@@ -67,3 +67,6 @@ export function store(key, value) {
 
 /** Spots a unit in view.units by id. */
 export const unitById = (view, id) => view.units.find((u) => u.id === id) ?? null;
+
+/** The join QR code (served by the server). */
+export const qrImg = () => h('img', { src: '/api/qr.svg', alt: 'Join QR code' });

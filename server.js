@@ -8,16 +8,17 @@ import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync, writeFileSync, readdirSync, existsSync, renameSync, unlinkSync } from 'node:fs';
 import { WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
-import { Game, GameError, validateSet } from './game.js';
+import { Room } from './room.js';
+import { GameError } from './lib.js';
+import { GAMES } from './games/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(here, 'data');
-const SETS_DIR = path.join(DATA_DIR, 'sets');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const PUBLIC_DIR = path.join(here, 'public');
 const PORT = Number(process.env.PORT ?? 3000);
-mkdirSync(SETS_DIR, { recursive: true });
+for (const id of Object.keys(GAMES)) mkdirSync(path.join(DATA_DIR, id), { recursive: true });
 
 // ---------- config: host PIN ----------
 function loadConfig() {
@@ -49,19 +50,20 @@ const wifiString = process.env.WIFI_SSID
   ? `WIFI:T:${process.env.WIFI_PASSWORD ? 'WPA' : 'nopass'};S:${process.env.WIFI_SSID};${process.env.WIFI_PASSWORD ? `P:${process.env.WIFI_PASSWORD};` : ''};`
   : null;
 
-// ---------- question sets on disk ----------
+// ---------- question sets on disk: data/<game>/<id>.json ----------
 const SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
-const setPath = (id) => path.join(SETS_DIR, `${id}.json`);
-function readSet(id) {
-  if (!SET_ID.test(id) || !existsSync(setPath(id))) return null;
-  try { return JSON.parse(readFileSync(setPath(id), 'utf8')); } catch { return null; }
+const setPath = (gameId, id) => path.join(DATA_DIR, gameId, `${id}.json`);
+function readSet(gameId, id) {
+  if (!GAMES[gameId] || !SET_ID.test(id) || !existsSync(setPath(gameId, id))) return null;
+  try { return JSON.parse(readFileSync(setPath(gameId, id), 'utf8')); } catch { return null; }
 }
-function listSets() {
-  return readdirSync(SETS_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).filter((id) => SET_ID.test(id))
-    .map((id) => ({ id, title: readSet(id)?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title));
+function listSets(gameId) {
+  if (!GAMES[gameId]) return [];
+  return readdirSync(path.join(DATA_DIR, gameId)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).filter((id) => SET_ID.test(id))
+    .map((id) => ({ id, title: readSet(gameId, id)?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title));
 }
 
-// ---------- the game, saved to disk so a restart does not lose it ----------
+// ---------- the room, saved to disk so a restart does not lose the game ----------
 let saveTimer = null;
 function saveSoon() {
   clearTimeout(saveTimer);
@@ -70,23 +72,23 @@ function saveSoon() {
 function saveNow() {
   try {
     const tmp = `${STATE_FILE}.tmp`;
-    writeFileSync(tmp, JSON.stringify(game));
+    writeFileSync(tmp, JSON.stringify(room));
     renameSync(tmp, STATE_FILE);
   } catch (e) { console.error('Could not save state:', e.message); }
 }
 let broadcastQueued = false;
-const game = new Game({
-  loadSet: readSet,
+const room = new Room({
+  games: GAMES,
+  loadContent: readSet,
+  listContent: listSets,
   onChange() {
     saveSoon();
     if (!broadcastQueued) { broadcastQueued = true; queueMicrotask(() => { broadcastQueued = false; broadcast(); }); }
   },
 });
-try { game.restore(JSON.parse(readFileSync(STATE_FILE, 'utf8'))); } catch { /* fresh start */ }
-if (!game.setId) {
-  const first = listSets()[0];
-  if (first) { try { game.chooseSet(first.id); } catch { /* ignore */ } }
-}
+try { room.restore(JSON.parse(readFileSync(STATE_FILE, 'utf8'))); } catch { /* fresh start */ }
+// With a single game installed there is nothing to choose, so pick it.
+if (!room.gameId && Object.keys(GAMES).length === 1) room.chooseGame(Object.keys(GAMES)[0]);
 
 // ---------- HTTP ----------
 const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host': 'host.html', '/editor': 'editor.html' };
@@ -112,28 +114,29 @@ async function handleApi(req, res, url) {
     if (!wifiString) return send(res, 404, { error: 'Wi-Fi QR not configured (set WIFI_SSID)' });
     return send(res, 200, await QRCode.toString(wifiString, { type: 'svg', margin: 1 }), 'image/svg+xml');
   }
+  if (url.pathname === '/api/games') return send(res, 200, Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description })));
   // Everything below exposes answers: host PIN required.
   if (!pinOk(req.headers['x-host-pin'])) return send(res, 401, { error: 'Wrong or missing host PIN' });
-  if (url.pathname === '/api/sets' && req.method === 'GET') return send(res, 200, listSets());
-  const m = url.pathname.match(/^\/api\/sets\/([^/]+)$/);
-  if (!m) return send(res, 404, { error: 'Not found' });
-  const id = m[1];
+  const m = url.pathname.match(/^\/api\/games\/([a-z0-9-]+)\/sets(?:\/([^/]+))?$/);
+  if (!m || !GAMES[m[1]]) return send(res, 404, { error: 'Not found' });
+  const [, gameId, id] = m;
+  if (!id) return req.method === 'GET' ? send(res, 200, listSets(gameId)) : send(res, 405, { error: 'Method not allowed' });
   if (!SET_ID.test(id)) return send(res, 400, { error: 'Set id must be lowercase letters, numbers and dashes' });
   if (req.method === 'GET') {
-    const set = readSet(id);
+    const set = readSet(gameId, id);
     return set ? send(res, 200, set) : send(res, 404, { error: 'No such set' });
   }
   if (req.method === 'PUT') {
     let set;
-    try { set = JSON.parse(await readBody(req)); validateSet(set); } catch (e) { return send(res, 400, { error: e.message }); }
-    writeFileSync(setPath(id), JSON.stringify(set, null, 2));
-    if (game.setId === id) game.refreshSet();
+    try { set = JSON.parse(await readBody(req)); GAMES[gameId].validateContent(set); } catch (e) { return send(res, 400, { error: e.message }); }
+    writeFileSync(setPath(gameId, id), JSON.stringify(set, null, 2));
+    room.contentChanged(gameId, id);
     return send(res, 200, { ok: true });
   }
   if (req.method === 'DELETE') {
-    if (game.setId === id && game.run.status !== 'lobby') return send(res, 409, { error: 'That set is in play' });
-    if (existsSync(setPath(id))) unlinkSync(setPath(id));
-    if (game.setId === id) { game.setId = null; game.set = null; game.refreshSet(); }
+    if (room.gameId === gameId && room.inProgress() && room.game?.usesContent?.(id)) return send(res, 409, { error: 'That set is in play' });
+    if (existsSync(setPath(gameId, id))) unlinkSync(setPath(gameId, id));
+    room.contentChanged(gameId, id);
     return send(res, 200, { ok: true });
   }
   return send(res, 405, { error: 'Method not allowed' });
@@ -159,13 +162,9 @@ const sockets = new Set();
 const sendJson = (ws, msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
 
 function viewFor(ws, cache) {
-  if (ws.role === 'host') return (cache.host ??= game.hostView());
-  const pub = (cache.pub ??= game.publicView());
-  if (ws.role === 'player') {
-    const p = game.players.find((x) => x.id === ws.playerId);
-    return { ...pub, me: p ? { id: p.id, name: p.name, color: p.color, unitId: game.unitOf(p)?.id ?? null } : null };
-  }
-  return pub;
+  if (ws.role === 'host') return (cache.host ??= room.hostView());
+  const pub = (cache.pub ??= room.publicView());
+  return ws.role === 'player' ? room.playerView(ws.playerId, pub) : pub;
 }
 function broadcast() {
   const cache = {};
@@ -175,41 +174,9 @@ function sendState(ws) { sendJson(ws, { t: 'state', view: viewFor(ws, {}) }); }
 
 function attachPlayer(ws, player) {
   ws.playerId = player.id;
-  game.setConnected(player.id, true);
+  room.setConnected(player.id, true);
 }
 const liveSockets = (playerId) => [...sockets].filter((s) => s.playerId === playerId).length;
-
-const HOST_ACTIONS = {
-  setMode: (a) => game.setMode(a.mode),
-  addTeam: (a) => game.addTeam(a.name),
-  removeTeam: (a) => game.removeTeam(a.id),
-  setPlayerTeam: (a) => game.setPlayerTeam(a.playerId, a.teamId),
-  renameUnit: (a) => game.renameUnit(a.id, a.name),
-  removePlayer: (a) => game.removePlayer(a.id),
-  clearRoster: () => game.clearRoster(),
-  setSettings: (a) => game.setSettings(a),
-  chooseSet: (a) => game.chooseSet(a.id),
-  startGame: () => game.startGame(),
-  endGame: () => game.endGame(),
-  setView: (a) => game.setView(a.view),
-  adjustScore: (a) => game.adjustScore(a.id, { delta: a.delta, set: a.set }),
-  select: (a) => game.select(Number(a.c), Number(a.r)),
-  setDailyDoubleUnit: (a) => game.setDailyDoubleUnit(a.id),
-  setDailyDoubleWager: (a) => game.setDailyDoubleWager(a.amount),
-  openBuzzers: () => game.openBuzzers(),
-  awardBuzz: (a) => game.awardBuzz(a.id),
-  reopen: () => game.reopen(),
-  correct: () => game.correct(),
-  wrong: () => game.wrong(),
-  reveal: () => game.reveal(),
-  closeClue: () => game.closeClue(),
-  startFinal: () => game.startFinal(),
-  setFinalWager: (a) => game.setFinalWager(a.id, a.amount),
-  finalNext: () => game.finalNext(),
-  finalJudge: (a) => game.finalJudge(a.id, !!a.ok),
-  finishFinal: () => game.finishFinal(),
-  finishGame: () => game.finishGame(),
-};
 
 function handle(ws, msg) {
   switch (msg.t) {
@@ -220,7 +187,7 @@ function handle(ws, msg) {
         ws.role = 'host';
       } else if (msg.role === 'player') {
         ws.role = 'player';
-        const p = game.playerByToken(msg.token);
+        const p = room.playerByToken(msg.token);
         if (p) attachPlayer(ws, p);
         else sendJson(ws, { t: 'need-join' });
       } else return;
@@ -229,32 +196,24 @@ function handle(ws, msg) {
     }
     case 'join': {
       if (ws.role !== 'player') return;
-      const p = game.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === 'buzzer' ? 'buzzer' : 'phone' });
+      const p = room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === 'buzzer' ? 'buzzer' : 'phone' });
       attachPlayer(ws, p);
       sendJson(ws, { t: 'joined', token: p.token });
       return;
     }
-    case 'buzz': {
-      if (ws.role !== 'player' || !ws.playerId) return;
-      const r = game.buzz(ws.playerId); // stamped with the server clock inside
-      sendJson(ws, { t: 'buzz-result', ...r });
-      return;
-    }
-    case 'final-wager':
-      if (ws.role === 'player' && ws.playerId) { game.finalWagerFrom(ws.playerId, msg.amount); sendJson(ws, { t: 'ack', what: 'wager' }); }
-      return;
-    case 'final-answer':
-      if (ws.role === 'player' && ws.playerId) { game.finalAnswerFrom(ws.playerId, msg.text); sendJson(ws, { t: 'ack', what: 'answer' }); }
-      return;
     case 'act': {
       if (ws.role !== 'host') return;
-      const fn = HOST_ACTIONS[msg.action];
-      if (!fn) throw new GameError(`Unknown action ${msg.action}`);
-      fn(msg.args ?? {});
+      room.act(msg.action, msg.args ?? {});
       return;
     }
     case 'ping': sendJson(ws, { t: 'pong' }); return;
-    default:
+    default: {
+      // Anything else from a joined player belongs to the active game (a buzz, a wager, ...).
+      if (ws.role === 'player' && ws.playerId) {
+        const reply = room.playerMessage(ws.playerId, msg);
+        if (reply) sendJson(ws, reply);
+      }
+    }
   }
 }
 
@@ -274,7 +233,7 @@ wss.on('connection', (ws) => {
   });
   ws.on('close', () => {
     sockets.delete(ws);
-    if (ws.playerId && !liveSockets(ws.playerId)) game.setConnected(ws.playerId, false);
+    if (ws.playerId && !liveSockets(ws.playerId)) room.setConnected(ws.playerId, false);
   });
   ws.on('error', () => {});
 });

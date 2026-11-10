@@ -1,19 +1,23 @@
 # Game Night
 
-Jeopardy-style trivia for a Raspberry Pi. The Pi plugs into a TV and shows the
-board; players buzz in from their phones; the host runs the game from a phone
-or tablet. One Node.js server is the single source of truth, so buzzer order is
+A party-game system for a Raspberry Pi. The Pi plugs into a TV and shows the
+game; players join and play from their phones; the host runs it from a phone or
+tablet. One Node.js server is the single source of truth, so buzzer order is
 decided by one clock (the server's), not by anyone's device.
+
+**Games:** Jeopardy-style trivia today. The server is built so more games (a
+Family Feud-style survey game is planned) plug in without touching the rest; see
+[Adding a game](#adding-a-game).
 
 This is **Phase 1** of the project plan (phones only). The server already speaks
 the protocol the light-up ESP32 buzzers will use; see [Buzzers](#buzzers-phase-3).
 
 | Page | Who | Address |
 | --- | --- | --- |
-| TV board | the TV (Pi kiosk browser) | `/tv` |
+| TV | the TV (Pi kiosk browser) | `/tv` |
 | Player | everyone's phone (what the QR code opens) | `/` |
 | Host | the host's phone or tablet, answers visible | `/host` (PIN) |
-| Editor | whoever writes the questions | `/editor` (PIN) |
+| Editor | whoever writes the questions | `/editor` (PIN; `?game=<id>` picks the game) |
 
 ## Try it on any computer
 
@@ -26,7 +30,10 @@ It prints the addresses. Open `/tv` on a big screen, `/host` on a phone, and
 scan the QR code on the TV with other phones. Everything must be on the same
 network. `npm test` runs the game-rule tests and a full server test.
 
-## How a game goes
+## How a game goes (Jeopardy)
+
+The host first picks the game (skipped while only one is installed) and whether
+players play individually or in teams.
 
 1. **Lobby.** Players scan the QR code, enter a name and pick a colour (or a
    team). The host picks the question set and individual or team mode.
@@ -58,8 +65,9 @@ saved to `data/state.json` and survives a server restart.
 
 Use `/editor`: six categories of five clues, a Final Jeopardy clue, and optional
 Daily Double flags. If no Daily Double is flagged, one is placed at random each
-game. Sets are plain JSON files in `data/sets/`, so you can also edit or share
-them as files. `data/sets/family-night.json` is a sample.
+game. Sets are plain JSON files in `data/<game>/` (for Jeopardy, `data/jeopardy/`),
+so you can also edit or share them as files. `data/jeopardy/family-night.json`
+is a sample.
 
 ## Host PIN
 
@@ -151,10 +159,14 @@ JSON text messages:
 ← {"t":"state","view":{…}}                                  (every change)
 ```
 
-Everything the LED ring needs is in `view`: `view.me.unitId`, `view.clue.step`
-(`reading`, `open`, `answering`, `revealed`), `view.clue.buzzedBy` and
-`view.clue.lockedOut`. Map them to the light states in the plan
-(`open` → pulsing, `buzzedBy === me.unitId` → solid, `lockedOut` → red flash).
+Every `view` is `{ room, game }`: `room` is shared by all games (players, teams,
+scores, `room.me` for the receiving player) and `game` is the active game's own
+state. For Jeopardy, everything the LED ring needs is there: `view.room.me.unitId`,
+`view.game.clue.step` (`reading`, `open`, `answering`, `revealed`),
+`view.game.clue.buzzedBy` and `view.game.clue.lockedOut`. Map them to the light
+states in the plan (`open` → pulsing, `buzzedBy === me.unitId` → solid,
+`lockedOut` → red flash). A buzzer sends `{"t":"buzz"}` whichever game is on;
+what a game does with it is up to the game.
 Send `{"t":"ping"}` every few seconds if the firmware needs a keepalive.
 Buzzers show up in the host's player list tagged "buzzer"; assign them to teams
 there.
@@ -162,15 +174,42 @@ there.
 ## Layout
 
 ```text
-game.js        game rules (pure, no I/O) – the thing tests lean on
-server.js      HTTP, WebSocket, saving, QR codes
-public/        tv / host / play / editor pages (plain JS, no build step)
-data/sets/     question sets
-test/          node --test suites
-deploy/        systemd unit
+lib.js                  small shared helpers and GameError
+room.js                 the room: players, teams, scores, host roster controls, saving
+games/index.js          the list of installed games
+games/jeopardy/         Jeopardy rules (pure, no I/O) and its game module
+server.js               HTTP, WebSocket, saving, QR codes, question-set API
+public/                 the four pages (tv, host, play, editor): thin shells
+public/games/jeopardy/  Jeopardy's own TV, host, phone and editor screens
+data/<game>/            question sets for each game
+test/                   node --test suites (room, Jeopardy rules, full server)
+deploy/                 systemd unit
 ```
+
+## Adding a game
+
+The room handles everything games have in common: joining by QR code, names and
+colours, teams, scores, reconnecting, the host's player controls, saving, and the
+buzzer connection. A game supplies its rules and its screens.
+
+1. **Rules.** Create `games/<id>/index.js` exporting `{ id, name, description,
+   validateContent, create(room) }`. `create` returns an object with
+   `inProgress()`, `act(action, args)` (host actions), `onPlayer(player, msg)`
+   (a message from a phone or buzzer; may return a reply), `publicView()` and
+   `hostView()` (what the TV and phones may see / what the host may see),
+   `toJSON()` and `restore()`. Optional: `init()` and `contentChanged(setId)`.
+   The full contract is the comment at the top of `room.js`. Score by changing
+   `unit.score` on `room.units()`. Keep it free of sockets and files so it can be
+   tested like `games/jeopardy/game.js`.
+2. **Screens.** Add `public/games/<id>/` with `tv.js` (`render(view)` returns an
+   element), `host.js` (`render(view, ctx)` returns `{ label, toolbar, cards }`),
+   `player.js` (`mount(container, ctx)` returns `{ update(view), onMessage(msg),
+   destroy() }`) and `editor.js` (`mount(container, api)`). `public/games/jeopardy/`
+   is the working example.
+3. **Register it** in `games/index.js`. The host page then offers it in the game
+   picker, and `/editor?game=<id>` edits its content, stored under `data/<id>/`.
 
 ## Not built yet
 
 From the plan: ESP32 firmware and enclosures (Phases 3-4), sound effects, and
-a timer on buzzed answers.
+a timer on buzzed answers. Next game: a Family Feud-style survey game.

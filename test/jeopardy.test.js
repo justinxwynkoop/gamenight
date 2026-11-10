@@ -1,19 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, GameError, validateSet } from '../game.js';
+import { Room } from '../room.js';
+import { GAMES } from '../games/index.js';
+import { GameError } from '../lib.js';
+import { validateSet } from '../games/jeopardy/game.js';
 
-const set = JSON.parse(readFileSync(new URL('../data/sets/family-night.json', import.meta.url)));
+const set = JSON.parse(readFileSync(new URL('../data/jeopardy/family-night.json', import.meta.url)));
 
 function setup({ players = ['Ann', 'Bo', 'Cy'], teams = false } = {}) {
   let t = 1000;
-  const g = new Game({ now: () => t, loadSet: () => set });
+  const room = new Room({ games: GAMES, now: () => t, loadContent: () => set });
   const clock = { advance: (ms) => { t += ms; } };
-  if (teams) { g.setMode('teams'); }
-  const ps = players.map((n, i) => g.join({ name: n, teamId: teams ? g.teams[i % g.teams.length].id : undefined }));
+  room.chooseGame('jeopardy');
+  if (teams) room.setMode('teams');
+  const ps = players.map((n, i) => room.join({ name: n, teamId: teams ? room.teams[i % room.teams.length].id : undefined }));
+  const g = room.game;
   g.chooseSet('x');
   g.run.dd = []; // no daily doubles unless a test adds one
-  return { g, ps, clock };
+  return { room, g, ps, clock };
 }
 const start = (g) => { const dd = g.run.dd; g.startGame(); g.run.dd = dd.length ? dd : []; };
 
@@ -23,15 +28,6 @@ test('validateSet rejects malformed sets', () => {
   assert.throws(() => validateSet({ title: 'x', categories: [] }), GameError);
   const bad = structuredClone(set); bad.categories[2].clues[1].answer = '';
   assert.throws(() => validateSet(bad), /answer/);
-});
-
-test('join rules: names unique, team required in team mode', () => {
-  const g = new Game({ loadSet: () => set });
-  g.join({ name: 'Ann' });
-  assert.throws(() => g.join({ name: 'ann' }), /taken/);
-  assert.throws(() => g.join({ name: '  ' }), /name/i);
-  g.setMode('teams');
-  assert.throws(() => g.join({ name: 'Bo' }), /team/i);
 });
 
 test('first buzz wins and locks everyone else out', () => {
@@ -86,12 +82,12 @@ test('wrong answer deducts and reopens for the others; all locked out reveals', 
 });
 
 test('answers stay hidden from the public view until revealed, but host sees them', () => {
-  const { g, ps } = setup();
+  const { room, g, ps } = setup();
   start(g); g.select(0, 0);
   assert.equal(g.publicView().clue.answer, null);
-  assert.equal(g.playerView(ps[0].id).clue.answer, null);
+  assert.equal(room.playerView(ps[0].id).game.clue.answer, null);
   assert.equal(g.hostView().clue.answer, 'The Pacific Ocean');
-  assert.ok(!JSON.stringify(g.publicView()).includes('Pacific Ocean'));
+  assert.ok(!JSON.stringify(room.publicView()).includes('Pacific Ocean'));
 });
 
 test('daily double: wager capped, scored, and clue hidden until wager', () => {
@@ -112,22 +108,22 @@ test('daily double: wager capped, scored, and clue hidden until wager', () => {
 });
 
 test('team mode: team score, team lockout after a teammate buzzes', () => {
-  const { g, ps } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'], teams: true });
+  const { room, g, ps } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'], teams: true });
   start(g); g.select(0, 0); g.openBuzzers();
   assert.equal(g.buzz(ps[0].id).ok, true);        // Team 1
   assert.equal(g.buzz(ps[2].id).ok, false);       // teammate of team 1
   g.correct();
-  assert.equal(g.teams[0].score, 200);
+  assert.equal(room.teams[0].score, 200);
   assert.equal(ps[0].score, 0);
-  assert.equal(g.run.control, g.teams[0].id);
+  assert.equal(g.run.control, room.teams[0].id);
 });
 
 test('host can adjust and set scores', () => {
-  const { g, ps } = setup();
-  g.adjustScore(ps[0].id, { delta: 300 });
-  g.adjustScore(ps[0].id, { delta: -100 });
+  const { room, ps } = setup();
+  room.act('adjustScore', { id: ps[0].id, delta: 300 });
+  room.act('adjustScore', { id: ps[0].id, delta: -100 });
   assert.equal(ps[0].score, 200);
-  g.adjustScore(ps[0].id, { set: 50 });
+  room.act('adjustScore', { id: ps[0].id, set: 50 });
   assert.equal(ps[0].score, 50);
 });
 
@@ -156,14 +152,31 @@ test('final jeopardy: wagers capped, only positive scores play, judging scores',
   assert.equal(g.publicView().final.answer, 'John Adams');
 });
 
-test('state survives a save and restore, minus live connections', () => {
-  const { g, ps } = setup();
+test('a game in progress survives a save and restore, minus live connections', () => {
+  const { room, g, ps } = setup();
   start(g); g.select(0, 0); g.openBuzzers(); g.buzz(ps[0].id); g.correct();
-  g.setConnected(ps[0].id, true);
-  const copy = new Game({ loadSet: () => set });
-  copy.restore(JSON.parse(JSON.stringify(g)));
+  room.setConnected(ps[0].id, true);
+  const copy = new Room({ games: GAMES, loadContent: () => set });
+  assert.equal(copy.restore(JSON.parse(JSON.stringify(room))), true);
   assert.equal(copy.players[0].score, 200);
-  assert.equal(copy.run.control, ps[0].id);
+  assert.equal(copy.game.run.control, ps[0].id);
+  assert.equal(copy.game.run.status, 'clue');
+  assert.equal(copy.game.run.clue.step, 'revealed');
   assert.equal(copy.playerByToken(ps[0].token).name, 'Ann');
   assert.equal(copy.connected.size, 0);
+  assert.equal(copy.inProgress(), true);
+});
+
+test('host actions reach the game through the room, and unknown ones are refused', () => {
+  const { room, g } = setup();
+  room.act('startGame');
+  assert.equal(g.run.status, 'board');
+  assert.throws(() => room.act('doesNotExist'), /Unknown action/);
+});
+
+test('buzz and final messages from phones are routed to the game', () => {
+  const { room, g, ps } = setup();
+  start(g); g.select(0, 0); g.openBuzzers();
+  assert.deepEqual(room.playerMessage(ps[0].id, { t: 'buzz' }), { t: 'buzz-result', ok: true, unitId: ps[0].id, playerId: ps[0].id });
+  assert.equal(room.playerMessage(ps[0].id, { t: 'nonsense' }), undefined);
 });

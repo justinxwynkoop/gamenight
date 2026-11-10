@@ -1,100 +1,58 @@
+// The editor page. It owns the PIN and choosing a game; the editor for each
+// game's content comes from /games/<id>/editor.js.
 import { h, store } from './common.js';
 
 const app = document.getElementById('app');
 let pin = store('gn-pin') ?? '';
-let sets = [];
-let id = '';        // id of the set being edited ('' = brand new)
-let isNew = true;
-let doc = blank();
-let msg = null;     // {ok: bool, text}
+let games = [];
+let gameId = new URLSearchParams(location.search).get('game');
+let error = '';
 
-function blank() {
-  return {
-    title: '',
-    categories: Array.from({ length: 6 }, (_, c) => ({
-      name: '', clues: [200, 400, 600, 800, 1000].map((value) => ({ value, clue: '', answer: '' })),
-    })),
-    final: { category: '', clue: '', answer: '' },
-  };
-}
-const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+class AuthError extends Error {}
 
-async function api(path, opts = {}) {
-  const r = await fetch(`/api/sets${path}`, { ...opts, headers: { 'x-host-pin': pin, 'content-type': 'application/json' } });
+async function call(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { 'x-host-pin': pin, 'content-type': 'application/json' } });
   const body = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new AuthError(body.error ?? 'Wrong or missing host PIN');
   if (!r.ok) throw new Error(body.error ?? `Error ${r.status}`);
   return body;
 }
 
-async function refresh() {
-  try { sets = await api(''); } catch (e) { sets = null; msg = { ok: false, text: e.message }; }
-  render();
+/** What a game's editor module is handed, scoped to one game's sets. */
+const apiFor = (id) => ({
+  list: () => call(`/api/games/${id}/sets`),
+  get: (setId) => call(`/api/games/${id}/sets/${setId}`),
+  put: (setId, doc) => call(`/api/games/${id}/sets/${setId}`, { method: 'PUT', body: JSON.stringify(doc) }),
+  del: (setId) => call(`/api/games/${id}/sets/${setId}`, { method: 'DELETE' }),
+});
+
+function login() {
+  const input = h('input', { type: 'password', inputMode: 'numeric', placeholder: 'Host PIN' });
+  const go = () => { pin = input.value.trim(); store('gn-pin', pin); error = ''; boot(); };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+  app.replaceChildren(h('div', { class: 'login' }, h('h1', {}, 'Question editor'), input,
+    error && h('div', { class: 'err' }, error), h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: go }, 'Enter')));
 }
-async function open(setId) {
-  try { doc = await api(`/${setId}`); id = setId; isNew = false; msg = null; } catch (e) { msg = { ok: false, text: e.message }; }
-  render();
-}
-async function save() {
-  const sid = isNew ? slug(id || doc.title) : id;
-  if (!sid) { msg = { ok: false, text: 'Give the set a title first.' }; return render(); }
+
+async function boot() {
   try {
-    await api(`/${sid}`, { method: 'PUT', body: JSON.stringify(doc) });
-    id = sid; isNew = false; msg = { ok: true, text: `Saved “${doc.title}”.` };
-    sets = await api('');
-  } catch (e) { msg = { ok: false, text: e.message }; }
-  render();
-}
-async function remove() {
-  if (isNew || !confirm(`Delete “${doc.title}”? This cannot be undone.`)) return;
-  try { await api(`/${id}`, { method: 'DELETE' }); doc = blank(); id = ''; isNew = true; msg = { ok: true, text: 'Deleted.' }; sets = await api(''); } catch (e) { msg = { ok: false, text: e.message }; }
-  render();
-}
-
-function field(tag, obj, key, props = {}) {
-  const el = h(tag, { ...props, value: obj[key] ?? '' });
-  el.addEventListener('input', () => { obj[key] = props.type === 'number' ? Number(el.value) : el.value; });
-  return el;
-}
-
-function render() {
-  if (sets === null) {
-    const input = h('input', { type: 'password', inputMode: 'numeric', placeholder: 'Host PIN' });
-    const go = () => { pin = input.value.trim(); store('gn-pin', pin); msg = null; sets = []; refresh(); };
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-    app.replaceChildren(h('div', { class: 'login' }, h('h1', {}, 'Question editor'), input,
-      msg && h('div', { class: 'err' }, msg.text), h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: go }, 'Enter')));
-    return;
+    games = await (await fetch('/api/games')).json();
+    if (!games.some((g) => g.id === gameId)) gameId = games[0]?.id ?? null;
+    if (!gameId) { app.replaceChildren(h('div', { class: 'wrap' }, h('div', { class: 'card' }, 'No games installed.'))); return; }
+    await apiFor(gameId).list(); // checks the PIN before showing anything
+    const mod = await import(`/games/${gameId}/editor.js`);
+    const box = h('div', { style: { display: 'contents' } });
+    app.replaceChildren(h('div', { class: 'wrap' },
+      h('div', { class: 'card bar' },
+        h('div', { class: 'row' }, h('a', { class: 'btn small', href: '/host', style: { textDecoration: 'none' } }, '← Host'), h('strong', {}, 'Question editor')),
+        games.length > 1 && h('select', { style: { width: 'auto' }, onchange: (e) => { location.search = `?game=${e.target.value}`; } },
+          games.map((g) => h('option', { value: g.id, selected: g.id === gameId }, g.name)))),
+      box));
+    mod.mount(box, apiFor(gameId));
+  } catch (e) {
+    error = e instanceof AuthError ? (pin ? e.message : '') : e.message;
+    login();
   }
-  const picker = h('select', { onchange: (e) => { if (e.target.value === '') { doc = blank(); id = ''; isNew = true; msg = null; render(); } else open(e.target.value); } },
-    h('option', { value: '' }, '＋ New question set'), sets.map((s) => h('option', { value: s.id, selected: !isNew && s.id === id }, s.title)));
-  const cats = doc.categories.map((cat, c) => h('div', { class: 'ed-cat' },
-    field('input', cat, 'name', { placeholder: `Category ${c + 1}`, maxLength: 40, style: { fontWeight: '700' } }),
-    cat.clues.map((cl, r) => h('div', { class: 'ed-clue' },
-      h('div', { class: 'top' }, field('input', cl, 'value', { type: 'number', min: 1, step: 100 }),
-        h('label', { class: 'row', style: { margin: 0, fontSize: '.8rem' } }, (() => {
-          const cb = h('input', { type: 'checkbox', checked: !!cl.dailyDouble });
-          cb.addEventListener('change', () => { if (cb.checked) cl.dailyDouble = true; else delete cl.dailyDouble; });
-          return cb;
-        })(), 'Daily Double')),
-      field('textarea', cl, 'clue', { placeholder: 'Clue (what the host reads)' }),
-      field('input', cl, 'answer', { placeholder: 'Answer (host only)' })))));
-  app.replaceChildren(h('div', { class: 'wrap' },
-    h('div', { class: 'card bar' }, h('div', { class: 'row' }, h('a', { class: 'btn small', href: '/host', style: { textDecoration: 'none' } }, '← Host'), h('strong', {}, 'Question editor')),
-      h('div', { class: 'row' }, picker)),
-    h('div', { class: 'card' },
-      h('label', {}, 'Title'), field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. Holiday Trivia' }),
-      isNew && [h('label', {}, 'File name (optional, letters/numbers/dashes)'), (() => {
-        const el = h('input', { value: id, placeholder: 'auto from title' }); el.addEventListener('input', () => { id = el.value; }); return el;
-      })()],
-      h('p', { class: 'tag' }, 'Tip: leave Daily Doubles unticked and the game places one at random each time. Tick any to choose the spots yourself.')),
-    h('div', { class: 'card' }, h('div', { class: 'ed-grid' }, cats)),
-    h('div', { class: 'card' }, h('h2', {}, 'Final Jeopardy'),
-      field('input', doc.final, 'category', { placeholder: 'Category' }),
-      h('div', { style: { height: '8px' } }), field('textarea', doc.final, 'clue', { placeholder: 'Clue' }),
-      h('div', { style: { height: '8px' } }), field('input', doc.final, 'answer', { placeholder: 'Answer' })),
-    msg && h('div', { class: msg.ok ? 'hostans' : 'err' }, msg.text),
-    h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: save }, 'Save'),
-      !isNew && h('button', { class: 'btn bad', onclick: remove }, 'Delete'))));
 }
 
-refresh();
+boot();

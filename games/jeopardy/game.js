@@ -1,23 +1,17 @@
-// Game Night: pure game logic. No network, no files, no timers.
-// The server owns one Game, feeds it events, and broadcasts the views it produces.
+// Jeopardy rules. No network, no files, no timers. The room supplies players,
+// teams and scores; this class owns the board, the clue flow and Final Jeopardy.
 //
 // Fairness: buzz() is called in the order messages arrive at the server and
 // stamps the press with the server clock. Device clocks are never consulted.
 
+import { GameError, fail, cleanName, int } from '../../lib.js';
+
 export const COLS = 6;
 export const ROWS = 5;
-export const MAX_PLAYERS = 30;
-export const COLORS = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4',
-  '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#a3e635', '#f8fafc',
-];
+export { GameError };
 
-export class GameError extends Error {}
-
-const fail = (msg) => { throw new GameError(msg); };
 const key = (c, r) => `${c},${r}`;
-const cleanName = (s, max = 20) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
-const int = (n) => (Number.isFinite(Number(n)) ? Math.trunc(Number(n)) : NaN);
+const GAME = 'jeopardy';
 
 export function validateSet(set) {
   if (!set || typeof set !== 'object') fail('Question set must be an object');
@@ -39,132 +33,77 @@ export function validateSet(set) {
   return true;
 }
 
-export class Game {
-  constructor({ now = () => performance.now(), onChange = () => {}, loadSet = () => null } = {}) {
-    this.now = now;
-    this.onChange = onChange;
-    this.loadSet = loadSet; // (id) => set object | null
-    this.nextId = 1;
-    this.mode = 'players'; // 'players' | 'teams'
+export class JeopardyGame {
+  constructor(room) {
+    this.room = room;
     this.settings = { earlyPenalty: true, penaltyMs: 500 };
-    this.players = []; // {id, token, name, color, teamId, score, kind}
-    this.teams = []; // {id, name, color, score}
     this.setId = null;
     this.set = null; // loaded question set
     this.run = this.#blankRun('lobby');
-    this.connected = new Set(); // runtime only: player ids with a live socket
   }
 
   #blankRun(status) {
     return { status, used: [], dd: [], control: null, clue: null, final: null, view: 'board' };
   }
-  #id(prefix) { return `${prefix}${this.nextId++}`; }
-  #changed() { this.onChange(); }
+  #changed() { this.room.changed(); }
+
+  /** Called when the host picks Jeopardy: start with the first question set, if any. */
+  init() {
+    const first = this.room.listContent(GAME)[0];
+    if (first) { try { this.chooseSet(first.id); } catch { /* leave it to the host */ } }
+  }
+
+  inProgress() { return this.run.status !== 'lobby'; }
+  /** Is this saved set the one chosen? (The editor won't delete a set in play.) */
+  usesContent(id) { return this.setId === id; }
 
   // ---------- persistence ----------
-  toJSON() {
-    return {
-      nextId: this.nextId, mode: this.mode, settings: this.settings,
-      players: this.players, teams: this.teams, setId: this.setId, run: this.run,
-    };
-  }
+  toJSON() { return { settings: this.settings, setId: this.setId, run: this.run }; }
   restore(data) {
-    if (!data || typeof data !== 'object') return;
-    Object.assign(this, {
-      nextId: data.nextId ?? 1, mode: data.mode ?? 'players',
-      settings: { ...this.settings, ...data.settings },
-      players: data.players ?? [], teams: data.teams ?? [], setId: data.setId ?? null,
-    });
-    this.set = this.setId ? this.loadSet(this.setId) : null;
+    this.settings = { ...this.settings, ...data.settings };
+    this.setId = data.setId ?? null;
+    this.set = this.setId ? this.room.loadContent(GAME, this.setId) : null;
     this.run = { ...this.#blankRun('lobby'), ...data.run };
     if (this.run.status !== 'lobby' && !this.set) this.run = this.#blankRun('lobby');
   }
 
-  // ---------- contestants ----------
-  unitOf(player) {
-    if (this.mode === 'teams') return this.teams.find((t) => t.id === player.teamId) ?? null;
-    return player;
+  // ---------- host actions & player messages ----------
+  act(action, a = {}) {
+    switch (action) {
+      case 'startGame': return this.startGame();
+      case 'endGame': return this.endGame();
+      case 'setView': return this.setView(a.view);
+      case 'setSettings': return this.setSettings(a);
+      case 'chooseSet': return this.chooseSet(a.id);
+      case 'select': return this.select(Number(a.c), Number(a.r));
+      case 'setDailyDoubleUnit': return this.setDailyDoubleUnit(a.id);
+      case 'setDailyDoubleWager': return this.setDailyDoubleWager(a.amount);
+      case 'openBuzzers': return this.openBuzzers();
+      case 'awardBuzz': return this.awardBuzz(a.id);
+      case 'reopen': return this.reopen();
+      case 'correct': return this.correct();
+      case 'wrong': return this.wrong();
+      case 'reveal': return this.reveal();
+      case 'closeClue': return this.closeClue();
+      case 'startFinal': return this.startFinal();
+      case 'setFinalWager': return this.setFinalWager(a.id, a.amount);
+      case 'finalNext': return this.finalNext();
+      case 'finalJudge': return this.finalJudge(a.id, !!a.ok);
+      case 'finishFinal': return this.finishFinal();
+      case 'finishGame': return this.finishGame();
+      default: throw new GameError(`Unknown action ${action}`);
+    }
   }
-  /** Things that hold a score: players in individual mode, teams in team mode. */
-  units() {
-    return this.mode === 'teams' ? this.teams : this.players;
-  }
-  unit(id) { return this.units().find((u) => u.id === id) ?? null; }
-  /** Units that can actually buzz: someone is attached to them. */
-  eligibleUnits() {
-    if (this.mode !== 'teams') return this.players;
-    return this.teams.filter((t) => this.players.some((p) => p.teamId === t.id));
-  }
-
-  join({ name, color, teamId, kind = 'phone' }) {
-    name = cleanName(name);
-    if (!name) fail('Enter a name');
-    if (this.players.length >= MAX_PLAYERS) fail('The game is full');
-    if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail('That name is taken');
-    if (this.mode === 'teams' && !this.teams.some((t) => t.id === teamId)) fail('Pick a team');
-    color = COLORS.includes(color) ? color : this.#freeColor();
-    const player = {
-      id: this.#id('p'), token: cryptoToken(), name, color, kind, score: 0,
-      teamId: this.mode === 'teams' ? teamId : null,
-    };
-    this.players.push(player);
-    this.#changed();
-    return player;
-  }
-  playerByToken(token) {
-    return token ? this.players.find((p) => p.token === token) ?? null : null;
-  }
-  #freeColor() {
-    const used = new Set(this.units().map((u) => u.color));
-    return COLORS.find((c) => !used.has(c)) ?? COLORS[this.players.length % COLORS.length];
-  }
-  setConnected(playerId, on) {
-    on ? this.connected.add(playerId) : this.connected.delete(playerId);
-    this.#changed();
+  onPlayer(player, msg) {
+    switch (msg.t) {
+      case 'buzz': return { t: 'buzz-result', ...this.buzz(player.id) }; // stamped with the server clock inside
+      case 'final-wager': this.finalWagerFrom(player.id, msg.amount); return { t: 'ack', what: 'wager' };
+      case 'final-answer': this.finalAnswerFrom(player.id, msg.text); return { t: 'ack', what: 'answer' };
+      default: return undefined;
+    }
   }
 
-  // ---------- lobby / setup (host) ----------
-  setMode(mode) {
-    if (!['players', 'teams'].includes(mode)) fail('Unknown mode');
-    if (this.run.status !== 'lobby') fail('Change the mode before the game starts');
-    this.mode = mode;
-    this.players.forEach((p) => { p.teamId = null; });
-    if (mode === 'teams' && !this.teams.length) ['Team 1', 'Team 2'].forEach((n) => this.addTeam(n));
-    this.#changed();
-  }
-  addTeam(name) {
-    name = cleanName(name);
-    if (!name) fail('Team needs a name');
-    if (this.teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) fail('That team name is taken');
-    this.teams.push({ id: this.#id('t'), name, color: this.#freeColor(), score: 0 });
-    this.#changed();
-  }
-  removeTeam(id) {
-    this.teams = this.teams.filter((t) => t.id !== id);
-    this.players.forEach((p) => { if (p.teamId === id) p.teamId = null; });
-    this.#changed();
-  }
-  setPlayerTeam(playerId, teamId) {
-    const p = this.#player(playerId);
-    if (teamId && !this.teams.some((t) => t.id === teamId)) fail('No such team');
-    p.teamId = teamId || null;
-    this.#changed();
-  }
-  renameUnit(id, name) {
-    const u = this.unit(id) ?? fail('No such player');
-    name = cleanName(name);
-    if (!name) fail('Name cannot be empty');
-    u.name = name;
-    this.#changed();
-  }
-  removePlayer(id) {
-    this.#player(id);
-    this.players = this.players.filter((p) => p.id !== id);
-    this.connected.delete(id);
-    this.#changed();
-  }
-  #player(id) { return this.players.find((p) => p.id === id) ?? fail('No such player'); }
-
+  // ---------- setup ----------
   setSettings({ earlyPenalty, penaltyMs }) {
     if (typeof earlyPenalty === 'boolean') this.settings.earlyPenalty = earlyPenalty;
     if (penaltyMs !== undefined) {
@@ -176,23 +115,26 @@ export class Game {
   }
   chooseSet(id) {
     if (this.run.status !== 'lobby') fail('Pick the question set before the game starts');
-    const set = this.loadSet(id) ?? fail('No such question set');
+    const set = this.room.loadContent(GAME, id) ?? fail('No such question set');
     validateSet(set);
     this.setId = id;
     this.set = set;
     this.#changed();
   }
-  /** The editor saved a set that may be the one in play. */
-  refreshSet() {
-    if (this.setId && this.run.status === 'lobby') this.set = this.loadSet(this.setId);
+  /** The editor saved or deleted a set that may be the one chosen. */
+  contentChanged(id) {
+    if (this.setId === id && this.run.status === 'lobby') {
+      this.set = this.room.loadContent(GAME, id);
+      if (!this.set) this.setId = null;
+    }
     this.#changed();
   }
 
   startGame() {
     if (this.run.status !== 'lobby') fail('Game already started');
     if (!this.set) fail('Choose a question set first');
-    if (this.eligibleUnits().length < 1) fail('Nobody has joined yet');
-    this.units().forEach((u) => { u.score = 0; });
+    if (this.room.eligibleUnits().length < 1) fail('Nobody has joined yet');
+    this.room.resetScores();
     const flagged = [];
     this.set.categories.forEach((cat, c) => cat.clues.forEach((cl, r) => { if (cl.dailyDouble) flagged.push(key(c, r)); }));
     let dd = flagged;
@@ -200,33 +142,15 @@ export class Game {
     this.run = { ...this.#blankRun('board'), dd };
     this.#changed();
   }
-  /** Lobby only: forget every player and team (a new party). */
-  clearRoster() {
-    if (this.run.status !== 'lobby') fail('Finish or end the game first');
-    this.players = []; this.teams = []; this.connected.clear();
-    if (this.mode === 'teams') ['Team 1', 'Team 2'].forEach((n) => this.addTeam(n));
-    this.#changed();
-  }
   /** Back to the lobby. Keeps players and teams, clears scores. */
   endGame() {
-    this.units().forEach((u) => { u.score = 0; });
+    this.room.resetScores();
     this.run = this.#blankRun('lobby');
     this.#changed();
   }
   setView(view) {
     if (!['board', 'leaderboard'].includes(view)) fail('Unknown view');
     this.run.view = view;
-    this.#changed();
-  }
-
-  // ---------- scores ----------
-  adjustScore(id, { delta, set }) {
-    const u = this.unit(id) ?? fail('No such player');
-    if (set !== undefined) {
-      const n = int(set); if (Number.isNaN(n)) fail('Score must be a number'); u.score = n;
-    } else {
-      const n = int(delta); if (Number.isNaN(n)) fail('Adjustment must be a number'); u.score += n;
-    }
     this.#changed();
   }
 
@@ -257,19 +181,19 @@ export class Game {
   }
   #validControl() {
     const id = this.run.control;
-    return this.eligibleUnits().some((u) => u.id === id) ? id : null;
+    return this.room.eligibleUnits().some((u) => u.id === id) ? id : null;
   }
 
   /** Host picks who gets the Daily Double (defaults to whoever is in control). */
   setDailyDoubleUnit(id) {
     const cl = this.#inClue('wager');
-    if (!this.eligibleUnits().some((u) => u.id === id)) fail('No such player');
+    if (!this.room.eligibleUnits().some((u) => u.id === id)) fail('No such player');
     cl.ddUnit = id;
     this.#changed();
   }
   setDailyDoubleWager(amount) {
     const cl = this.#inClue('wager');
-    const u = this.unit(cl.ddUnit) ?? fail('Pick who is playing the Daily Double');
+    const u = this.room.unit(cl.ddUnit) ?? fail('Pick who is playing the Daily Double');
     const max = Math.max(u.score, 1000);
     const n = int(amount);
     if (!(n >= 0 && n <= max)) fail(`Wager must be between 0 and ${max}`);
@@ -283,7 +207,7 @@ export class Game {
   openBuzzers() {
     const cl = this.#inClue('reading');
     if (cl.dd) fail('Daily Doubles do not use buzzers');
-    const t = this.now();
+    const t = this.room.now();
     for (const id of cl.early) cl.penaltyUntil[id] = t + this.settings.penaltyMs;
     cl.early = [];
     cl.step = 'open';
@@ -293,12 +217,12 @@ export class Game {
 
   /** A press from a phone or a physical buzzer. Returns what happened to it. */
   buzz(playerId) {
-    const p = this.players.find((x) => x.id === playerId);
+    const p = this.room.players.find((x) => x.id === playerId);
     const cl = this.run.clue;
     if (!p || this.run.status !== 'clue' || !cl || cl.dd) return { ok: false, reason: 'closed' };
-    const u = this.unitOf(p);
+    const u = this.room.unitOf(p);
     if (!u) return { ok: false, reason: 'no-team' };
-    const t = this.now();
+    const t = this.room.now();
     if (cl.step === 'reading') {
       if (this.settings.earlyPenalty && !cl.early.includes(u.id)) { cl.early.push(u.id); this.#changed(); }
       return { ok: false, reason: this.settings.earlyPenalty ? 'early' : 'closed' };
@@ -317,7 +241,7 @@ export class Game {
 
   correct() {
     const cl = this.#inClue('answering');
-    const u = this.unit(cl.buzzedBy) ?? fail('Nobody is answering');
+    const u = this.room.unit(cl.buzzedBy) ?? fail('Nobody is answering');
     u.score += cl.value;
     this.run.control = u.id;
     cl.correct = u.id;
@@ -327,7 +251,7 @@ export class Game {
   }
   wrong() {
     const cl = this.#inClue('answering');
-    const u = this.unit(cl.buzzedBy) ?? fail('Nobody is answering');
+    const u = this.room.unit(cl.buzzedBy) ?? fail('Nobody is answering');
     u.score -= cl.value;
     if (cl.dd) {
       cl.step = 'revealed';
@@ -335,8 +259,8 @@ export class Game {
     } else {
       cl.lockedOut.push(u.id);
       cl.buzzedBy = null; cl.buzzedPlayer = null; cl.buzzedAt = null;
-      const anyoneLeft = this.eligibleUnits().some((x) => !cl.lockedOut.includes(x.id));
-      if (anyoneLeft) { cl.step = 'open'; cl.openedAt = this.now(); } else { cl.step = 'revealed'; this.#markUsed(cl); }
+      const anyoneLeft = this.room.eligibleUnits().some((x) => !cl.lockedOut.includes(x.id));
+      if (anyoneLeft) { cl.step = 'open'; cl.openedAt = this.room.now(); } else { cl.step = 'revealed'; this.#markUsed(cl); }
     }
     this.#changed();
   }
@@ -352,11 +276,11 @@ export class Game {
   awardBuzz(unitId) {
     const cl = this.#inClue('reading', 'open');
     if (cl.dd) fail('Daily Doubles do not use buzzers');
-    const u = this.eligibleUnits().find((x) => x.id === unitId) ?? fail('No such player');
+    const u = this.room.eligibleUnits().find((x) => x.id === unitId) ?? fail('No such player');
     cl.step = 'answering';
     cl.buzzedBy = u.id;
     cl.buzzedPlayer = null;
-    cl.buzzedAt = this.now();
+    cl.buzzedAt = this.room.now();
     this.#changed();
   }
   /** Re-open buzzers for everyone (host undo / mistaken press). Locked-out units stay out. */
@@ -365,7 +289,7 @@ export class Game {
     if (cl.dd) fail('Daily Doubles do not use buzzers');
     cl.buzzedBy = null; cl.buzzedPlayer = null; cl.buzzedAt = null;
     cl.step = 'open';
-    cl.openedAt = this.now();
+    cl.openedAt = this.room.now();
     this.#changed();
   }
   #markUsed(cl) {
@@ -373,10 +297,9 @@ export class Game {
     if (!this.run.used.includes(k)) this.run.used.push(k);
   }
   closeClue() {
-    const cl = this.#inClue('revealed');
+    this.#inClue('revealed');
     this.run.clue = null;
     this.run.status = 'board';
-    void cl;
     this.#changed();
   }
   boardCleared() { return this.run.used.length >= COLS * ROWS; }
@@ -386,8 +309,8 @@ export class Game {
    *  so a player who bets it all and loses still appears in the results. */
   finalists() {
     const ids = this.run.final?.ids;
-    if (ids) return ids.map((id) => this.unit(id)).filter(Boolean);
-    return this.eligibleUnits().filter((u) => u.score > 0);
+    if (ids) return ids.map((id) => this.room.unit(id)).filter(Boolean);
+    return this.room.eligibleUnits().filter((u) => u.score > 0);
   }
   startFinal() {
     if (this.run.status !== 'board') fail('Return to the board first');
@@ -418,11 +341,11 @@ export class Game {
   }
   /** Player-side helpers: act on behalf of the player's unit. */
   finalWagerFrom(playerId, amount) {
-    const u = this.unitOf(this.#player(playerId)) ?? fail('Join a team first');
+    const u = this.room.unitOf(this.room.player(playerId)) ?? fail('Join a team first');
     this.setFinalWager(u.id, amount);
   }
   finalAnswerFrom(playerId, text) {
-    const u = this.unitOf(this.#player(playerId)) ?? fail('Join a team first');
+    const u = this.room.unitOf(this.room.player(playerId)) ?? fail('Join a team first');
     this.setFinalAnswer(u.id, text);
   }
   finalNext() {
@@ -457,32 +380,19 @@ export class Game {
   }
 
   // ---------- views ----------
-  #unitViews() {
-    const connected = (u) =>
-      this.mode === 'teams'
-        ? this.players.some((p) => p.teamId === u.id && this.connected.has(p.id))
-        : this.connected.has(u.id);
-    const count = (u) => (this.mode === 'teams' ? this.players.filter((p) => p.teamId === u.id).length : 1);
-    return this.units().map((u) => ({
-      id: u.id, name: u.name, color: u.color, score: u.score,
-      connected: connected(u), members: count(u),
-    }));
-  }
-
   /** What the TV and phones may see. Answers appear only once revealed. */
   publicView() {
     const run = this.run;
     const set = this.set;
     const cl = run.clue;
     const view = {
-      mode: this.mode, settings: this.settings, status: run.status, view: run.view,
+      game: GAME, lobbyTitle: set?.title ?? 'Jeopardy',
+      settings: this.settings, status: run.status, view: run.view,
       title: set?.title ?? null, control: run.control,
       categories: set ? set.categories.map((c) => c.name) : [],
       board: set
         ? set.categories.map((cat, c) => cat.clues.map((cl2, r) => ({ value: int(cl2.value), used: run.used.includes(key(c, r)) })))
         : [],
-      units: this.#unitViews(),
-      teams: this.teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
       clue: null, final: null,
     };
     if (cl) {
@@ -519,12 +429,11 @@ export class Game {
     return view;
   }
 
-  /** The host also sees answers, the roster and every final answer. */
+  /** The host also sees every answer and each Final Jeopardy wager and answer. */
   hostView() {
     const view = this.publicView();
     const cl = this.run.clue;
-    if (cl) view.clue.answer = this.#cell(cl.c, cl.r).answer;
-    if (cl) view.clue.text = this.#cell(cl.c, cl.r).clue;
+    if (cl) { view.clue.answer = this.#cell(cl.c, cl.r).answer; view.clue.text = this.#cell(cl.c, cl.r).clue; }
     if (view.final) {
       const f = this.run.final;
       view.final.answer = this.set.final.answer;
@@ -534,26 +443,9 @@ export class Game {
         fu.answer = f.answers[fu.id] ?? null;
       });
     }
-    view.players = this.players.map((p) => ({
-      id: p.id, name: p.name, color: p.color, teamId: p.teamId, kind: p.kind,
-      connected: this.connected.has(p.id),
-    }));
     view.dailyDoubles = this.run.dd;
     view.setId = this.setId;
     view.boardCleared = this.boardCleared();
     return view;
   }
-
-  playerView(playerId) {
-    const view = this.publicView();
-    const p = this.players.find((x) => x.id === playerId);
-    view.me = p ? { id: p.id, name: p.name, color: p.color, unitId: this.unitOf(p)?.id ?? null } : null;
-    return view;
-  }
-}
-
-function cryptoToken() {
-  const bytes = new Uint8Array(12);
-  globalThis.crypto.getRandomValues(bytes);
-  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
