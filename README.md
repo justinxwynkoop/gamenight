@@ -73,8 +73,26 @@ don't reuse a password.
 
 *Written from the plan; not yet tried on real hardware. Check each step.*
 
-1. Flash Raspberry Pi OS with desktop (64-bit) and connect it to the Game Night
-   network. Give it a DHCP reservation so its address never changes.
+### Which Pi
+
+A **Pi 4** is the target. This is a small Node server plus a simple page in a
+kiosk browser, so a Pi 4 of any RAM size runs it comfortably. A Pi 5 also works
+but isn't needed. A Pi 3 / 3B+ works too, just slower to boot and load pages
+(and 1 GB of RAM is tight for heavier games later); keep one as a spare.
+
+What to buy or gather for a Pi 4:
+
+- Official 5 V 3 A USB-C power supply. A weak phone charger causes random reboots.
+- Micro-HDMI to HDMI cable (Pi 4 has micro-HDMI; a Pi 3 uses full-size HDMI).
+- microSD card, 32 GB, A1 or better, from a reputable seller (fakes are common).
+  Keep a spare card cloned from the first one.
+- A case with a small heatsink. An active fan isn't needed for this workload.
+
+### Software
+
+1. Flash Raspberry Pi OS with desktop (64-bit) with Raspberry Pi Imager and
+   connect the Pi to the Game Night network. Give it a DHCP reservation so its
+   address never changes.
 2. Install Node 20 or newer (the OS package may be older):
    ```bash
    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
@@ -95,9 +113,6 @@ don't reuse a password.
    ```
    (The binary is `chromium-browser` on older images. Use `:3000` in the URL if
    you didn't set `PORT=80`.)
-
-Pi 5 and HDMI notes from the plan still apply: official 27 W supply, micro-HDMI
-cable.
 
 ### Network
 
