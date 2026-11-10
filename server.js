@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync, readdirSync, existsSync, rename
 import { WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
 import { Room } from './room.js';
-import { GameError } from './lib.js';
+import { GameError, pickAddress } from './lib.js';
 import { GAMES } from './games/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -41,13 +41,9 @@ const pinOk = (given) => {
 };
 
 // ---------- the join address that goes in the QR code ----------
-function lanAddress() {
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const i of list ?? []) if (i.family === 'IPv4' && !i.internal) return i.address;
-  }
-  return 'localhost';
-}
-const joinUrl = (process.env.PUBLIC_URL ?? `http://${lanAddress()}${PORT === 80 ? '' : `:${PORT}`}`).replace(/\/?$/, '/');
+// The address in the QR code. Worked out on every request (not once at startup) so that when the
+// Pi joins a different network, the QR code follows it. PUBLIC_URL pins it and turns that off.
+const currentJoinUrl = () => (process.env.PUBLIC_URL ?? `http://${pickAddress(os.networkInterfaces())}${PORT === 80 ? '' : `:${PORT}`}`).replace(/\/?$/, '/');
 const wifiString = process.env.WIFI_SSID
   ? `WIFI:T:${process.env.WIFI_PASSWORD ? 'WPA' : 'nopass'};S:${process.env.WIFI_SSID};${process.env.WIFI_PASSWORD ? `P:${process.env.WIFI_PASSWORD};` : ''};`
   : null;
@@ -115,9 +111,9 @@ const readBody = (req, limit = 1_000_000) => new Promise((resolve, reject) => {
 });
 
 async function handleApi(req, res, url) {
-  if (url.pathname === '/api/info') return send(res, 200, { joinUrl, wifi: !!wifiString });
+  if (url.pathname === '/api/info') return send(res, 200, { joinUrl: currentJoinUrl(), wifi: !!wifiString });
   if (url.pathname === '/api/sounds') return send(res, 200, listSounds());
-  if (url.pathname === '/api/qr.svg') return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), 'image/svg+xml');
+  if (url.pathname === '/api/qr.svg') return send(res, 200, await QRCode.toString(currentJoinUrl(), { type: 'svg', margin: 1 }), 'image/svg+xml');
   if (url.pathname === '/api/wifi-qr.svg') {
     if (!wifiString) return send(res, 404, { error: 'Wi-Fi QR not configured (set WIFI_SSID)' });
     return send(res, 200, await QRCode.toString(wifiString, { type: 'svg', margin: 1 }), 'image/svg+xml');
@@ -265,10 +261,19 @@ const stop = () => { saveNow(); process.exit(0); };
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 
-server.listen(PORT, () => {
-  console.log(`\nGame Night is running.`);
+function printAddresses(joinUrl) {
   console.log(`  TV board : ${joinUrl}tv`);
   console.log(`  Players  : ${joinUrl}   (this is what the QR code opens)`);
   console.log(`  Host     : ${joinUrl}host   PIN ${config.pin}`);
   console.log(`  Editor   : ${joinUrl}editor\n`);
+}
+server.listen(PORT, () => {
+  console.log('\nGame Night is running.');
+  printAddresses(currentJoinUrl());
+  // If the network changes (the Pi joins another Wi-Fi), say so in the log. The QR code updates itself.
+  let shown = currentJoinUrl();
+  setInterval(() => {
+    const now = currentJoinUrl();
+    if (now !== shown) { shown = now; console.log('Network address changed:'); printAddresses(now); }
+  }, 5000).unref();
 });

@@ -80,6 +80,14 @@ test('server end to end', async (t) => {
     assert.equal((await fetch(`${base}/sounds/missing.mp3`)).status, 404);
   });
 
+  await t.test('the join address comes from the current network and is served as JSON and a QR code', async () => {
+    const info = await (await fetch(`${base}/api/info`)).json();
+    assert.match(info.joinUrl, new RegExp(`^http://[^/]+:${port}/$`));
+    const qr = await fetch(`${base}/api/qr.svg`);
+    assert.equal(qr.status, 200);
+    assert.match(await qr.text(), /^<svg/);
+  });
+
   await t.test('static files stay inside public/', async () => {
     assert.equal((await fetch(`${base}/tv`)).status, 200);
     assert.equal((await fetch(`${base}/%2e%2e/server.js`)).status, 404);

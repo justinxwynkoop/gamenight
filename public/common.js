@@ -68,5 +68,11 @@ export function store(key, value) {
 /** Spots a unit in view.units by id. */
 export const unitById = (view, id) => view.units.find((u) => u.id === id) ?? null;
 
-/** The join QR code (served by the server). */
-export const qrImg = () => h('img', { src: '/api/qr.svg', alt: 'Join QR code' });
+/**
+ * The join QR code (served by the server). The address it encodes can change while the page stays
+ * open, and a browser reuses an image it already has for the same URL, so the address goes into the
+ * URL (the server ignores it) to force a fresh image when it changes.
+ */
+let qrKey = '';
+export const setQrKey = (key) => { qrKey = key; };
+export const qrImg = () => h('img', { src: `/api/qr.svg?for=${encodeURIComponent(qrKey)}`, alt: 'Join QR code' });

@@ -1,6 +1,6 @@
 // The TV page. It owns the connection and the lobby screen, and hands every
 // other screen to the active game's module (/games/<id>/tv.js).
-import { h, ink, connect, unitById, qrImg } from './common.js';
+import { h, ink, connect, unitById, qrImg, setQrKey } from './common.js';
 import { audio } from './audio.js';
 
 const app = document.getElementById('app');
@@ -20,7 +20,19 @@ const unlock = () => { audio.init(); badge.classList.toggle('hidden', !audio.blo
 addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
 setInterval(unlock, 1000);
 
-fetch('/api/info').then((r) => r.json()).then((i) => { info = i; if (last) render(last); }).catch(() => {});
+// The address in the QR code can change (the Pi joined another network), so ask again now and then
+// and redraw if it did. The QR image itself is fetched fresh each time the screen is drawn.
+async function refreshInfo() {
+  try {
+    const i = await (await fetch('/api/info')).json();
+    const changed = i.joinUrl !== info.joinUrl;
+    info = i;
+    setQrKey(i.joinUrl);
+    if (changed && last) render(last);
+  } catch { /* offline: try again next time */ }
+}
+refreshInfo();
+setInterval(refreshInfo, 5000);
 connect({
   hello: { t: 'hello', role: 'tv' },
   onStatus: (up) => conn.classList.toggle('down', !up),

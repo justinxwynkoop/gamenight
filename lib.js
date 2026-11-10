@@ -18,3 +18,17 @@ export function newToken() {
   globalThis.crypto.getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
+
+/**
+ * Pick the address phones should use to reach this machine, from os.networkInterfaces().
+ * Skips loopback, IPv6 and virtual interfaces (Docker and friends), and prefers a real address over
+ * a 169.254.x.x "no DHCP answer" one. Returns 'localhost' when there is no network at all.
+ */
+export function pickAddress(interfaces) {
+  const found = [];
+  for (const [name, list] of Object.entries(interfaces ?? {})) {
+    if (/^(lo|docker|veth|br-|virbr|tun|tap)/.test(name)) continue;
+    for (const i of list ?? []) if ((i.family === 'IPv4' || i.family === 4) && !i.internal) found.push(i.address);
+  }
+  return found.find((a) => !a.startsWith('169.254.')) ?? found[0] ?? 'localhost';
+}

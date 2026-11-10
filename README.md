@@ -177,9 +177,15 @@ Follow the Game Night SSID steps in the project plan, including the offline test
 (Teleport off, no uplink) before the first real game. Phones may show "No
 internet"; that's expected.
 
-The QR code points at the Pi's LAN address. Override it with `PUBLIC_URL` if the
-Pi has several interfaces. Set `WIFI_SSID` and `WIFI_PASSWORD` to also serve a
-Wi-Fi join QR at `/api/wifi-qr.svg` (for a printed table sign).
+The QR code points at the Pi's current address and **follows it**: if the Pi joins a
+different network (a new house, a different Wi-Fi), the TV notices within a few seconds
+and redraws the code, and the server logs the new addresses. You don't need to restart
+anything. Each house's router hands the Pi a different address, so the DHCP
+reservation above only helps on your own network. Set `PUBLIC_URL` to pin the address
+(for example if the Pi has several network connections and the wrong one is picked);
+that turns the automatic update off.
+
+Set `WIFI_SSID` and `WIFI_PASSWORD` to also serve a Wi-Fi join QR at `/api/wifi-qr.svg` (for a printed table sign).
 
 ## Configuration
 
@@ -187,7 +193,7 @@ Wi-Fi join QR at `/api/wifi-qr.svg` (for a printed table sign).
 | --- | --- | --- |
 | `PORT` | `3000` | HTTP/WebSocket port |
 | `HOST_PIN` | random, saved | Host and editor PIN |
-| `PUBLIC_URL` | detected LAN IP | Address in the join QR code |
+| `PUBLIC_URL` | detected, kept up to date | Address in the join QR code (setting it pins it) |
 | `DATA_DIR` | `./data` | Question sets, saved game, PIN, custom sounds |
 | `WIFI_SSID`, `WIFI_PASSWORD` | unset | Enables the Wi-Fi QR |
 
