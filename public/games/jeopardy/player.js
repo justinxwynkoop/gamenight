@@ -52,8 +52,11 @@ export function mount(container, { send, flash }) {
     }
     if (cl.lockedOut.includes(uid)) return { label: 'OUT', cls: 'out', line: 'You answered wrong — locked out for this clue' };
     if (cl.step === 'open') {
+      const tm = cl.timer;
+      if (tm?.timedOut) return { label: 'TIME’S UP', cls: 'out', line: 'Nobody buzzed in' };
       if (performance.now() < penaltyUntil) return { label: 'TOO EARLY', cls: 'bad', line: 'Wait a moment…' };
-      return { label: 'BUZZ', cls: 'live', line: 'Go!', color: mine.color };
+      const left = tm ? Math.max(0, Math.ceil((tm.leftMs - (performance.now() - receivedAt)) / 1000)) : null;
+      return { label: 'BUZZ', cls: 'live', line: left !== null ? `Go! · ${left}s` : 'Go!', color: mine.color };
     }
     return { label: 'READY', cls: 'out', line: 'Wait for the host to open buzzers', color: null };
   }
@@ -114,7 +117,7 @@ export function mount(container, { send, flash }) {
   // While buzzers are open, re-check once a moment so a "too early" penalty clears itself.
   const timer = setInterval(() => {
     const clue = view?.game?.clue;
-    if ((penaltyUntil && clue?.step === 'open') || (clue?.step === 'answering' && clue.timer && !clue.timer.timedOut)) refresh();
+    if ((penaltyUntil && clue?.step === 'open') || (clue?.timer && !clue.timer.timedOut && (clue.step === 'open' || clue.step === 'answering'))) refresh();
   }, 250);
 
   return {

@@ -121,7 +121,12 @@ function clue(v) {
   } else {
     stage.push(h('div', {}, h('div', { class: 'text' }, cl.text),
       cl.step === 'revealed' && h('div', { class: 'answer' }, cl.answer)));
-    if (cl.step === 'open') stage.push(h('div', { class: 'banner open' }, 'Buzz in!'));
+    if (cl.step === 'open') {
+      // The buzz-in window: a countdown while buzzers are live, TIME'S UP when nobody buzzed in time.
+      const { bar, num } = timerParts(cl.timer);
+      const late = cl.timer?.timedOut;
+      stage.push(h('div', { class: `banner ${late ? 'timeup' : 'open'}` }, h('span', {}, late ? 'TIME’S UP' : 'Buzz in!'), num), bar);
+    }
     else if (cl.step === 'answering' && who) {
       const c = colorOf(v, who);
       const { bar, num } = timerParts(cl.timer);

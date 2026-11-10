@@ -174,7 +174,7 @@ test('server end to end', async (t) => {
     host.act('openBuzzers');
     await tv.until((c) => c.view?.game?.clue?.step === 'open');
     bo.send({ t: 'buzz' });
-    await tv.until((c) => c.view?.game?.clue?.timer, 'timer started');
+    await tv.until((c) => c.view?.game?.clue?.timer?.kind === 'answer', 'answer timer started');
     assert.equal(tv.view.game.clue.timer.timedOut, false);
     assert.ok(tv.view.game.clue.timer.leftMs <= 1000);
     await tv.until((c) => c.view?.game?.clue?.timer?.timedOut, 'timer expiry');   // pushed by the server, no host action
@@ -182,6 +182,24 @@ test('server end to end', async (t) => {
     host.act('reveal'); host.act('closeClue');
     await tv.until((c) => c.view?.game?.status === 'board');
     host.act('setSettings', { answerSeconds: 10 });
+  });
+
+  await t.test('with no buzz, the server calls time\'s up by itself and locks buzzing; the host reveals', async () => {
+    host.act('setSettings', { buzzSeconds: 1 });
+    host.act('select', { c: 2, r: 0 });
+    await tv.until((c) => c.view?.game?.clue?.step === 'reading');
+    host.act('openBuzzers');
+    await tv.until((c) => c.view?.game?.clue?.timer?.kind === 'buzz', 'buzz window started');
+    assert.equal(tv.view.game.clue.timer.timedOut, false);
+    await tv.until((c) => c.view?.game?.clue?.timer?.timedOut, 'buzz window closed');
+    assert.equal(tv.view.game.clue.step, 'open');                      // nothing is revealed for the host
+    const before = bo.msgs.filter((m) => m.t === 'buzz-result').length;
+    bo.send({ t: 'buzz' });
+    const refused = await bo.until((c) => c.msgs.filter((m) => m.t === 'buzz-result')[before], 'buzz reply');
+    assert.deepEqual({ ok: refused.ok, reason: refused.reason }, { ok: false, reason: 'timeup' });
+    host.act('reveal'); host.act('closeClue');
+    await tv.until((c) => c.view?.game?.status === 'board');
+    host.act('setSettings', { buzzSeconds: 10 });
   });
 
   await t.test('game survives a server restart', async () => {

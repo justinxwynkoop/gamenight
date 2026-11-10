@@ -65,6 +65,10 @@ function setupCard(v) {
     h('div', { class: 'row' },
       h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.earlyPenalty, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { earlyPenalty: e.target.checked }) }), 'Lock out early buzzers for'),
       pen, h('span', { class: 'tag' }, 'ms'), h('button', { class: 'btn small', onclick: () => act('setSettings', { penaltyMs: pen.value }) }, 'Save')),
+    h('label', {}, 'Time to buzz in after you open buzzers'),
+    h('div', { class: 'row' }, [10, 0].map((n) => h('button', {
+      class: `btn ${v.settings.buzzSeconds === n ? 'primary' : ''}`, onclick: () => act('setSettings', { buzzSeconds: n }),
+    }, n ? `${n} seconds` : 'No timer'))),
     h('label', {}, 'Time to answer after a buzz'),
     h('div', { class: 'row' }, [5, 10].map((n) => h('button', {
       class: `btn ${v.settings.answerSeconds === n ? 'primary' : ''}`, onclick: () => act('setSettings', { answerSeconds: n }),
@@ -117,8 +121,12 @@ function clueCard(v) {
       h('button', { class: 'btn primary grow', onclick: () => act('openBuzzers') }, 'Open buzzers'), give,
       h('button', { class: 'btn', onclick: () => act('reveal') }, 'Skip / reveal')));
   } else if (cl.step === 'open') {
-    body.push(h('p', { class: 'tag' }, 'Buzzers are live…'),
-      h('div', { class: 'row' }, give, h('button', { class: 'btn', onclick: () => act('reveal') }, 'Nobody — reveal answer')));
+    const late = cl.timer?.timedOut;
+    body.push(h('div', { class: 'row', style: { marginTop: '10px' } },
+        h('span', { class: 'tag grow' }, late ? 'Time’s up — nobody buzzed in.' : 'Buzzers are live…'), timerPill(cl.timer),
+        cl.timer && h('button', { class: 'btn small', onclick: () => act('restartTimer') }, 'Restart timer')),
+      h('div', { class: 'row', style: { marginTop: '8px' } }, give,
+        h('button', { class: `btn ${late ? 'primary' : ''}`, onclick: () => act('reveal') }, 'Nobody — reveal answer')));
   } else if (cl.step === 'answering') {
     const u = unitById(v, cl.buzzedBy);
     body.push(h('div', { class: 'item', style: { marginTop: '12px', fontSize: '1.2rem' } }, sw(u?.color ?? '#fff'), h('span', { class: 'nm' }, `${u?.name ?? '?'} is answering`), cl.dd && h('span', { class: 'pill' }, `wager ${money(cl.wager)}`), timerPill(cl.timer),

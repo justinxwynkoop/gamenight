@@ -54,12 +54,22 @@ Other things the host can do: adjust, set or rename any score; give the buzz to 
 player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
 
-**Timers.** When someone buzzes in (or a Daily Double wager is set) a countdown starts on the
-TV, the host page and the buzzing player's phone. In the lobby the host chooses **5 or 10
-seconds** (10 by default). At zero the TV flashes TIME'S UP and plays a buzzer, and the host
-still decides: tap Correct or Wrong, or **Restart timer** to give more time. Final Jeopardy has
-its own countdown (30 seconds by default, adjustable in the lobby) that starts when the clue is
-shown. Tick **Time-out counts as wrong** if you'd rather it be scored automatically.
+**Timers.** There are three, all shown on the TV and on the host page.
+
+1. **Buzz-in window:** when the host taps **Open buzzers**, players get 10 seconds to buzz in
+   (or switch this off in the lobby with **No timer**). If nobody does, the TV flashes **TIME'S UP**,
+   plays a buzzer and locks buzzing; the host then taps **Nobody — reveal answer**. **Restart timer**
+   opens buzzing again for another 10 seconds. After a wrong answer, or when the host re-opens
+   buzzers, the players still in get a fresh window.
+2. **Answer timer:** when someone buzzes in (or a Daily Double wager is set) a countdown starts on the
+   TV, the host page and the buzzing player's phone.
+3. **Final Jeopardy timer**, described below.
+
+The answer timer is **5 or 10 seconds** (10 by default), chosen by the host in the lobby. At zero the
+TV flashes TIME'S UP and plays a buzzer, and the host still decides: tap Correct or Wrong, or
+**Restart timer** to give more time. Tick **Time-out counts as wrong** if you'd rather it be scored
+automatically. The Final Jeopardy countdown (30 seconds by default, adjustable in the lobby) starts
+when the clue is shown.
 
 **Early buzzes.** Pressing before the host opens buzzers locks that player out for
 a short time after they open (default 500 ms, adjustable or off in the lobby).

@@ -188,9 +188,10 @@ test('a buzz-in starts the answer timer; a correct answer clears it', () => {
   const { g, ps, clock } = setup();
   start(g);
   g.select(0, 0); g.openBuzzers();
-  assert.equal(g.publicView().clue.timer, null);          // not while buzzers are only open
+  assert.equal(g.publicView().clue.timer.kind, 'buzz');   // opening buzzers starts the buzz-in window
   g.buzz(ps[0].id);
   let tm = g.publicView().clue.timer;
+  assert.equal(tm.kind, 'answer');                        // ...which becomes the answer timer
   assert.equal(tm.totalMs, 10000);
   assert.equal(tm.leftMs, 10000);
   assert.equal(tm.timedOut, false);
@@ -222,7 +223,7 @@ test('with auto-wrong on, a time-out counts as a wrong answer and reopens buzzin
   clock.advance(10001); g.tick();
   assert.equal(ps[0].score, -200);
   assert.equal(g.run.clue.step, 'open');
-  assert.equal(g.run.clue.timer, null);
+  assert.equal(g.publicView().clue.timer.kind, 'buzz');   // the others get a fresh buzz-in window
   assert.equal(g.buzz(ps[0].id).reason, 'locked-out');
   assert.equal(g.buzz(ps[1].id).ok, true);                // the next buzz gets a fresh timer
   assert.equal(g.publicView().clue.timer.leftMs, 10000);
@@ -238,7 +239,7 @@ test('the host can restart the timer, and change or switch off the time', () => 
   g.restartTimer();                                       // restarting after time-out gives time again
   assert.equal(g.publicView().clue.timer.timedOut, false);
   g.reveal();
-  assert.throws(() => g.restartTimer(), /no answer/);
+  assert.throws(() => g.restartTimer(), /nothing to time/);
 
   const b = setup(); b.g.setSettings({ answerSeconds: 0 }); start(b.g); buzzIn(b.g, b.ps);
   assert.equal(b.g.publicView().clue.timer, null);        // 0 = no timer
@@ -311,4 +312,82 @@ test('room settings: sound and volume are validated and shown to the TV', () => 
   assert.throws(() => room.act('setRoomSettings', { volume: 101 }), /Volume/);
   room.act('testSound');
   assert.equal(room.publicView().room.settings.ping, 1);
+});
+
+// ---------- the buzz-in window ----------
+test('opening buzzers starts a 10 second buzz-in window; 0 switches it off', () => {
+  const { g } = setup();
+  start(g); g.select(0, 0);
+  assert.equal(g.publicView().clue.timer, null);          // still reading the clue: no timer
+  g.openBuzzers();
+  const tm = g.publicView().clue.timer;
+  assert.deepEqual({ kind: tm.kind, totalMs: tm.totalMs, leftMs: tm.leftMs, timedOut: tm.timedOut }, { kind: 'buzz', totalMs: 10000, leftMs: 10000, timedOut: false });
+
+  const b = setup(); b.g.setSettings({ buzzSeconds: 0 }); start(b.g); b.g.select(0, 0); b.g.openBuzzers();
+  assert.equal(b.g.publicView().clue.timer, null);
+  b.clock.advance(60000); b.g.tick();
+  assert.equal(b.g.buzz(b.ps[0].id).ok, true);            // no window, so buzzing never closes
+});
+
+test('if nobody buzzes in time, it is time\'s up: buzzing locks and the host reveals the answer', () => {
+  const { g, ps, clock } = setup();
+  start(g); g.select(0, 0); g.openBuzzers();
+  clock.advance(9000); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, false);
+  assert.equal(g.buzz(ps[0].id).ok, true);                // 9 seconds in, still inside the window
+  g.reveal(); g.closeClue();
+
+  g.select(1, 0); g.openBuzzers();
+  clock.advance(10001); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, true);
+  assert.equal(g.run.clue.step, 'open');                  // nothing happens by itself
+  assert.equal(g.buzz(ps[1].id).reason, 'timeup');        // buzzers are locked
+  assert.equal(ps.every((p) => p.score === 0), true);
+  g.reveal();                                             // the host reveals the answer
+  assert.equal(g.publicView().clue.answer, set.categories[1].clues[0].answer);
+  assert.equal(g.run.clue.step, 'revealed');
+  assert.equal(g.publicView().clue.timer, null);
+});
+
+test('a buzz right at the deadline is refused even before the next tick notices', () => {
+  const { g, ps, clock } = setup();
+  start(g); g.select(0, 0); g.openBuzzers();
+  clock.advance(10000);                                   // exactly at the deadline, tick() has not run yet
+  assert.equal(g.buzz(ps[0].id).reason, 'timeup');
+});
+
+test('the host can restart the buzz-in window after time is up', () => {
+  const { g, ps, clock } = setup();
+  start(g); g.select(0, 0); g.openBuzzers();
+  clock.advance(10001); g.tick();
+  assert.equal(g.buzz(ps[0].id).ok, false);
+  g.restartTimer();
+  assert.equal(g.publicView().clue.timer.timedOut, false);
+  assert.equal(g.publicView().clue.timer.leftMs, 10000);
+  assert.equal(g.buzz(ps[0].id).ok, true);
+  assert.equal(g.publicView().clue.timer.kind, 'answer');
+});
+
+test('re-opening buzzers gives a fresh window; auto-wrong never fires on a buzz-in window', () => {
+  const { g, ps, clock } = setup();
+  g.setSettings({ autoWrong: true });
+  start(g); g.select(0, 0); g.openBuzzers(); g.buzz(ps[0].id);
+  clock.advance(5000);
+  g.reopen();
+  assert.equal(g.publicView().clue.timer.kind, 'buzz');
+  assert.equal(g.publicView().clue.timer.leftMs, 10000);
+  clock.advance(10001); g.tick();
+  assert.equal(ps.every((p) => p.score === 0), true);     // nobody is penalised for not buzzing
+  assert.equal(g.run.clue.step, 'open');
+});
+
+test('buzz-in time is validated and a Daily Double has no buzz window', () => {
+  const { g, ps } = setup();
+  assert.throws(() => g.setSettings({ buzzSeconds: 121 }), /Buzz-in time/);
+  assert.throws(() => g.setSettings({ buzzSeconds: -5 }), /Buzz-in time/);
+  g.setSettings({ buzzSeconds: 7 });
+  assert.equal(g.settings.buzzSeconds, 7);
+  start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3);
+  assert.equal(g.publicView().clue.timer, null);          // wagering: no timer at all
 });

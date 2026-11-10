@@ -36,7 +36,7 @@ export function validateSet(set) {
 export class JeopardyGame {
   constructor(room) {
     this.room = room;
-    this.settings = { earlyPenalty: true, penaltyMs: 500, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
+    this.settings = { earlyPenalty: true, penaltyMs: 500, buzzSeconds: 10, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
     this.setId = null;
     this.set = null; // loaded question set
     this.run = this.#blankRun('lobby');
@@ -111,7 +111,7 @@ export class JeopardyGame {
   }
 
   // ---------- setup ----------
-  setSettings({ earlyPenalty, penaltyMs, answerSeconds, finalSeconds, autoWrong }) {
+  setSettings({ earlyPenalty, penaltyMs, buzzSeconds, answerSeconds, finalSeconds, autoWrong }) {
     const inRange = (v, max, what) => {
       const n = int(v);
       if (!(n >= 0 && n <= max)) fail(`${what} must be 0 to ${max}`);
@@ -120,6 +120,7 @@ export class JeopardyGame {
     if (typeof earlyPenalty === 'boolean') this.settings.earlyPenalty = earlyPenalty;
     if (typeof autoWrong === 'boolean') this.settings.autoWrong = autoWrong;
     if (penaltyMs !== undefined) this.settings.penaltyMs = inRange(penaltyMs, 5000, 'Penalty (ms)');
+    if (buzzSeconds !== undefined) this.settings.buzzSeconds = inRange(buzzSeconds, 120, 'Buzz-in time (seconds)');
     if (answerSeconds !== undefined) this.settings.answerSeconds = inRange(answerSeconds, 120, 'Answer time (seconds)');
     if (finalSeconds !== undefined) this.settings.finalSeconds = inRange(finalSeconds, 300, 'Final Jeopardy time (seconds)');
     this.#changed();
@@ -224,6 +225,7 @@ export class JeopardyGame {
     cl.early = [];
     cl.step = 'open';
     cl.openedAt = t;
+    this.#startTimer(cl, this.settings.buzzSeconds, 'buzz');
     this.#changed();
   }
 
@@ -241,6 +243,8 @@ export class JeopardyGame {
     }
     if (cl.step !== 'open') return { ok: false, reason: 'closed' };
     if (cl.lockedOut.includes(u.id)) return { ok: false, reason: 'locked-out' };
+    // Once the buzz-in window has closed ('time's up'), nobody can buzz until the host restarts it.
+    if (cl.timer?.kind === 'buzz' && (cl.timer.timedOut || t >= cl.timer.deadline)) return { ok: false, reason: 'timeup' };
     const until = cl.penaltyUntil[u.id] ?? 0;
     if (t < until) return { ok: false, reason: 'penalty', retryMs: Math.ceil(until - t) };
     cl.step = 'answering';
@@ -275,7 +279,7 @@ export class JeopardyGame {
       cl.lockedOut.push(u.id);
       cl.buzzedBy = null; cl.buzzedPlayer = null; cl.buzzedAt = null;
       const anyoneLeft = this.room.eligibleUnits().some((x) => !cl.lockedOut.includes(x.id));
-      if (anyoneLeft) { cl.step = 'open'; cl.openedAt = this.room.now(); } else { cl.step = 'revealed'; this.#markUsed(cl); }
+      if (anyoneLeft) { cl.step = 'open'; cl.openedAt = this.room.now(); this.#startTimer(cl, this.settings.buzzSeconds, 'buzz'); } else { cl.step = 'revealed'; this.#markUsed(cl); }
     }
     this.#changed();
   }
@@ -305,25 +309,29 @@ export class JeopardyGame {
     const cl = this.#inClue('answering');
     if (cl.dd) fail('Daily Doubles do not use buzzers');
     cl.buzzedBy = null; cl.buzzedPlayer = null; cl.buzzedAt = null;
-    cl.timer = null;
     cl.step = 'open';
     cl.openedAt = this.room.now();
+    this.#startTimer(cl, this.settings.buzzSeconds, 'buzz');
     this.#changed();
   }
   // ---------- timers ----------
-  /** Starts (or, with 0 seconds, clears) a countdown on a clue or on the final round. */
-  #startTimer(holder, seconds) {
+  /**
+   * Starts (or, with 0 seconds, clears) a countdown on a clue or on the final round.
+   * kind is 'buzz' (the window for someone to buzz in), 'answer' (time to answer) or 'final'.
+   */
+  #startTimer(holder, seconds, kind = 'answer') {
     if (!(seconds > 0)) { holder.timer = null; return; }
     const totalMs = seconds * 1000;
-    holder.timer = { totalMs, deadline: this.room.now() + totalMs, timedOut: false };
+    holder.timer = { kind, totalMs, deadline: this.room.now() + totalMs, timedOut: false };
   }
-  /** Host: give the current answer (or the final round) its full time again. */
+  /** Host: give the current buzz-in window, answer, or the final round its full time again. */
   restartTimer() {
     const cl = this.run.clue;
     const f = this.run.final;
-    if (this.run.status === 'clue' && cl?.step === 'answering') this.#startTimer(cl, this.settings.answerSeconds);
-    else if (this.run.status === 'final' && f?.step === 'clue') this.#startTimer(f, this.settings.finalSeconds);
-    else fail('There is no answer to time right now');
+    if (this.run.status === 'clue' && cl?.step === 'open') this.#startTimer(cl, this.settings.buzzSeconds, 'buzz');
+    else if (this.run.status === 'clue' && cl?.step === 'answering') this.#startTimer(cl, this.settings.answerSeconds);
+    else if (this.run.status === 'final' && f?.step === 'clue') this.#startTimer(f, this.settings.finalSeconds, 'final');
+    else fail('There is nothing to time right now');
     this.#changed();
   }
   /** Called by the room a few times a second. Expires a timer once, when its time is up. */
@@ -333,7 +341,7 @@ export class JeopardyGame {
     const f = this.run.final;
     if (this.run.status === 'clue' && cl?.timer && !cl.timer.timedOut && t >= cl.timer.deadline) {
       cl.timer.timedOut = true;
-      if (this.settings.autoWrong && cl.step === 'answering') this.wrong(); else this.#changed();
+      if (this.settings.autoWrong && cl.step === 'answering' && cl.timer.kind === 'answer') this.wrong(); else this.#changed();
     } else if (this.run.status === 'final' && f?.step === 'clue' && f.timer && !f.timer.timedOut && t >= f.timer.deadline) {
       f.timer.timedOut = true;
       this.#changed();
@@ -341,7 +349,7 @@ export class JeopardyGame {
   }
   #timerView(holder) {
     const tm = holder?.timer;
-    return tm ? { totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
+    return tm ? { kind: tm.kind, totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
   }
 
   #markUsed(cl) {
@@ -405,7 +413,7 @@ export class JeopardyGame {
     if (f.step === 'wager') {
       for (const u of this.finalists()) f.wagers[u.id] ??= 0;
       f.step = 'clue';
-      this.#startTimer(f, this.settings.finalSeconds);
+      this.#startTimer(f, this.settings.finalSeconds, 'final');
     } else if (f.step === 'clue') {
       f.step = 'judge';
       f.timer = null;
