@@ -1,0 +1,27 @@
+# Copy to /etc/systemd/system/gamenight.service, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now gamenight
+# Edit User, WorkingDirectory and HOST_PIN below first.
+[Unit]
+Description=Game Night trivia server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/gamenight
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=2
+# Port 80 gives a clean join address (no :3000 in the QR code).
+Environment=PORT=80
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+# The PIN the host and editor pages ask for. Change it.
+Environment=HOST_PIN=1234
+# Optional: print a Wi-Fi join QR (set the real SSID and password)
+#Environment=WIFI_SSID=Game Night
+#Environment=WIFI_PASSWORD=changeme
+# Optional: force the address in the QR code (otherwise the Pi's LAN IP is used)
+#Environment=PUBLIC_URL=http://192.168.50.10
+
+[Install]
+WantedBy=multi-user.target

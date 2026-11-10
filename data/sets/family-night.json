@@ -1,0 +1,52 @@
+{
+  "title": "Family Night Sampler",
+  "categories": [
+    { "name": "Around the World", "clues": [
+      { "value": 200, "clue": "This is the largest ocean on Earth.", "answer": "The Pacific Ocean" },
+      { "value": 400, "clue": "The capital of Australia, and it is not Sydney.", "answer": "Canberra" },
+      { "value": 600, "clue": "This river flows through Cairo, Egypt.", "answer": "The Nile" },
+      { "value": 800, "clue": "Mount Kilimanjaro is the tallest mountain on this continent.", "answer": "Africa" },
+      { "value": 1000, "clue": "The only country that has a flag that is not a rectangle or square.", "answer": "Nepal" }
+    ]},
+    { "name": "Food & Drink", "clues": [
+      { "value": 200, "clue": "Guacamole is mainly made from this fruit.", "answer": "Avocado" },
+      { "value": 400, "clue": "This Italian dish layers pasta sheets with ragu, béchamel and cheese.", "answer": "Lasagna" },
+      { "value": 600, "clue": "Sushi rice is seasoned with this type of vinegar.", "answer": "Rice vinegar" },
+      { "value": 800, "clue": "Brie and Camembert both come from this country.", "answer": "France" },
+      { "value": 1000, "clue": "This spice, the world's most expensive by weight, comes from a crocus flower.", "answer": "Saffron" }
+    ]},
+    { "name": "Movie Night", "clues": [
+      { "value": 200, "clue": "In this Pixar film, a clownfish named Marlin searches for his son.", "answer": "Finding Nemo" },
+      { "value": 400, "clue": "Harry Potter's school of wizardry.", "answer": "Hogwarts" },
+      { "value": 600, "clue": "This 1993 film brought dinosaurs back to life on an island park.", "answer": "Jurassic Park" },
+      { "value": 800, "clue": "Simba's father in The Lion King.", "answer": "Mufasa" },
+      { "value": 1000, "clue": "This 1997 film ends with the sinking of a famous ocean liner.", "answer": "Titanic" }
+    ]},
+    { "name": "Science & Nature", "clues": [
+      { "value": 200, "clue": "The planet closest to the Sun.", "answer": "Mercury" },
+      { "value": 400, "clue": "Water is made of hydrogen and this element.", "answer": "Oxygen" },
+      { "value": 600, "clue": "A baby kangaroo is called this.", "answer": "A joey" },
+      { "value": 800, "clue": "This gas makes up about 78% of Earth's atmosphere.", "answer": "Nitrogen" },
+      { "value": 1000, "clue": "The human body has this many bones, give or take, as an adult.", "answer": "206" }
+    ]},
+    { "name": "Name That Decade", "clues": [
+      { "value": 200, "clue": "Disco and bell-bottoms: the 1970s, 1980s or 1990s?", "answer": "The 1970s" },
+      { "value": 400, "clue": "The first iPhone was released in this year.", "answer": "2007" },
+      { "value": 600, "clue": "Humans first walked on the Moon in this year.", "answer": "1969" },
+      { "value": 800, "clue": "The Berlin Wall fell in this year.", "answer": "1989" },
+      { "value": 1000, "clue": "The Wright brothers' first powered flight took place in this year.", "answer": "1903" }
+    ]},
+    { "name": "Word Play", "clues": [
+      { "value": 200, "clue": "The opposite of \"ancient\".", "answer": "Modern (or new)" },
+      { "value": 400, "clue": "A word that reads the same forwards and backwards, like \"level\".", "answer": "A palindrome" },
+      { "value": 600, "clue": "This is the only letter that does not appear in any U.S. state name.", "answer": "Q" },
+      { "value": 800, "clue": "A group of crows is called this.", "answer": "A murder" },
+      { "value": 1000, "clue": "The longest word you can type using only the top row of a keyboard.", "answer": "Typewriter" }
+    ]}
+  ],
+  "final": {
+    "category": "U.S. Presidents",
+    "clue": "He was the first U.S. president to live in the White House.",
+    "answer": "John Adams"
+  }
+}

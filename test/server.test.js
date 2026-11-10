@@ -1,0 +1,134 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdtempSync, cpSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import net from 'node:net';
+import { WebSocket } from 'ws';
+
+const root = path.resolve(import.meta.dirname, '..');
+const PIN = '2468';
+const dataDir = mkdtempSync(path.join(tmpdir(), 'gamenight-'));
+cpSync(path.join(root, 'data/sets'), path.join(dataDir, 'sets'), { recursive: true });
+
+const freePort = () => new Promise((res) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => res(p)); }); });
+
+async function startServer(port) {
+  const proc = spawn('node', ['server.js'], { cwd: root, env: { ...process.env, PORT: String(port), HOST_PIN: PIN, DATA_DIR: dataDir }, stdio: ['ignore', 'pipe', 'inherit'] });
+  await new Promise((resolve, reject) => {
+    proc.stdout.on('data', (d) => { if (String(d).includes('running')) resolve(); });
+    proc.on('exit', (c) => reject(new Error(`server exited ${c}`)));
+  });
+  return proc;
+}
+const stopServer = (proc) => new Promise((res) => { proc.once('exit', res); proc.kill('SIGTERM'); });
+
+class Client {
+  constructor(port) { this.msgs = []; this.view = null; this.ws = new WebSocket(`ws://localhost:${port}/ws`); this.raw = [];
+    this.ws.on('message', (d) => { this.raw.push(String(d)); const m = JSON.parse(d); this.msgs.push(m); if (m.t === 'state') this.view = m.view; }); }
+  open() { return new Promise((r) => (this.ws.readyState === 1 ? r() : this.ws.once('open', r))); }
+  send(m) { this.ws.send(JSON.stringify(m)); }
+  act(action, args = {}) { this.send({ t: 'act', action, args }); }
+  async until(fn, label = 'condition') {
+    for (let i = 0; i < 100; i++) { const r = fn(this); if (r) return r; await new Promise((s) => setTimeout(s, 20)); }
+    throw new Error(`timed out waiting for ${label}`);
+  }
+  close() { this.ws.close(); }
+}
+async function connectAs(port, hello) { const c = new Client(port); await c.open(); c.send(hello); return c; }
+
+test('server end to end', async (t) => {
+  const port = await freePort();
+  let proc = await startServer(port);
+  t.after(async () => { await stopServer(proc).catch(() => {}); rmSync(dataDir, { recursive: true, force: true }); });
+  const base = `http://localhost:${port}`;
+
+  await t.test('editor API needs the host PIN', async () => {
+    assert.equal((await fetch(`${base}/api/sets`)).status, 401);
+    assert.equal((await fetch(`${base}/api/sets`, { headers: { 'x-host-pin': 'nope' } })).status, 401);
+    const ok = await fetch(`${base}/api/sets`, { headers: { 'x-host-pin': PIN } });
+    assert.equal(ok.status, 200);
+    assert.equal((await ok.json())[0].id, 'family-night');
+    // Invalid set is rejected
+    const bad = await fetch(`${base}/api/sets/broken`, { method: 'PUT', headers: { 'x-host-pin': PIN }, body: '{"title":"x"}' });
+    assert.equal(bad.status, 400);
+  });
+
+  await t.test('static files stay inside public/', async () => {
+    assert.equal((await fetch(`${base}/tv`)).status, 200);
+    assert.equal((await fetch(`${base}/%2e%2e/server.js`)).status, 404);
+    assert.equal((await fetch(`${base}/..%2fserver.js`)).status, 404);
+  });
+
+  const host = await connectAs(port, { t: 'hello', role: 'host', pin: PIN });
+  const tv = await connectAs(port, { t: 'hello', role: 'tv' });
+  const wrong = await connectAs(port, { t: 'hello', role: 'host', pin: '0000' });
+  await t.test('wrong host PIN is refused and gets no state', async () => {
+    await wrong.until((c) => c.msgs.some((m) => m.t === 'bad-pin'), 'bad-pin');
+    assert.equal(wrong.view, null);
+  });
+  await host.until((c) => c.view, 'host state');
+
+  const ann = await connectAs(port, { t: 'hello', role: 'player' });
+  const bo = await connectAs(port, { t: 'hello', role: 'player' });
+  await ann.until((c) => c.msgs.some((m) => m.t === 'need-join'));
+  ann.send({ t: 'join', name: 'Ann', color: '#ef4444' });
+  bo.send({ t: 'join', name: 'Bo' });
+  const annToken = (await ann.until((c) => c.msgs.find((m) => m.t === 'joined'))).token;
+  await bo.until((c) => c.msgs.find((m) => m.t === 'joined'));
+  host.act('startGame');
+  await tv.until((c) => c.view?.status === 'board', 'board');
+
+  await t.test('answers never reach the TV or phones before the reveal', async () => {
+    host.act('select', { c: 0, r: 0 });
+    await tv.until((c) => c.view?.clue?.step === 'reading');
+    assert.equal(tv.view.clue.answer, null);
+    await host.until((c) => c.view?.clue?.answer);
+    assert.equal(host.view.clue.answer, 'The Pacific Ocean');
+    for (const c of [tv, ann, bo]) assert.ok(!c.raw.some((r) => r.includes('Pacific Ocean')), 'answer leaked');
+  });
+
+  await t.test('simultaneous buzzes produce exactly one winner', async () => {
+    host.act('openBuzzers');
+    await tv.until((c) => c.view?.clue?.step === 'open');
+    ann.send({ t: 'buzz' }); bo.send({ t: 'buzz' });
+    const ra = await ann.until((c) => c.msgs.find((m) => m.t === 'buzz-result'));
+    const rb = await bo.until((c) => c.msgs.find((m) => m.t === 'buzz-result'));
+    assert.equal([ra, rb].filter((r) => r.ok).length, 1);
+    await tv.until((c) => c.view?.clue?.step === 'answering');
+  });
+
+  await t.test('only the host can drive the game', async () => {
+    ann.act('correct');
+    bo.act('correct');
+    await new Promise((r) => setTimeout(r, 100));
+    assert.equal(tv.view.clue.step, 'answering');
+    host.act('correct');
+    await tv.until((c) => c.view?.clue?.step === 'revealed');
+    assert.equal(tv.view.clue.answer, 'The Pacific Ocean');
+    host.act('closeClue');
+  });
+
+  await t.test('a refreshed phone rejoins as the same player with its score', async () => {
+    const scoreBefore = tv.view.units.find((u) => u.name === 'Ann').score + tv.view.units.find((u) => u.name === 'Bo').score;
+    assert.equal(scoreBefore, 200);
+    ann.close();
+    const again = await connectAs(port, { t: 'hello', role: 'player', token: annToken });
+    await again.until((c) => c.view?.me?.name === 'Ann');
+    assert.ok(!again.msgs.some((m) => m.t === 'need-join'));
+  });
+
+  await t.test('game survives a server restart', async () => {
+    await new Promise((r) => setTimeout(r, 500)); // let the debounced save land
+    await stopServer(proc);
+    proc = await startServer(port);
+    const again = await connectAs(port, { t: 'hello', role: 'player', token: annToken });
+    await again.until((c) => c.view?.me);
+    const v = again.view;
+    assert.equal(v.me.name, 'Ann');
+    assert.equal(v.status, 'board');
+    assert.equal(v.board[0][0].used, true);
+    assert.equal(v.units.reduce((s, u) => s + u.score, 0), 200);
+  });
+});
