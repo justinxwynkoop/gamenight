@@ -110,6 +110,25 @@ const readBody = (req, limit = 1_000_000) => new Promise((resolve, reject) => {
   req.on('error', reject);
 });
 
+// ---------- host info: only for a browser on the Pi itself ----------
+// Shows the host page address, a QR code for it, and the PIN, so the host never needs a terminal to
+// find them. Anyone on the network is refused: the PIN is for the person at the Pi's screen.
+const isLocalRequest = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+const escapeHtml = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+async function hostInfoPage() {
+  const hostUrl = `${currentJoinUrl()}host`;
+  const qr = await QRCode.toString(hostUrl, { type: 'svg', margin: 1 });
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Night – Host info</title><style>
+body{margin:0;font-family:system-ui,sans-serif;background:#0a1030;color:#f4f6ff;display:grid;place-items:center;min-height:100vh;text-align:center}
+main{padding:24px;max-width:520px}h1{margin:0 0 4px}p{color:#9aa8e6;line-height:1.4}.pin{font-size:56px;font-weight:800;letter-spacing:.15em;margin:8px 0}
+.qr{background:#fff;padding:12px;border-radius:12px;width:260px;margin:12px auto}.qr svg{display:block;width:100%;height:auto}code{background:#16225f;padding:2px 8px;border-radius:6px;color:#fff}
+</style></head><body><main><h1>Host controls</h1>
+<p>On your phone or tablet, scan this or open <code>${escapeHtml(hostUrl)}</code></p>
+<div class="qr">${qr}</div><p>Then enter the host PIN:</p><div class="pin">${escapeHtml(config.pin)}</div>
+<p>Close this window before guests arrive; the PIN shows answers to anyone who has it.</p></main></body></html>`;
+}
+
 async function handleApi(req, res, url) {
   if (url.pathname === '/api/info') return send(res, 200, { joinUrl: currentJoinUrl(), wifi: !!wifiString });
   if (url.pathname === '/api/sounds') return send(res, 200, listSounds());
@@ -150,6 +169,10 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+    if (url.pathname === '/host-info') {
+      if (!isLocalRequest(req)) return send(res, 404, 'Not found', 'text/plain');
+      return send(res, 200, await hostInfoPage(), 'text/html; charset=utf-8');
+    }
     if (url.pathname.startsWith('/sounds/')) {
       const file = url.pathname.slice('/sounds/'.length);
       if (!SOUND_FILE.test(file) || !existsSync(path.join(SOUNDS_DIR, file))) return send(res, 404, 'Not found', 'text/plain');

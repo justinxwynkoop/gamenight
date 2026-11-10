@@ -5,6 +5,8 @@ import { mkdtempSync, cpSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
+import os from 'node:os';
+import { pickAddress } from '../lib.js';
 import { WebSocket } from 'ws';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -86,6 +88,19 @@ test('server end to end', async (t) => {
     const qr = await fetch(`${base}/api/qr.svg`);
     assert.equal(qr.status, 200);
     assert.match(await qr.text(), /^<svg/);
+  });
+
+  await t.test('host info (address, QR and PIN) is shown only to a browser on the machine itself', async () => {
+    const local = await fetch(`${base}/host-info`);
+    assert.equal(local.status, 200);
+    const html = await local.text();
+    assert.ok(html.includes(PIN) && html.includes('<svg') && html.includes('/host'));
+    const lan = pickAddress(os.networkInterfaces());
+    if (lan !== 'localhost') {                                    // reaching the server by its network address is "someone else"
+      const other = await fetch(`http://${lan}:${port}/host-info`);
+      assert.equal(other.status, 404);
+      assert.ok(!(await other.text()).includes(PIN));
+    }
   });
 
   await t.test('static files stay inside public/', async () => {

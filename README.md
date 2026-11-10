@@ -143,7 +143,36 @@ What to buy or gather for a Pi 4:
   Keep a spare card cloned from the first one.
 - A case with a small heatsink. An active fan isn't needed for this workload.
 
-### Software
+### Software: the easy way (one command, then desktop icons)
+
+On the Pi's desktop, open a terminal **once** and paste this. It installs what's needed, asks you to
+choose a host PIN, and puts icons on the desktop:
+
+```bash
+git clone https://github.com/justinxwynkoop/gamenight.git ~/gamenight && ~/gamenight/deploy/setup-pi.sh
+```
+
+(If you already cloned it: `cd ~/gamenight && git pull && deploy/setup-pi.sh`. It is safe to run
+again.) It needs the Pi online and asks for the Pi's password once, to install Node.js.
+
+After that you never need the terminal. The desktop has four icons (the first time you
+double-click one, the Pi may ask whether to run it; choose **Execute**):
+
+| Icon | What it does |
+| --- | --- |
+| **Game Night** | Starts the game server if it isn't running, then shows the board full screen. Press **Alt+F4** to leave the full-screen board; the server and any game in progress keep running. |
+| **Game Night Host Info** | Shows the host page address, a QR code for it and the PIN. Scan it with the host's phone. Close it before guests arrive. Only a browser on the Pi itself can open this page. |
+| **Game Night Stop** | Stops the server. |
+| **Game Night Update** | Downloads the newest version (the Pi must be online). Then Stop and start it again. |
+
+Everything the server prints is saved in `data/server.log` if something doesn't start. The icons
+call `deploy/gamenight.sh`, which you can also run by hand (`tv`, `info`, `start`, `stop`, `update`).
+These scripts were tested on a laptop, not yet on a real Pi.
+
+### Software: by hand
+
+The steps below do the same thing without the setup script, and add running the server as a
+background service that starts at boot.
 
 1. Flash Raspberry Pi OS with desktop (64-bit) with Raspberry Pi Imager and
    connect the Pi to the Game Night network. Give it a DHCP reservation so its
@@ -237,7 +266,7 @@ public/games/jeopardy/  Jeopardy's own TV, host, phone and editor screens
 data/<game>/            question sets for each game
 data/sounds/            your own sound files (not in git)
 test/                   node --test suites (room, Jeopardy rules, full server)
-deploy/                 systemd unit
+deploy/                 desktop launcher + setup script, systemd unit
 ```
 
 ## Adding a game
