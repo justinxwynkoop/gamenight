@@ -51,8 +51,8 @@ export function onChange(prev, view, sound) {
   // Final Jeopardy music (the optional "think" file) runs with the countdown and stops with it.
   const running = !!(f && f.step === 'clue' && f.timer && !f.timer.timedOut);
   const wasRunning = !!(pf && pf.step === 'clue' && pf.timer && !pf.timer.timedOut);
-  if (running && (!wasRunning || f.timer.leftMs > pf.timer.leftMs + 1500)) sound.music('think'); // started, or the host restarted it
-  else if (!running) sound.stopMusic();
+  if (running && (!wasRunning || f.timer.leftMs > pf.timer.leftMs + 1500)) sound.music('think', { owner: 'final', loop: true }); // started, or the host restarted it
+  else if (!running) sound.stopMusic('final');
   if (f) {
     if (!pf) sound.play('final');
     else {

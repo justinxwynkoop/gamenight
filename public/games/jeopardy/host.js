@@ -58,7 +58,6 @@ function setupCard(v) {
     !v.setId && h('option', { value: '' }, '— choose a question set —'),
     sets.map((s) => h('option', { value: s.id, selected: s.id === v.setId }, s.title)));
   const pen = h('input', { type: 'number', min: 0, max: 5000, step: 100, value: v.settings.penaltyMs, style: { width: '110px' }, 'data-k': 'pen' });
-  const ans = h('input', { type: 'number', min: 0, max: 120, value: v.settings.answerSeconds, style: { width: '80px' }, 'data-k': 'ans' });
   const fin = h('input', { type: 'number', min: 0, max: 300, value: v.settings.finalSeconds, style: { width: '80px' }, 'data-k': 'fin' });
   return h('div', { class: 'card' }, h('h2', {}, 'Jeopardy setup'),
     h('label', {}, 'Question set'), setSel,
@@ -66,12 +65,14 @@ function setupCard(v) {
     h('div', { class: 'row' },
       h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.earlyPenalty, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { earlyPenalty: e.target.checked }) }), 'Lock out early buzzers for'),
       pen, h('span', { class: 'tag' }, 'ms'), h('button', { class: 'btn small', onclick: () => act('setSettings', { penaltyMs: pen.value }) }, 'Save')),
-    h('label', {}, 'Timers (seconds, 0 = off)'),
-    h('div', { class: 'row' },
-      h('span', { class: 'tag' }, 'Answer'), ans,
-      h('span', { class: 'tag' }, 'Final'), fin,
-      h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.autoWrong, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { autoWrong: e.target.checked }) }), 'Time-out counts as wrong'),
-      h('button', { class: 'btn small', onclick: () => act('setSettings', { answerSeconds: ans.value, finalSeconds: fin.value }) }, 'Save')),
+    h('label', {}, 'Time to answer after a buzz'),
+    h('div', { class: 'row' }, [5, 10].map((n) => h('button', {
+      class: `btn ${v.settings.answerSeconds === n ? 'primary' : ''}`, onclick: () => act('setSettings', { answerSeconds: n }),
+    }, `${n} seconds`))),
+    h('label', {}, 'Final Jeopardy time (seconds, 0 = no timer)'),
+    h('div', { class: 'row' }, fin,
+      h('button', { class: 'btn small', onclick: () => act('setSettings', { finalSeconds: fin.value }) }, 'Save'),
+      h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.autoWrong, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { autoWrong: e.target.checked }) }), 'Time-out counts as wrong')),
     h('div', { class: 'row', style: { marginTop: '16px' } },
       h('button', { class: 'btn ok grow', disabled: !v.setId || !v.units.length, onclick: () => act('startGame') },
         v.units.length ? `Start game (${v.units.length} ${v.mode === 'teams' ? 'teams' : 'players'})` : 'Waiting for players…')));

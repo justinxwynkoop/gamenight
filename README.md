@@ -55,11 +55,11 @@ player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
 
 **Timers.** When someone buzzes in (or a Daily Double wager is set) a countdown starts on the
-TV, the host page and the buzzing player's phone: 10 seconds by default. At zero the TV flashes
-TIME'S UP and plays a buzzer, and the host still decides: tap Correct or Wrong, or **Restart
-timer** to give more time. Final Jeopardy has its own countdown (30 seconds) that starts when the
-clue is shown. Set the times, or 0 to turn a timer off, in the lobby. Tick **Time-out counts as
-wrong** if you'd rather it be scored automatically.
+TV, the host page and the buzzing player's phone. In the lobby the host chooses **5 or 10
+seconds** (10 by default). At zero the TV flashes TIME'S UP and plays a buzzer, and the host
+still decides: tap Correct or Wrong, or **Restart timer** to give more time. Final Jeopardy has
+its own countdown (30 seconds by default, adjustable in the lobby) that starts when the clue is
+shown. Tick **Time-out counts as wrong** if you'd rather it be scored automatically.
 
 **Early buzzes.** Pressing before the host opens buzzers locks that player out for
 a short time after they open (default 500 ms, adjustable or off in the lobby).
@@ -93,12 +93,24 @@ To use your own audio, put files in `data/sounds/` on the Pi. Use these names (`
 `.ogg` or `.m4a`) and the game uses your file instead of the built-in sound:
 
 `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`
-(Final Jeopardy sting), `fanfare` (winner), and **`think`**: music that plays during the Final
-Jeopardy countdown and stops when time is up (a 30-second file matches the default time). It only
-plays if you provide the file.
+(Final Jeopardy sting), `fanfare` (winner), and two music files:
 
-Files are read when the TV page loads, so reload it after adding some. Anything with a different
-name is ignored.
+- **`think`**: plays during the Final Jeopardy countdown and stops when time is up. A 30-second
+  file matches the default time (it loops if the countdown is longer).
+- **`lobby`**: loops on the TV while players are joining, before the game starts, and stops when
+  it starts. If there is no `lobby` file, `think` is used here too, so one file covers both.
+
+Music only plays if you provide a file. Files are read when the TV page loads, so reload it
+after adding some. Anything with a different name is ignored.
+
+**Getting a file onto the Pi.** From your computer, with the Pi on the same network (Windows 10 and
+later, macOS and Linux all have `scp`):
+
+```bash
+scp think.mp3 YOURUSERNAME@gamenight.local:~/gamenight/data/sounds/think.mp3
+```
+
+Or copy it with a USB stick into `~/gamenight/data/sounds/` on the Pi.
 
 `data/sounds/` is git-ignored on purpose: this repository is public, so audio you didn't create
 (a TV show's music, for instance) can't be accidentally published from here. Whether using such

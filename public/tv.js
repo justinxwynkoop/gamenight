@@ -12,11 +12,11 @@ let seq = 0; // drops a render that was overtaken by a newer state while its mod
 const modules = {};
 const loaded = {};   // id -> module, once it has loaded (so sound cues can run without waiting)
 const load = (id) => (modules[id] ??= import(`/games/${id}/tv.js`).then((m) => (loaded[id] = m)));
-const sound = { play: (n) => audio.play(n), music: (n) => audio.music(n), stopMusic: () => audio.stopMusic(), musicPlaying: () => audio.musicPlaying };
+const sound = { play: (n) => audio.play(n), music: (n, o) => audio.music(n, o), stopMusic: (owner) => audio.stopMusic(owner), musicPlaying: () => audio.musicPlaying };
 const badge = h('div', { class: 'soundbadge hidden' }, '🔇 Click or press any key to turn sound on');
 document.body.append(badge);
 audio.init();
-const unlock = () => { audio.init(); badge.classList.toggle('hidden', !audio.blocked || !audio.enabled); };
+const unlock = () => { audio.init(); badge.classList.toggle('hidden', !audio.blocked || !audio.enabled); if (last) lobbyMusic(last); };
 addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
 setInterval(unlock, 1000);
 
@@ -35,9 +35,21 @@ connect({
   },
 });
 
+/**
+ * While players are joining (before the game starts) loop the lobby music: a file called "lobby" if
+ * there is one, otherwise "think". It stops when the game starts. Safe to call on every update.
+ */
+function lobbyMusic(v) {
+  const inLobby = !v.game || !v.room.inProgress;
+  if (!inLobby) { audio.stopMusic('lobby'); return; }
+  if (audio.musicOwner !== 'lobby') audio.music('lobby', { owner: 'lobby', loop: true, fallback: 'think' });
+}
+audio.ready.then(() => { if (last) lobbyMusic(last); });
+
 /** Sound cues: the settings, the host's test button, then whatever the active game wants to play. */
 function effects(prev, v) {
   audio.configure(v.room.settings);
+  lobbyMusic(v);
   if (!prev) return;
   if (prev.room.settings?.ping !== v.room.settings?.ping) audio.play('correct');
   const mod = v.game && loaded[v.game.game];

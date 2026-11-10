@@ -8,6 +8,8 @@ let master = null;
 const cfg = { enabled: true, volume: 0.7 };
 const custom = {};  // name -> decoded audio the family dropped into data/sounds/
 let musicNode = null;
+let musicOwner = null;   // who started the music, so one screen can't switch off another's
+let resolveReady = () => {};
 
 function ensure() {
   if (!ctx) {
@@ -75,13 +77,15 @@ const SOUNDS = {
 
 export const audio = {
   loaded: false,
+  /** Resolves once the files in data/sounds/ have been fetched and decoded (or there are none). */
+  ready: new Promise((ok) => { resolveReady = ok; }),
   /** Apply the host's room settings: { sound: boolean, volume: 0-100 }. */
   configure(s = {}) {
     if (typeof s.sound === 'boolean') { cfg.enabled = s.sound; if (!s.sound) audio.stopMusic(); }
     if (typeof s.volume === 'number') { cfg.volume = Math.min(1, Math.max(0, s.volume / 100)); if (master) master.gain.value = cfg.volume * 0.5; }
   },
   /** Create the audio context early so a kiosk with autoplay allowed is ready for the first sound. */
-  init() { if (ensure() && !audio.loaded) { audio.loaded = true; loadCustom().catch(() => {}); } },
+  init() { if (ensure() && !audio.loaded) { audio.loaded = true; loadCustom().catch(() => {}).finally(() => resolveReady()); } },
   /** True while the browser is still holding audio back (waiting for a click or key press). */
   get blocked() { return !!ctx && ctx.state !== 'running'; },
   get enabled() { return cfg.enabled; },
@@ -91,17 +95,27 @@ export const audio = {
     if (!c || c.state !== 'running') return; // never queue sounds that would fire late, all at once, when audio unlocks
     if (custom[name]) playBuffer(custom[name]); else SOUNDS[name]?.();
   },
-  /** Music for a stretch of the game (Final Jeopardy). Only plays if a file with this name was provided. */
-  music(name) {
-    audio.stopMusic();
-    if (!cfg.enabled || cfg.volume <= 0 || !custom[name]) return false;
+  /**
+   * Music for a stretch of the game. Only plays if a file with this name (or the fallback name) was provided.
+   * `owner` tags who started it; `loop` keeps it going until stopped. Returns whether it started.
+   */
+  music(name, { owner = null, loop = false, fallback = null } = {}) {
+    const buf = custom[name] ?? (fallback ? custom[fallback] : null);
+    if (!cfg.enabled || cfg.volume <= 0 || !buf) return false;
     const c = ensure();
     if (!c || c.state !== 'running') return false;
-    musicNode = playBuffer(custom[name]);
-    const mine = musicNode;
-    mine.onended = () => { if (musicNode === mine) musicNode = null; };
+    audio.stopMusic();
+    const node = playBuffer(buf, loop);
+    musicNode = node; musicOwner = owner;
+    node.onended = () => { if (musicNode === node) { musicNode = null; musicOwner = null; } };
     return true;
   },
-  stopMusic() { try { musicNode?.stop(); } catch { /* already stopped */ } musicNode = null; },
+  /** Stop the music. With an owner, only if that owner started it. */
+  stopMusic(owner) {
+    if (owner && musicOwner !== owner) return;
+    try { musicNode?.stop(); } catch { /* already stopped */ }
+    musicNode = null; musicOwner = null;
+  },
+  get musicOwner() { return musicOwner; },
   get musicPlaying() { return !!musicNode; },
 };
