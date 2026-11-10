@@ -50,13 +50,15 @@ case "${1:-tv}" in
     B="$(browser)"
     if [ -z "$B" ]; then say "No Chromium browser found."; exit 1; fi
     # Full screen, no "restore pages?" bubble, and sound allowed without a click.
+    # --password-store=basic stops Chromium asking to create a password keyring; in full screen that
+    # prompt hides behind the page and leaves a white screen.
     exec "$B" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run \
-      --autoplay-policy=no-user-gesture-required "$URL/tv" ;;
+      --password-store=basic --autoplay-policy=no-user-gesture-required "$URL/tv" ;;
   info)
     start_server || exit 1
     B="$(browser)"
     if [ -z "$B" ]; then say "No Chromium browser found."; exit 1; fi
-    exec "$B" --no-first-run --app="$URL/host-info" --window-size=620,820 ;;
+    exec "$B" --no-first-run --password-store=basic --app="$URL/host-info" --window-size=620,820 ;;
   stop)
     if [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null; then
       rm -f "$PIDFILE"; say "Game Night stopped."

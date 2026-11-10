@@ -165,7 +165,11 @@ double-click one, the Pi may ask whether to run it; choose **Execute**):
 | **Game Night Stop** | Stops the server. |
 | **Game Night Update** | Downloads the newest version (the Pi must be online). Then Stop and start it again. |
 
-Everything the server prints is saved in `data/server.log` if something doesn't start. The icons
+Everything the server prints is saved in `data/server.log` if something doesn't start.
+
+If the board opens as a **white screen**, Chromium is waiting on a hidden "choose password for new
+keyring" prompt. The icons already start Chromium with `--password-store=basic` to avoid it. In an
+ordinary Chromium window you can stop the prompt by choosing a blank password once and continuing. The icons
 call `deploy/gamenight.sh`, which you can also run by hand (`tv`, `info`, `start`, `stop`, `update`).
 These scripts were tested on a laptop, not yet on a real Pi.
 
@@ -193,7 +197,7 @@ background service that starts at boot.
 5. Boot the TV straight into the board. On the current desktop (labwc), add this
    line to `~/.config/labwc/autostart`:
    ```bash
-   chromium --kiosk --noerrdialogs --disable-infobars --autoplay-policy=no-user-gesture-required http://localhost/tv &
+   chromium --kiosk --noerrdialogs --disable-infobars --password-store=basic --autoplay-policy=no-user-gesture-required http://localhost/tv &
    ```
    (The binary is `chromium-browser` on older images. Use `:3000` in the URL if
    you didn't set `PORT=80`.)
