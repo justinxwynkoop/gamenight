@@ -180,3 +180,135 @@ test('buzz and final messages from phones are routed to the game', () => {
   assert.deepEqual(room.playerMessage(ps[0].id, { t: 'buzz' }), { t: 'buzz-result', ok: true, unitId: ps[0].id, playerId: ps[0].id });
   assert.equal(room.playerMessage(ps[0].id, { t: 'nonsense' }), undefined);
 });
+
+// ---------- timers ----------
+const buzzIn = (g, ps, i = 0) => { g.select(0, 0); g.openBuzzers(); return g.buzz(ps[i].id); };
+
+test('a buzz-in starts the answer timer; a correct answer clears it', () => {
+  const { g, ps, clock } = setup();
+  start(g);
+  g.select(0, 0); g.openBuzzers();
+  assert.equal(g.publicView().clue.timer, null);          // not while buzzers are only open
+  g.buzz(ps[0].id);
+  let tm = g.publicView().clue.timer;
+  assert.equal(tm.totalMs, 10000);
+  assert.equal(tm.leftMs, 10000);
+  assert.equal(tm.timedOut, false);
+  clock.advance(4000);
+  assert.equal(g.publicView().clue.timer.leftMs, 6000);
+  g.correct();
+  assert.equal(g.publicView().clue.timer, null);
+});
+
+test('tick expires the timer once and leaves the decision to the host', () => {
+  const { g, ps, clock } = setup();
+  start(g); buzzIn(g, ps);
+  let changes = 0; const real = g.room.onChange; g.room.onChange = () => { changes++; real(); };
+  clock.advance(9999); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, false);
+  assert.equal(changes, 0);
+  clock.advance(2); g.tick(); g.tick(); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, true);
+  assert.equal(g.publicView().clue.timer.leftMs, 0);
+  assert.equal(changes, 1);                               // announced once, not every tick
+  assert.equal(g.run.clue.step, 'answering');             // nothing is scored automatically
+  assert.equal(ps[0].score, 0);
+});
+
+test('with auto-wrong on, a time-out counts as a wrong answer and reopens buzzing', () => {
+  const { g, ps, clock } = setup();
+  g.setSettings({ autoWrong: true });
+  start(g); buzzIn(g, ps);
+  clock.advance(10001); g.tick();
+  assert.equal(ps[0].score, -200);
+  assert.equal(g.run.clue.step, 'open');
+  assert.equal(g.run.clue.timer, null);
+  assert.equal(g.buzz(ps[0].id).reason, 'locked-out');
+  assert.equal(g.buzz(ps[1].id).ok, true);                // the next buzz gets a fresh timer
+  assert.equal(g.publicView().clue.timer.leftMs, 10000);
+});
+
+test('the host can restart the timer, and change or switch off the time', () => {
+  const { g, ps, clock } = setup();
+  start(g); buzzIn(g, ps);
+  clock.advance(9000);
+  g.restartTimer();
+  assert.equal(g.publicView().clue.timer.leftMs, 10000);
+  clock.advance(10001); g.tick();
+  g.restartTimer();                                       // restarting after time-out gives time again
+  assert.equal(g.publicView().clue.timer.timedOut, false);
+  g.reveal();
+  assert.throws(() => g.restartTimer(), /no answer/);
+
+  const b = setup(); b.g.setSettings({ answerSeconds: 0 }); start(b.g); buzzIn(b.g, b.ps);
+  assert.equal(b.g.publicView().clue.timer, null);        // 0 = no timer
+  b.clock.advance(60000); b.g.tick();
+  assert.equal(b.g.run.clue.step, 'answering');
+
+  const c = setup(); c.g.setSettings({ answerSeconds: 3 }); start(c.g); buzzIn(c.g, c.ps);
+  assert.equal(c.g.publicView().clue.timer.totalMs, 3000);
+});
+
+test('timer settings are validated', () => {
+  const { g } = setup();
+  assert.throws(() => g.setSettings({ answerSeconds: -1 }), /Answer time/);
+  assert.throws(() => g.setSettings({ answerSeconds: 121 }), /Answer time/);
+  assert.throws(() => g.setSettings({ finalSeconds: 301 }), /Final/);
+  assert.throws(() => g.setSettings({ answerSeconds: 'soon' }), /Answer time/);
+  g.setSettings({ answerSeconds: 15, finalSeconds: 45 });
+  assert.equal(g.settings.answerSeconds, 15);
+  assert.equal(g.settings.finalSeconds, 45);
+});
+
+test('a Daily Double answer is timed too, and awarding a buzz by hand starts the timer', () => {
+  const { g, ps } = setup();
+  start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3); g.setDailyDoubleWager(400);
+  assert.equal(g.publicView().clue.timer.totalMs, 10000);
+  g.wrong(); g.closeClue();
+  g.select(0, 0); g.awardBuzz(ps[1].id);
+  assert.equal(g.publicView().clue.timer.totalMs, 10000);
+});
+
+test('Final Jeopardy has a countdown that starts with the clue', () => {
+  const { g, ps, clock } = setup();
+  start(g); ps[0].score = 500;
+  g.startFinal();
+  assert.equal(g.publicView().final.timer, null);         // wagering is untimed
+  g.finalNext();
+  assert.equal(g.publicView().final.timer.totalMs, 30000);
+  clock.advance(30001); g.tick();
+  assert.equal(g.publicView().final.timer.timedOut, true);
+  assert.equal(g.run.final.step, 'clue');                 // the host still moves on
+  g.restartTimer();
+  assert.equal(g.publicView().final.timer.timedOut, false);
+  g.finalNext();
+  assert.equal(g.publicView().final.timer, null);
+});
+
+test('after a restart the clock-based values are reset so nobody stays locked out', () => {
+  const { room, g, ps } = setup();
+  start(g);
+  g.select(0, 0);
+  g.buzz(ps[2].id);                                       // too early: recorded for a penalty
+  room.clock = () => 9_000_000;                           // the old process ran for a long time
+  g.openBuzzers();                                        // penalty runs until 9_000_500
+  const saved = JSON.parse(JSON.stringify(room));
+  const copy = new Room({ games: GAMES, now: () => 500, loadContent: () => set }); // new process, clock restarts
+  copy.restore(saved);
+  const cg = copy.game;
+  assert.deepEqual(cg.run.clue.penaltyUntil, {});
+  assert.equal(cg.buzz(ps[2].id).ok, true);
+  assert.equal(cg.publicView().clue.timer.leftMs, 10000); // a timer that was running gets its full time back
+});
+
+test('room settings: sound and volume are validated and shown to the TV', () => {
+  const { room } = setup();
+  assert.deepEqual({ ...room.publicView().room.settings }, { sound: true, volume: 70, ping: 0 });
+  room.act('setRoomSettings', { sound: false, volume: 25 });
+  assert.equal(room.publicView().room.settings.sound, false);
+  assert.equal(room.publicView().room.settings.volume, 25);
+  assert.throws(() => room.act('setRoomSettings', { volume: 101 }), /Volume/);
+  room.act('testSound');
+  assert.equal(room.publicView().room.settings.ping, 1);
+});

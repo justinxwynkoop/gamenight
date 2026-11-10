@@ -4,6 +4,67 @@ import { flat } from './flat.js';
 
 const qr = qrImg;
 
+// ---------- countdown ----------
+// The server sends how much time is left when something changes; between pushes the
+// TV counts down locally, so the bar stays smooth and nothing is sent every second.
+let live = null; // { leftMs, totalMs, at, bar, num, shown }
+let play = () => {};
+let musicPlaying = () => false;
+setInterval(() => {
+  if (!live) return;
+  const left = Math.max(0, live.leftMs - (performance.now() - live.at));
+  if (live.bar) { live.bar.firstChild.style.width = `${(left / live.totalMs) * 100}%`; live.bar.classList.toggle('low', left <= 3000); }
+  const secs = Math.ceil(left / 1000);
+  if (live.num) live.num.textContent = String(secs);
+  if (secs !== live.shown) { live.shown = secs; if (secs > 0 && secs <= 5 && left < live.totalMs && !musicPlaying()) play('tick'); }
+}, 100);
+
+/** Builds the bar and number for a running timer and starts counting it down. */
+function timerParts(timer) {
+  if (!timer || timer.timedOut) { live = null; return { bar: null, num: null }; }
+  const bar = h('div', { class: 'timer' }, h('i'));
+  const num = h('span', { class: 'tnum' }, String(Math.ceil(timer.leftMs / 1000)));
+  live = { leftMs: timer.leftMs, totalMs: timer.totalMs, at: performance.now(), bar, num, shown: Math.ceil(timer.leftMs / 1000) };
+  bar.firstChild.style.width = `${(timer.leftMs / timer.totalMs) * 100}%`;
+  return { bar, num };
+}
+
+/** Sound cues for a change of state. prev and view are the raw { room, game } views. */
+export function onChange(prev, view, sound) {
+  play = sound.play; musicPlaying = sound.musicPlaying;
+  const p = prev.game; const g = view.game;
+  const pc = p.clue; const c = g.clue;
+  if (c) {
+    const changed = !pc || pc.c !== c.c || pc.r !== c.r;
+    if (c.dd && c.step === 'wager' && changed) sound.play('dd');
+    else if (c.step === 'open' && pc?.step !== 'open') sound.play('open');
+    else if (c.step === 'answering' && pc?.step !== 'answering') sound.play('buzz');
+    else if (c.lockedOut.length > (changed ? 0 : pc.lockedOut.length)) sound.play('wrong');
+    else if (c.step === 'revealed' && pc && pc.step !== 'revealed') {
+      if (c.correct) sound.play('correct');
+      else if (pc.step === 'answering') sound.play('wrong');   // a wrong Daily Double
+      else sound.play('reveal');
+    }
+    if (c.timer?.timedOut && !pc?.timer?.timedOut) sound.play('timeup');
+  }
+  const pf = p.final; const f = g.final;
+  // Final Jeopardy music (the optional "think" file) runs with the countdown and stops with it.
+  const running = !!(f && f.step === 'clue' && f.timer && !f.timer.timedOut);
+  const wasRunning = !!(pf && pf.step === 'clue' && pf.timer && !pf.timer.timedOut);
+  if (running && (!wasRunning || f.timer.leftMs > pf.timer.leftMs + 1500)) sound.music('think'); // started, or the host restarted it
+  else if (!running) sound.stopMusic();
+  if (f) {
+    if (!pf) sound.play('final');
+    else {
+      if (f.timer?.timedOut && !pf.timer?.timedOut) sound.play('timeup');
+      f.finalists.forEach((fu, i) => {
+        if (fu.result !== null && pf.finalists[i]?.result === null) sound.play(fu.result ? 'correct' : 'wrong');
+      });
+    }
+  }
+  if (g.status === 'done' && p.status !== 'done') sound.play('fanfare');
+}
+
 const byScore = (units) => [...units].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 const pts = (n, cls = '') => h('span', { class: `pts ${n < 0 ? 'neg' : ''} ${cls}` }, money(n));
 const nameOf = (v, id) => unitById(v, id)?.name ?? '';
@@ -63,7 +124,11 @@ function clue(v) {
     if (cl.step === 'open') stage.push(h('div', { class: 'banner open' }, 'Buzz in!'));
     else if (cl.step === 'answering' && who) {
       const c = colorOf(v, who);
-      stage.push(h('div', { class: 'banner who', style: { background: c, color: ink(c) } }, nameOf(v, who) + (cl.dd ? ` · wager ${money(cl.wager)}` : '')));
+      const { bar, num } = timerParts(cl.timer);
+      const late = cl.timer?.timedOut;
+      stage.push(h('div', { class: `banner who ${late ? 'timeup' : ''}`, style: late ? {} : { background: c, color: ink(c) } },
+        h('span', {}, nameOf(v, who) + (cl.dd ? ` · wager ${money(cl.wager)}` : '')),
+        late ? h('span', { class: 'tnum' }, 'TIME’S UP') : num), bar);
     } else if (cl.step === 'revealed') {
       const ok = cl.correct;
       stage.push(h('div', { class: 'banner', style: ok ? { background: '#15803d' } : {} },
@@ -80,8 +145,10 @@ function final(v) {
     body.push(h('div', { class: 'text' }, 'Final Jeopardy'), h('div', { class: 'answer' }, f.category),
       h('p', { style: { fontSize: '3vmin', color: '#cdd6ff' } }, 'Place your wagers on your phone'));
   } else if (f.step === 'clue') {
+    const { bar, num } = timerParts(f.timer);
     body.push(h('div', { class: 'cluecat' }, h('span', {}, f.category), h('span', {}, 'Final Jeopardy')), h('div', { class: 'text' }, f.text),
-      h('p', { style: { fontSize: '3vmin', color: '#cdd6ff' } }, 'Type your answer on your phone'));
+      f.timer && h('div', { class: 'bigtimer' }, f.timer.timedOut ? 'TIME’S UP' : num),
+      h('p', { style: { fontSize: '3vmin', color: '#cdd6ff' } }, 'Type your answer on your phone'), bar);
   } else {
     body.push(h('div', { class: 'cluecat' }, h('span', {}, f.category), h('span', {}, 'Final Jeopardy')),
       h('div', { class: 'text', style: { fontSize: '4.4vmin' } }, f.text),
@@ -114,8 +181,10 @@ function done(v) {
 }
 
 /** Returns the element to show for the current state. The TV page swaps it in. */
-export function render(view) {
+export function render(view, ctx) {
+  if (ctx?.sound) { play = ctx.sound.play; musicPlaying = ctx.sound.musicPlaying; }
   const v = flat(view);
+  live = null; // each screen sets up its own countdown, if it has one
   if (v.status === 'done') return done(v);
   if (v.status === 'final' && v.final) return final(v);
   if (v.view === 'leaderboard') return leaderboard(v);

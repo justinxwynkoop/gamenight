@@ -56,7 +56,7 @@ body.tv { overflow: hidden; font-size: 2.2vmin; cursor: none; }
 .qr-mini img, .qr-big img { display: block; width: 100%; height: auto; }
 .stage { flex: 1; display: grid; place-items: center; text-align: center; padding: 3vmin; background: var(--tile); border-radius: 1.2vmin; position: relative; }
 .stage .cluecat { position: absolute; top: 2.5vmin; left: 3vmin; right: 3vmin; font-size: 3vmin; font-weight: 800; text-transform: uppercase; color: var(--gold); display: flex; justify-content: space-between; }
-.stage > div { width: 100%; }
+.stage > div:not(.cluecat):not(.banner):not(.timer) { width: 100%; }
 .stage .text { margin: 0 auto; font-size: 6.4vmin; font-weight: 800; line-height: 1.25; text-transform: uppercase; max-width: 92%; text-shadow: .3vmin .3vmin 0 #000a; }
 .stage .answer { margin-top: 3vmin; font-size: 5vmin; font-weight: 800; color: var(--gold); text-transform: none; }
 .banner { position: absolute; left: 0; right: 0; bottom: 0; padding: 2.2vmin; border-radius: 0 0 1.2vmin 1.2vmin; font-size: 4.2vmin; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; background: #000a; }
@@ -133,3 +133,13 @@ h2 { font-size: 1.05rem; margin: 0 0 8px; color: var(--dim); text-transform: upp
 .ed-clue input[type=checkbox] { width: 20px; min-height: 20px; }
 .login { max-width: 360px; margin: 18vh auto; padding: 0 16px; }
 @media (max-width: 640px) { .lobby { grid-template-columns: 1fr; } }
+
+/* ---------- timers & sound ---------- */
+.timer { position: absolute; left: 0; right: 0; bottom: 0; height: 1.6vmin; background: #000a; border-radius: 0 0 1.2vmin 1.2vmin; overflow: hidden; }
+.timer i { display: block; height: 100%; width: 100%; background: #fff; }
+.timer.low i { background: var(--gold); }
+.banner { display: flex; justify-content: center; align-items: center; gap: 4vmin; }
+.banner .tnum { font-variant-numeric: tabular-nums; font-weight: 900; }
+.banner.timeup { background: #b91c1c; animation: pulse .6s ease-in-out infinite; }
+.bigtimer { font-size: 9vmin; font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; margin-top: 2vmin; }
+.soundbadge { position: fixed; left: 1vmin; bottom: 1vmin; background: #b45309; color: #fff; padding: .6vmin 1.4vmin; border-radius: 1vmin; font-size: 1.8vmin; z-index: 5; }

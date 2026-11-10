@@ -13,6 +13,7 @@
 //   toJSON() / restore(data)  saved with the room
 //   init()                    optional, called when the game is newly chosen
 //   contentChanged(setId)     optional, a question set was saved or deleted
+//   tick()                    optional, called ~4x a second; the place to expire timers
 //
 // The game scores by changing `unit.score` on room.units(): players in
 // individual mode, teams in team mode.
@@ -34,6 +35,8 @@ export class Room {
     this.teams = []; // {id, name, color, score}
     this.gameId = null;
     this.game = null;
+    this.settings = { sound: true, volume: 70 }; // sound plays on the TV
+    this.soundPing = 0; // bumped by the host's "test sound" so the TV can play one
     this.connected = new Set(); // runtime only: player ids with a live socket
   }
 
@@ -44,7 +47,7 @@ export class Room {
   // ---------- persistence ----------
   toJSON() {
     return {
-      version: VERSION, nextId: this.nextId, mode: this.mode, players: this.players, teams: this.teams,
+      version: VERSION, nextId: this.nextId, mode: this.mode, players: this.players, teams: this.teams, settings: this.settings,
       gameId: this.gameId, game: this.game?.toJSON() ?? null,
     };
   }
@@ -55,6 +58,7 @@ export class Room {
     this.mode = data.mode ?? 'players';
     this.players = data.players ?? [];
     this.teams = data.teams ?? [];
+    this.settings = { sound: true, volume: 70, ...data.settings };
     this.gameId = null; this.game = null;
     if (data.gameId && this.games[data.gameId]) {
       this.gameId = data.gameId;
@@ -173,6 +177,18 @@ export class Room {
     this.changed();
   }
   resetScores() { this.units().forEach((u) => { u.score = 0; }); }
+  setRoomSettings({ sound, volume }) {
+    if (typeof sound === 'boolean') this.settings.sound = sound;
+    if (volume !== undefined) {
+      const v = int(volume);
+      if (!(v >= 0 && v <= 100)) fail('Volume must be 0 to 100');
+      this.settings.volume = v;
+    }
+    this.changed();
+  }
+  testSound() { this.soundPing += 1; this.changed(); }
+  /** Called by the server a few times a second so games can run timers. */
+  tick() { this.game?.tick?.(); }
 
   /** A host action: roster actions are handled here, anything else goes to the active game. */
   act(action, args = {}) {
@@ -186,6 +202,8 @@ export class Room {
       case 'removePlayer': return this.removePlayer(args.id);
       case 'clearRoster': return this.clearRoster();
       case 'adjustScore': return this.adjustScore(args.id, { delta: args.delta, set: args.set });
+      case 'setRoomSettings': return this.setRoomSettings(args);
+      case 'testSound': return this.testSound();
       default:
         if (!this.game) throw new GameError('Pick a game first');
         return this.game.act(action, args);
@@ -218,6 +236,7 @@ export class Room {
       units: this.#unitViews(),
       gameId: this.gameId,
       inProgress: this.inProgress(),
+      settings: { ...this.settings, ping: this.soundPing },
     };
   }
   /** What the TV and phones may see. */

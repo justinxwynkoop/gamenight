@@ -52,12 +52,19 @@ function flash(text) {
 }
 const act = (a, args) => net.act(a, args);
 
-// Re-rendering replaces the DOM; keep whatever the host was typing.
+// Every update redraws the page, which would wipe a half-typed number (a player joining is enough).
+// So remember what was typed into any field marked data-k, and put it back after each redraw. Pressing
+// a button (Save, Add, Set...) ends the edit: the next redraw shows what the server now has.
+const drafts = {};
+app.addEventListener('input', (e) => { const k = e.target.dataset?.k; if (k) drafts[k] = e.target.value; });
+app.addEventListener('click', (e) => { if (e.target.closest('button')) for (const k of Object.keys(drafts)) delete drafts[k]; }, true);
+
 function render() {
   const ae = document.activeElement;
   const k = ae?.dataset?.k;
   const keep = k ? { k, value: ae.value, s: ae.selectionStart, e: ae.selectionEnd } : null;
   app.replaceChildren(authed && view ? main() : login());
+  for (const el of app.querySelectorAll('[data-k]')) if (el.dataset.k in drafts) el.value = drafts[el.dataset.k];
   if (keep) {
     const el = app.querySelector(`[data-k="${keep.k}"]`);
     if (el) { el.value = keep.value; el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch { /* not text */ } }
@@ -87,7 +94,8 @@ function main() {
     game?.cards,
     lobby && rosterCard(),
     room.inProgress && scoresCard(),
-    playersCard());
+    playersCard(),
+    soundCard());
 }
 
 function topBar(gameName, game) {
@@ -119,6 +127,16 @@ function rosterCard() {
         h('button', { class: 'btn small', onclick: () => act('removeTeam', { id: t.id }) }, 'Remove')))),
       h('div', { class: 'row', style: { marginTop: '8px' } }, h('div', { class: 'grow' }, teamName),
         h('button', { class: 'btn', onclick: () => { act('addTeam', { name: teamName.value }); teamName.value = ''; } }, 'Add team'))]);
+}
+
+function soundCard() {
+  const { settings } = view.room;
+  const vol = h('input', { type: 'range', min: 0, max: 100, step: 5, value: settings.volume, style: { flex: '1 1 160px', minHeight: '30px' }, 'data-k': 'vol',
+    onchange: (e) => act('setRoomSettings', { volume: e.target.value }) });
+  return h('div', { class: 'card' }, h('h2', {}, 'Sound (plays on the TV)'),
+    h('div', { class: 'row' },
+      h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: settings.sound, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setRoomSettings', { sound: e.target.checked }) }), 'Sound on'),
+      vol, h('button', { class: 'btn small', onclick: () => act('testSound') }, 'Test on TV')));
 }
 
 function scoresCard() {

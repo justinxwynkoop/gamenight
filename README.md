@@ -54,6 +54,13 @@ Other things the host can do: adjust, set or rename any score; give the buzz to 
 player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
 
+**Timers.** When someone buzzes in (or a Daily Double wager is set) a countdown starts on the
+TV, the host page and the buzzing player's phone: 10 seconds by default. At zero the TV flashes
+TIME'S UP and plays a buzzer, and the host still decides: tap Correct or Wrong, or **Restart
+timer** to give more time. Final Jeopardy has its own countdown (30 seconds) that starts when the
+clue is shown. Set the times, or 0 to turn a timer off, in the lobby. Tick **Time-out counts as
+wrong** if you'd rather it be scored automatically.
+
 **Early buzzes.** Pressing before the host opens buzzers locks that player out for
 a short time after they open (default 500 ms, adjustable or off in the lobby).
 
@@ -68,6 +75,34 @@ Daily Double flags. If no Daily Double is flagged, one is placed at random each
 game. Sets are plain JSON files in `data/<game>/` (for Jeopardy, `data/jeopardy/`),
 so you can also edit or share them as files. `data/jeopardy/family-night.json`
 is a sample.
+
+## Sound
+
+The TV plays short sound effects: buzzers open, a buzz-in, correct, wrong, a Daily Double, Final
+Jeopardy, time's up, and a tick for the last five seconds. They are generated in the browser, so
+there is nothing to install. The host can turn sound off, change the volume, or press **Test on
+TV** at the bottom of the host page.
+
+Browsers keep sound off until a page has had a click or key press. On the Pi, the kiosk launch
+line in the setup steps allows it from the start. On a laptop, click once on the TV page (a small
+notice appears until you do).
+
+### Your own sounds
+
+To use your own audio, put files in `data/sounds/` on the Pi. Use these names (`.mp3`, `.wav`,
+`.ogg` or `.m4a`) and the game uses your file instead of the built-in sound:
+
+`open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`
+(Final Jeopardy sting), `fanfare` (winner), and **`think`**: music that plays during the Final
+Jeopardy countdown and stops when time is up (a 30-second file matches the default time). It only
+plays if you provide the file.
+
+Files are read when the TV page loads, so reload it after adding some. Anything with a different
+name is ignored.
+
+`data/sounds/` is git-ignored on purpose: this repository is public, so audio you didn't create
+(a TV show's music, for instance) can't be accidentally published from here. Whether using such
+audio at a private family game night suits you is your call; the app just plays what you put there.
 
 ## Host PIN
 
@@ -141,7 +176,7 @@ Wi-Fi join QR at `/api/wifi-qr.svg` (for a printed table sign).
 | `PORT` | `3000` | HTTP/WebSocket port |
 | `HOST_PIN` | random, saved | Host and editor PIN |
 | `PUBLIC_URL` | detected LAN IP | Address in the join QR code |
-| `DATA_DIR` | `./data` | Question sets, saved game, PIN |
+| `DATA_DIR` | `./data` | Question sets, saved game, PIN, custom sounds |
 | `WIFI_SSID`, `WIFI_PASSWORD` | unset | Enables the Wi-Fi QR |
 
 ## Buzzers (Phase 3)
@@ -182,6 +217,7 @@ server.js               HTTP, WebSocket, saving, QR codes, question-set API
 public/                 the four pages (tv, host, play, editor): thin shells
 public/games/jeopardy/  Jeopardy's own TV, host, phone and editor screens
 data/<game>/            question sets for each game
+data/sounds/            your own sound files (not in git)
 test/                   node --test suites (room, Jeopardy rules, full server)
 deploy/                 systemd unit
 ```
@@ -197,7 +233,8 @@ buzzer connection. A game supplies its rules and its screens.
    `inProgress()`, `act(action, args)` (host actions), `onPlayer(player, msg)`
    (a message from a phone or buzzer; may return a reply), `publicView()` and
    `hostView()` (what the TV and phones may see / what the host may see),
-   `toJSON()` and `restore()`. Optional: `init()` and `contentChanged(setId)`.
+   `toJSON()` and `restore()`. Optional: `init()`, `contentChanged(setId)` and `tick()` (called a few times a second, for timers).
+   A game's TV screen can also export `onChange(prev, view, sound)` to play sounds.
    The full contract is the comment at the top of `room.js`. Score by changing
    `unit.score` on `room.units()`. Keep it free of sockets and files so it can be
    tested like `games/jeopardy/game.js`.
@@ -211,5 +248,5 @@ buzzer connection. A game supplies its rules and its screens.
 
 ## Not built yet
 
-From the plan: ESP32 firmware and enclosures (Phases 3-4), sound effects, and
-a timer on buzzed answers. Next game: a Family Feud-style survey game.
+From the plan: ESP32 firmware and enclosures (Phases 3-4). Next game: a Family
+Feud-style survey game.

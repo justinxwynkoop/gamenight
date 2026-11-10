@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, cpSync, rmSync } from 'node:fs';
+import { mkdtempSync, cpSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
@@ -62,6 +62,22 @@ test('server end to end', async (t) => {
     const h = { 'x-host-pin': PIN };
     assert.equal((await fetch(`${base}/api/games/nope/sets`, { headers: h })).status, 404);
     assert.equal((await fetch(`${base}/api/sets`, { headers: h })).status, 404); // the old, un-namespaced route is gone
+  });
+
+  await t.test('custom sounds in data/sounds are listed and served; other names are refused', async () => {
+    assert.deepEqual(await (await fetch(`${base}/api/sounds`)).json(), []);
+    mkdirSync(path.join(dataDir, 'sounds'), { recursive: true });
+    writeFileSync(path.join(dataDir, 'sounds', 'think.mp3'), Buffer.from([1, 2, 3, 4]));
+    writeFileSync(path.join(dataDir, 'sounds', 'Bad Name.mp3'), Buffer.from([9]));   // not a name the game would use
+    writeFileSync(path.join(dataDir, 'sounds', 'notes.txt'), 'x');
+    assert.deepEqual(await (await fetch(`${base}/api/sounds`)).json(), [{ name: 'think', url: '/sounds/think.mp3' }]);
+    const file = await fetch(`${base}/sounds/think.mp3`);
+    assert.equal(file.status, 200);
+    assert.equal(file.headers.get('content-type'), 'audio/mpeg');
+    assert.deepEqual([...Buffer.from(await file.arrayBuffer())], [1, 2, 3, 4]);
+    assert.equal((await fetch(`${base}/sounds/notes.txt`)).status, 404);
+    assert.equal((await fetch(`${base}/sounds/..%2fstate.json`)).status, 404);
+    assert.equal((await fetch(`${base}/sounds/missing.mp3`)).status, 404);
   });
 
   await t.test('static files stay inside public/', async () => {
@@ -126,6 +142,23 @@ test('server end to end', async (t) => {
     const again = await connectAs(port, { t: 'hello', role: 'player', token: annToken });
     await again.until((c) => c.view?.room?.me?.name === 'Ann');
     assert.ok(!again.msgs.some((m) => m.t === 'need-join'));
+  });
+
+  await t.test('the server expires an answer timer on its own', async () => {
+    host.act('setSettings', { answerSeconds: 1 });
+    host.act('select', { c: 1, r: 0 });
+    await tv.until((c) => c.view?.game?.clue?.step === 'reading');
+    host.act('openBuzzers');
+    await tv.until((c) => c.view?.game?.clue?.step === 'open');
+    bo.send({ t: 'buzz' });
+    await tv.until((c) => c.view?.game?.clue?.timer, 'timer started');
+    assert.equal(tv.view.game.clue.timer.timedOut, false);
+    assert.ok(tv.view.game.clue.timer.leftMs <= 1000);
+    await tv.until((c) => c.view?.game?.clue?.timer?.timedOut, 'timer expiry');   // pushed by the server, no host action
+    assert.equal(tv.view.game.clue.step, 'answering');                           // the host still decides
+    host.act('reveal'); host.act('closeClue');
+    await tv.until((c) => c.view?.game?.status === 'board');
+    host.act('setSettings', { answerSeconds: 10 });
   });
 
   await t.test('game survives a server restart', async () => {

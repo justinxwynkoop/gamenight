@@ -10,6 +10,21 @@ let sets = [];
 const sw = (c) => h('span', { class: 'swatch', style: { background: c } });
 const nameOf = (id) => unitById(view, id)?.name ?? '?';
 
+// A live countdown label: the server sends the time left when something changes and we count down from there.
+let ticking = null; // { leftMs, at, el }
+setInterval(() => {
+  if (ticking?.el.isConnected) ticking.el.textContent = `${Math.max(0, Math.ceil((ticking.leftMs - (performance.now() - ticking.at)) / 1000))}s`;
+}, 250);
+/** A pill showing the time left (or TIME'S UP) for a timer from the view, or nothing without one. */
+function timerPill(timer) {
+  ticking = null;
+  if (!timer) return null;
+  if (timer.timedOut) return h('span', { class: 'pill', style: { background: '#b91c1c' } }, 'TIME’S UP');
+  const el = h('span', { class: 'pill live' }, `${Math.ceil(timer.leftMs / 1000)}s`);
+  ticking = { leftMs: timer.leftMs, at: performance.now(), el };
+  return el;
+}
+
 /** Returns { label, toolbar, cards } for the page to lay out. */
 export function render(rawView, ctx) {
   view = flat(rawView);
@@ -43,12 +58,20 @@ function setupCard(v) {
     !v.setId && h('option', { value: '' }, '— choose a question set —'),
     sets.map((s) => h('option', { value: s.id, selected: s.id === v.setId }, s.title)));
   const pen = h('input', { type: 'number', min: 0, max: 5000, step: 100, value: v.settings.penaltyMs, style: { width: '110px' }, 'data-k': 'pen' });
+  const ans = h('input', { type: 'number', min: 0, max: 120, value: v.settings.answerSeconds, style: { width: '80px' }, 'data-k': 'ans' });
+  const fin = h('input', { type: 'number', min: 0, max: 300, value: v.settings.finalSeconds, style: { width: '80px' }, 'data-k': 'fin' });
   return h('div', { class: 'card' }, h('h2', {}, 'Jeopardy setup'),
     h('label', {}, 'Question set'), setSel,
     h('label', {}, 'Early buzz penalty'),
     h('div', { class: 'row' },
       h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.earlyPenalty, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { earlyPenalty: e.target.checked }) }), 'Lock out early buzzers for'),
       pen, h('span', { class: 'tag' }, 'ms'), h('button', { class: 'btn small', onclick: () => act('setSettings', { penaltyMs: pen.value }) }, 'Save')),
+    h('label', {}, 'Timers (seconds, 0 = off)'),
+    h('div', { class: 'row' },
+      h('span', { class: 'tag' }, 'Answer'), ans,
+      h('span', { class: 'tag' }, 'Final'), fin,
+      h('label', { class: 'row', style: { margin: 0, color: 'inherit' } }, h('input', { type: 'checkbox', checked: v.settings.autoWrong, style: { width: '22px', minHeight: '22px' }, onchange: (e) => act('setSettings', { autoWrong: e.target.checked }) }), 'Time-out counts as wrong'),
+      h('button', { class: 'btn small', onclick: () => act('setSettings', { answerSeconds: ans.value, finalSeconds: fin.value }) }, 'Save')),
     h('div', { class: 'row', style: { marginTop: '16px' } },
       h('button', { class: 'btn ok grow', disabled: !v.setId || !v.units.length, onclick: () => act('startGame') },
         v.units.length ? `Start game (${v.units.length} ${v.mode === 'teams' ? 'teams' : 'players'})` : 'Waiting for players…')));
@@ -97,7 +120,8 @@ function clueCard(v) {
       h('div', { class: 'row' }, give, h('button', { class: 'btn', onclick: () => act('reveal') }, 'Nobody — reveal answer')));
   } else if (cl.step === 'answering') {
     const u = unitById(v, cl.buzzedBy);
-    body.push(h('div', { class: 'item', style: { marginTop: '12px', fontSize: '1.2rem' } }, sw(u?.color ?? '#fff'), h('span', { class: 'nm' }, `${u?.name ?? '?'} is answering`), cl.dd && h('span', { class: 'pill' }, `wager ${money(cl.wager)}`)),
+    body.push(h('div', { class: 'item', style: { marginTop: '12px', fontSize: '1.2rem' } }, sw(u?.color ?? '#fff'), h('span', { class: 'nm' }, `${u?.name ?? '?'} is answering`), cl.dd && h('span', { class: 'pill' }, `wager ${money(cl.wager)}`), timerPill(cl.timer),
+        h('button', { class: 'btn small', onclick: () => act('restartTimer') }, 'Restart timer')),
       h('div', { class: 'row', style: { marginTop: '10px' } },
         h('button', { class: 'btn ok grow', onclick: () => act('correct') }, `✔ Correct (+${money(cl.value)})`),
         h('button', { class: 'btn bad grow', onclick: () => act('wrong') }, `✘ Wrong (−${money(cl.value)})`)),
@@ -134,7 +158,7 @@ function finalCard(v) {
     return item;
   });
   const next = f.step === 'wager' ? h('button', { class: 'btn primary', onclick: () => act('finalNext') }, 'Show clue on TV')
-    : f.step === 'clue' ? h('button', { class: 'btn primary', onclick: () => act('finalNext') }, 'Time’s up — start judging')
+    : f.step === 'clue' ? [timerPill(f.timer), h('button', { class: 'btn small', onclick: () => act('restartTimer') }, 'Restart timer'), h('button', { class: 'btn primary', onclick: () => act('finalNext') }, 'Time’s up — start judging')]
       : f.step === 'judge' ? h('button', { class: 'btn', onclick: () => act('finishFinal') }, 'Skip the rest, show results')
         : h('button', { class: 'btn primary', onclick: () => act('finishGame') }, 'Show winner');
   return h('div', { class: 'card' }, head, h('div', { class: 'list', style: { marginTop: '12px' } }, rows), h('div', { class: 'row', style: { marginTop: '12px' } }, next));

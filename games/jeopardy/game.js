@@ -1,5 +1,5 @@
-// Jeopardy rules. No network, no files, no timers. The room supplies players,
-// teams and scores; this class owns the board, the clue flow and Final Jeopardy.
+// Jeopardy rules. No network, no files, no real timers: time-outs are driven by tick().
+// The room supplies players, teams and scores; this class owns the board, the clue flow and Final Jeopardy.
 //
 // Fairness: buzz() is called in the order messages arrive at the server and
 // stamps the press with the server clock. Device clocks are never consulted.
@@ -36,7 +36,7 @@ export function validateSet(set) {
 export class JeopardyGame {
   constructor(room) {
     this.room = room;
-    this.settings = { earlyPenalty: true, penaltyMs: 500 };
+    this.settings = { earlyPenalty: true, penaltyMs: 500, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
     this.setId = null;
     this.set = null; // loaded question set
     this.run = this.#blankRun('lobby');
@@ -65,6 +65,12 @@ export class JeopardyGame {
     this.set = this.setId ? this.room.loadContent(GAME, this.setId) : null;
     this.run = { ...this.#blankRun('lobby'), ...data.run };
     if (this.run.status !== 'lobby' && !this.set) this.run = this.#blankRun('lobby');
+    // The clock restarts with the server, so times saved before are meaningless: a leftover
+    // penalty could lock a player out for ages. Clear them and give a running timer its full time.
+    const cl = this.run.clue;
+    if (cl) { cl.penaltyUntil = {}; cl.openedAt = null; if (cl.timer && !cl.timer.timedOut) cl.timer.deadline = this.room.now() + cl.timer.totalMs; }
+    const f = this.run.final;
+    if (f?.timer && !f.timer.timedOut) f.timer.deadline = this.room.now() + f.timer.totalMs;
   }
 
   // ---------- host actions & player messages ----------
@@ -85,6 +91,7 @@ export class JeopardyGame {
       case 'wrong': return this.wrong();
       case 'reveal': return this.reveal();
       case 'closeClue': return this.closeClue();
+      case 'restartTimer': return this.restartTimer();
       case 'startFinal': return this.startFinal();
       case 'setFinalWager': return this.setFinalWager(a.id, a.amount);
       case 'finalNext': return this.finalNext();
@@ -104,13 +111,17 @@ export class JeopardyGame {
   }
 
   // ---------- setup ----------
-  setSettings({ earlyPenalty, penaltyMs }) {
+  setSettings({ earlyPenalty, penaltyMs, answerSeconds, finalSeconds, autoWrong }) {
+    const inRange = (v, max, what) => {
+      const n = int(v);
+      if (!(n >= 0 && n <= max)) fail(`${what} must be 0 to ${max}`);
+      return n;
+    };
     if (typeof earlyPenalty === 'boolean') this.settings.earlyPenalty = earlyPenalty;
-    if (penaltyMs !== undefined) {
-      const ms = int(penaltyMs);
-      if (!(ms >= 0 && ms <= 5000)) fail('Penalty must be 0 to 5000 ms');
-      this.settings.penaltyMs = ms;
-    }
+    if (typeof autoWrong === 'boolean') this.settings.autoWrong = autoWrong;
+    if (penaltyMs !== undefined) this.settings.penaltyMs = inRange(penaltyMs, 5000, 'Penalty (ms)');
+    if (answerSeconds !== undefined) this.settings.answerSeconds = inRange(answerSeconds, 120, 'Answer time (seconds)');
+    if (finalSeconds !== undefined) this.settings.finalSeconds = inRange(finalSeconds, 300, 'Final Jeopardy time (seconds)');
     this.#changed();
   }
   chooseSet(id) {
@@ -175,7 +186,7 @@ export class JeopardyGame {
       step: dd ? 'wager' : 'reading',
       wager: null, ddUnit: dd ? this.#validControl() : null,
       buzzedBy: null, buzzedPlayer: null, buzzedAt: null,
-      lockedOut: [], early: [], penaltyUntil: {}, openedAt: null, correct: null,
+      lockedOut: [], early: [], penaltyUntil: {}, openedAt: null, correct: null, timer: null,
     };
     this.#changed();
   }
@@ -201,6 +212,7 @@ export class JeopardyGame {
     cl.value = n;
     cl.step = 'answering';
     cl.buzzedBy = u.id;
+    this.#startTimer(cl, this.settings.answerSeconds);
     this.#changed();
   }
 
@@ -235,6 +247,7 @@ export class JeopardyGame {
     cl.buzzedBy = u.id;
     cl.buzzedPlayer = p.id;
     cl.buzzedAt = t;
+    this.#startTimer(cl, this.settings.answerSeconds);
     this.#changed();
     return { ok: true, unitId: u.id, playerId: p.id };
   }
@@ -246,6 +259,7 @@ export class JeopardyGame {
     this.run.control = u.id;
     cl.correct = u.id;
     cl.step = 'revealed';
+    cl.timer = null;
     this.#markUsed(cl);
     this.#changed();
   }
@@ -253,6 +267,7 @@ export class JeopardyGame {
     const cl = this.#inClue('answering');
     const u = this.room.unit(cl.buzzedBy) ?? fail('Nobody is answering');
     u.score -= cl.value;
+    cl.timer = null;
     if (cl.dd) {
       cl.step = 'revealed';
       this.#markUsed(cl);
@@ -269,6 +284,7 @@ export class JeopardyGame {
     const cl = this.#inClue('reading', 'open', 'answering');
     cl.step = 'revealed';
     cl.buzzedBy = null;
+    cl.timer = null;
     this.#markUsed(cl);
     this.#changed();
   }
@@ -281,6 +297,7 @@ export class JeopardyGame {
     cl.buzzedBy = u.id;
     cl.buzzedPlayer = null;
     cl.buzzedAt = this.room.now();
+    this.#startTimer(cl, this.settings.answerSeconds);
     this.#changed();
   }
   /** Re-open buzzers for everyone (host undo / mistaken press). Locked-out units stay out. */
@@ -288,10 +305,45 @@ export class JeopardyGame {
     const cl = this.#inClue('answering');
     if (cl.dd) fail('Daily Doubles do not use buzzers');
     cl.buzzedBy = null; cl.buzzedPlayer = null; cl.buzzedAt = null;
+    cl.timer = null;
     cl.step = 'open';
     cl.openedAt = this.room.now();
     this.#changed();
   }
+  // ---------- timers ----------
+  /** Starts (or, with 0 seconds, clears) a countdown on a clue or on the final round. */
+  #startTimer(holder, seconds) {
+    if (!(seconds > 0)) { holder.timer = null; return; }
+    const totalMs = seconds * 1000;
+    holder.timer = { totalMs, deadline: this.room.now() + totalMs, timedOut: false };
+  }
+  /** Host: give the current answer (or the final round) its full time again. */
+  restartTimer() {
+    const cl = this.run.clue;
+    const f = this.run.final;
+    if (this.run.status === 'clue' && cl?.step === 'answering') this.#startTimer(cl, this.settings.answerSeconds);
+    else if (this.run.status === 'final' && f?.step === 'clue') this.#startTimer(f, this.settings.finalSeconds);
+    else fail('There is no answer to time right now');
+    this.#changed();
+  }
+  /** Called by the room a few times a second. Expires a timer once, when its time is up. */
+  tick() {
+    const t = this.room.now();
+    const cl = this.run.clue;
+    const f = this.run.final;
+    if (this.run.status === 'clue' && cl?.timer && !cl.timer.timedOut && t >= cl.timer.deadline) {
+      cl.timer.timedOut = true;
+      if (this.settings.autoWrong && cl.step === 'answering') this.wrong(); else this.#changed();
+    } else if (this.run.status === 'final' && f?.step === 'clue' && f.timer && !f.timer.timedOut && t >= f.timer.deadline) {
+      f.timer.timedOut = true;
+      this.#changed();
+    }
+  }
+  #timerView(holder) {
+    const tm = holder?.timer;
+    return tm ? { totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
+  }
+
   #markUsed(cl) {
     const k = key(cl.c, cl.r);
     if (!this.run.used.includes(k)) this.run.used.push(k);
@@ -353,8 +405,10 @@ export class JeopardyGame {
     if (f.step === 'wager') {
       for (const u of this.finalists()) f.wagers[u.id] ??= 0;
       f.step = 'clue';
+      this.#startTimer(f, this.settings.finalSeconds);
     } else if (f.step === 'clue') {
       f.step = 'judge';
+      f.timer = null;
     } else fail('Nothing further');
     this.#changed();
   }
@@ -403,7 +457,7 @@ export class JeopardyGame {
         step: cl.step, text: showText ? cell.clue : null,
         answer: cl.step === 'revealed' ? cell.answer : null,
         buzzedBy: cl.buzzedBy, buzzedPlayer: cl.buzzedPlayer, ddUnit: cl.ddUnit, wager: cl.wager,
-        lockedOut: cl.lockedOut, correct: cl.correct,
+        lockedOut: cl.lockedOut, correct: cl.correct, timer: this.#timerView(cl),
       };
     }
     if (run.final && set) {
@@ -411,7 +465,7 @@ export class JeopardyGame {
       const showClue = f.step !== 'wager';
       const judged = f.step === 'judge' || f.step === 'results';
       view.final = {
-        step: f.step, category: set.final.category,
+        step: f.step, category: set.final.category, timer: this.#timerView(f),
         text: showClue ? set.final.clue : null,
         answer: f.step === 'results' ? set.final.answer : null,
         finalists: this.finalists().map((u) => ({

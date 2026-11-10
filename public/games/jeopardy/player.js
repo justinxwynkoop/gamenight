@@ -5,6 +5,7 @@ import { flat } from './flat.js';
 
 export function mount(container, { send, flash }) {
   let view = null;
+  let receivedAt = 0;   // when the last state arrived, so a countdown can be drawn from it
   let screenKey = '';
   let penaltyUntil = 0;
   let buzzBtn; let statusLine; let peek;
@@ -41,7 +42,12 @@ export function mount(container, { send, flash }) {
       return { label: '—', cls: 'out', line: cl.answer ? `Answer: ${cl.answer}` : '' };
     }
     if (cl.step === 'answering') {
-      if (cl.buzzedBy === uid) return { label: 'YOU!', cls: 'won', line: 'You buzzed first — answer out loud', color: mine.color };
+      if (cl.buzzedBy === uid) {
+        const tm = cl.timer;
+        const left = tm && !tm.timedOut ? Math.max(0, Math.ceil((tm.leftMs - (performance.now() - receivedAt)) / 1000)) : null;
+        const line = tm?.timedOut ? 'Time’s up!' : left !== null ? `You buzzed first — answer out loud · ${left}s` : 'You buzzed first — answer out loud';
+        return { label: 'YOU!', cls: 'won', line, color: mine.color };
+      }
       return { label: 'LOCKED', cls: 'out', line: `${unitById(v, cl.buzzedBy)?.name ?? 'Someone'} is answering` };
     }
     if (cl.lockedOut.includes(uid)) return { label: 'OUT', cls: 'out', line: 'You answered wrong — locked out for this clue' };
@@ -106,10 +112,13 @@ export function mount(container, { send, flash }) {
   }
 
   // While buzzers are open, re-check once a moment so a "too early" penalty clears itself.
-  const timer = setInterval(() => { if (penaltyUntil && view?.game?.clue?.step === 'open') refresh(); }, 250);
+  const timer = setInterval(() => {
+    const clue = view?.game?.clue;
+    if ((penaltyUntil && clue?.step === 'open') || (clue?.step === 'answering' && clue.timer && !clue.timer.timedOut)) refresh();
+  }, 250);
 
   return {
-    update(v) { view = v; refresh(); },
+    update(v) { view = v; receivedAt = performance.now(); refresh(); },
     onMessage(m) {
       if (m.t === 'buzz-result') onBuzzResult(m);
       else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer saved');

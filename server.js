@@ -17,8 +17,10 @@ const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : pat
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const PUBLIC_DIR = path.join(here, 'public');
+const SOUNDS_DIR = path.join(DATA_DIR, 'sounds');
 const PORT = Number(process.env.PORT ?? 3000);
 for (const id of Object.keys(GAMES)) mkdirSync(path.join(DATA_DIR, id), { recursive: true });
+mkdirSync(SOUNDS_DIR, { recursive: true });
 
 // ---------- config: host PIN ----------
 function loadConfig() {
@@ -90,6 +92,11 @@ try { room.restore(JSON.parse(readFileSync(STATE_FILE, 'utf8'))); } catch { /* f
 // With a single game installed there is nothing to choose, so pick it.
 if (!room.gameId && Object.keys(GAMES).length === 1) room.chooseGame(Object.keys(GAMES)[0]);
 
+// ---------- custom sounds: data/sounds/<name>.mp3|wav|ogg|m4a replace the built-in ones ----------
+const SOUND_FILE = /^[a-z0-9-]+\.(mp3|wav|ogg|m4a)$/;
+const SOUND_TYPES = { '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4' };
+const listSounds = () => readdirSync(SOUNDS_DIR).filter((f) => SOUND_FILE.test(f)).map((f) => ({ name: f.replace(/\.[^.]+$/, ''), url: `/sounds/${f}` }));
+
 // ---------- HTTP ----------
 const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host': 'host.html', '/editor': 'editor.html' };
 const TYPES = {
@@ -109,6 +116,7 @@ const readBody = (req, limit = 1_000_000) => new Promise((resolve, reject) => {
 
 async function handleApi(req, res, url) {
   if (url.pathname === '/api/info') return send(res, 200, { joinUrl, wifi: !!wifiString });
+  if (url.pathname === '/api/sounds') return send(res, 200, listSounds());
   if (url.pathname === '/api/qr.svg') return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), 'image/svg+xml');
   if (url.pathname === '/api/wifi-qr.svg') {
     if (!wifiString) return send(res, 404, { error: 'Wi-Fi QR not configured (set WIFI_SSID)' });
@@ -146,6 +154,11 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+    if (url.pathname.startsWith('/sounds/')) {
+      const file = url.pathname.slice('/sounds/'.length);
+      if (!SOUND_FILE.test(file) || !existsSync(path.join(SOUNDS_DIR, file))) return send(res, 404, 'Not found', 'text/plain');
+      return send(res, 200, readFileSync(path.join(SOUNDS_DIR, file)), SOUND_TYPES[path.extname(file)]);
+    }
     const file = PAGES[url.pathname] ?? decodeURIComponent(url.pathname.slice(1));
     const full = path.resolve(PUBLIC_DIR, file);
     if (!full.startsWith(PUBLIC_DIR + path.sep) || !existsSync(full)) return send(res, 404, 'Not found', 'text/plain');
@@ -244,6 +257,9 @@ setInterval(() => {
     try { ws.ping(); } catch { /* closing */ }
   }
 }, 10_000).unref();
+
+// Games with timers (answer countdowns) expire them from here.
+setInterval(() => room.tick(), 250).unref();
 
 const stop = () => { saveNow(); process.exit(0); };
 process.on('SIGINT', stop);
