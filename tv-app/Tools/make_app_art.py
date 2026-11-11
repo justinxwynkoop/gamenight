@@ -241,9 +241,60 @@ def fgn_flat(w, h, wide=False):
 # ---------- Home screen tiles ----------
 
 def singo_tile(w, h):
-    img = mi.back_layer(w, h).convert("RGBA")
-    img.alpha_composite(mi.middle_layer(w, h, mi.ICON_BALLS))
-    img.alpha_composite(mi.front_layer(w, h, 0.34, 0.085))
+    """Song bingo: a bingo card with S-I-N-G-O across the top, big title, glowing bingo balls."""
+    img = vgrad(w, h, (122, 34, 176), (38, 18, 112))
+    img.alpha_composite(radial(w, h, w * 0.2, h * 0.15, h * 0.8, (255, 90, 170), 0.34))
+    img.alpha_composite(radial(w, h, w * 0.9, h * 0.95, h * 0.8, (70, 130, 255), 0.36))
+
+    # The card: a header row of coloured S-I-N-G-O tiles, then rows of notes, with a gold star in the middle.
+    card = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    cd = ImageDraw.Draw(card)
+    cols, rows = 5, 6
+    gap = h * 0.016
+    mx, my = w * 0.07, h * 0.05
+    cw = (w - 2 * mx - gap * (cols - 1)) / cols
+    ch = (h - 2 * my - gap * (rows - 1)) / rows
+    cd.rounded_rectangle([mx - gap, my - gap, w - mx + gap, h - my + gap], radius=h * 0.03, fill=(18, 6, 56, 235))
+    letter_font = ImageFont.truetype(BEBAS, int(ch * 0.78))
+    note_font = ImageFont.truetype(mi.NOTE_FONT, int(ch * 0.5))
+    for r in range(rows):
+        for c in range(cols):
+            x, y = mx + c * (cw + gap), my + r * (ch + gap)
+            box = [x, y, x + cw, y + ch]
+            if r == 0:
+                col = mi.BALL_COLORS[c % len(mi.BALL_COLORS)]
+                cd.rounded_rectangle(box, radius=h * 0.016, fill=col + (255,))
+                cd.text((x + cw / 2, y + ch / 2 + h * 0.004), "SINGO"[c], font=letter_font, fill=(255, 255, 255, 255), anchor="mm")
+            elif (r, c) == (3, 2):
+                cd.rounded_rectangle(box, radius=h * 0.016, fill=(255, 196, 40, 70))
+                cd.text((x + cw / 2, y + ch / 2), "★", font=note_font, fill=(255, 210, 70, 255), anchor="mm")
+            else:
+                cd.rounded_rectangle(box, radius=h * 0.016, fill=(255, 255, 255, 30))
+                cd.text((x + cw / 2, y + ch / 2), "♪♫"[(r + c) % 2], font=note_font, fill=(255, 255, 255, 105), anchor="mm")
+    img.alpha_composite(card)
+
+    # Darken the middle so the title reads.
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.31, w * 1.02, h * 0.77], radius=h * 0.12, fill=(20, 6, 70, 232))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.05)))
+
+    # Bingo balls tumbling in from the corners.
+    balls = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    # Kept to the bottom corners so the S-I-N-G-O header stays clear.
+    mi.draw_ball(balls, 0.075 * w, 0.855 * h, 0.14 * h, mi.BALL_COLORS[0], "♪")
+    mi.draw_ball(balls, 0.925 * w, 0.865 * h, 0.14 * h, mi.BALL_COLORS[1], "♫")
+    mi.draw_ball(balls, 0.215 * w, 0.915 * h, 0.075 * h, mi.BALL_COLORS[3], "♫")
+    mi.draw_ball(balls, 0.80 * w, 0.93 * h, 0.07 * h, mi.BALL_COLORS[2], "♪")
+    img.alpha_composite(balls)
+
+    front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    title_font = ImageFont.truetype(BEBAS, int(h * 0.36))
+    gradient_text(front, (w / 2, h * 0.505), "SINGO NIGHT", title_font, (255, 255, 255), (214, 196, 255),
+                  stroke=int(h * 0.011), stroke_fill=(52, 14, 110, 255), shadow=0.035, glow=(255, 150, 220, 150))
+    tag_font = ImageFont.truetype(mi.SUB_FONT, int(h * 0.058))
+    gradient_text(front, (w / 2, h * 0.685), "NAME THAT SONG", tag_font, (255, 224, 110), (255, 178, 40),
+                  shadow=0.06, spacing=h * 0.03)
+    img.alpha_composite(front)
     return img.convert("RGB")
 
 
