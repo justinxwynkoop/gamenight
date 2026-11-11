@@ -1,0 +1,233 @@
+{
+  "room": {
+    "mode": "players",
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#14b8a6",
+        "score": 600,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": -400,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#3b82f6",
+        "score": 200,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p4",
+        "name": "Grandma",
+        "color": "#d946ef",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Family Night Sampler",
+    "settings": {
+      "earlyPenalty": true,
+      "penaltyMs": 500,
+      "buzzSeconds": 10,
+      "answerSeconds": 10,
+      "finalSeconds": 30,
+      "autoWrong": false
+    },
+    "status": "done",
+    "view": "board",
+    "title": "Family Night Sampler",
+    "control": "p3",
+    "categories": [
+      "Around the World",
+      "Food & Drink",
+      "Movie Night",
+      "Science & Nature",
+      "Name That Decade",
+      "Word Play"
+    ],
+    "board": [
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": true
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": true
+        },
+        {
+          "value": 400,
+          "used": true
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ]
+    ],
+    "clue": null,
+    "final": {
+      "step": "results",
+      "category": "U.S. Presidents",
+      "timer": null,
+      "text": "He was the first U.S. president to live in the White House.",
+      "answer": "John Adams",
+      "finalists": [
+        {
+          "id": "p1",
+          "wagered": true,
+          "answered": true,
+          "wager": 200,
+          "answer": "John Adams",
+          "result": true,
+          "judged": true
+        },
+        {
+          "id": "p3",
+          "wagered": true,
+          "answered": true,
+          "wager": 200,
+          "answer": "Thomas Jefferson",
+          "result": false,
+          "judged": true
+        }
+      ]
+    }
+  }
+}

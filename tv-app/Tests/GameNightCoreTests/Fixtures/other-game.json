@@ -1,0 +1,20 @@
+{
+  "room": {
+    "mode": "players",
+    "teams": [],
+    "units": [],
+    "gameId": "feud",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "feud",
+    "lobbyTitle": "Family Feud",
+    "status": "lobby",
+    "rounds": []
+  }
+}

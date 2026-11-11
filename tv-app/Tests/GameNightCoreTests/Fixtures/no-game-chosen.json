@@ -1,0 +1,15 @@
+{
+  "room": {
+    "mode": "players",
+    "teams": [],
+    "units": [],
+    "gameId": null,
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": null
+}

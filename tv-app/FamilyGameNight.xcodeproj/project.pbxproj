@@ -179,6 +179,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Game Night";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Singo Night plays songs from the Apple Music library on this Apple TV.";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
@@ -204,6 +205,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Game Night";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Singo Night plays songs from the Apple Music library on this Apple TV.";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;

@@ -1,22 +1,56 @@
 import SwiftUI
 
-/// Placeholder for the Jeopardy screen. This will connect to the Game Night
-/// server (github.com/justinxwynkoop/gamenight) as its TV display and draw the
-/// board; see the roadmap in the README.
+/// The Jeopardy tile: asks for the server's address the first time, then shows
+/// the game on the TV. Everything else (buzzing, judging, picking clues) happens
+/// on phones, against the Game Night server (github.com/justinxwynkoop/gamenight).
 struct JeopardyRootView: View {
     let onExit: () -> Void
 
+    @State private var client = GameNightClient()
+    @State private var address: ServerAddress? = ServerSettings.load()
+    @State private var editing = (ServerSettings.load() == nil)
+
     var body: some View {
-        VStack(spacing: 50) {
-            Text("Jeopardy")
-                .font(.system(size: 96, weight: .bold))
-            Text("Coming soon. This screen will connect to your Game Night server and show the board.")
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: 1100)
-            Button("Back to games", action: onExit)
+        // A ZStack, not a Group: onAppear/onDisappear below must fire once for the
+        // whole Jeopardy screen, not each time the form and display swap places.
+        ZStack {
+            if editing || address == nil {
+                ServerAddressView(
+                    initialText: address?.text ?? "",
+                    onConnect: connect,
+                    onBack: back
+                )
+            } else {
+                JeopardyDisplayView(
+                    client: client,
+                    onChangeServer: { editing = true },
+                    onExit: onExit
+                )
+            }
         }
-        .onExitCommand(perform: onExit)
+        .onAppear {
+            if let address, !editing { client.connect(to: address) }
+        }
+        .onDisappear { client.disconnect() }
+    }
+
+    /// Returns an error message to show, or nil once connected.
+    private func connect(_ text: String) -> String? {
+        guard let parsed = ServerAddress.parse(text) else {
+            return "That doesn't look like an address. Try something like 192.168.1.50:3000 or gamenight.local."
+        }
+        ServerSettings.save(parsed)
+        address = parsed
+        client.connect(to: parsed)
+        editing = false
+        return nil
+    }
+
+    private func back() {
+        if address == nil {
+            onExit()
+        } else {
+            editing = false
+        }
     }
 }

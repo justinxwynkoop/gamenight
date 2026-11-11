@@ -5,7 +5,7 @@ A private Apple TV app for family game nights. Open it and pick a game:
 | Game | What it is | Status |
 | ---- | ---------- | ------ |
 | **Singo Night** | Bingo with songs. Plays a short clip of each song from an Apple Music playlist, fades in hints, then reveals the answer. | Working (moved in from the `singo` repo) |
-| **Jeopardy** | Trivia board on the TV, phones as buzzers. The Apple TV is the TV display for the [`gamenight`](https://github.com/justinxwynkoop/gamenight) server. | Placeholder screen; see the [roadmap](#roadmap) |
+| **Jeopardy** | Trivia board on the TV, phones as buzzers. The Apple TV is the TV display for the [`gamenight`](https://github.com/justinxwynkoop/gamenight) server. | Built (display only); see [Jeopardy on the TV](#jeopardy-on-the-tv) |
 
 On the home screen, moving the remote highlights a tile: it grows, and the
 background glows in that game's colour. Click to open a game. Menu goes back to
@@ -14,8 +14,8 @@ the game picker.
 Family only: installed from Xcode, never the App Store or TestFlight.
 
 > **Not yet built or tested.** This was written without Xcode. Expect a round of
-> build fixes on first open, then check on a real Apple TV that the Menu button
-> and focus behave (see [First things to check](#first-things-to-check)).
+> build fixes on first open, then check on a real Apple TV (see
+> [First things to check](#first-things-to-check)).
 
 ## First-time setup
 
@@ -152,11 +152,25 @@ FamilyGameNight/
     Core/                    Game rules, no Apple frameworks (unit tested)
     Music/                   MusicKit, playback, round controller
     Views/                   SwiftUI screens
-  GameNight/
-    JeopardyRootView.swift   Placeholder for the Jeopardy TV display
+  GameNight/                 The Jeopardy TV display
+    JeopardyRootView.swift   Asks for the server address once, then shows the display
+    GameNightClient.swift    WebSocket connection to the server (joins as the TV)
+    ServerSettings.swift     Remembers the server address
+    Core/                    No Apple frameworks (unit tested)
+      ServerState.swift      The data the server sends, as Swift types
+      DisplayScreen.swift    Which screen to show; ranking and placing
+      Countdown.swift        Local countdown between server updates
+      ServerAddress.swift    Parsing what you type: host, port, URLs
+      Formatting.swift       Money, join address, player colours
+    Display/                 SwiftUI screens
+      JeopardyDisplayView    Picks the screen for the current state
+      Lobby, Board, Clue (and Daily Double), Final, Leaderboard, Winner
+      Status screens, address entry, QR code, score panel, timers, theme
   Assets.xcassets            App icon, Top Shelf, home screen tiles
+Config/Info.plist            Local-network permission and plain-http allowance
 Tests/SingoCoreTests/        Tests for Singo's Core
-Tools/                       Art generators (Pillow)
+Tests/GameNightCoreTests/    Tests for the display's logic; Fixtures/ are real server messages
+Tools/                       Art generators (Pillow) and the fixture recorder
 ```
 
 The Xcode project uses a synced folder, so new files under `FamilyGameNight/`
@@ -183,8 +197,9 @@ own art instead, replace the images in `Assets.xcassets` in Xcode.
 
 ## Tests
 
-The Singo rules in `FamilyGameNight/Singo/Core` build without MusicKit, so they
-test on the Mac directly:
+The Singo rules (`FamilyGameNight/Singo/Core`) and the Jeopardy display's logic
+(`FamilyGameNight/GameNight/Core`) build without Apple frameworks, so they test
+on the Mac directly:
 
 ```bash
 swift test
@@ -192,25 +207,58 @@ swift test
 
 Or open `Package.swift` in Xcode and press ⌘U.
 
+`Tests/GameNightCoreTests/Fixtures/` holds the messages the Game Night server
+sends, recorded from a scripted game (join, clues, buzzes, Daily Double, Final
+Jeopardy, winner) so the tests read real data. If the server's messages change,
+record new ones with `Tools/record-fixtures.mjs` (its header says how).
+
+## Jeopardy on the TV
+
+The Jeopardy tile makes the Apple TV the **TV display** for a Game Night server
+(the [`gamenight`](https://github.com/justinxwynkoop/gamenight) repo: Node.js,
+runs on a Raspberry Pi or any computer on the network). Phones buzz and answer,
+the host judges from a phone, and the server decides who was first. The Apple TV
+only draws what the server tells it.
+
+**Try it**
+1. On a computer on your network: clone `gamenight`, then
+   `npm install && HOST_PIN=1234 npm start`. It prints an address such as
+   `192.168.1.50:3000`.
+2. On the Apple TV open Family Game Night → Jeopardy and type that address
+   (typing is easiest with an iPhone nearby: the Apple TV offers its keyboard).
+   Say Allow if it asks to find devices on your network. The address is
+   remembered.
+3. Scan the QR code on the TV with a phone to join. Open `/host` on another
+   phone (PIN 1234) to pick the question set and start.
+
+**Remote:** Menu goes back to the game picker. Play/Pause opens a small panel to
+change the server or leave. The TV shows a "Reconnecting…" badge if the server
+drops and keeps trying.
+
+**Screens:** lobby (QR code, who has joined), board, clue (buzzers open, who is
+answering, answer revealed, with a draining countdown), Daily Double, Final
+Jeopardy (wagers, clue and timer, judged answers), leaderboard, winner. Team
+mode shows teams. If the server runs a game this app doesn't know, it says so.
+
+**Fonts:** the display uses the system's heavy condensed font. To use Anton (the
+face in the design mockups), add `Anton-Regular.ttf` to the app target, list it
+under "Fonts provided by application" in the Info settings, and it is picked up
+automatically.
+
 ## Roadmap
 
 1. ✅ Home screen with the game tiles; Singo Night running inside it.
-2. **Jeopardy: connect.** The Jeopardy screen joins the Game Night server as its
-   TV display (WebSocket `hello` with `role: "tv"`; the server pushes the full
-   state on every change). Enter the server address once and remember it. Needs
-   `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` in the
-   Info.plist. Shows the lobby: QR code and the players who have joined.
-3. **Jeopardy: screens.** Board, clue (wager, buzz-in, answering, revealed),
-   Final Jeopardy, leaderboard, winner, and the countdown timers.
-4. **Jeopardy: sound.** Port the sound cues (they're decided by comparing the
-   old and new state) and play your custom sounds from the server.
+2. ✅ Jeopardy: connect to the server and show the lobby.
+3. ✅ Jeopardy: board, clues, Daily Double, Final Jeopardy, leaderboard, winner.
+4. **Jeopardy: sound.** Port the sound cues (the web TV decides them by comparing
+   the old and new state) and play your custom sounds from the server's
+   `/sounds/` files.
 5. **Find the server automatically** with Bonjour instead of typing an address.
 6. **Family Feud.** A new game module in the `gamenight` server, plus a SwiftUI
    screen here.
 
-The `gamenight` server (Node.js) runs on a Raspberry Pi or any always-on
-computer on the same network. The host picks which game is active from their
-phone; the Apple TV shows whatever is active.
+The host picks which game is active from their phone; the Apple TV shows
+whatever is active.
 
 ## First things to check
 
@@ -219,6 +267,10 @@ phone; the Apple TV shows whatever is active.
   whether to end it.
 - After backing out of a game, focus lands on that game's tile.
 - The tile art and focus effect look right on the Apple TV.
+- Jeopardy: the address prompt appears once; after that the tile connects by
+  itself. Menu and Play/Pause behave as described above. Text is readable from
+  across the room (sizes are in tvOS points at 1920×1080; adjust in `Display/`).
+- The Local Network permission prompt appears the first time Jeopardy connects.
 
 ## Singo notes
 

@@ -1,0 +1,202 @@
+{
+  "room": {
+    "mode": "teams",
+    "teams": [
+      {
+        "id": "t1",
+        "name": "Team 1",
+        "color": "#ef4444"
+      },
+      {
+        "id": "t2",
+        "name": "Team 2",
+        "color": "#3b82f6"
+      }
+    ],
+    "units": [
+      {
+        "id": "t1",
+        "name": "Team 1",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 3
+      },
+      {
+        "id": "t2",
+        "name": "Team 2",
+        "color": "#3b82f6",
+        "score": 0,
+        "connected": false,
+        "members": 2
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Family Night Sampler",
+    "settings": {
+      "earlyPenalty": true,
+      "penaltyMs": 500,
+      "buzzSeconds": 10,
+      "answerSeconds": 10,
+      "finalSeconds": 30,
+      "autoWrong": false
+    },
+    "status": "lobby",
+    "view": "board",
+    "title": "Family Night Sampler",
+    "control": null,
+    "categories": [
+      "Around the World",
+      "Food & Drink",
+      "Movie Night",
+      "Science & Nature",
+      "Name That Decade",
+      "Word Play"
+    ],
+    "board": [
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ]
+    ],
+    "clue": null,
+    "final": null
+  }
+}
