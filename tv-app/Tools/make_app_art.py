@@ -342,52 +342,63 @@ def jeopardy_tile(w, h):
 
 
 def feud_tile(w, h):
-    """The survey board: deep red, a wall of flipped-over gold answers, and the title across the middle."""
-    img = vgrad(w, h, (214, 36, 46), (88, 8, 30))
-    img.alpha_composite(radial(w, h, w * 0.5, h * 0.2, h * 0.9, (255, 150, 120), 0.30))
+    """A game-show stage: deep blue with spotlight beams, a frame of light bulbs, a big gold FEUD and a red banner."""
+    img = vgrad(w, h, (24, 52, 206), (6, 12, 86))
+    img.alpha_composite(radial(w, h, w * 0.5, h * 0.42, h * 0.8, (120, 170, 255), 0.30))
 
-    board = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    bd = ImageDraw.Draw(board)
-    cols, rows = 2, 4
-    gap = h * 0.02
-    mx, my = w * 0.035, h * 0.06
-    cw = (w - 2 * mx - gap * (cols - 1)) / cols
-    ch = (h - 2 * my - gap * (rows - 1)) / rows
-    bd.rounded_rectangle([mx - gap, my - gap, w - mx + gap, h - my + gap], radius=h * 0.05, fill=(20, 4, 24, 255))
-    num_font = ImageFont.truetype(BEBAS, int(ch * 0.62))
-    pts_font = ImageFont.truetype(BEBAS, int(ch * 0.55))
-    flipped = {(0, 0), (0, 1), (1, 0), (1, 2)}          # which answers are turned over
-    points = {(0, 0): 38, (0, 1): 24, (1, 0): 12, (1, 2): 7}
-    for c in range(cols):
-        for r in range(rows):
-            x, y = mx + c * (cw + gap), my + r * (ch + gap)
-            up = (c, r) in flipped
-            top, bottom = ((247, 205, 80), (214, 152, 22)) if up else ((44, 70, 222), (22, 42, 176))
-            slot = vgrad(int(cw), int(ch), top, bottom)
-            mask = Image.new("L", slot.size, 0)
-            ImageDraw.Draw(mask).rounded_rectangle([0, 0, slot.width - 1, slot.height - 1], radius=ch * 0.22, fill=255)
-            board.paste(slot, (int(x), int(y)), mask)
-            n = c * rows + r + 1
-            cx, cy = x + ch * 0.5, y + ch / 2
-            bd.ellipse([cx - ch * 0.32, cy - ch * 0.32, cx + ch * 0.32, cy + ch * 0.32], fill=(10, 14, 70, 255) if not up else (27, 19, 0, 255))
-            bd.text((cx, cy + ch * 0.02), str(n), font=num_font, fill=(255, 205, 64, 255), anchor="mm")
-            if up:
-                bd.rounded_rectangle([x + cw - ch * 1.25, y + ch * 0.2, x + cw - ch * 0.15, y + ch * 0.8], radius=ch * 0.12, fill=(27, 19, 0, 255))
-                bd.text((x + cw - ch * 0.7, y + ch * 0.52), str(points[(c, r)]), font=pts_font, fill=(255, 226, 122, 255), anchor="mm")
-                bd.rounded_rectangle([x + ch * 0.95, y + ch * 0.38, x + cw * 0.58, y + ch * 0.62], radius=ch * 0.12, fill=(27, 19, 0, 70))
-    img.alpha_composite(board)
+    # Spotlight beams fanning out from the top middle.
+    beams = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(beams)
+    import math
+    for k in range(-5, 6):
+        a0, a1 = math.radians(90 + k * 15 - 3.2), math.radians(90 + k * 15 + 3.2)
+        r = w * 1.4
+        bd.polygon([(w / 2, -h * 0.1), (w / 2 + r * math.cos(a0), -h * 0.1 + r * math.sin(a0)), (w / 2 + r * math.cos(a1), -h * 0.1 + r * math.sin(a1))], fill=(255, 255, 255, 22))
+    img.alpha_composite(beams.filter(ImageFilter.GaussianBlur(radius=h * 0.012)))
 
-    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.25, w * 1.02, h * 0.81], radius=h * 0.12, fill=(52, 2, 24, 238))
-    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.05)))
+    # The frame of bulbs: gold rail, then bulbs all the way round.
+    frame = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(frame)
+    m = h * 0.055
+    fd.rounded_rectangle([m, m, w - m, h - m], radius=h * 0.05, outline=(255, 205, 70, 255), width=max(3, int(h * 0.012)))
+    img.alpha_composite(frame)
+    r = h * 0.017
+    bulbs = []
+    nx, ny = 22, 12
+    for i in range(nx):
+        x = m + (w - 2 * m) * i / (nx - 1)
+        bulbs += [(x, m), (x, h - m)]
+    for j in range(1, ny - 1):
+        y = m + (h - 2 * m) * j / (ny - 1)
+        bulbs += [(m, y), (w - m, y)]
+    glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    for x, y in bulbs:
+        gd.ellipse([x - r * 2.4, y - r * 2.4, x + r * 2.4, y + r * 2.4], fill=(255, 190, 60, 110))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(radius=r * 2)))
+    bl = ImageDraw.Draw(img)
+    for x, y in bulbs:
+        bl.ellipse([x - r, y - r, x + r, y + r], fill=(255, 238, 170, 255))
+        bl.ellipse([x - r * 0.45, y - r * 0.55, x + r * 0.25, y + r * 0.15], fill=(255, 255, 245, 255))
 
     front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    title_font = ImageFont.truetype(BEBAS, int(h * 0.36))
-    gradient_text(front, (w / 2, h * 0.47), "FAMILY FEUD", title_font, (255, 255, 255), (255, 214, 120),
-                  stroke=int(h * 0.011), stroke_fill=(110, 6, 24, 255), shadow=0.035, glow=(255, 170, 130, 150))
-    tag_font = ImageFont.truetype(mi.SUB_FONT, int(h * 0.062))
-    gradient_text(front, (w / 2, h * 0.705), "SURVEY SAYS", tag_font, (255, 224, 110), (255, 178, 40),
-                  shadow=0.06, spacing=h * 0.034)
+    small = ImageFont.truetype(BEBAS, int(h * 0.19))
+    gradient_text(front, (w / 2, h * 0.235), "FAMILY", small, (255, 255, 255), (184, 198, 240),
+                  stroke=int(h * 0.008), stroke_fill=(10, 20, 120, 255), shadow=0.03, spacing=h * 0.05)
+    big = ImageFont.truetype(BEBAS, int(h * 0.50))
+    gradient_text(front, (w / 2, h * 0.565), "FEUD", big, (255, 241, 150), (245, 168, 20),
+                  stroke=int(h * 0.016), stroke_fill=(120, 14, 22, 255), shadow=0.035, glow=(255, 190, 70, 170), spacing=h * 0.012)
+    # A red banner, like a strike box turned sideways.
+    banner = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    bw, bh = w * 0.50, h * 0.115
+    bx0, by0 = w / 2 - bw / 2, h * 0.795
+    ImageDraw.Draw(banner).rounded_rectangle([bx0, by0, bx0 + bw, by0 + bh], radius=bh * 0.32, fill=(214, 36, 46, 255), outline=(255, 190, 190, 255), width=max(3, int(h * 0.007)))
+    sh = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sh.paste((0, 0, 0, 150), (0, int(h * 0.012)), banner.split()[3])
+    front.alpha_composite(sh.filter(ImageFilter.GaussianBlur(radius=h * 0.012)))
+    front.alpha_composite(banner)
+    tag = ImageFont.truetype(mi.SUB_FONT, int(h * 0.058))
+    gradient_text(front, (w / 2, by0 + bh / 2), "SURVEY SAYS", tag, (255, 255, 255), (255, 225, 225), spacing=h * 0.03)
     img.alpha_composite(front)
     return img.convert("RGB")
 

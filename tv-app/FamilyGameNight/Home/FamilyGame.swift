@@ -42,7 +42,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         switch self {
         case .singo: return Color(red: 0.55, green: 0.22, blue: 0.85)
         case .jeopardy: return Color(red: 0.12, green: 0.30, blue: 0.85)
-        case .feud: return Color(red: 0.85, green: 0.22, blue: 0.20)
+        case .feud: return Color(red: 0.92, green: 0.58, blue: 0.10)
         }
     }
 }
