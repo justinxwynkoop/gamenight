@@ -129,6 +129,9 @@ struct FastMoneyRow: Decodable, Equatable {
 }
 
 struct FastMoneyCell: Decodable, Equatable {
+    /// How much the host has shown on the TV: 0 nothing, 1 what the player said, 2 the points as well.
+    var shown: Int
+    /// The points are up ("survey says").
     var judged: Bool
     var points: Int?
     /// The survey answer it matched, once scored.
@@ -156,9 +159,9 @@ struct FeudFastMoneyResult: Decodable, Equatable {
 }
 
 extension FastMoneyCell {
-    /// What a scored cell shows on the TV: the survey answer it matched, else what was typed, else "No answer".
+    /// What the answer cell shows once the host reveals it: what the player said, or "NO ANSWER" if they said nothing.
     static func shownText(_ cell: FastMoneyCell) -> String {
-        for candidate in [cell.label, cell.typed] {
+        for candidate in [cell.typed, cell.label] {
             if let text = candidate?.trimmingCharacters(in: .whitespaces), !text.isEmpty { return text.uppercased() }
         }
         return "NO ANSWER"

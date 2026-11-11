@@ -231,7 +231,9 @@ plays, steal, round result), and Fast Money (the questions with a countdown, the
 answers revealed beside the points, a running total and whether they reached the goal). The winner
 screen adds the Fast Money result. Sounds follow the web TV: a ding for each answer, the big X for a
 strike, the buzzers, and the fanfare. The Family Feud sound names for the server's `data/sounds/` are `ding`, `strike`,
-`strikeout`, `faceoff`, `roundstart`, `winner` and `zero`. A strike puts a big boxed X in the middle of
+`strikeout`, `faceoff`, `fastmoney`, `fmpoints`, `roundstart`, `winner` and `zero`, and the music `feud-lobby`.
+`strikeout` and `zero` use your `strike` file if they have none of their own. Answers on the board flip over like cards. In Fast Money the host reveals each answer in two steps: what the
+player said (typed out a letter at a time), then the points. A strike puts a big boxed X in the middle of
 the screen, which then slides down into the next empty strike box.
 
 `Tools/record-feud-fixtures.mjs` records the Family Feud states used by the tests (see the header for how).
@@ -300,9 +302,10 @@ TV's own volume still sets how loud it is in the room.
 **Your own sounds.** Anything you put in the server's `data/sounds/` folder
 replaces the built-in sound of the same name, and the Apple TV downloads it when
 Jeopardy opens (so re-open Jeopardy after adding files). Names: `open`, `buzz`,
-`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, `ding`, `strike`, `strikeout`, `faceoff`, `roundstart`, `winner`, `zero`, plus two
-music files: `think` (loops during the Final Jeopardy countdown) and `lobby`
-(loops while players join; `think` is used if there is no `lobby`). Use `.mp3`,
+`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, `ding`, `strike`, `strikeout`, `faceoff`, `roundstart`, `winner`, `zero`, `fmpoints`, `fastmoney`, plus these
+music files: `think` (loops during the Final Jeopardy countdown), `lobby`
+(loops while players join; `think` is used if there is no `lobby`) and `feud-lobby` (the same, but only
+when Family Feud is the game). Use `.mp3`,
 `.wav` or `.m4a`; the Apple TV can't play `.ogg`, so those are skipped and the
 built-in sound is used. Music only plays if you provide a file.
 

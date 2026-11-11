@@ -120,13 +120,13 @@ enum SoundPlanner {
                     plan.cues.append(.timeup)
                 }
                 if judgedCount(fm) > judgedCount(was) {
-                    plan.cues.append(pointsTotal(fm) > pointsTotal(was) ? .ding : .zero)
+                    plan.cues.append(pointsTotal(fm) > pointsTotal(was) ? .fmpoints : .zero)
                 }
                 if fm.step == .results && was.step != .results {
                     plan.cues.append((fm.won ?? false) ? .winner : .zero)
                 }
             } else {
-                plan.cues.append(.finalSting)
+                plan.cues.append(.fastmoney)
             }
         }
 

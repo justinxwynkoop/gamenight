@@ -9,7 +9,7 @@ import Foundation
 /// The host's room settings (sound on/off, volume) are applied on every update.
 @MainActor
 final class SoundDirector {
-    private enum MusicOwner { case lobby, finalRound }
+    private enum MusicOwner { case lobby, feudLobby, finalRound }
 
     private var enabled = true
     private var volume = 0.7   // 0...1, from the host's setting
@@ -89,9 +89,10 @@ final class SoundDirector {
     private func refreshLobbyMusic() {
         guard let state = lastState else { return }
         if SoundPlanner.wantsLobbyMusic(state) {
-            startMusic(.lobby, restart: false)
+            startMusic(state.feud != nil ? .feudLobby : .lobby, restart: false)
         } else {
             stopMusic(owner: .lobby)
+            stopMusic(owner: .feudLobby)
         }
     }
 
@@ -101,7 +102,7 @@ final class SoundDirector {
         guard enabled, volume > 0 else { return }
         let data: Data
         let gain: Double
-        if let file = custom[cue.rawValue] {
+        if let file = custom[cue.rawValue] ?? cue.fallbackFile.flatMap({ custom[$0] }) {
             data = file
             gain = 0.5          // the web TV plays everything through a 0.5 master gain
         } else {
@@ -138,7 +139,12 @@ final class SoundDirector {
     /// is no lobby file) in the lobby, and "think" during the Final Jeopardy countdown.
     private func startMusic(_ owner: MusicOwner, restart: Bool) {
         guard enabled, volume > 0 else { return }
-        let names = owner == .lobby ? ["lobby", "think"] : ["think"]
+        let names: [String]
+        switch owner {
+        case .lobby: names = ["lobby", "think"]
+        case .feudLobby: names = ["feud-lobby", "lobby", "think"]   // Family Feud can have its own
+        case .finalRound: names = ["think"]
+        }
         guard let data = names.compactMap({ custom[$0] }).first else { return }
         if !restart, musicOwner == owner, music?.isPlaying == true { return }
         stopMusic()

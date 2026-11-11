@@ -110,16 +110,36 @@ final class FeudDecodingTests: XCTestCase {
         XCTAssertEqual(Standings.winners(done.room.units).map(\.name), ["Red"])
     }
 
-    func testBlankFastMoneyAnswersAreAlreadyZero() throws {
+    func testABlankAnswerIsAZeroInOneStep() throws {
         let fm = try XCTUnwrap(try Fixture.feud("feud-fm-blanks").fm)
         XCTAssertEqual(fm.step, .reveal)
-        // Player 2 sent nothing, so all five are zeros. Player 1's two blanks are zeros too; the real answers wait.
-        XCTAssertTrue(fm.rows.allSatisfy { $0.p2.judged && $0.p2.points == 0 && $0.p2.label == "No answer" })
-        XCTAssertEqual(fm.rows.map { $0.p1.judged }, [false, true, false, true, false])
-        XCTAssertEqual(fm.rows[1].p1.points, 0)
-        XCTAssertEqual(fm.rows[1].p1.typed, "")
+        // The host revealed player 1's blank answer to question 2: it goes straight to its 0.
+        let blank = fm.rows[1].p1
+        XCTAssertEqual(blank.shown, 2)
+        XCTAssertTrue(blank.judged)
+        XCTAssertEqual(blank.points, 0)
+        XCTAssertEqual(blank.label, "No answer")
+        XCTAssertEqual(blank.typed, "")
+        XCTAssertEqual(FastMoneyCell.shownText(blank), "NO ANSWER")
+        // Nothing else is up yet, so nothing is given away.
+        XCTAssertEqual(fm.rows[0].p1.shown, 0)
+        XCTAssertNil(fm.rows[0].p1.typed)
+        XCTAssertTrue(fm.rows.allSatisfy { $0.p2.shown == 0 && $0.p2.typed == nil })
         XCTAssertEqual(fm.totals.total, 0)
-        XCTAssertEqual(FastMoneyCell.shownText(fm.rows[1].p1), "NO ANSWER")
+    }
+
+    func testAnswerThenPoints() throws {
+        let said = try XCTUnwrap(try Fixture.feud("feud-fm-said").fm).rows[0].p1
+        XCTAssertEqual(said.shown, 1, "what they said is up, the points are not")
+        XCTAssertEqual(said.typed, "apple")
+        XCTAssertFalse(said.judged)
+        XCTAssertNil(said.points)
+        XCTAssertEqual(FastMoneyCell.shownText(said), "APPLE")
+        XCTAssertEqual(try XCTUnwrap(try Fixture.feud("feud-fm-said").fm).totals.total, 0)
+        let partial = try XCTUnwrap(try Fixture.feud("feud-fm-partial").fm)
+        XCTAssertEqual(partial.rows[0].p1.shown, 2)
+        XCTAssertEqual(partial.rows[0].p1.points, 34)
+        XCTAssertEqual(partial.totals.total, 110, "only points that are up count")
     }
 
     func testUnknownValuesDoNotBreakDecoding() throws {
@@ -171,11 +191,12 @@ final class FeudSoundTests: XCTestCase {
     }
 
     func testFastMoney() throws {
-        XCTAssertEqual(try cues("feud-round4-done", "feud-fm-pick"), [.finalSting])
+        XCTAssertEqual(try cues("feud-round4-done", "feud-fm-pick"), [.fastmoney])
         XCTAssertEqual(try cues("feud-fm-pick", "feud-fm-p1"), [])
         XCTAssertEqual(try cues("feud-fm-p1", "feud-fm-p2"), [])
-        XCTAssertEqual(try cues("feud-fm-reveal", "feud-fm-partial"), [.ding])
-        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-results"), [.ding, .winner])
+        XCTAssertEqual(try cues("feud-fm-reveal", "feud-fm-said"), [], "what they said makes no sound; the points do")
+        XCTAssertEqual(try cues("feud-fm-said", "feud-fm-partial"), [.fmpoints])
+        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-results"), [.fmpoints, .winner])
         XCTAssertEqual(try cues("feud-fm-results", "feud-done"), [.winner])
     }
 
@@ -205,5 +226,14 @@ final class FeudSoundTests: XCTestCase {
         XCTAssertEqual(seconds(.roundstart), 0.33 + 0.6 + 0.05, accuracy: 0.001)
         XCTAssertEqual(seconds(.winner), 1.06 + 0.9 + 0.05, accuracy: 0.001)
         XCTAssertEqual(seconds(.zero), 0.6 + 0.5 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.fmpoints), 0.1 + 0.55 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.fastmoney), 0.62 + 0.8 + 0.05, accuracy: 0.001)
+    }
+
+    func testSomeSoundsBorrowTheStrikeBuzzerFile() {
+        XCTAssertEqual(SoundCue.strikeout.fallbackFile, "strike")
+        XCTAssertEqual(SoundCue.zero.fallbackFile, "strike")
+        XCTAssertNil(SoundCue.ding.fallbackFile)
+        XCTAssertNil(SoundCue.strike.fallbackFile)
     }
 }

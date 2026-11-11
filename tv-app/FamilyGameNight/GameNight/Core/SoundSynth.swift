@@ -20,10 +20,21 @@ enum SoundCue: String, CaseIterable, Hashable {
     case roundstart  // Family Feud: a new round begins
     case winner      // Family Feud: the winning jingle
     case zero        // Family Feud: Fast Money answer worth nothing
+    case fmpoints    // Family Feud: Fast Money points are shown
+    case fastmoney   // Family Feud: Fast Money is about to begin
 
-    /// Every file name the server may supply: the cues above plus two music tracks.
+    /// Every file name the server may supply: the cues above plus the music tracks.
     static var customNames: Set<String> {
-        Set(allCases.map(\.rawValue)).union(["think", "lobby"])
+        Set(allCases.map(\.rawValue)).union(["think", "lobby", "feud-lobby"])
+    }
+
+    /// Another cue's file to use when the family supplied no file for this one (the third strike
+    /// and a Fast Money zero use the strike buzzer).
+    var fallbackFile: String? {
+        switch self {
+        case .strikeout, .zero: return SoundCue.strike.rawValue
+        default: return nil
+        }
     }
 }
 
@@ -133,6 +144,22 @@ enum SoundSynth {
             tones.append(ToneSpec(frequency: 1047, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.4))
             tones.append(ToneSpec(frequency: 784, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.3))
             tones.append(ToneSpec(frequency: 659, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.25))
+            return tones
+        case .fmpoints:
+            return [
+                ToneSpec(frequency: 1568, start: 0, duration: 0.18, wave: .triangle, gain: 0.4),
+                ToneSpec(frequency: 2093, start: 0.1, duration: 0.55, wave: .triangle, gain: 0.4),
+                ToneSpec(frequency: 3136, start: 0.1, duration: 0.4, wave: .sine, gain: 0.12),
+            ]
+        case .fastmoney:
+            var tones: [ToneSpec] = []
+            let climb: [(Double, Double)] = [(392, 0), (523, 0.15), (659, 0.3), (784, 0.45)]
+            for (note, start) in climb {
+                tones.append(ToneSpec(frequency: note, start: start, duration: 0.14, wave: .triangle, gain: 0.45))
+            }
+            tones.append(ToneSpec(frequency: 1047, start: 0.62, duration: 0.8, wave: .triangle, gain: 0.4))
+            tones.append(ToneSpec(frequency: 784, start: 0.62, duration: 0.8, wave: .triangle, gain: 0.3))
+            tones.append(ToneSpec(frequency: 659, start: 0.62, duration: 0.8, wave: .triangle, gain: 0.25))
             return tones
         case .zero:
             var tones: [ToneSpec] = []

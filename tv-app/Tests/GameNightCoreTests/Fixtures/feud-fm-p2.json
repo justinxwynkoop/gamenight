@@ -27,8 +27,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Ben",
-          "Cat"
+          "Cat",
+          "Dev"
         ]
       },
       {
@@ -40,7 +40,7 @@
         "members": 2,
         "memberNames": [
           "Ann",
-          "Dev"
+          "Ben"
         ]
       }
     ],
@@ -82,13 +82,13 @@
       "players": [
         {
           "slot": "p1",
-          "id": "p2",
-          "name": "Ben"
+          "id": "p3",
+          "name": "Cat"
         },
         {
           "slot": "p2",
-          "id": "p3",
-          "name": "Cat"
+          "id": "p4",
+          "name": "Dev"
         }
       ],
       "submitted": {
@@ -100,12 +100,14 @@
           "q": 0,
           "question": "Name a fruit you can eat on the go",
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -116,12 +118,14 @@
           "q": 1,
           "question": "Name a pet people keep at home",
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -132,12 +136,14 @@
           "q": 2,
           "question": "Name something you wear on your feet",
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -148,12 +154,14 @@
           "q": 3,
           "question": "Name a room in a house",
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -164,12 +172,14 @@
           "q": 4,
           "question": "Name something you do on a rainy day",
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,

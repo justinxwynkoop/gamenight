@@ -176,18 +176,77 @@ struct FeudTeamBox: View {
     }
 }
 
-struct FeudSlot: View {
-    let answer: FeudAnswer
+/// A card with two faces that turns over about its horizontal middle, as the survey board's answers do.
+struct FlipCard<Front: View, Back: View>: View, Animatable {
+    var angle: Double
+    let front: Front
+    let back: Back
+
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
 
     var body: some View {
-        let up = answer.revealed
-        let late = answer.late
+        ZStack {
+            if angle < 90 {
+                front
+            } else {
+                back.rotation3DEffect(.degrees(180), axis: (x: 1, y: 0, z: 0))
+            }
+        }
+        .rotation3DEffect(.degrees(angle), axis: (x: 1, y: 0, z: 0), perspective: 0.4)
+    }
+}
+
+struct FeudSlot: View {
+    let answer: FeudAnswer
+    /// Whether the card is turned over. It starts the way the state says (nothing flips on a reconnect)
+    /// and turns over when the host reveals the answer.
+    @State private var turned: Bool
+
+    init(answer: FeudAnswer) {
+        self.answer = answer
+        _turned = State(initialValue: answer.revealed || answer.late)
+    }
+
+    var body: some View {
+        FlipCard(angle: turned ? 180 : 0, front: frontFace, back: backFace)
+            .frame(maxHeight: .infinity)
+            .onChange(of: answer.revealed || answer.late) { _, now in
+                withAnimation(.easeInOut(duration: 0.7)) { turned = now }
+            }
+            .accessibilityElement(children: .combine)
+    }
+
+    /// The blue card with just its number.
+    private var frontFace: some View {
         HStack(spacing: 24) {
+            Text("\(answer.n)")
+                .font(JP.display(54))
+                .foregroundStyle(JP.gold)
+                .frame(width: 84, height: 84)
+                .background(Circle().fill(Color(hex: 0x0A1250)))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(LinearGradient(colors: [JP.tileTop, JP.tileBottom], startPoint: .top, endPoint: .bottom))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Color(hex: 0x5B72FF), lineWidth: 4))
+    }
+
+    /// The gold card with the answer and its points (dim when the host showed it after the round).
+    private var backFace: some View {
+        let late = answer.late && !answer.revealed
+        return HStack(spacing: 24) {
             Text("\(answer.n)")
                 .font(JP.display(54))
                 .foregroundStyle(late ? JP.muted : JP.gold)
                 .frame(width: 84, height: 84)
-                .background(Circle().fill(up ? Color(hex: 0x1B1300) : Color(hex: 0x0A1250)))
+                .background(Circle().fill(late ? Color(hex: 0x0A1250) : Color(hex: 0x1B1300)))
             Text((answer.text ?? "").uppercased())
                 .font(JP.text(56, .heavy))
                 .lineLimit(1)
@@ -196,28 +255,22 @@ struct FeudSlot: View {
             Text(answer.points.map { "\($0)" } ?? "")
                 .font(JP.display(64))
                 .monospacedDigit()
-                .foregroundStyle(up ? Color(hex: 0xFFE27A) : JP.muted)
+                .foregroundStyle(late ? JP.muted : Color(hex: 0xFFE27A))
                 .frame(width: 150, height: 84)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(answer.points == nil ? Color.clear : (up ? Color(hex: 0x1B1300) : Color(hex: 0x0A1250))))
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(late ? Color(hex: 0x0A1250) : Color(hex: 0x1B1300)))
         }
-        .foregroundStyle(up ? Color(hex: 0x1B1300) : Color.white)
+        .foregroundStyle(late ? JP.muted : Color(hex: 0x1B1300))
         .padding(.horizontal, 28)
-        .frame(maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(
-                    up
-                        ? LinearGradient(colors: [Color(hex: 0xF5C84B), Color(hex: 0xD99A14)], startPoint: .top, endPoint: .bottom)
-                        : late
-                            ? LinearGradient(colors: [Color(hex: 0x0E1650)], startPoint: .top, endPoint: .bottom)
-                            : LinearGradient(colors: [JP.tileTop, JP.tileBottom], startPoint: .top, endPoint: .bottom)
+                    late
+                        ? LinearGradient(colors: [Color(hex: 0x0E1650)], startPoint: .top, endPoint: .bottom)
+                        : LinearGradient(colors: [Color(hex: 0xF5C84B), Color(hex: 0xD99A14)], startPoint: .top, endPoint: .bottom)
                 )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(up ? Color(hex: 0xFFF1A8) : Color(hex: 0x5B72FF).opacity(late ? 0.3 : 1), lineWidth: 4)
-        )
-        .accessibilityElement(children: .combine)
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(late ? Color(hex: 0x26358F) : Color(hex: 0xFFF1A8), lineWidth: 4))
     }
 }
 
@@ -441,33 +494,63 @@ struct FeudFastMoneyScreen: View {
     }
 }
 
+/// Text that types itself out a letter at a time (what the player said, in Fast Money).
+struct TypewriterText: View {
+    let text: String
+    @State private var count = 0
+
+    var body: some View {
+        Text(String(text.prefix(count)) + (count < text.count ? "▍" : ""))
+            .task(id: text) {
+                count = 0
+                for _ in 0..<text.count {
+                    try? await Task.sleep(for: .milliseconds(55))
+                    if Task.isCancelled { return }
+                    count += 1
+                }
+            }
+    }
+}
+
+/// One Fast Money answer, in the host's stages: empty, then what the player said (typed out), then the points.
 struct FeudFastMoneyCell: View {
     let cell: FastMoneyCell
 
     var body: some View {
-        let on = cell.judged
-        let zero = on && (cell.points ?? 0) == 0
+        let said = cell.shown >= 1
+        let done = cell.shown >= 2
+        let zero = done && (cell.points ?? 0) == 0
         HStack(spacing: 18) {
-            Text(on ? FastMoneyCell.shownText(cell) : "")
-                .font(JP.text(48, .heavy))
-                .lineLimit(1)
-                .minimumScaleFactor(0.4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(on ? "\(cell.points ?? 0)" : "")
+            Group {
+                if said {
+                    TypewriterText(text: FastMoneyCell.shownText(cell))
+                } else {
+                    Text("")
+                }
+            }
+            .font(JP.text(48, .heavy))
+            .lineLimit(1)
+            .minimumScaleFactor(0.4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(done ? "\(cell.points ?? 0)" : "")
                 .font(JP.display(60))
                 .monospacedDigit()
-                .foregroundStyle(zero ? Color.white : (on ? Color(hex: 0xFFE27A) : JP.muted))
+                .foregroundStyle(zero ? Color.white : Color(hex: 0xFFE27A))
                 .frame(width: 130, height: 76)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Color(hex: 0x1B1300).opacity(zero ? 0.4 : 1) : Color(hex: 0x0A1250)))
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(done ? Color(hex: 0x1B1300).opacity(zero ? 0.4 : 1) : Color(hex: 0x0A1250)))
+                .scaleEffect(done ? 1 : 0.6)
+                .opacity(done ? 1 : 0.4)
+                .animation(.spring(response: 0.4, dampingFraction: 0.6), value: done)
         }
-        .foregroundStyle(on ? (zero ? Color.white : Color(hex: 0x1B1300)) : Color.white)
+        .foregroundStyle(done ? (zero ? Color.white : Color(hex: 0x1B1300)) : Color.white)
         .padding(.horizontal, 26)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(on ? (zero ? Color(hex: 0x7F1D1D) : Color(hex: 0xE3AB25)) : Color(hex: 0x0D1540))
+                .fill(done ? (zero ? Color(hex: 0x7F1D1D) : Color(hex: 0xE3AB25)) : Color(hex: 0x0D1540))
         )
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(on ? Color(hex: 0xFFF1A8).opacity(0.8) : Color(hex: 0x26358F), lineWidth: 4))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(done ? Color(hex: 0xFFF1A8).opacity(0.8) : (said ? Color(hex: 0x5B72FF) : Color(hex: 0x26358F)), lineWidth: 4))
+        .animation(.easeInOut(duration: 0.3), value: done)
     }
 }
 

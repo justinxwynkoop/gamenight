@@ -84,11 +84,17 @@ await act('fmSetAnswers', { slot: 'p2', answers: ['banana', 'cat', 'socks', 'gar
 await act('fmNext');
 await snap('feud-fm-reveal');
 const rows = () => host.last.game.fm.rows;
-for (const [slot, q] of [['p1', 0], ['p2', 0], ['p1', 1]]) { const s = rows()[q][slot].suggest; await act('fmJudge', { slot, q, points: s.points, label: s.label ?? '' }); }
+// Each answer is revealed in two taps: what they said, then the points ("survey says").
+const reveal = async (slot, q, { stop = false } = {}) => { await act('fmShowAnswer', { slot, q }); if (!stop && !rows()[q][slot].judged) await act('fmShowPoints', { slot, q }); };
+await reveal('p1', 0, { stop: true });
+await snap('feud-fm-said');
+await act('fmShowPoints', { slot: 'p1', q: 0 });
+await reveal('p2', 0);
+await reveal('p1', 1);
 await snap('feud-fm-partial');
 for (let q = 0; q < 5; q++) for (const slot of ['p1', 'p2']) {
   if (rows()[q][slot].judged) continue;
-  const s = rows()[q][slot].suggest; await act('fmJudge', { slot, q, points: s.points, label: s.label ?? '' });
+  await reveal(slot, q);
 }
 await snap('feud-fm-results');
 await act('finishGame');
@@ -103,6 +109,7 @@ await act('fmStart');
 await act('fmSetAnswers', { slot: 'p1', answers: ['apple', '', 'sneakers', '', 'nap'] });
 await act('fmNext');
 await act('fmNext');                               // player 2 sent nothing
+await act('fmShowAnswer', { slot: 'p1', q: 1 });   // a blank goes straight to its 0
 await snap('feud-fm-blanks');
 server.kill();
 process.exit(0);

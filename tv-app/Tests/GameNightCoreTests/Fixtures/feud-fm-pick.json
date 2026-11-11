@@ -27,8 +27,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Ben",
-          "Cat"
+          "Cat",
+          "Dev"
         ]
       },
       {
@@ -40,7 +40,7 @@
         "members": 2,
         "memberNames": [
           "Ann",
-          "Dev"
+          "Ben"
         ]
       }
     ],
@@ -77,13 +77,13 @@
       "players": [
         {
           "slot": "p1",
-          "id": "p2",
-          "name": "Ben"
+          "id": "p3",
+          "name": "Cat"
         },
         {
           "slot": "p2",
-          "id": "p3",
-          "name": "Cat"
+          "id": "p4",
+          "name": "Dev"
         }
       ],
       "submitted": {
@@ -95,12 +95,14 @@
           "q": 0,
           "question": null,
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -111,12 +113,14 @@
           "q": 1,
           "question": null,
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -127,12 +131,14 @@
           "q": 2,
           "question": null,
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -143,12 +149,14 @@
           "q": 3,
           "question": null,
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
@@ -159,12 +167,14 @@
           "q": 4,
           "question": null,
           "p1": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,
             "typed": null
           },
           "p2": {
+            "shown": 0,
             "judged": false,
             "points": null,
             "label": null,

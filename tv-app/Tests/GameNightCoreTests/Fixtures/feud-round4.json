@@ -27,8 +27,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Ben",
-          "Cat"
+          "Cat",
+          "Dev"
         ]
       },
       {
@@ -40,7 +40,7 @@
         "members": 2,
         "memberNames": [
           "Ann",
-          "Dev"
+          "Ben"
         ]
       }
     ],
@@ -130,13 +130,13 @@
         "reps": [
           {
             "unitId": "t5",
-            "playerId": "p3",
-            "name": "Cat"
+            "playerId": "p4",
+            "name": "Dev"
           },
           {
             "unitId": "t6",
-            "playerId": "p4",
-            "name": "Dev"
+            "playerId": "p2",
+            "name": "Ben"
           }
         ]
       },
