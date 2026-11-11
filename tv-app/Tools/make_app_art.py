@@ -3,7 +3,7 @@ screen tiles (Singo Night, Jeopardy).
 
 Usage: python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
 
-Needs Pillow. Reuses the drawing helpers in make_icon.py (the Singo Night art).
+Needs Pillow and the Bebas Neue font (BEBAS below). Reuses the drawing helpers in make_icon.py (the Singo Night art).
 """
 import os
 import sys
@@ -69,46 +69,172 @@ def board_tile(layer, cx, cy, tw, th, angle, label, h):
     layer.alpha_composite(tile, (x, y))
 
 
+# ---------- Shared drawing helpers ----------
+
+BEBAS = "/usr/share/fonts/opentype/bebas-neue/BebasNeue-Bold.otf"   # tall condensed capitals (apt: fonts-bebas-neue)
+
+
+def vgrad(w, h, top, bottom):
+    """A top-to-bottom gradient."""
+    img = Image.new("RGB", (w, h))
+    d = ImageDraw.Draw(img)
+    for y in range(h):
+        d.line([(0, y), (w, y)], fill=mi.lerp(top, bottom, y / max(1, h - 1)))
+    return img.convert("RGBA")
+
+
+def radial(w, h, cx, cy, radius, color, strength):
+    """A soft round glow centred at (cx, cy), as a transparent layer."""
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], fill=color + (int(255 * strength),))
+    return layer.filter(ImageFilter.GaussianBlur(radius=radius * 0.45))
+
+
+def gradient_text(layer, xy, text, font, top, bottom, anchor="mm", stroke=0, stroke_fill=(0, 0, 0, 255),
+                  shadow=0.0, glow=None, spacing=0):
+    """Letters filled with a vertical gradient, with an optional outline, a drop shadow and a glow."""
+    w, h = layer.size
+    if spacing:
+        # Letter-spaced text: draw each letter, centred as a group.
+        d0 = ImageDraw.Draw(layer)
+        widths = [d0.textlength(ch, font=font) for ch in text]
+        total = sum(widths) + spacing * (len(text) - 1)
+        x = xy[0] - total / 2
+        for ch, cw in zip(text, widths):
+            gradient_text(layer, (x, xy[1]), ch, font, top, bottom, anchor="lm", stroke=stroke, stroke_fill=stroke_fill, shadow=shadow, glow=glow)
+            x += cw + spacing
+        return
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).text(xy, text, font=font, fill=255, anchor=anchor)
+    box = mask.getbbox()
+    if not box:
+        return
+    x0, y0, x1, y1 = box
+    outline = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(outline).text(xy, text, font=font, fill=stroke_fill, anchor=anchor, stroke_width=stroke)
+    if glow:
+        halo = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        halo.paste(Image.new("RGBA", (w, h), glow), (0, 0), outline.split()[3])
+        layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(radius=max(4, font.size * 0.06))))
+    if shadow:
+        sh = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        sh.paste(Image.new("RGBA", (w, h), (0, 0, 0, 170)), (0, int(font.size * shadow)), outline.split()[3])
+        layer.alpha_composite(sh.filter(ImageFilter.GaussianBlur(radius=max(2, font.size * 0.03))))
+    if stroke:
+        layer.alpha_composite(outline)
+    fill = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(fill)
+    for y in range(y0, y1 + 1):
+        fd.line([(x0, y), (x1, y)], fill=mi.lerp(top, bottom, (y - y0) / max(1, y1 - y0)) + (255,))
+    layer.paste(fill, (0, 0), mask)
+
+
+def marquee(layer, y, count, h, margin=0.04):
+    """A row of glowing warm light bulbs, like the edge of a game-show stage."""
+    w = layer.size[0]
+    r = h * 0.014
+    glow = Image.new("RGBA", layer.size, (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    xs = [w * margin + (w * (1 - 2 * margin)) * i / (count - 1) for i in range(count)]
+    for x in xs:
+        gd.ellipse([x - r * 2.6, y - r * 2.6, x + r * 2.6, y + r * 2.6], fill=(255, 190, 60, 120))
+    layer.alpha_composite(glow.filter(ImageFilter.GaussianBlur(radius=r * 2.2)))
+    d = ImageDraw.Draw(layer)
+    for x in xs:
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 236, 160, 255))
+        d.ellipse([x - r * 0.45, y - r * 0.55, x + r * 0.25, y + r * 0.15], fill=(255, 255, 240, 255))
+
+
+def confetti(layer, seed, count, avoid=None):
+    """Small paper confetti, placed from a fixed seed so every render matches."""
+    import random
+    rng = random.Random(seed)
+    w, h = layer.size
+    colors = [(249, 115, 22), (234, 179, 8), (59, 130, 246), (217, 70, 239), (20, 184, 166), (255, 201, 60), (244, 63, 94)]
+    for _ in range(count):
+        x, y = rng.random() * w, rng.random() * h
+        if avoid and avoid[0] < x / w < avoid[1] and avoid[2] < y / h < avoid[3]:
+            continue
+        size = h * rng.uniform(0.014, 0.026)
+        piece = Image.new("RGBA", (int(size * 3), int(size * 3)), (0, 0, 0, 0))
+        pd = ImageDraw.Draw(piece)
+        col = rng.choice(colors) + (235,)
+        if rng.random() < 0.25:
+            pd.ellipse([size, size, size * 2, size * 2], fill=col)
+        else:
+            pd.rounded_rectangle([size * 0.8, size * 0.5, size * 2.2, size * 2.5], radius=size * 0.2, fill=col)
+        piece = piece.rotate(rng.uniform(0, 360), resample=Image.BICUBIC, expand=True)
+        layer.alpha_composite(piece, (int(x - piece.width / 2), int(y - piece.height / 2)))
+
+
+def beams(w, h, cx, cy, count=14, spread=70):
+    """Soft spotlight beams fanning down from a point above the picture."""
+    import math
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    reach = h * 1.6
+    for i in range(count):
+        a = math.radians(90 - spread / 2 + spread * i / (count - 1))
+        half = math.radians(2.2)
+        pts = [(cx, cy), (cx + reach * math.cos(a - half), cy + reach * math.sin(a - half)),
+               (cx + reach * math.cos(a + half), cy + reach * math.sin(a + half))]
+        d.polygon(pts, fill=(255, 235, 190, 26))
+    return layer.filter(ImageFilter.GaussianBlur(radius=h * 0.012))
+
+
 # ---------- Family Game Night icon and Top Shelf ----------
 
 def fgn_back(w, h):
-    return gradient(w, h, (12, 14, 48), (58, 28, 120), [
-        (0.12, 0.15, 0.55, (249, 115, 22, 95)),
-        (0.88, 0.88, 0.6, (59, 130, 246, 120)),
-        (0.75, 0.1, 0.35, (236, 72, 153, 90)),
-    ])
+    img = vgrad(w, h, (20, 14, 70), (88, 36, 150))
+    img.alpha_composite(radial(w, h, w * 0.5, h * 0.35, h * 0.75, (255, 160, 80), 0.28))
+    img.alpha_composite(radial(w, h, w * 0.1, h * 1.0, h * 0.7, (59, 130, 246), 0.35))
+    img.alpha_composite(radial(w, h, w * 0.95, h * 0.95, h * 0.6, (236, 72, 153), 0.30))
+    img.alpha_composite(beams(w, h, w * 0.5, -h * 0.25))
+    vignette = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(vignette).rectangle([0, 0, w, h], outline=(10, 6, 40, 150), width=int(h * 0.05))
+    img.alpha_composite(vignette.filter(ImageFilter.GaussianBlur(radius=h * 0.06)))
+    return img.convert("RGB")
 
 
 def fgn_middle(w, h, wide=False):
     layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    if wide:  # Top Shelf: spread the pieces out so the text sits in the middle
-        mi.draw_ball(layer, 0.10 * w, 0.30 * h, 0.17 * h, mi.BALL_COLORS[0], "♪")
-        mi.draw_ball(layer, 0.90 * w, 0.72 * h, 0.15 * h, mi.BALL_COLORS[2], "♫")
-        board_tile(layer, 0.86 * w, 0.24 * h, 0.12 * w, 0.2 * h, 9, "$", h)
-        board_tile(layer, 0.14 * w, 0.76 * h, 0.1 * w, 0.17 * h, -10, "$", h)
+    marquee(layer, h * 0.075, 17 if wide else 13, h)
+    marquee(layer, h * 0.925, 17 if wide else 13, h)
+    if wide:
+        confetti(layer, 7, 46, avoid=(0.2, 0.8, 0.22, 0.82))
+        mi.draw_ball(layer, 0.11 * w, 0.40 * h, 0.17 * h, mi.BALL_COLORS[0], "♪")
+        mi.draw_ball(layer, 0.89 * w, 0.62 * h, 0.15 * h, mi.BALL_COLORS[2], "♫")
+        board_tile(layer, 0.88 * w, 0.26 * h, 0.12 * w, 0.2 * h, 8, "$", h)
+        board_tile(layer, 0.12 * w, 0.78 * h, 0.1 * w, 0.17 * h, -9, "$", h)
     else:
-        mi.draw_ball(layer, 0.14 * w, 0.24 * h, 0.17 * h, mi.BALL_COLORS[0], "♪")
-        mi.draw_ball(layer, 0.87 * w, 0.80 * h, 0.14 * h, mi.BALL_COLORS[2], "♫")
-        board_tile(layer, 0.86 * w, 0.22 * h, 0.2 * w, 0.24 * h, 9, "$", h)
-        board_tile(layer, 0.14 * w, 0.80 * h, 0.17 * w, 0.2 * h, -10, "$", h)
+        confetti(layer, 11, 30, avoid=(0.24, 0.76, 0.18, 0.82))
+        mi.draw_ball(layer, 0.13 * w, 0.40 * h, 0.15 * h, mi.BALL_COLORS[0], "♪")
+        mi.draw_ball(layer, 0.87 * w, 0.62 * h, 0.13 * h, mi.BALL_COLORS[2], "♫")
+        board_tile(layer, 0.86 * w, 0.27 * h, 0.17 * w, 0.2 * h, 8, "$", h)
+        board_tile(layer, 0.14 * w, 0.78 * h, 0.15 * w, 0.18 * h, -9, "$", h)
     return layer
 
 
-def fgn_front(w, h, big=0.24, small=0.075):
+def fgn_front(w, h, big=0.30, small=0.075):
     layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    big_font = ImageFont.truetype(mi.TITLE_FONT, int(big * h))
-    small_font = ImageFont.truetype(mi.SUB_FONT, int(small * h))
     cx = w / 2
-    spaced_text(layer, cx, h * 0.24, "FAMILY", small_font, (255, 255, 255, 225), small * h * 0.55)
-    shadowed_text(layer, (cx, h * 0.47), "GAME", big_font, (255, 255, 255, 255), h)
-    shadowed_text(layer, (cx, h * 0.72), "NIGHT", big_font, GOLD + (255,), h)
+    small_font = ImageFont.truetype(mi.SUB_FONT, int(small * h))
+    big_font = ImageFont.truetype(BEBAS, int(big * h))
+    gradient_text(layer, (cx, h * 0.225), "FAMILY", small_font, (255, 255, 255), (214, 206, 255),
+                  shadow=0.08, spacing=small * h * 0.55)
+    # GAME in white-lavender, NIGHT in gold: two lines, tightly stacked, with an outline for depth.
+    gradient_text(layer, (cx, h * 0.46), "GAME", big_font, (255, 255, 255), (206, 198, 255), stroke=int(h * 0.012),
+                  stroke_fill=(38, 16, 96, 255), shadow=0.05, glow=(255, 255, 255, 70))
+    gradient_text(layer, (cx, h * 0.72), "NIGHT", big_font, (255, 236, 130), (255, 160, 24), stroke=int(h * 0.012),
+                  stroke_fill=(104, 44, 4, 255), shadow=0.05, glow=(255, 190, 60, 120))
     return layer
 
 
 def fgn_flat(w, h, wide=False):
     img = fgn_back(w, h).convert("RGBA")
     img.alpha_composite(fgn_middle(w, h, wide))
-    img.alpha_composite(fgn_front(w, h, 0.3 if wide else 0.24, 0.085 if wide else 0.075))
+    img.alpha_composite(fgn_front(w, h, 0.34 if wide else 0.30, 0.085 if wide else 0.075))
     return img.convert("RGB")
 
 
@@ -122,33 +248,44 @@ def singo_tile(w, h):
 
 
 def jeopardy_tile(w, h):
-    img = gradient(w, h, (8, 16, 80), (28, 62, 175), [
-        (0.15, 0.2, 0.5, (96, 165, 250, 90)),
-        (0.85, 0.9, 0.55, (250, 204, 21, 70)),
-    ]).convert("RGBA")
+    """The classic quiz-show board: vivid blue, gold dollar amounts, big silver-white title."""
+    img = vgrad(w, h, (34, 62, 236), (8, 18, 140))
+    img.alpha_composite(radial(w, h, w * 0.5, h * 0.2, h * 0.85, (120, 170, 255), 0.32))
+
+    # The board: a grid of blue tiles with dark gaps, each with a gold dollar value.
     grid = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     gd = ImageDraw.Draw(grid)
-    cols, rows, gap = 6, 4, h * 0.025
-    mx, my = w * 0.035, h * 0.08
+    cols, rows = 6, 5
+    gap = h * 0.014
+    mx, my = w * 0.03, h * 0.05
     cw = (w - 2 * mx - gap * (cols - 1)) / cols
-    chh = (h - 2 * my - gap * (rows - 1)) / rows
-    font = ImageFont.truetype(mi.TITLE_FONT, int(min(chh * 0.42, cw * 0.27)))
+    ch = (h - 2 * my - gap * (rows - 1)) / rows
+    gd.rectangle([mx - gap, my - gap, w - mx + gap, h - my + gap], fill=(2, 4, 40, 255))
+    value_font = ImageFont.truetype(BEBAS, int(ch * 0.62))
     for r in range(rows):
         for c in range(cols):
-            x, y = mx + c * (cw + gap), my + r * (chh + gap)
-            gd.rounded_rectangle([x, y, x + cw, y + chh], radius=chh * 0.1, fill=(20, 40, 150, 255))
-            gd.text((x + cw / 2, y + chh / 2), f"${(r + 1) * 200}", font=font, fill=GOLD + (255,), anchor="mm")
-    grid.putalpha(grid.split()[3].point(lambda a: int(a * 0.55)))
+            x, y = mx + c * (cw + gap), my + r * (ch + gap)
+            tile = vgrad(int(cw), int(ch), (30, 56, 226), (12, 28, 170))
+            grid.paste(tile, (int(x), int(y)))
+            gd.line([(x, y + 1), (x + cw, y + 1)], fill=(110, 140, 255, 150), width=max(1, int(h * 0.004)))
+            label = f"${(r + 1) * 200}"
+            sx, sy = x + cw / 2, y + ch / 2
+            gd.text((sx + h * 0.006, sy + h * 0.008), label, font=value_font, fill=(0, 0, 20, 200), anchor="mm")
+            gd.text((sx, sy), label, font=value_font, fill=(255, 205, 64, 255), anchor="mm")
     img.alpha_composite(grid)
+
+    # Darken the middle so the title reads, then draw it.
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.25, w * 1.02, h * 0.81], radius=h * 0.12, fill=(2, 6, 72, 238))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.05)))
+
     front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    title_font = ImageFont.truetype(mi.TITLE_FONT, int(0.21 * h))
-    # A dark band behind the title so it reads over the board.
-    band = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ImageDraw.Draw(band).rounded_rectangle([w * 0.04, h * 0.31, w * 0.96, h * 0.87], radius=h * 0.05, fill=(6, 10, 50, 240))
-    front.alpha_composite(band)
-    shadowed_text(front, (w / 2, h * 0.485), "JEOPARDY", title_font, GOLD + (255,), h)
-    spaced_text(front, w / 2, h * 0.73, "BUZZ IN", ImageFont.truetype(mi.SUB_FONT, int(0.075 * h)),
-                (255, 255, 255, 235), 0.075 * h * 0.55)
+    title_font = ImageFont.truetype(BEBAS, int(h * 0.40))
+    gradient_text(front, (w / 2, h * 0.47), "JEOPARDY!", title_font, (255, 255, 255), (178, 190, 228),
+                  stroke=int(h * 0.011), stroke_fill=(6, 12, 110, 255), shadow=0.035, glow=(130, 170, 255, 150))
+    tag_font = ImageFont.truetype(mi.SUB_FONT, int(h * 0.062))
+    gradient_text(front, (w / 2, h * 0.705), "FAMILY EDITION", tag_font, (255, 224, 110), (255, 178, 40),
+                  shadow=0.06, spacing=h * 0.034)
     img.alpha_composite(front)
     return img.convert("RGB")
 

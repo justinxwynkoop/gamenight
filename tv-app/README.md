@@ -189,7 +189,9 @@ show up in Xcode on their own.
 ## Art
 
 The app icon, Top Shelf images and the two home screen tiles are drawn by
-`Tools/make_app_art.py` (needs Python with Pillow):
+`Tools/make_app_art.py` (needs Python with Pillow, and the free Bebas Neue font for
+the lettering: `apt install fonts-bebas-neue` on Debian/Ubuntu; elsewhere install it from
+Google Fonts and point `BEBAS` at the file in the script):
 
 ```bash
 python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
