@@ -79,6 +79,51 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertNil(room.unit(nil))
     }
 
+    // MARK: Team play (recorded from the server with six players)
+
+    func testAutoTeamsLobby() throws {
+        let room = try Fixture.state("teams-lobby").room
+        XCTAssertTrue(room.isTeamMode)
+        XCTAssertEqual(room.units.map(\.name), ["Red", "Blue"])
+        XCTAssertEqual(room.units.map(\.color), ["#ef4444", "#3b82f6"])
+        XCTAssertEqual(room.units.map(\.members), [3, 3])
+        XCTAssertEqual(room.units.flatMap { $0.memberNames ?? [] }.sorted(), ["Ann", "Ben", "Cat", "Dev", "Eli", "Fay"])
+        XCTAssertEqual(room.settings.sound, true)
+    }
+
+    func testFourTeams() throws {
+        let room = try Fixture.state("teams-lobby-four").room
+        XCTAssertEqual(room.units.map(\.name), ["Red", "Blue", "Green", "Yellow"])
+        XCTAssertEqual(room.units.map(\.color), ["#ef4444", "#3b82f6", "#22c55e", "#eab308"])
+        XCTAssertEqual(room.units.map(\.members).sorted(), [1, 1, 2, 2])
+        for unit in room.units { XCTAssertEqual(unit.memberNames?.count, unit.members) }
+    }
+
+    func testIndividualPlayHasNoMemberList() throws {
+        XCTAssertNil(try Fixture.state("lobby-players").room.units.first?.memberNames)
+    }
+
+    func testTeamsPlayAGame() throws {
+        let answering = try XCTUnwrap(try Fixture.jeopardy("teams-clue-answering").clue)
+        let room = try Fixture.state("teams-clue-answering").room
+        XCTAssertNotNil(room.unit(answering.buzzedBy), "buzzedBy is a team")
+        XCTAssertNotEqual(answering.buzzedBy, answering.buzzedPlayer, "the player who pressed is not the team")
+        let revealed = try Fixture.state("teams-board-after-clue")
+        XCTAssertEqual(revealed.room.units.map(\.score).sorted(), [0, 400])
+        XCTAssertNotNil(revealed.jeopardy?.control)
+    }
+
+    func testFinalWagerListsEveryoneButOnlyQualifiedTeamsPlay() throws {
+        let state = try Fixture.state("teams-final-wager")
+        let round = try XCTUnwrap(state.jeopardy?.finalRound)
+        XCTAssertEqual(round.step, .wager)
+        XCTAssertEqual(state.room.units.count, 2, "everyone's score is in the state the TV and phones receive")
+        XCTAssertEqual(round.finalists.count, 1, "only the team with points plays the final round")
+        let finalist = try XCTUnwrap(state.room.unit(round.finalists[0].id))
+        XCTAssertEqual(finalist.score, 400)
+        XCTAssertEqual(state.room.units.filter { $0.id != finalist.id }.map(\.score), [0])
+    }
+
     func testNoGameChosen() throws {
         let state = try Fixture.state("no-game-chosen")
         XCTAssertEqual(state.game, .noGame)

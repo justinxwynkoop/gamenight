@@ -4,31 +4,40 @@
     "teams": [
       {
         "id": "t1",
-        "name": "Team 1",
+        "name": "Red",
         "color": "#ef4444"
       },
       {
         "id": "t2",
-        "name": "Team 2",
+        "name": "Blue",
         "color": "#3b82f6"
       }
     ],
     "units": [
       {
         "id": "t1",
-        "name": "Team 1",
+        "name": "Red",
         "color": "#ef4444",
         "score": 0,
         "connected": true,
-        "members": 3
+        "members": 3,
+        "memberNames": [
+          "Ann",
+          "Cat",
+          "Eli"
+        ]
       },
       {
         "id": "t2",
-        "name": "Team 2",
+        "name": "Blue",
         "color": "#3b82f6",
         "score": 0,
         "connected": false,
-        "members": 2
+        "members": 2,
+        "memberNames": [
+          "Ben",
+          "Dev"
+        ]
       }
     ],
     "gameId": "jeopardy",
@@ -37,7 +46,11 @@
       "sound": true,
       "volume": 70,
       "ping": 0
-    }
+    },
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "individualMax": 5,
+    "teamSize": 5
   },
   "game": {
     "game": "jeopardy",

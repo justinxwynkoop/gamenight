@@ -1,0 +1,232 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t7",
+        "name": "Red",
+        "color": "#ef4444"
+      },
+      {
+        "id": "t8",
+        "name": "Blue",
+        "color": "#3b82f6"
+      }
+    ],
+    "units": [
+      {
+        "id": "t7",
+        "name": "Red",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 3,
+        "memberNames": [
+          "Ben",
+          "Eli",
+          "Fay"
+        ]
+      },
+      {
+        "id": "t8",
+        "name": "Blue",
+        "color": "#3b82f6",
+        "score": 400,
+        "connected": true,
+        "members": 3,
+        "memberNames": [
+          "Ann",
+          "Cat",
+          "Dev"
+        ]
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Family Night Sampler",
+    "settings": {
+      "earlyPenalty": true,
+      "penaltyMs": 500,
+      "buzzSeconds": 10,
+      "answerSeconds": 10,
+      "finalSeconds": 30,
+      "autoWrong": false
+    },
+    "status": "clue",
+    "view": "board",
+    "title": "Family Night Sampler",
+    "control": "t8",
+    "categories": [
+      "Around the World",
+      "Food & Drink",
+      "Movie Night",
+      "Science & Nature",
+      "Name That Decade",
+      "Word Play"
+    ],
+    "board": [
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": true
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 200,
+          "used": false
+        },
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 600,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1000,
+          "used": false
+        }
+      ]
+    ],
+    "clue": {
+      "c": 0,
+      "r": 1,
+      "category": "Around the World",
+      "value": 400,
+      "dd": false,
+      "step": "revealed",
+      "text": "The capital of Australia, and it is not Sydney.",
+      "answer": "Canberra",
+      "buzzedBy": "t8",
+      "buzzedPlayer": "p1",
+      "ddUnit": null,
+      "wager": null,
+      "lockedOut": [],
+      "correct": "t8",
+      "timer": null
+    },
+    "final": null
+  }
+}

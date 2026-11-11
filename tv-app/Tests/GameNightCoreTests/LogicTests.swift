@@ -13,6 +13,15 @@ final class DisplayScreenTests: XCTestCase {
         XCTAssertEqual(try screen("lobby-teams"), .lobby)
     }
 
+    func testTeamStatesUseTheSameScreens() throws {
+        XCTAssertEqual(try screen("teams-lobby"), .lobby)
+        XCTAssertEqual(try screen("teams-lobby-four"), .lobby)
+        XCTAssertEqual(try screen("teams-board"), .board)
+        XCTAssertEqual(try screen("teams-clue-answering"), .clue)
+        XCTAssertEqual(try screen("teams-clue-revealed"), .clue)
+        XCTAssertEqual(try screen("teams-final-wager"), .finalRound)
+    }
+
     func testBoard() throws {
         XCTAssertEqual(try screen("board"), .board)
         XCTAssertEqual(try screen("board-after-clue"), .board)

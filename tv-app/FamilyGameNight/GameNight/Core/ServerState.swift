@@ -84,6 +84,8 @@ struct ScoreUnit: Decodable, Equatable, Identifiable {
     var connected: Bool
     /// Players on this unit (1 in individual mode).
     var members: Int
+    /// Who is on this team. Only sent in team play.
+    var memberNames: [String]?
 }
 
 struct RoomSettings: Decodable, Equatable {

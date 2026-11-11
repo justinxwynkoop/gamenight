@@ -213,7 +213,7 @@ Or open `Package.swift` in Xcode and press ⌘U.
 `Tests/GameNightCoreTests/Fixtures/` holds the messages the Game Night server
 sends, recorded from a scripted game (join, clues, buzzes, Daily Double, Final
 Jeopardy, winner) so the tests read real data. If the server's messages change,
-record new ones with `Tools/record-fixtures.mjs` (its header says how).
+record new ones with `Tools/record-fixtures.mjs` (individual play) and `Tools/record-team-fixtures.mjs` (team play); their headers say how.
 
 ## Jeopardy on the TV
 
@@ -243,9 +243,14 @@ only draws what the server tells it.
 change the server or leave. The TV shows a "Reconnecting…" badge if the server
 drops and keeps trying.
 
-**Screens:** lobby (QR code, who has joined), board, clue (buzzers open, who is
+**Teams:** with six or more players the server splits everyone into Red and Blue
+(Green and Yellow join above ten players, or when the host picks four teams). The
+lobby shows each team and who is on it, and the score panel shows teams. The server
+does the splitting; see the `gamenight` README, "Players and teams".
+
+**Screens:** lobby (QR code, who has joined or who is on each team), board, clue (buzzers open, who is
 answering, answer revealed, with a draining countdown), Daily Double, Final
-Jeopardy (wagers, clue and timer, judged answers), leaderboard, winner. Team
+Jeopardy (wagers with everyone's scores listed, clue and timer, judged answers), leaderboard, winner. Team
 mode shows teams. If the server runs a game this app doesn't know, it says so.
 
 **Sound:** see [Sound](#sound).

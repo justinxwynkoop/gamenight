@@ -35,12 +35,22 @@ struct LobbyScreen: View {
                     .font(JP.text(36, .medium))
                     .foregroundStyle(JP.muted)
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], alignment: .leading, spacing: 16) {
-                    ForEach(state.room.units) { unit in
-                        chip(for: unit)
+                if state.room.isTeamMode {
+                    // Teams are picked at random, so show who ended up where.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380), spacing: 16)], alignment: .leading, spacing: 16) {
+                        ForEach(state.room.units) { unit in
+                            teamCard(for: unit)
+                        }
                     }
+                    .padding(.top, 8)
+                } else {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 16)], alignment: .leading, spacing: 16) {
+                        ForEach(state.room.units) { unit in
+                            chip(for: unit)
+                        }
+                    }
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
 
                 Spacer(minLength: 16)
                 HostCodeBlock(joinURL: joinURL)
@@ -59,6 +69,24 @@ struct LobbyScreen: View {
         }
         .padding(.horizontal, 100)
         .padding(.vertical, 80)
+    }
+
+    private func teamCard(for unit: ScoreUnit) -> some View {
+        let names = unit.memberNames ?? []
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("\(unit.name) team · \(unit.members)")
+                .font(JP.text(40))
+            Text(names.isEmpty ? "Waiting for players" : names.joined(separator: ", "))
+                .font(JP.text(28, .medium))
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .opacity(0.9)
+        }
+        .foregroundStyle(JP.inkColor(on: unit.color))
+        .padding(.horizontal, 26)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color(playerHex: unit.color)))
     }
 
     private func chip(for unit: ScoreUnit) -> some View {
