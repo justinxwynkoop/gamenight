@@ -226,3 +226,22 @@ body.play { box-shadow: inset 0 0 0 6px var(--team, transparent); }
 .fd-fmfoot { display: grid; grid-template-columns: auto 1fr; gap: 3vmin; align-items: center; }
 .fd-fmfoot .tot { font-size: 5vmin; font-weight: 900; }
 .fd-fmfoot .tot b { font-size: 11vmin; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* ---------- Family Feud: the Fast Money form on a phone ---------- */
+.fm-dots { display: flex; gap: 8px; margin: 4px 0 14px; }
+.fm-dot { flex: 1; min-height: 40px; border-radius: 10px; border: 2px solid #2b3a8f; background: transparent; color: #cdd6ff; font-weight: 800; }
+.fm-dot.done { background: #14532d; border-color: #22c55e; color: #bbf7d0; }
+.fm-dot.skip { border-style: dashed; border-color: #eab308; color: #fde68a; }
+.fm-dot.now { background: #3b5bff; border-color: #fff; color: #fff; }
+.fm-q { font-size: 1.35rem; font-weight: 700; line-height: 1.3; margin: 6px 0 14px; }
+.fm-row { display: flex; gap: 10px; align-items: stretch; }
+.fm-input { flex: 1; min-width: 0; font-size: 1.4rem; padding: 14px 16px; }
+.fm-mic { flex: none; width: 60px; border-radius: 14px; border: 2px solid #2b3a8f; background: #16225f; font-size: 1.5rem; cursor: pointer; }
+.fm-mic.listening { background: #b91c1c; border-color: #fca5a5; animation: pulse .8s ease-in-out infinite; }
+.fm-hint { min-height: 1.4em; margin: 8px 0; color: #cdd6ff; font-size: .95rem; }
+.fm-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.fm-actions .btn { min-height: 54px; font-size: 1.1rem; }
+.fm-review h3 { margin: 4px 0; }
+.fm-rv { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #2b3a8f; }
+.fm-rv .q { grid-column: 1 / -1; color: #cdd6ff; font-size: .9rem; }
+.fm-rv .a { font-weight: 700; font-size: 1.1rem; }

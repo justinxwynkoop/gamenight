@@ -1,12 +1,14 @@
 // Family Feud on a phone: the face-off buzzer, and the Fast Money answer form.
 // The page (play.js) handles joining and the header; this fills the rest.
 import { h, ink } from '../../common.js';
+import { buildFastMoneyForm } from './fmform.js';
 
 export function mount(container, { send, flash }) {
   let view = null;
   let receivedAt = 0;
   let screenKey = '';
   let buzzBtn; let statusLine; let peek; let clockEl; let fmBox = null;
+  let quiet = 0;   // answers sent along the way: the server's "saved" replies for these are not shown
 
   function buildBuzz() {
     buzzBtn = h('button', { class: 'buzz', type: 'button' }, 'WAIT');
@@ -83,16 +85,12 @@ export function mount(container, { send, flash }) {
       return { key: `fm-wait-${f.step}`, node: h('div', { class: 'card' }, h('h2', {}, 'Fast Money'), h('p', {}, line)) };
     }
     const key = `fm-${slot}`;
-    if (fmBox?.key === key) { fmBox.note.textContent = f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : ''; return { key, node: fmBox.node }; }
-    const inputs = f.rows.map((row) => h('input', { type: 'text', maxLength: 40, placeholder: 'Your answer', autocomplete: 'off', autocapitalize: 'sentences', 'aria-label': row.question }));
-    let sent = false;
+    if (fmBox?.key === key) { fmBox.form.setNote(f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : ''); return { key, node: fmBox.node }; }
     clockEl = h('div', { class: 'status-line' });
-    const note = h('p', { class: 'tag' }, f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : '');
-    const submit = (auto) => { send({ t: 'fm-answers', answers: inputs.map((i) => i.value) }); if (auto) sent = true; };
-    const node = h('div', { class: 'card' }, h('h2', {}, 'Fast Money — you’re up!'), clockEl,
-      ...f.rows.map((row, i) => h('div', {}, h('label', {}, `${i + 1}. ${row.question}`), inputs[i])),
-      h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: () => submit(false) }, 'Send my answers'), note);
-    fmBox = { key, node, note, auto: () => { if (!sent) submit(true); } };
+    // One question at a time, with a microphone, Skip, and a way back to skipped questions (see fmform.js).
+    const form = buildFastMoneyForm(f.rows.map((row) => row.question), { send: (m) => { quiet += 1; send(m); } });
+    const node = h('div', { class: 'card' }, h('h2', {}, 'Fast Money — you’re up!'), clockEl, form.node);
+    fmBox = { key, node, form, auto: () => form.auto() };
     return { key, node };
   }
 
@@ -131,7 +129,7 @@ export function mount(container, { send, flash }) {
     update(v) { view = v; receivedAt = performance.now(); refresh(); },
     onMessage(m) {
       if (m.t === 'buzz-result') { if (m.ok) navigator.vibrate?.(60); else if (m.reason === 'not-your-turn') flash('Only the two face-off players buzz.'); }
-      else if (m.t === 'ack') flash('Answers saved');
+      else if (m.t === 'ack') { if (quiet > 0) quiet -= 1; else flash('Answers saved'); }
     },
     destroy() { clearInterval(timer); },
   };

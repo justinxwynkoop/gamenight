@@ -134,7 +134,13 @@ dealt onto them at random and the host can move anyone.
    rounds.
 5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
-   their phone, or the host types what they say. The reveal then goes as on the show, one answer at a
+   their phone, or the host types what they say. On the phone the questions come one at a time with a big
+   answer box and a microphone button; **Skip** (or just saying "skip", or sending nothing) moves on, and
+   after the last question it goes back to any skipped ones while there is time, then shows a review with a
+   **Send my answers** button. Answers go to the host as you go, and whatever is there is sent when time runs
+   out. (The microphone button uses the browser's speech recognition. Browsers usually only allow that on a
+   secure `https` page, which this plain-`http` server isn't, so it may say "Voice isn't allowed here"; the
+   microphone on the phone's own keyboard always works and fills the box the same way.) The reveal then goes as on the show, one answer at a
    time: the host reads the question, taps **Reveal what they said** (the TV types the answer out on the
    board), says "survey says", then taps the points button (the TV shows the points). Each survey list is
    shown on the host screen with a tag where each player's answer landed, so the rank is visible without
