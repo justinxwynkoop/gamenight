@@ -9,9 +9,11 @@
     "start": "node server.js",
     "test": "node --test \"test/*.test.js\""
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "qrcode": "1.5.4",
-    "ws": "8.18.0"
+    "ws": "8.22.2"
   }
 }
