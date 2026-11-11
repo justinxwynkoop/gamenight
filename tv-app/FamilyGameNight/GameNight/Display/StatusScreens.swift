@@ -3,6 +3,7 @@ import SwiftUI
 /// Shown until the first update arrives, or when the server can't be reached.
 struct ConnectingScreen: View {
     let client: GameNightClient
+    let onRetry: () -> Void
     let onChangeServer: () -> Void
     let onExit: () -> Void
 
@@ -22,7 +23,7 @@ struct ConnectingScreen: View {
                     .foregroundStyle(JP.softWhite)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 1100)
-                Text("Check that the server is running and on the same network as this Apple TV. If it asked to find devices on your network, choose Allow. It keeps trying by itself.")
+                Text("Check that the server is running and on the same network as this Apple TV. If you chose Don't Allow when it asked to find devices on your network, turn that back on in Settings. It keeps trying by itself.")
                     .font(JP.text(30, .medium))
                     .foregroundStyle(JP.muted)
                     .multilineTextAlignment(.center)
@@ -45,10 +46,14 @@ struct ConnectingScreen: View {
             }
 
             HStack(spacing: 40) {
+                Button("Try again", action: onRetry)
                 Button("Change server", action: onChangeServer)
                 Button("Back to games", action: onExit)
             }
             .padding(.top, 16)
+            Text("Menu goes back to the address page.")
+                .font(JP.text(26, .medium))
+                .foregroundStyle(JP.muted)
         }
         .padding(80)
     }

@@ -32,6 +32,12 @@ struct JeopardyRootView: View {
             if let address, !editing { client.connect(to: address) }
         }
         .onDisappear { client.disconnect() }
+        // Remember an address only once it has really connected, so a typo is not kept.
+        .onChange(of: client.connection) { _, connection in
+            if connection == .connected, let connected = client.address {
+                ServerSettings.save(connected)
+            }
+        }
     }
 
     /// Returns an error message to show, or nil once connected.
@@ -39,18 +45,19 @@ struct JeopardyRootView: View {
         guard let parsed = ServerAddress.parse(text) else {
             return "That doesn't look like an address. Try something like 192.168.1.50:3000 or gamenight.local."
         }
-        ServerSettings.save(parsed)
         address = parsed
         client.connect(to: parsed)
         editing = false
         return nil
     }
 
+    /// Back from the address page: return to the live display if we are connected
+    /// (the page was opened from its menu), otherwise leave to the game picker.
     private func back() {
-        if address == nil {
-            onExit()
-        } else {
+        if client.connection == .connected {
             editing = false
+        } else {
+            onExit()
         }
     }
 }

@@ -144,20 +144,24 @@ final class GameNightClient {
     }
 
     private static func describe(_ error: Error) -> String {
-        guard let code = (error as? URLError)?.code else {
+        guard let urlError = error as? URLError else {
             return "Couldn't connect (\(error.localizedDescription))."
         }
-        switch code {
+        // The numeric code is shown too, so a problem can be looked up or reported exactly.
+        let code = " [error \(urlError.code.rawValue)]"
+        switch urlError.code {
         case .cannotFindHost, .dnsLookupFailed:
-            return "That address wasn't found on this network."
+            return "That address wasn't found on this network." + code
         case .cannotConnectToHost:
-            return "Nothing answered at that address. Is the Game Night server running?"
+            return "Nothing answered at that address. Is the Game Night server running, and is the port right?" + code
         case .timedOut:
-            return "The server didn't answer in time."
+            return "The server didn't answer in time." + code
         case .notConnectedToInternet, .networkConnectionLost:
-            return "The Apple TV isn't connected to a network."
+            return "The Apple TV couldn't reach the network or that address. If it asked to find devices on your network, it needs to be allowed." + code
+        case .appTransportSecurityRequiresSecureConnection:
+            return "The app isn't allowed to use a plain http address. This is a setting in the app, not your network." + code
         default:
-            return "Couldn't connect (\(error.localizedDescription))."
+            return "Couldn't connect (\(urlError.localizedDescription))." + code
         }
     }
 }

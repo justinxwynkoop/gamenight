@@ -47,12 +47,15 @@ struct JeopardyDisplayView: View {
             }
         }
         .ignoresSafeArea()
-        // The display itself takes focus so Menu and Play/Pause reach it. Not while the
-        // menu is open, or while the "connecting" screen's own buttons need focus.
-        .focusable(client.state != nil && !showMenu)
-        .focusEffectDisabled()
         .onExitCommand {
-            if showMenu { showMenu = false } else { onExit() }
+            if showMenu {
+                showMenu = false
+            } else if client.state == nil {
+                // Still connecting, or can't reach the server: go back to the address page.
+                onChangeServer()
+            } else {
+                onExit()
+            }
         }
         .onPlayPauseCommand { showMenu.toggle() }
         .onChange(of: client.state) { previous, next in
@@ -76,10 +79,26 @@ struct JeopardyDisplayView: View {
     @ViewBuilder
     private var content: some View {
         if let state = client.state {
-            screen(for: state)
+            // The game screens have no buttons, so the screen itself takes focus. That is
+            // what lets Menu and Play/Pause reach this view. The highlight is switched off
+            // for this part only: the connecting screen's buttons below need theirs.
+            ZStack {
+                screen(for: state)
+            }
+            .focusable(!showMenu)
+            .focusEffectDisabled()
         } else {
-            ConnectingScreen(client: client, onChangeServer: onChangeServer, onExit: onExit)
+            ConnectingScreen(
+                client: client,
+                onRetry: retry,
+                onChangeServer: onChangeServer,
+                onExit: onExit
+            )
         }
+    }
+
+    private func retry() {
+        if let address = client.address { client.connect(to: address) }
     }
 
     @ViewBuilder
