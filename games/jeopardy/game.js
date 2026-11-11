@@ -36,14 +36,16 @@ export function validateSet(set) {
 export class JeopardyGame {
   constructor(room) {
     this.room = room;
-    this.settings = { earlyPenalty: true, penaltyMs: 500, buzzSeconds: 10, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
+    this.settings = { rounds: 1, earlyPenalty: true, penaltyMs: 500, buzzSeconds: 10, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
     this.setId = null;
-    this.set = null; // loaded question set
+    this.set = null; // the question set for round 1 (and Final Jeopardy when there is only one round)
+    this.setId2 = null;
+    this.set2 = null; // the question set for round 2, when two rounds are played (its values are doubled)
     this.run = this.#blankRun('lobby');
   }
 
   #blankRun(status) {
-    return { status, used: [], dd: [], control: null, clue: null, final: null, view: 'board' };
+    return { status, round: 1, used: [], dd: [], control: null, clue: null, final: null, view: 'board' };
   }
   #changed() { this.room.changed(); }
 
@@ -55,16 +57,19 @@ export class JeopardyGame {
 
   inProgress() { return this.run.status !== 'lobby'; }
   /** Is this saved set the one chosen? (The editor won't delete a set in play.) */
-  usesContent(id) { return this.setId === id; }
+  usesContent(id) { return this.setId === id || this.setId2 === id; }
 
   // ---------- persistence ----------
-  toJSON() { return { settings: this.settings, setId: this.setId, run: this.run }; }
+  toJSON() { return { settings: this.settings, setId: this.setId, setId2: this.setId2, run: this.run }; }
   restore(data) {
     this.settings = { ...this.settings, ...data.settings };
     this.setId = data.setId ?? null;
     this.set = this.setId ? this.room.loadContent(GAME, this.setId) : null;
+    this.setId2 = data.setId2 ?? null;
+    this.set2 = this.setId2 ? this.room.loadContent(GAME, this.setId2) : null;
     this.run = { ...this.#blankRun('lobby'), ...data.run };
-    if (this.run.status !== 'lobby' && !this.set) this.run = this.#blankRun('lobby');
+    const missing = !this.set || (this.settings.rounds === 2 && !this.set2);
+    if (this.run.status !== 'lobby' && missing) this.run = this.#blankRun('lobby');
     // The clock restarts with the server, so times saved before are meaningless: a leftover
     // penalty could lock a player out for ages. Clear them and give a running timer its full time.
     const cl = this.run.clue;
@@ -80,7 +85,8 @@ export class JeopardyGame {
       case 'endGame': return this.endGame();
       case 'setView': return this.setView(a.view);
       case 'setSettings': return this.setSettings(a);
-      case 'chooseSet': return this.chooseSet(a.id);
+      case 'chooseSet': return this.chooseSet(a.id, Number(a.round ?? 1));
+      case 'startRound2': return this.startRound2();
       case 'select': return this.select(Number(a.c), Number(a.r));
       case 'setDailyDoubleUnit': return this.setDailyDoubleUnit(a.id);
       case 'setDailyDoubleWager': return this.setDailyDoubleWager(a.amount);
@@ -111,12 +117,17 @@ export class JeopardyGame {
   }
 
   // ---------- setup ----------
-  setSettings({ earlyPenalty, penaltyMs, buzzSeconds, answerSeconds, finalSeconds, autoWrong }) {
+  setSettings({ rounds, earlyPenalty, penaltyMs, buzzSeconds, answerSeconds, finalSeconds, autoWrong }) {
     const inRange = (v, max, what) => {
       const n = int(v);
       if (!(n >= 0 && n <= max)) fail(`${what} must be 0 to ${max}`);
       return n;
     };
+    if (rounds !== undefined) {
+      if (this.run.status !== 'lobby') fail('Choose the number of rounds before the game starts');
+      if (![1, 2].includes(int(rounds))) fail('Play 1 or 2 rounds before Final Jeopardy');
+      this.settings.rounds = int(rounds);
+    }
     if (typeof earlyPenalty === 'boolean') this.settings.earlyPenalty = earlyPenalty;
     if (typeof autoWrong === 'boolean') this.settings.autoWrong = autoWrong;
     if (penaltyMs !== undefined) this.settings.penaltyMs = inRange(penaltyMs, 5000, 'Penalty (ms)');
@@ -125,19 +136,22 @@ export class JeopardyGame {
     if (finalSeconds !== undefined) this.settings.finalSeconds = inRange(finalSeconds, 300, 'Final Jeopardy time (seconds)');
     this.#changed();
   }
-  chooseSet(id) {
+  /** Pick the question set for a round (1, or 2 when two rounds are played). The two rounds need different sets. */
+  chooseSet(id, round = 1) {
     if (this.run.status !== 'lobby') fail('Pick the question set before the game starts');
+    if (![1, 2].includes(round)) fail('Choose a set for round 1 or 2');
     const set = this.room.loadContent(GAME, id) ?? fail('No such question set');
     validateSet(set);
-    this.setId = id;
-    this.set = set;
+    const other = round === 1 ? this.setId2 : this.setId;
+    if (other === id) fail(`That set is already used for round ${round === 1 ? 2 : 1}. Pick a different one.`);
+    if (round === 1) { this.setId = id; this.set = set; } else { this.setId2 = id; this.set2 = set; }
     this.#changed();
   }
-  /** The editor saved or deleted a set that may be the one chosen. */
+  /** The editor saved or deleted a set that may be one of those chosen. */
   contentChanged(id) {
-    if (this.setId === id && this.run.status === 'lobby') {
-      this.set = this.room.loadContent(GAME, id);
-      if (!this.set) this.setId = null;
+    if (this.run.status === 'lobby') {
+      if (this.setId === id) { this.set = this.room.loadContent(GAME, id); if (!this.set) this.setId = null; }
+      if (this.setId2 === id) { this.set2 = this.room.loadContent(GAME, id); if (!this.set2) this.setId2 = null; }
     }
     this.#changed();
   }
@@ -145,14 +159,46 @@ export class JeopardyGame {
   startGame() {
     if (this.run.status !== 'lobby') fail('Game already started');
     if (!this.set) fail('Choose a question set first');
+    if (this.settings.rounds === 2) {
+      if (!this.set2) fail('Choose a question set for Double Jeopardy, or play one round');
+      if (this.setId === this.setId2) fail('Round 1 and round 2 need different question sets');
+    }
     if (this.room.eligibleUnits().length < 1) fail('Nobody has joined yet');
     this.room.resetScores();
-    const flagged = [];
-    this.set.categories.forEach((cat, c) => cat.clues.forEach((cl, r) => { if (cl.dailyDouble) flagged.push(key(c, r)); }));
-    let dd = flagged;
-    if (!dd.length) dd = [key(Math.floor(Math.random() * COLS), 1 + Math.floor(Math.random() * (ROWS - 1)))];
-    this.run = { ...this.#blankRun('board'), dd };
+    this.run = { ...this.#blankRun('board'), dd: this.#placeDailyDoubles(this.set, 1) };
     this.#changed();
+  }
+  /**
+   * Where the Daily Doubles are: any the question set flags, otherwise random. The first round has one and
+   * the second has two (in different columns), none on the top row, as on the show.
+   */
+  #placeDailyDoubles(set, round) {
+    const flagged = [];
+    set.categories.forEach((cat, c) => cat.clues.forEach((cl, r) => { if (cl.dailyDouble) flagged.push(key(c, r)); }));
+    if (flagged.length) return flagged;
+    const columns = [...Array(COLS).keys()];
+    for (let i = columns.length - 1; i > 0; i--) { const j = Math.floor(this.room.rng() * (i + 1)); [columns[i], columns[j]] = [columns[j], columns[i]]; }
+    return columns.slice(0, round === 2 ? 2 : 1).map((c) => key(c, 1 + Math.floor(this.room.rng() * (ROWS - 1))));
+  }
+  /** Host: end round 1 and begin round 2. Scores carry over; whoever is behind picks first. */
+  startRound2() {
+    if (this.run.status !== 'board') fail('Return to the board first');
+    if (this.settings.rounds !== 2 || this.run.round !== 1) fail('There is no second round to start');
+    if (!this.set2) fail('Choose a question set for Double Jeopardy');
+    this.run.round = 2;
+    this.run.used = [];
+    this.run.dd = this.#placeDailyDoubles(this.set2, 2);
+    this.run.control = this.#lowestUnit();
+    this.run.view = 'board';
+    this.#changed();
+  }
+  /** The unit with the lowest score (a random one of them if tied), or null if nobody can play. */
+  #lowestUnit() {
+    const units = this.room.eligibleUnits();
+    if (!units.length) return null;
+    const low = Math.min(...units.map((u) => u.score));
+    const tied = units.filter((u) => u.score === low);
+    return tied[Math.floor(this.room.rng() * tied.length)].id;
   }
   /** Back to the lobby. Keeps players and teams, clears scores. */
   endGame() {
@@ -167,7 +213,14 @@ export class JeopardyGame {
   }
 
   // ---------- the board ----------
-  #cell(c, r) { return this.set?.categories[c]?.clues[r] ?? fail('No such square'); }
+  /** The question set whose board is in play: round 1's, or round 2's. */
+  #board() { return this.run.round === 2 && this.set2 ? this.set2 : this.set; }
+  /** Round 2 (Double Jeopardy) is worth double. */
+  #multiplier() { return this.run.round === 2 ? 2 : 1; }
+  #value(cell) { return int(cell.value) * this.#multiplier(); }
+  /** Final Jeopardy comes from the last round's set. */
+  #finalSet() { return this.settings.rounds === 2 && this.set2 ? this.set2 : this.set; }
+  #cell(c, r) { return this.#board()?.categories[c]?.clues[r] ?? fail('No such square'); }
   #inClue(...steps) {
     const cl = this.run.clue;
     if (this.run.status !== 'clue' || !cl) fail('No clue is open');
@@ -183,7 +236,7 @@ export class JeopardyGame {
     this.run.status = 'clue';
     this.run.view = 'board';
     this.run.clue = {
-      c, r, value: int(cell.value), dd,
+      c, r, value: this.#value(cell), dd,
       step: dd ? 'wager' : 'reading',
       wager: null, ddUnit: dd ? this.#validControl() : null,
       buzzedBy: null, buzzedPlayer: null, buzzedAt: null,
@@ -206,7 +259,8 @@ export class JeopardyGame {
   setDailyDoubleWager(amount) {
     const cl = this.#inClue('wager');
     const u = this.room.unit(cl.ddUnit) ?? fail('Pick who is playing the Daily Double');
-    const max = Math.max(u.score, 1000);
+    // The most you can wager is your score, or the biggest clue on this board if that is more.
+    const max = Math.max(u.score, this.#boardTop());
     const n = int(amount);
     if (!(n >= 0 && n <= max)) fail(`Wager must be between 0 and ${max}`);
     cl.wager = n;
@@ -370,6 +424,8 @@ export class JeopardyGame {
     this.#changed();
   }
   boardCleared() { return this.run.used.length >= COLS * ROWS; }
+  /** The biggest clue value on the board in play ($1,000 in round 1, $2,000 in round 2). */
+  #boardTop() { return Math.max(1000 * this.#multiplier(), ...(this.#board()?.categories ?? []).flatMap((c) => c.clues.map((cl) => this.#value(cl)))); }
 
   // ---------- Final Jeopardy ----------
   /** Before the round: everyone with a positive score. Once it starts the list is frozen,
@@ -452,15 +508,18 @@ export class JeopardyGame {
   /** What the TV and phones may see. Answers appear only once revealed. */
   publicView() {
     const run = this.run;
-    const set = this.set;
+    const set = this.#board();
+    const finalSet = this.#finalSet();
     const cl = run.clue;
     const view = {
-      game: GAME, lobbyTitle: set?.title ?? 'Jeopardy',
+      game: GAME, lobbyTitle: this.set?.title ?? 'Jeopardy',
       settings: this.settings, status: run.status, view: run.view,
+      round: run.round, rounds: this.settings.rounds,
+      roundTitle: this.settings.rounds === 2 && run.round === 2 ? 'Double Jeopardy!' : 'Jeopardy!',
       title: set?.title ?? null, control: run.control,
       categories: set ? set.categories.map((c) => c.name) : [],
       board: set
-        ? set.categories.map((cat, c) => cat.clues.map((cl2, r) => ({ value: int(cl2.value), used: run.used.includes(key(c, r)) })))
+        ? set.categories.map((cat, c) => cat.clues.map((cl2, r) => ({ value: this.#value(cl2), used: run.used.includes(key(c, r)) })))
         : [],
       clue: null, final: null,
     };
@@ -475,14 +534,14 @@ export class JeopardyGame {
         lockedOut: cl.lockedOut, correct: cl.correct, timer: this.#timerView(cl),
       };
     }
-    if (run.final && set) {
+    if (run.final && finalSet) {
       const f = run.final;
       const showClue = f.step !== 'wager';
       const judged = f.step === 'judge' || f.step === 'results';
       view.final = {
-        step: f.step, category: set.final.category, timer: this.#timerView(f),
-        text: showClue ? set.final.clue : null,
-        answer: f.step === 'results' ? set.final.answer : null,
+        step: f.step, category: finalSet.final.category, timer: this.#timerView(f),
+        text: showClue ? finalSet.final.clue : null,
+        answer: f.step === 'results' ? finalSet.final.answer : null,
         finalists: this.finalists().map((u) => ({
           id: u.id,
           wagered: f.wagers[u.id] !== undefined,
@@ -505,8 +564,8 @@ export class JeopardyGame {
     if (cl) { view.clue.answer = this.#cell(cl.c, cl.r).answer; view.clue.text = this.#cell(cl.c, cl.r).clue; }
     if (view.final) {
       const f = this.run.final;
-      view.final.answer = this.set.final.answer;
-      view.final.text = this.set.final.clue;
+      view.final.answer = this.#finalSet().final.answer;
+      view.final.text = this.#finalSet().final.clue;
       view.final.finalists.forEach((fu) => {
         fu.wager = f.wagers[fu.id] ?? null;
         fu.answer = f.answers[fu.id] ?? null;
@@ -514,6 +573,7 @@ export class JeopardyGame {
     }
     view.dailyDoubles = this.run.dd;
     view.setId = this.setId;
+    view.setId2 = this.setId2;
     view.boardCleared = this.boardCleared();
     return view;
   }

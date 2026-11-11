@@ -441,3 +441,209 @@ test('buzz-in time is validated and a Daily Double has no buzz window', () => {
   g.select(2, 3);
   assert.equal(g.publicView().clue.timer, null);          // wagering: no timer at all
 });
+
+// ---------- two rounds before Final Jeopardy ----------
+const set2 = (() => {
+  const b = structuredClone(set);
+  b.title = 'Second board';
+  b.categories.forEach((c, i) => { c.name = `Round two ${i + 1}`; });
+  b.final = { category: 'The Last Word', clue: 'Second set final clue', answer: 'Second set answer' };
+  return b;
+})();
+
+function twoRounds({ players = ['Ann', 'Bo', 'Cy'], random = Math.random } = {}) {
+  let t = 1000;
+  const room = new Room({ games: GAMES, now: () => t, random, loadContent: (game, id) => (id === 'y' ? set2 : set) });
+  const clock = { advance: (ms) => { t += ms; } };
+  room.chooseGame('jeopardy');
+  const ps = players.map((n) => room.join({ name: n }));
+  const g = room.game;
+  g.setSettings({ rounds: 2 });
+  g.chooseSet('x', 1);
+  g.chooseSet('y', 2);
+  return { room, g, ps, clock };
+}
+/** Clear the board in play by marking every square used. */
+const clearBoard = (g) => { g.run.used = []; for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) g.run.used.push(`${c},${r}`); };
+
+test('one round is the default; the number of rounds is 1 or 2 and is chosen in the lobby', () => {
+  const { g } = setup();
+  assert.equal(g.settings.rounds, 1);
+  assert.throws(() => g.setSettings({ rounds: 3 }), /1 or 2/);
+  assert.throws(() => g.setSettings({ rounds: 0 }), /1 or 2/);
+  g.setSettings({ rounds: 2 });
+  assert.equal(g.publicView().rounds, 2);
+  g.setSettings({ rounds: 1 });
+  g.chooseSet('x'); start(g);
+  assert.throws(() => g.setSettings({ rounds: 2 }), /before the game starts/);
+});
+
+test('each round has its own question set, and they must differ', () => {
+  const { g } = twoRounds();
+  assert.equal(g.setId, 'x');
+  assert.equal(g.setId2, 'y');
+  assert.throws(() => g.chooseSet('x', 2), /already used for round 1/);
+  assert.throws(() => g.chooseSet('y', 1), /already used for round 2/);
+  assert.throws(() => g.chooseSet('z', 3), /round 1 or 2/);
+  assert.equal(g.hostView().setId2, 'y');
+});
+
+test('a two-round game cannot start without a second set', () => {
+  const { room, g } = twoRounds();
+  g.setId2 = null; g.set2 = null;
+  assert.throws(() => g.startGame(), /Double Jeopardy/);
+  g.setSettings({ rounds: 1 });
+  assert.doesNotThrow(() => g.startGame());                    // one round needs only the first set
+  assert.equal(room.inProgress(), true);
+});
+
+test('round 1 is played from the first set, with one Daily Double', () => {
+  for (let i = 0; i < 40; i++) {
+    const { g } = twoRounds();
+    g.startGame();
+    const v = g.publicView();
+    assert.equal(v.round, 1);
+    assert.equal(v.roundTitle, 'Jeopardy!');
+    assert.equal(v.categories[0], set.categories[0].name);
+    assert.equal(v.board[0].map((c) => c.value).join(), '200,400,600,800,1000');
+    assert.equal(g.run.dd.length, 1);
+    assert.ok(Number(g.run.dd[0].split(',')[1]) >= 1, 'never the top row');
+  }
+});
+
+test('starting round 2: new board from the second set, values doubled, scores carry, lowest score picks', () => {
+  const { room, g, ps } = twoRounds();
+  start(g);
+  g.select(0, 0); g.openBuzzers(); g.awardBuzz(ps[0].id); g.correct(); g.closeClue();   // Ann +200
+  g.select(0, 1); g.openBuzzers(); g.awardBuzz(ps[1].id); g.correct(); g.closeClue();   // Bo +400
+  assert.deepEqual(ps.map((p) => p.score), [200, 400, 0]);
+  assert.equal(g.run.control, ps[1].id);
+  g.startRound2();
+  const v = g.publicView();
+  assert.equal(v.round, 2);
+  assert.equal(v.roundTitle, 'Double Jeopardy!');
+  assert.deepEqual(v.categories, set2.categories.map((c) => c.name));
+  assert.equal(v.board[0].map((c) => c.value).join(), '400,800,1200,1600,2000');
+  assert.ok(v.board.flat().every((c) => !c.used), 'a fresh board');
+  assert.deepEqual(ps.map((p) => p.score), [200, 400, 0], 'scores carry over');
+  assert.equal(g.run.control, ps[2].id, 'Cy has the lowest score, so Cy picks first');
+  assert.equal(room.publicView().game.status, 'board');
+});
+
+test('round 2 has two Daily Doubles in different columns; a set can flag its own', () => {
+  for (let i = 0; i < 40; i++) {
+    const { g } = twoRounds();
+    start(g); g.startRound2();
+    assert.equal(g.run.dd.length, 2);
+    const cols = g.run.dd.map((k) => k.split(',')[0]);
+    assert.notEqual(cols[0], cols[1]);
+    assert.ok(g.run.dd.every((k) => Number(k.split(',')[1]) >= 1));
+  }
+  const { g } = twoRounds();
+  const flagged = structuredClone(set2);
+  flagged.categories[1].clues[2].dailyDouble = true;
+  g.room.loadContent = (game, id) => (id === 'y' ? flagged : set);
+  g.chooseSet('y', 2);
+  start(g); g.startRound2();
+  assert.deepEqual(g.run.dd, ['1,2']);
+});
+
+test('round 2 clues are worth double, and a Daily Double can be wagered up to $2,000', () => {
+  const { g, ps } = twoRounds();
+  start(g); g.startRound2();
+  g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(0, 0);                                              // a $400 clue now
+  assert.equal(g.run.clue.value, 400);
+  g.openBuzzers(); g.awardBuzz(ps[0].id); g.correct();
+  assert.equal(ps[0].score, 400);
+  g.closeClue();
+  g.select(2, 3);                                              // the Daily Double
+  assert.throws(() => g.setDailyDoubleWager(2001), /between 0 and 2000/);
+  g.setDailyDoubleWager(2000);
+  assert.equal(g.run.clue.value, 2000);
+  g.correct();
+  assert.equal(ps[0].score, 2400);
+  // a rich player can wager their whole score, as before
+  const { g: g2, ps: p2 } = twoRounds();
+  start(g2); g2.startRound2();
+  p2[0].score = 5000; g2.run.dd = ['0,1']; g2.run.control = p2[0].id;
+  g2.select(0, 1);
+  assert.doesNotThrow(() => g2.setDailyDoubleWager(5000));
+});
+
+test('round 1 Daily Doubles are still capped at $1,000 (or your score)', () => {
+  const { g, ps } = twoRounds();
+  start(g);
+  g.run.dd = ['0,1']; g.run.control = ps[0].id;
+  g.select(0, 1);
+  assert.throws(() => g.setDailyDoubleWager(1001), /between 0 and 1000/);
+});
+
+test('the lowest score picks first in round 2, and ties are broken at random', () => {
+  const lowRng = twoRounds({ random: () => 0 });
+  start(lowRng.g); lowRng.g.startRound2();
+  assert.equal(lowRng.g.run.control, lowRng.ps[0].id);          // all tied at 0: the random draw picks the first
+  const highRng = twoRounds({ random: () => 0.99 });
+  start(highRng.g); highRng.g.startRound2();
+  assert.equal(highRng.g.run.control, highRng.ps[2].id);
+});
+
+test('round 2 can only be started from the board, once, and only in a two-round game', () => {
+  const { g, ps } = twoRounds();
+  assert.throws(() => g.startRound2(), /Return to the board/);   // not started
+  start(g);
+  g.select(0, 0);
+  assert.throws(() => g.startRound2(), /Return to the board/);   // a clue is open
+  g.reveal(); g.closeClue();
+  g.startRound2();
+  assert.throws(() => g.startRound2(), /no second round/);       // already in round 2
+  const one = setup();
+  start(one.g);
+  assert.throws(() => one.g.startRound2(), /no second round/);
+  assert.ok(ps.length);
+});
+
+test('Final Jeopardy uses the last round’s set, and can follow round 1 if the host skips round 2', () => {
+  const { g, ps } = twoRounds();
+  start(g); ps[0].score = 500;
+  g.startRound2();
+  g.startFinal();
+  const v = g.publicView();
+  assert.equal(v.final.category, 'The Last Word');
+  assert.equal(g.hostView().final.answer, 'Second set answer');
+  const skip = twoRounds();
+  start(skip.g); skip.ps[0].score = 500;
+  skip.g.startFinal();                                          // skipping round 2 is allowed
+  assert.equal(skip.g.publicView().final.category, 'The Last Word');
+  const single = setup();
+  start(single.g); single.ps[0].score = 500; single.g.startFinal();
+  assert.equal(single.g.publicView().final.category, set.final.category);
+});
+
+test('rounds and the second set survive a restart; an old save without them loads as one round', () => {
+  const { room, g, ps } = twoRounds();
+  start(g); ps[0].score = 300; g.startRound2();
+  const copy = new Room({ games: GAMES, loadContent: (game, id) => (id === 'y' ? set2 : set) });
+  assert.equal(copy.restore(JSON.parse(JSON.stringify(room))), true);
+  const cg = copy.game;
+  assert.equal(cg.settings.rounds, 2);
+  assert.equal(cg.setId2, 'y');
+  assert.equal(cg.run.round, 2);
+  assert.equal(cg.publicView().roundTitle, 'Double Jeopardy!');
+  assert.equal(cg.publicView().board[0][0].value, 400);
+  const old = JSON.parse(JSON.stringify(room));
+  delete old.game.setId2; delete old.game.settings.rounds; delete old.game.run.round;
+  const o = new Room({ games: GAMES, loadContent: () => set });
+  assert.equal(o.restore(old), true);
+  assert.equal(o.game.settings.rounds, 1);
+  assert.equal(o.game.run.round, 1);
+});
+
+test('the editor cannot delete a set that either round is using; end game keeps the sets', () => {
+  const { g } = twoRounds();
+  assert.equal(g.usesContent('x'), true);
+  assert.equal(g.usesContent('y'), true);
+  assert.equal(g.usesContent('z'), false);
+  start(g); g.endGame();
+  assert.equal(g.setId, 'x'); assert.equal(g.setId2, 'y'); assert.equal(g.run.round, 1);
+});
