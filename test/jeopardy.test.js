@@ -107,6 +107,18 @@ test('daily double: wager capped, scored, and clue hidden until wager', () => {
   assert.equal(g.run.clue.step, 'revealed');
 });
 
+test('a Daily Double cannot be skipped with a blank wager', () => {
+  const { g, ps } = setup();
+  start(g);
+  g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3);
+  for (const blank of ['', '  ', null, undefined]) assert.throws(() => g.setDailyDoubleWager(blank), /Enter the wager/);
+  assert.equal(g.run.clue.step, 'wager');
+  assert.equal(g.publicView().clue.text, null);
+  g.setDailyDoubleWager('0');                       // an explicit $0 is a real wager
+  assert.equal(g.run.clue.step, 'answering');
+});
+
 test('team mode: team score, team lockout after a teammate buzzes', () => {
   const { room, g, ps } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'], teams: true });
   start(g); g.select(0, 0); g.openBuzzers();

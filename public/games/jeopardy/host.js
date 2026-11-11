@@ -177,26 +177,20 @@ function clueView() {
   const body = [
     card(tracker,
       h('div', { class: 'meta' }, cl.category, h('span', {}, '·'), cl.dd ? pill('Daily Double', 'warn') : money(cl.value)),
-      h('div', { class: 'clue-text' }, cl.text),
-      h('div', { class: 'answer' }, h('small', {}, 'Answer'), h('b', {}, cl.answer))),
+      cl.step === 'wager'
+        ? h('div', { class: 'clue-text dim' }, 'Hidden until the wager is set')
+        : [h('div', { class: 'clue-text' }, cl.text),
+          h('div', { class: 'answer' }, h('small', {}, 'Answer'), h('b', {}, cl.answer))]),
   ];
   const dock = [];
   const give = button({ label: 'Give buzz to…', icon: 'user', size: 'sm', onclick: openGiveSheet });
 
   if (cl.step === 'wager') {
-    const max = Math.max(unitById(v, cl.ddUnit)?.score ?? 0, topValue());
-    const wager = h('input', { type: 'number', inputMode: 'numeric', min: 0, max, placeholder: `Wager, up to ${money(max)}`, 'data-k': 'ddw', 'aria-label': 'Wager' });
-    const set = () => act('setDailyDoubleWager', { amount: wager.value });
-    body.push(card(eyebrow('Daily Double'), h('div', { class: 'card-title' }, 'Who is playing, and how much?'),
-      h('p', { class: 'dim' }, 'The clue stays hidden on the TV until you set the wager.'),
-      h('div', { class: 'list' }, v.units.map((u) => h('button', {
-        type: 'button', class: 'pick', 'aria-pressed': String(u.id === cl.ddUnit), onclick: () => act('setDailyDoubleUnit', { id: u.id }),
-      }, dot(u.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, u.name)), h('span', { class: 'dim' }, money(u.score)), u.id === cl.ddUnit && icon('check', 20)))),
-      wager,
-      h('div', { class: 'chips' },
-        h('button', { type: 'button', class: 'chip', onclick: () => { wager.value = max; } }, `All in · ${money(max)}`),
-        h('button', { type: 'button', class: 'chip', onclick: () => { wager.value = Math.floor(max / 2 / 100) * 100; } }, 'Half'))));
-    dock.push(button({ label: 'Set wager and show clue', icon: 'check', kind: 'ok', size: 'lg', block: true, disabled: !cl.ddUnit, onclick: set }));
+    const u = unitById(v, cl.ddUnit);
+    body.push(card(eyebrow('Daily Double'), h('div', { class: 'card-title' }, u ? `Ask ${u.name} for a wager` : 'Who is playing?'),
+      h('p', { class: 'dim' }, 'The clue and the answer stay hidden here and on the TV until the wager is locked in.')));
+    dock.push(button({ label: 'Enter the wager', icon: 'star', kind: 'ok', size: 'lg', block: true, onclick: openWagerSheet }));
+    wagerPopupOnce(cl);
   } else if (cl.step === 'reading') {
     dock.push(button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openBuzzers') }),
       dockRow(give, button({ label: 'Skip and reveal', size: 'sm', onclick: () => act('reveal') })));
@@ -223,6 +217,52 @@ function clueView() {
   }
   if (cl.lockedOut.length) body.push(h('div', { class: 'note' }, 'Locked out:', h('div', { class: 'chips' }, cl.lockedOut.map((id) => h('span', { class: 'chip lock' }, nameOf(id))))));
   return { body, dock };
+}
+
+// ---------- the Daily Double wager popup ----------
+// It opens by itself when a Daily Double is picked, so the host asks for the wager before anything is shown.
+let wagerFor = null;   // which clue the popup has already opened for ("round,c,r")
+let wagerText = '';    // what is typed in the box
+function wagerPopupOnce(cl) {
+  const key = `${v.round},${cl.c},${cl.r}`;
+  if (wagerFor === key) return;
+  wagerFor = key; wagerText = '';
+  setTimeout(openWagerSheet, 0);   // after this render finishes
+}
+const wagerMax = (cl) => Math.max(unitById(v, cl.ddUnit)?.score ?? 0, topValue());
+
+function openWagerSheet() {
+  C.openSheet({
+    title: 'Daily Double!',
+    build: () => {
+      const cl = v.clue;
+      if (!cl || cl.step !== 'wager') return h('p', { class: 'dim' }, 'The wager is set.');
+      const u = unitById(v, cl.ddUnit);
+      const max = wagerMax(cl);
+      const amount = wagerText.trim() === '' ? null : Number(wagerText);
+      const valid = amount !== null && Number.isInteger(amount) && amount >= 0 && amount <= max;
+      const box = h('input', {
+        type: 'number', inputMode: 'numeric', min: 0, max, step: 100, value: wagerText, placeholder: '0', 'data-k': 'ddw', 'aria-label': 'Wager',
+        oninput: (e) => { wagerText = e.target.value; C.refresh(); },
+      });
+      const set = (n) => { wagerText = String(n); C.refresh(); };
+      return [
+        h('p', {}, 'Ask who is playing how much they want to wager, then enter it here. The clue shows on the TV once you lock it in.'),
+        h('div', { class: 'field' }, h('span', {}, 'Who is playing'),
+          h('div', { class: 'list' }, v.units.map((x) => h('button', {
+            type: 'button', class: 'pick', 'aria-pressed': String(x.id === cl.ddUnit), onclick: () => act('setDailyDoubleUnit', { id: x.id }),
+          }, dot(x.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, x.name)), h('span', { class: 'dim' }, money(x.score)), x.id === cl.ddUnit && icon('check', 20))))),
+        h('div', { class: 'field' }, h('span', {}, u ? `${u.name}'s wager (up to ${money(max)})` : `Wager (up to ${money(max)})`), box),
+        h('div', { class: 'chips' },
+          [['$0', 0], ['Half', Math.floor(max / 2 / 100) * 100], [`All in · ${money(max)}`, max]].map(([label, n]) => h('button', { type: 'button', class: 'chip', onclick: () => set(n) }, label))),
+        amount !== null && !valid && h('p', { class: 'pill bad', role: 'alert' }, `Enter a whole number from $0 to ${money(max)}`),
+        button({
+          label: !cl.ddUnit ? 'Choose who is playing' : valid ? `Lock in ${money(amount)} and show the clue` : 'Enter a wager to continue', icon: 'check', kind: 'ok', size: 'lg', block: true,
+          disabled: !valid || !cl.ddUnit, onclick: () => { act('setDailyDoubleWager', { amount: wagerText }); C.closeSheet(); },
+        }),
+      ];
+    },
+  });
 }
 
 function inkOn(hex) {

@@ -33,6 +33,12 @@ export function validateSet(set) {
   return true;
 }
 
+/** A wager typed by the host. A blank box must not quietly turn into $0 (that is how a Daily Double gets skipped). */
+function wagerAmount(amount) {
+  if (amount === '' || amount === null || amount === undefined || (typeof amount === 'string' && !amount.trim())) fail('Enter the wager first (0 is allowed)');
+  return int(amount);
+}
+
 export class JeopardyGame {
   constructor(room) {
     this.room = room;
@@ -261,7 +267,7 @@ export class JeopardyGame {
     const u = this.room.unit(cl.ddUnit) ?? fail('Pick who is playing the Daily Double');
     // The most you can wager is your score, or the biggest clue on this board if that is more.
     const max = Math.max(u.score, this.#boardTop());
-    const n = int(amount);
+    const n = wagerAmount(amount);
     if (!(n >= 0 && n <= max)) fail(`Wager must be between 0 and ${max}`);
     cl.wager = n;
     cl.value = n;
@@ -451,7 +457,7 @@ export class JeopardyGame {
   setFinalWager(unitId, amount) {
     const f = this.#inFinal('wager');
     const u = this.finalists().find((x) => x.id === unitId) ?? fail('That player is not in Final Jeopardy');
-    const n = int(amount);
+    const n = wagerAmount(amount);
     if (!(n >= 0 && n <= u.score)) fail(`Wager must be between 0 and ${u.score}`);
     f.wagers[u.id] = n;
     this.#changed();
