@@ -1,0 +1,367 @@
+{
+  "title": "Kids Corner",
+  "rounds": [
+    {
+      "question": "Name an animal at the zoo",
+      "answers": [
+        {
+          "text": "Lion",
+          "points": 28
+        },
+        {
+          "text": "Elephant",
+          "points": 24
+        },
+        {
+          "text": "Monkey",
+          "points": 18
+        },
+        {
+          "text": "Giraffe",
+          "points": 14
+        },
+        {
+          "text": "Zebra",
+          "points": 9
+        },
+        {
+          "text": "Penguin",
+          "points": 7
+        }
+      ]
+    },
+    {
+      "question": "Name something you find at school",
+      "answers": [
+        {
+          "text": "Desks",
+          "points": 26,
+          "aliases": [
+            "desk"
+          ]
+        },
+        {
+          "text": "Teacher",
+          "points": 22,
+          "aliases": [
+            "teachers"
+          ]
+        },
+        {
+          "text": "Books",
+          "points": 18,
+          "aliases": [
+            "book",
+            "library"
+          ]
+        },
+        {
+          "text": "Pencils",
+          "points": 14,
+          "aliases": [
+            "pencil",
+            "pens"
+          ]
+        },
+        {
+          "text": "Backpack",
+          "points": 12,
+          "aliases": [
+            "backpacks"
+          ]
+        },
+        {
+          "text": "Chalkboard",
+          "points": 8,
+          "aliases": [
+            "whiteboard",
+            "board"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a favorite ice cream flavor",
+      "answers": [
+        {
+          "text": "Chocolate",
+          "points": 34
+        },
+        {
+          "text": "Vanilla",
+          "points": 30
+        },
+        {
+          "text": "Strawberry",
+          "points": 16
+        },
+        {
+          "text": "Cookie dough",
+          "points": 10
+        },
+        {
+          "text": "Mint chocolate chip",
+          "points": 6,
+          "aliases": [
+            "mint"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that flies",
+      "answers": [
+        {
+          "text": "Bird",
+          "points": 32,
+          "aliases": [
+            "birds"
+          ]
+        },
+        {
+          "text": "Airplane",
+          "points": 30,
+          "aliases": [
+            "plane",
+            "jet"
+          ]
+        },
+        {
+          "text": "Butterfly",
+          "points": 14
+        },
+        {
+          "text": "Helicopter",
+          "points": 12
+        },
+        {
+          "text": "Kite",
+          "points": 8,
+          "aliases": [
+            "kites"
+          ]
+        },
+        {
+          "text": "Superman",
+          "points": 4
+        }
+      ]
+    },
+    {
+      "question": "Name a cartoon character",
+      "answers": [
+        {
+          "text": "Mickey Mouse",
+          "points": 28,
+          "aliases": [
+            "mickey"
+          ]
+        },
+        {
+          "text": "SpongeBob",
+          "points": 26,
+          "aliases": [
+            "spongebob squarepants"
+          ]
+        },
+        {
+          "text": "Bugs Bunny",
+          "points": 14
+        },
+        {
+          "text": "Mario",
+          "points": 12,
+          "aliases": [
+            "super mario"
+          ]
+        },
+        {
+          "text": "Elsa",
+          "points": 10
+        },
+        {
+          "text": "Scooby-Doo",
+          "points": 10,
+          "aliases": [
+            "scooby"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something that is round",
+      "answers": [
+        {
+          "text": "Ball",
+          "points": 36,
+          "aliases": [
+            "basketball",
+            "soccer ball"
+          ]
+        },
+        {
+          "text": "Wheel",
+          "points": 20,
+          "aliases": [
+            "tire"
+          ]
+        },
+        {
+          "text": "Pizza",
+          "points": 16
+        },
+        {
+          "text": "Sun",
+          "points": 12
+        },
+        {
+          "text": "Moon",
+          "points": 10,
+          "aliases": [
+            "full moon"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a color of the rainbow",
+      "answers": [
+        {
+          "text": "Red",
+          "points": 24
+        },
+        {
+          "text": "Blue",
+          "points": 22
+        },
+        {
+          "text": "Green",
+          "points": 20
+        },
+        {
+          "text": "Yellow",
+          "points": 18
+        },
+        {
+          "text": "Orange",
+          "points": 10
+        },
+        {
+          "text": "Purple",
+          "points": 6,
+          "aliases": [
+            "violet"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a sport played with a ball",
+      "answers": [
+        {
+          "text": "Soccer",
+          "points": 30
+        },
+        {
+          "text": "Basketball",
+          "points": 28
+        },
+        {
+          "text": "Baseball",
+          "points": 20
+        },
+        {
+          "text": "Football",
+          "points": 14
+        },
+        {
+          "text": "Tennis",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something you do at the playground",
+      "answers": [
+        {
+          "text": "Swing",
+          "points": 34,
+          "aliases": [
+            "swings"
+          ]
+        },
+        {
+          "text": "Slide",
+          "points": 28,
+          "aliases": [
+            "go down the slide"
+          ]
+        },
+        {
+          "text": "Climb",
+          "points": 16,
+          "aliases": [
+            "monkey bars"
+          ]
+        },
+        {
+          "text": "Seesaw",
+          "points": 12,
+          "aliases": [
+            "teeter totter"
+          ]
+        },
+        {
+          "text": "Run",
+          "points": 10,
+          "aliases": [
+            "play tag",
+            "tag"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a month with a holiday",
+      "answers": [
+        {
+          "text": "December",
+          "points": 34,
+          "aliases": [
+            "christmas"
+          ]
+        },
+        {
+          "text": "October",
+          "points": 22,
+          "aliases": [
+            "halloween"
+          ]
+        },
+        {
+          "text": "July",
+          "points": 18,
+          "aliases": [
+            "fourth of july"
+          ]
+        },
+        {
+          "text": "November",
+          "points": 14,
+          "aliases": [
+            "thanksgiving"
+          ]
+        },
+        {
+          "text": "February",
+          "points": 12,
+          "aliases": [
+            "valentines"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,444 @@
+{
+  "title": "Family Night Basics",
+  "rounds": [
+    {
+      "question": "Name something you do before leaving the house",
+      "answers": [
+        {
+          "text": "Brush teeth",
+          "points": 30,
+          "aliases": [
+            "brush my teeth"
+          ]
+        },
+        {
+          "text": "Put on shoes",
+          "points": 24,
+          "aliases": [
+            "shoes",
+            "tie shoes"
+          ]
+        },
+        {
+          "text": "Grab keys",
+          "points": 17,
+          "aliases": [
+            "keys"
+          ]
+        },
+        {
+          "text": "Lock the door",
+          "points": 12,
+          "aliases": [
+            "lock up"
+          ]
+        },
+        {
+          "text": "Eat breakfast",
+          "points": 9,
+          "aliases": [
+            "breakfast",
+            "eat"
+          ]
+        },
+        {
+          "text": "Check the mirror",
+          "points": 8,
+          "aliases": [
+            "mirror",
+            "look in the mirror"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a reason kids stay up past bedtime",
+      "answers": [
+        {
+          "text": "Watching TV",
+          "points": 28,
+          "aliases": [
+            "tv",
+            "television",
+            "watch a show"
+          ]
+        },
+        {
+          "text": "Playing video games",
+          "points": 24,
+          "aliases": [
+            "video games",
+            "games"
+          ]
+        },
+        {
+          "text": "Not tired",
+          "points": 18
+        },
+        {
+          "text": "Scared of the dark",
+          "points": 12,
+          "aliases": [
+            "afraid"
+          ]
+        },
+        {
+          "text": "Want a snack",
+          "points": 10,
+          "aliases": [
+            "hungry",
+            "snack"
+          ]
+        },
+        {
+          "text": "Reading a book",
+          "points": 8,
+          "aliases": [
+            "reading",
+            "book"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you find in a couch",
+      "answers": [
+        {
+          "text": "Coins",
+          "points": 32,
+          "aliases": [
+            "change",
+            "money",
+            "quarters"
+          ]
+        },
+        {
+          "text": "Remote control",
+          "points": 24,
+          "aliases": [
+            "remote"
+          ]
+        },
+        {
+          "text": "Crumbs",
+          "points": 18,
+          "aliases": [
+            "food",
+            "popcorn"
+          ]
+        },
+        {
+          "text": "Pens",
+          "points": 10,
+          "aliases": [
+            "pen",
+            "pencil"
+          ]
+        },
+        {
+          "text": "Toys",
+          "points": 9,
+          "aliases": [
+            "toy",
+            "lego"
+          ]
+        },
+        {
+          "text": "Lost socks",
+          "points": 7,
+          "aliases": [
+            "socks",
+            "sock"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a place families go on vacation",
+      "answers": [
+        {
+          "text": "Beach",
+          "points": 34,
+          "aliases": [
+            "the beach",
+            "ocean"
+          ]
+        },
+        {
+          "text": "Disney World",
+          "points": 22,
+          "aliases": [
+            "disney",
+            "disneyland",
+            "theme park"
+          ]
+        },
+        {
+          "text": "Mountains",
+          "points": 14,
+          "aliases": [
+            "camping",
+            "hiking"
+          ]
+        },
+        {
+          "text": "Grandma's house",
+          "points": 12,
+          "aliases": [
+            "grandparents",
+            "grandmas"
+          ]
+        },
+        {
+          "text": "Cruise",
+          "points": 10,
+          "aliases": [
+            "cruise ship",
+            "boat"
+          ]
+        },
+        {
+          "text": "Hotel",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something people do at a birthday party",
+      "answers": [
+        {
+          "text": "Eat cake",
+          "points": 30,
+          "aliases": [
+            "cake"
+          ]
+        },
+        {
+          "text": "Sing happy birthday",
+          "points": 24,
+          "aliases": [
+            "sing",
+            "happy birthday"
+          ]
+        },
+        {
+          "text": "Open presents",
+          "points": 20,
+          "aliases": [
+            "gifts",
+            "presents"
+          ]
+        },
+        {
+          "text": "Play games",
+          "points": 12,
+          "aliases": [
+            "games"
+          ]
+        },
+        {
+          "text": "Blow out candles",
+          "points": 9,
+          "aliases": [
+            "candles"
+          ]
+        },
+        {
+          "text": "Take photos",
+          "points": 5,
+          "aliases": [
+            "pictures",
+            "photos"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name a fruit you can eat on the go",
+      "answers": [
+        {
+          "text": "Apple",
+          "points": 34
+        },
+        {
+          "text": "Banana",
+          "points": 30
+        },
+        {
+          "text": "Grapes",
+          "points": 16
+        },
+        {
+          "text": "Orange",
+          "points": 12,
+          "aliases": [
+            "clementine"
+          ]
+        },
+        {
+          "text": "Strawberries",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name a pet people keep at home",
+      "answers": [
+        {
+          "text": "Dog",
+          "points": 46,
+          "aliases": [
+            "puppy"
+          ]
+        },
+        {
+          "text": "Cat",
+          "points": 34,
+          "aliases": [
+            "kitten"
+          ]
+        },
+        {
+          "text": "Fish",
+          "points": 10,
+          "aliases": [
+            "goldfish"
+          ]
+        },
+        {
+          "text": "Hamster",
+          "points": 6
+        },
+        {
+          "text": "Bird",
+          "points": 4,
+          "aliases": [
+            "parrot"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you wear on your feet",
+      "answers": [
+        {
+          "text": "Shoes",
+          "points": 36,
+          "aliases": [
+            "sneakers",
+            "tennis shoes"
+          ]
+        },
+        {
+          "text": "Socks",
+          "points": 34,
+          "aliases": [
+            "sock"
+          ]
+        },
+        {
+          "text": "Slippers",
+          "points": 14
+        },
+        {
+          "text": "Boots",
+          "points": 10,
+          "aliases": [
+            "boot"
+          ]
+        },
+        {
+          "text": "Flip flops",
+          "points": 6,
+          "aliases": [
+            "sandals"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a room in a house",
+      "answers": [
+        {
+          "text": "Kitchen",
+          "points": 30
+        },
+        {
+          "text": "Bedroom",
+          "points": 28,
+          "aliases": [
+            "bed room"
+          ]
+        },
+        {
+          "text": "Bathroom",
+          "points": 22,
+          "aliases": [
+            "restroom",
+            "toilet"
+          ]
+        },
+        {
+          "text": "Living room",
+          "points": 12,
+          "aliases": [
+            "family room"
+          ]
+        },
+        {
+          "text": "Garage",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something you do on a rainy day",
+      "answers": [
+        {
+          "text": "Watch a movie",
+          "points": 32,
+          "aliases": [
+            "movie",
+            "tv",
+            "watch tv"
+          ]
+        },
+        {
+          "text": "Play board games",
+          "points": 22,
+          "aliases": [
+            "games",
+            "board games",
+            "play games"
+          ]
+        },
+        {
+          "text": "Read a book",
+          "points": 18,
+          "aliases": [
+            "read",
+            "reading"
+          ]
+        },
+        {
+          "text": "Take a nap",
+          "points": 16,
+          "aliases": [
+            "nap",
+            "sleep"
+          ]
+        },
+        {
+          "text": "Bake",
+          "points": 12,
+          "aliases": [
+            "cook",
+            "baking"
+          ]
+        }
+      ]
+    }
+  ]
+}

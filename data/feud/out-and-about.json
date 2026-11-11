@@ -1,0 +1,401 @@
+{
+  "title": "Out and About",
+  "rounds": [
+    {
+      "question": "Name something you take on a road trip",
+      "answers": [
+        {
+          "text": "Snacks",
+          "points": 30,
+          "aliases": [
+            "food"
+          ]
+        },
+        {
+          "text": "Music",
+          "points": 22,
+          "aliases": [
+            "playlist",
+            "radio",
+            "cds"
+          ]
+        },
+        {
+          "text": "Pillow",
+          "points": 16,
+          "aliases": [
+            "blanket"
+          ]
+        },
+        {
+          "text": "Phone",
+          "points": 12,
+          "aliases": [
+            "phone charger"
+          ]
+        },
+        {
+          "text": "Games",
+          "points": 10,
+          "aliases": [
+            "travel games",
+            "ipad"
+          ]
+        },
+        {
+          "text": "Map",
+          "points": 6,
+          "aliases": [
+            "gps"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a place you wait in line",
+      "answers": [
+        {
+          "text": "Grocery store",
+          "points": 28,
+          "aliases": [
+            "store",
+            "supermarket"
+          ]
+        },
+        {
+          "text": "Bank",
+          "points": 18
+        },
+        {
+          "text": "Amusement park",
+          "points": 16,
+          "aliases": [
+            "theme park",
+            "roller coaster"
+          ]
+        },
+        {
+          "text": "Movie theater",
+          "points": 14,
+          "aliases": [
+            "movies"
+          ]
+        },
+        {
+          "text": "DMV",
+          "points": 14,
+          "aliases": [
+            "post office"
+          ]
+        },
+        {
+          "text": "Restaurant",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name something you buy at a movie theater",
+      "answers": [
+        {
+          "text": "Popcorn",
+          "points": 44
+        },
+        {
+          "text": "Soda",
+          "points": 22,
+          "aliases": [
+            "drink",
+            "pop"
+          ]
+        },
+        {
+          "text": "Candy",
+          "points": 16
+        },
+        {
+          "text": "Tickets",
+          "points": 12,
+          "aliases": [
+            "ticket"
+          ]
+        },
+        {
+          "text": "Nachos",
+          "points": 6,
+          "aliases": [
+            "hot dog"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you see at a park",
+      "answers": [
+        {
+          "text": "Swings",
+          "points": 26,
+          "aliases": [
+            "swing"
+          ]
+        },
+        {
+          "text": "Trees",
+          "points": 22,
+          "aliases": [
+            "tree"
+          ]
+        },
+        {
+          "text": "Ducks",
+          "points": 16,
+          "aliases": [
+            "duck",
+            "geese"
+          ]
+        },
+        {
+          "text": "Dogs",
+          "points": 14,
+          "aliases": [
+            "dog"
+          ]
+        },
+        {
+          "text": "Benches",
+          "points": 12,
+          "aliases": [
+            "bench"
+          ]
+        },
+        {
+          "text": "Picnic tables",
+          "points": 10,
+          "aliases": [
+            "picnic"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you bring to the beach",
+      "answers": [
+        {
+          "text": "Towel",
+          "points": 30,
+          "aliases": [
+            "towels"
+          ]
+        },
+        {
+          "text": "Sunscreen",
+          "points": 26,
+          "aliases": [
+            "sunblock",
+            "lotion"
+          ]
+        },
+        {
+          "text": "Umbrella",
+          "points": 14
+        },
+        {
+          "text": "Sunglasses",
+          "points": 12
+        },
+        {
+          "text": "Cooler",
+          "points": 10,
+          "aliases": [
+            "snacks",
+            "drinks"
+          ]
+        },
+        {
+          "text": "Bucket and shovel",
+          "points": 8,
+          "aliases": [
+            "sand toys",
+            "bucket",
+            "shovel"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something you ride",
+      "answers": [
+        {
+          "text": "Bicycle",
+          "points": 32,
+          "aliases": [
+            "bike"
+          ]
+        },
+        {
+          "text": "Roller coaster",
+          "points": 24
+        },
+        {
+          "text": "Horse",
+          "points": 16
+        },
+        {
+          "text": "Bus",
+          "points": 14
+        },
+        {
+          "text": "Skateboard",
+          "points": 8,
+          "aliases": [
+            "scooter"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a school subject",
+      "answers": [
+        {
+          "text": "Math",
+          "points": 34,
+          "aliases": [
+            "arithmetic"
+          ]
+        },
+        {
+          "text": "Science",
+          "points": 22
+        },
+        {
+          "text": "Reading",
+          "points": 18,
+          "aliases": [
+            "english",
+            "language arts"
+          ]
+        },
+        {
+          "text": "History",
+          "points": 14
+        },
+        {
+          "text": "Art",
+          "points": 12,
+          "aliases": [
+            "gym",
+            "music"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something with wheels",
+      "answers": [
+        {
+          "text": "Car",
+          "points": 36
+        },
+        {
+          "text": "Bike",
+          "points": 22,
+          "aliases": [
+            "bicycle"
+          ]
+        },
+        {
+          "text": "Skateboard",
+          "points": 14
+        },
+        {
+          "text": "Wagon",
+          "points": 12
+        },
+        {
+          "text": "Wheelchair",
+          "points": 8,
+          "aliases": [
+            "stroller"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a fast food restaurant",
+      "answers": [
+        {
+          "text": "McDonald's",
+          "points": 40,
+          "aliases": [
+            "mcdonalds"
+          ]
+        },
+        {
+          "text": "Burger King",
+          "points": 18
+        },
+        {
+          "text": "Wendy's",
+          "points": 14,
+          "aliases": [
+            "wendys"
+          ]
+        },
+        {
+          "text": "Taco Bell",
+          "points": 14
+        },
+        {
+          "text": "Chick-fil-A",
+          "points": 8,
+          "aliases": [
+            "chickfila"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you do at a campfire",
+      "answers": [
+        {
+          "text": "Roast marshmallows",
+          "points": 38,
+          "aliases": [
+            "marshmallows",
+            "make smores",
+            "smores"
+          ]
+        },
+        {
+          "text": "Tell stories",
+          "points": 22,
+          "aliases": [
+            "ghost stories",
+            "scary stories"
+          ]
+        },
+        {
+          "text": "Sing songs",
+          "points": 16,
+          "aliases": [
+            "sing"
+          ]
+        },
+        {
+          "text": "Cook hot dogs",
+          "points": 14,
+          "aliases": [
+            "hot dogs",
+            "cook"
+          ]
+        },
+        {
+          "text": "Stay warm",
+          "points": 10
+        }
+      ]
+    }
+  ]
+}

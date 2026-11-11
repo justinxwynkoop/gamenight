@@ -1,0 +1,401 @@
+{
+  "title": "Holidays and Seasons",
+  "rounds": [
+    {
+      "question": "Name something you do on Halloween",
+      "answers": [
+        {
+          "text": "Trick or treat",
+          "points": 40,
+          "aliases": [
+            "trick-or-treating",
+            "collect candy"
+          ]
+        },
+        {
+          "text": "Wear a costume",
+          "points": 28,
+          "aliases": [
+            "dress up",
+            "costume"
+          ]
+        },
+        {
+          "text": "Carve pumpkins",
+          "points": 14,
+          "aliases": [
+            "pumpkin"
+          ]
+        },
+        {
+          "text": "Watch scary movies",
+          "points": 10
+        },
+        {
+          "text": "Decorate",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something you see at Christmas",
+      "answers": [
+        {
+          "text": "Christmas tree",
+          "points": 34,
+          "aliases": [
+            "tree"
+          ]
+        },
+        {
+          "text": "Presents",
+          "points": 24,
+          "aliases": [
+            "gifts"
+          ]
+        },
+        {
+          "text": "Lights",
+          "points": 16,
+          "aliases": [
+            "christmas lights",
+            "decorations"
+          ]
+        },
+        {
+          "text": "Santa Claus",
+          "points": 14,
+          "aliases": [
+            "santa"
+          ]
+        },
+        {
+          "text": "Snow",
+          "points": 8
+        },
+        {
+          "text": "Reindeer",
+          "points": 4
+        }
+      ]
+    },
+    {
+      "question": "Name something you eat at Thanksgiving",
+      "answers": [
+        {
+          "text": "Turkey",
+          "points": 38
+        },
+        {
+          "text": "Stuffing",
+          "points": 18,
+          "aliases": [
+            "dressing"
+          ]
+        },
+        {
+          "text": "Mashed potatoes",
+          "points": 16,
+          "aliases": [
+            "potatoes"
+          ]
+        },
+        {
+          "text": "Pumpkin pie",
+          "points": 14,
+          "aliases": [
+            "pie"
+          ]
+        },
+        {
+          "text": "Cranberry sauce",
+          "points": 8
+        },
+        {
+          "text": "Corn",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name something you do in the summer",
+      "answers": [
+        {
+          "text": "Swim",
+          "points": 34,
+          "aliases": [
+            "go swimming",
+            "pool"
+          ]
+        },
+        {
+          "text": "Go to the beach",
+          "points": 22,
+          "aliases": [
+            "beach"
+          ]
+        },
+        {
+          "text": "Barbecue",
+          "points": 16,
+          "aliases": [
+            "grill",
+            "cookout"
+          ]
+        },
+        {
+          "text": "Camping",
+          "points": 12,
+          "aliases": [
+            "camp"
+          ]
+        },
+        {
+          "text": "Ride bikes",
+          "points": 10,
+          "aliases": [
+            "bike riding"
+          ]
+        },
+        {
+          "text": "Eat ice cream",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name a winter activity",
+      "answers": [
+        {
+          "text": "Build a snowman",
+          "points": 30,
+          "aliases": [
+            "snowman"
+          ]
+        },
+        {
+          "text": "Sledding",
+          "points": 26,
+          "aliases": [
+            "sled"
+          ]
+        },
+        {
+          "text": "Skiing",
+          "points": 16,
+          "aliases": [
+            "ski",
+            "snowboarding"
+          ]
+        },
+        {
+          "text": "Ice skating",
+          "points": 14,
+          "aliases": [
+            "skate"
+          ]
+        },
+        {
+          "text": "Snowball fight",
+          "points": 10
+        },
+        {
+          "text": "Drink hot chocolate",
+          "points": 4,
+          "aliases": [
+            "cocoa"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name a Valentine's Day gift",
+      "answers": [
+        {
+          "text": "Chocolate",
+          "points": 34,
+          "aliases": [
+            "candy"
+          ]
+        },
+        {
+          "text": "Flowers",
+          "points": 32,
+          "aliases": [
+            "roses",
+            "rose"
+          ]
+        },
+        {
+          "text": "Card",
+          "points": 16
+        },
+        {
+          "text": "Teddy bear",
+          "points": 10,
+          "aliases": [
+            "stuffed animal"
+          ]
+        },
+        {
+          "text": "Jewelry",
+          "points": 8,
+          "aliases": [
+            "ring",
+            "necklace"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you do on New Year's Eve",
+      "answers": [
+        {
+          "text": "Watch the ball drop",
+          "points": 30,
+          "aliases": [
+            "ball drop",
+            "countdown"
+          ]
+        },
+        {
+          "text": "Stay up late",
+          "points": 24
+        },
+        {
+          "text": "Kiss someone",
+          "points": 16,
+          "aliases": [
+            "kiss"
+          ]
+        },
+        {
+          "text": "Eat",
+          "points": 14,
+          "aliases": [
+            "eat food",
+            "snacks"
+          ]
+        },
+        {
+          "text": "Set off fireworks",
+          "points": 10,
+          "aliases": [
+            "fireworks"
+          ]
+        },
+        {
+          "text": "Toast",
+          "points": 6,
+          "aliases": [
+            "champagne"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a flower",
+      "answers": [
+        {
+          "text": "Rose",
+          "points": 38
+        },
+        {
+          "text": "Tulip",
+          "points": 18
+        },
+        {
+          "text": "Daisy",
+          "points": 16
+        },
+        {
+          "text": "Sunflower",
+          "points": 14
+        },
+        {
+          "text": "Lily",
+          "points": 8,
+          "aliases": [
+            "lilies"
+          ]
+        },
+        {
+          "text": "Daffodil",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name something that melts",
+      "answers": [
+        {
+          "text": "Ice",
+          "points": 34
+        },
+        {
+          "text": "Snow",
+          "points": 24,
+          "aliases": [
+            "snowman"
+          ]
+        },
+        {
+          "text": "Ice cream",
+          "points": 20
+        },
+        {
+          "text": "Chocolate",
+          "points": 12
+        },
+        {
+          "text": "Butter",
+          "points": 6,
+          "aliases": [
+            "cheese"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you see in spring",
+      "answers": [
+        {
+          "text": "Flowers",
+          "points": 30
+        },
+        {
+          "text": "Rain",
+          "points": 24,
+          "aliases": [
+            "showers"
+          ]
+        },
+        {
+          "text": "Baby animals",
+          "points": 14,
+          "aliases": [
+            "baby birds",
+            "bunnies"
+          ]
+        },
+        {
+          "text": "Easter",
+          "points": 12
+        },
+        {
+          "text": "Birds",
+          "points": 8
+        },
+        {
+          "text": "Cleaning",
+          "points": 6,
+          "aliases": [
+            "spring cleaning"
+          ]
+        }
+      ]
+    }
+  ]
+}

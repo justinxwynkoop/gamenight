@@ -14,6 +14,8 @@
 //   init()                    optional, called when the game is newly chosen
 //   contentChanged(setId)     optional, a question set was saved or deleted
 //   tick()                    optional, called ~4x a second; the place to expire timers
+// and the module may declare `needs: { teams: 2 }` when the game can only be played by that many teams
+// (the room then always plays in teams, and the host cannot switch to individuals).
 //
 // The game scores by changing `unit.score` on room.units(): players in
 // individual mode, teams in team mode.
@@ -126,11 +128,13 @@ export class Room {
     this.gameId = id;
     this.game = mod.create(this);
     this.game.init?.();
+    this.#reconcile();   // a game may need teams (or not)
     this.changed();
   }
   /** How to play: 'auto' (individuals up to INDIVIDUAL_MAX players, teams beyond that), or force 'players' or 'teams'. */
   setMode(mode) {
     if (!['auto', 'players', 'teams'].includes(mode)) fail('Unknown mode');
+    this.#fixedTeams('How to play');
     this.#lobbyOnly('Change the mode');
     this.modeSetting = mode;
     this.#reconcile();
@@ -140,6 +144,7 @@ export class Room {
   setTeamCount(count) {
     const n = int(count);
     if (![2, 4].includes(n)) fail('Choose 2 or 4 teams');
+    this.#fixedTeams('The number of teams');
     this.#lobbyOnly('Change the number of teams');
     if (n === 2 && this.players.length > 2 * TEAM_SIZE) fail(`With more than ${2 * TEAM_SIZE} players you need four teams`);
     this.teamCount = n;
@@ -155,11 +160,18 @@ export class Room {
   }
 
   // ---------- keeping teams in step with the roster ----------
+  /** Teams the active game insists on (0 when it does not mind). */
+  #neededTeams() { return this.games[this.gameId]?.needs?.teams ?? 0; }
+  #fixedTeams(what) {
+    const n = this.#neededTeams();
+    if (n) fail(`${what} is fixed: ${this.games[this.gameId].name} is always played by ${n} teams`);
+  }
   #effectiveMode() {
+    if (this.#neededTeams()) return 'teams';
     if (this.modeSetting === 'auto') return this.players.length > INDIVIDUAL_MAX ? 'teams' : 'players';
     return this.modeSetting;
   }
-  #wantedTeamCount() { return this.teamCount === 4 || this.players.length > 2 * TEAM_SIZE ? 4 : 2; }
+  #wantedTeamCount() { return this.#neededTeams() || (this.teamCount === 4 || this.players.length > 2 * TEAM_SIZE ? 4 : 2); }
   /**
    * Makes mode, teams and who is on which team match the roster and the host's choices.
    * Before the game starts it may switch between individuals and teams, add or drop Green and Yellow,

@@ -1,0 +1,357 @@
+{
+  "title": "Home and Kitchen",
+  "rounds": [
+    {
+      "question": "Name something you keep in the refrigerator",
+      "answers": [
+        {
+          "text": "Milk",
+          "points": 30
+        },
+        {
+          "text": "Eggs",
+          "points": 22
+        },
+        {
+          "text": "Cheese",
+          "points": 16
+        },
+        {
+          "text": "Butter",
+          "points": 12
+        },
+        {
+          "text": "Leftovers",
+          "points": 10
+        },
+        {
+          "text": "Juice",
+          "points": 10,
+          "aliases": [
+            "orange juice"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a chore kids hate",
+      "answers": [
+        {
+          "text": "Dishes",
+          "points": 30,
+          "aliases": [
+            "washing dishes",
+            "do the dishes"
+          ]
+        },
+        {
+          "text": "Cleaning their room",
+          "points": 26,
+          "aliases": [
+            "clean room",
+            "tidy room",
+            "make bed"
+          ]
+        },
+        {
+          "text": "Taking out the trash",
+          "points": 16,
+          "aliases": [
+            "trash",
+            "garbage"
+          ]
+        },
+        {
+          "text": "Laundry",
+          "points": 12
+        },
+        {
+          "text": "Mowing the lawn",
+          "points": 9,
+          "aliases": [
+            "yard work",
+            "lawn"
+          ]
+        },
+        {
+          "text": "Cleaning the bathroom",
+          "points": 7,
+          "aliases": [
+            "bathroom"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you cook on a grill",
+      "answers": [
+        {
+          "text": "Hamburgers",
+          "points": 34,
+          "aliases": [
+            "burgers"
+          ]
+        },
+        {
+          "text": "Hot dogs",
+          "points": 28,
+          "aliases": [
+            "hotdogs"
+          ]
+        },
+        {
+          "text": "Steak",
+          "points": 16
+        },
+        {
+          "text": "Chicken",
+          "points": 12
+        },
+        {
+          "text": "Corn",
+          "points": 6,
+          "aliases": [
+            "corn on the cob"
+          ]
+        },
+        {
+          "text": "Vegetables",
+          "points": 4
+        }
+      ]
+    },
+    {
+      "question": "Name a breakfast food",
+      "answers": [
+        {
+          "text": "Eggs",
+          "points": 30
+        },
+        {
+          "text": "Cereal",
+          "points": 26
+        },
+        {
+          "text": "Pancakes",
+          "points": 18,
+          "aliases": [
+            "waffles"
+          ]
+        },
+        {
+          "text": "Bacon",
+          "points": 12
+        },
+        {
+          "text": "Toast",
+          "points": 8,
+          "aliases": [
+            "bread"
+          ]
+        },
+        {
+          "text": "Oatmeal",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name something that makes noise in the kitchen",
+      "answers": [
+        {
+          "text": "Blender",
+          "points": 26
+        },
+        {
+          "text": "Microwave",
+          "points": 22,
+          "aliases": [
+            "beep"
+          ]
+        },
+        {
+          "text": "Dishwasher",
+          "points": 18
+        },
+        {
+          "text": "Boiling water",
+          "points": 14,
+          "aliases": [
+            "kettle",
+            "tea kettle"
+          ]
+        },
+        {
+          "text": "Smoke alarm",
+          "points": 12,
+          "aliases": [
+            "smoke detector"
+          ]
+        },
+        {
+          "text": "Garbage disposal",
+          "points": 8,
+          "aliases": [
+            "disposal"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something you put on a hamburger",
+      "answers": [
+        {
+          "text": "Ketchup",
+          "points": 28
+        },
+        {
+          "text": "Cheese",
+          "points": 26
+        },
+        {
+          "text": "Lettuce",
+          "points": 18
+        },
+        {
+          "text": "Pickles",
+          "points": 16
+        },
+        {
+          "text": "Onions",
+          "points": 12,
+          "aliases": [
+            "onion"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a kitchen appliance",
+      "answers": [
+        {
+          "text": "Microwave",
+          "points": 30
+        },
+        {
+          "text": "Oven",
+          "points": 26,
+          "aliases": [
+            "stove"
+          ]
+        },
+        {
+          "text": "Toaster",
+          "points": 18
+        },
+        {
+          "text": "Refrigerator",
+          "points": 14,
+          "aliases": [
+            "fridge"
+          ]
+        },
+        {
+          "text": "Blender",
+          "points": 12,
+          "aliases": [
+            "mixer"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you sprinkle on food",
+      "answers": [
+        {
+          "text": "Salt",
+          "points": 38
+        },
+        {
+          "text": "Pepper",
+          "points": 26
+        },
+        {
+          "text": "Cheese",
+          "points": 16
+        },
+        {
+          "text": "Sugar",
+          "points": 12
+        },
+        {
+          "text": "Cinnamon",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name a type of pasta",
+      "answers": [
+        {
+          "text": "Spaghetti",
+          "points": 38
+        },
+        {
+          "text": "Macaroni",
+          "points": 24,
+          "aliases": [
+            "mac and cheese"
+          ]
+        },
+        {
+          "text": "Lasagna",
+          "points": 14
+        },
+        {
+          "text": "Penne",
+          "points": 12
+        },
+        {
+          "text": "Fettuccine",
+          "points": 7,
+          "aliases": [
+            "alfredo"
+          ]
+        },
+        {
+          "text": "Ravioli",
+          "points": 5
+        }
+      ]
+    },
+    {
+      "question": "Name something you drink from a cup",
+      "answers": [
+        {
+          "text": "Water",
+          "points": 36
+        },
+        {
+          "text": "Milk",
+          "points": 22
+        },
+        {
+          "text": "Juice",
+          "points": 20
+        },
+        {
+          "text": "Soda",
+          "points": 14,
+          "aliases": [
+            "pop",
+            "coke"
+          ]
+        },
+        {
+          "text": "Tea",
+          "points": 8,
+          "aliases": [
+            "hot tea"
+          ]
+        }
+      ]
+    }
+  ]
+}
