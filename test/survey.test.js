@@ -15,6 +15,9 @@ test('a Title Case question becomes a sentence', () => {
   assert.equal(tidyQuestion('name something i like at Christmas'), 'Name something I like at Christmas');
   assert.equal(tidyQuestion('Name a thing that is already a normal sentence.'), 'Name a thing that is already a normal sentence.');
   assert.equal(tidyAnswer('  sun hat '), 'Sun hat');
+  assert.equal(tidyQuestion('Name A US City Where It Snows'), 'Name a US city where it snows');
+  assert.equal(tidyQuestion('Name Something That Helps Us Sleep Like A Baby'), 'Name something that helps us sleep like a baby', 'the pronoun stays lower case');
+  assert.equal(tidyQuestion('Name A Show On TV'), 'Name a show on TV');
 });
 
 test('a survey line becomes a question with ranked answers', () => {
@@ -58,4 +61,49 @@ test('sets are valid, ten questions each, no question twice, and repeatable with
 test('it makes fewer sets when there are not enough questions, and none from nothing', () => {
   assert.equal(makeSets(Array.from({ length: 15 }, (_, i) => sample(i)), { sets: 10 }).length, 1);
   assert.equal(makeSets([], { sets: 3 }).length, 0);
+});
+
+// ---------- through the real server ----------
+import { spawn } from 'node:child_process';
+import { mkdtempSync, cpSync, rmSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import net from 'node:net';
+
+const root = path.resolve(import.meta.dirname, '..');
+const freePort = () => new Promise((res) => { const s = net.createServer().listen(0, () => { const p = s.address().port; s.close(() => res(p)); }); });
+
+test('API: a random Family Feud board needs the PIN and the data, builds a valid set, and keeps only a few', async () => {
+  const dataDir = mkdtempSync(path.join(tmpdir(), 'gn-feudrand-'));
+  mkdirSync(path.join(dataDir, 'feud'), { recursive: true });
+  const port = await freePort();
+  const proc = spawn('node', ['server.js'], { cwd: root, env: { ...process.env, PORT: String(port), HOST_PIN: '2468', DATA_DIR: dataDir }, stdio: ['ignore', 'pipe', 'inherit'] });
+  await new Promise((resolve, reject) => { proc.stdout.on('data', (d) => String(d).includes('running') && resolve()); proc.on('exit', (c) => reject(new Error(`exit ${c}`))); });
+  const url = `http://127.0.0.1:${port}/api/games/feud/random`;
+  const call = (method, body, pin = '2468') => fetch(url, { method, headers: { 'x-host-pin': pin, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  try {
+    assert.equal((await call('GET', null, 'wrong')).status, 401);
+    assert.equal((await (await call('GET')).json()).available, false);
+    const missing = await call('POST', {});
+    assert.equal(missing.status, 404);
+    assert.equal((await missing.json()).code, 'no-dataset');
+
+    mkdirSync(path.join(dataDir, 'surveys'));
+    writeFileSync(path.join(dataDir, 'surveys', 'train.jsonl'), Array.from({ length: 60 }, (_, i) => JSON.stringify(sample(i))).join('\n') + '\n');
+    assert.equal((await (await call('GET')).json()).available, true);
+    const ok = await call('POST', { family: true });
+    assert.equal(ok.status, 200);
+    const made = await ok.json();
+    assert.match(made.id, /^random-[a-z0-9]+$/);
+    assert.equal(made.categories.length, 5, 'the five round questions are listed');
+    const saved = await (await fetch(`http://127.0.0.1:${port}/api/games/feud/sets/${made.id}`, { headers: { 'x-host-pin': '2468' } })).json();
+    assert.equal(validateSet(saved), true);
+    assert.equal(saved.fastMoney.length, 5);
+
+    for (let i = 0; i < 3; i++) assert.equal((await call('POST', {})).status, 200);
+    assert.ok(readdirSync(path.join(dataDir, 'feud')).filter((f) => f.startsWith('random-')).length <= 12);
+  } finally {
+    await new Promise((res) => { proc.once('exit', res); proc.kill('SIGTERM'); });
+    rmSync(dataDir, { recursive: true, force: true });
+  }
 });

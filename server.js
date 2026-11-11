@@ -172,7 +172,7 @@ async function handleRandomBoard(req, res, gameId) {
     writeFileSync(setPath(gameId, id), JSON.stringify(set, null, 2));
     room.contentChanged(gameId, id);
     pruneRandomSets(gameId);
-    return send(res, 200, { id, title: set.title, date, categories: set.categories.map((c) => c.name), final: set.final.category });
+    return send(res, 200, { id, title: set.title, date, categories: set.categories?.map((c) => c.name) ?? set.rounds?.map((r) => r.question) ?? [], final: set.final?.category ?? null });
   } catch (e) {
     return send(res, e.code === 'no-dataset' ? 404 : 422, { error: e.message, code: e.code });
   }

@@ -171,6 +171,11 @@ leaves out dating, drinking, politics, money worries and similar topics, since m
 Feud questions are for adults. It isn't perfect, so glance at a question before reading it out, and use
 Undo and the editor freely. Use the data for your own family nights; don't publish it.
 
+**Random board button.** Once the survey data is installed, the host's setup screen has a **Random board**
+card for Family Feud: **Build a random board** makes a fresh set (5 rounds and 5 Fast Money questions)
+at once and picks it, with a switch for the family-friendly filter. (Without the data it says "Not set up
+on this Pi yet" and shows the command.) The newest 12 random boards are kept.
+
 ## If a phone can't join
 
 Open **`/check`** on that phone (for example `http://192.168.1.50/check`, using the address

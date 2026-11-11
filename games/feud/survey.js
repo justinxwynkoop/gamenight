@@ -2,6 +2,9 @@
 // a collection of survey questions with ranked answers and counts. Its "scraped" files come from Family Feud
 // fan sites. The data is NOT part of this repository: scripts/get-feud-sets.sh downloads it into data/surveys/
 // (git-ignored) and builds sets into data/feud/ (also git-ignored for the generated ones).
+import { existsSync, readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { validateSet } from './game.js';
 
 // A modest "not for the little ones" filter. The host also sees every question before reading it out.
@@ -19,6 +22,8 @@ export function tidyQuestion(raw) {
   const capped = words.filter((w) => /^[A-Z]/.test(w)).length;
   if (capped / words.length > 0.5) s = s.toLowerCase();   // Title Case (or all caps) becomes a normal sentence
   s = s.replace(/\bi\b/g, 'I').replace(/\bi'(m|ll|d|ve)\b/g, "I'$1");
+  for (const word of ['USA', 'TV', 'DVD', 'CD', 'ATM', 'DMV', 'NFL', 'NBA', 'MTV', 'CEO', 'FBI', 'CIA', 'NASA', 'PTA', 'DJ', 'UFO']) s = s.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  s = s.replace(/\bu\.s\.?(?=\s|$|\W)/gi, 'U.S.').replace(/\bus(?= (cities|city|states?|presidents?|capitals?|holidays?|teams?|citizens?|coins?|currency|presidential)\b)/gi, 'US');
   for (const name of PROPER) s = s.replace(new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi'), name);
   s = s.charAt(0).toUpperCase() + s.slice(1);
   return s;
@@ -89,4 +94,34 @@ export function makeSets(lines, { sets = 20, seed = 1, rounds = 5, family = true
     made.push({ id: `${prefix}-${String(n + 1).padStart(3, '0')}`, set });
   }
   return made;
+}
+
+// ---------- a random board on demand, from the survey files in data/surveys/ ----------
+const surveyFiles = (dataDir) => {
+  const dir = path.join(dataDir, 'surveys');
+  return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.jsonl')).map((f) => path.join(dir, f)) : [];
+};
+
+/** A source of random Family Feud sets. The parsed files are dropped after a while without use. */
+export function createRandomSurvey({ dataDir, keepMs = 10 * 60 * 1000, rng = Math.random } = {}) {
+  let loaded = null; // Promise of the parsed lines
+  let timer = null;
+  const touch = () => { clearTimeout(timer); timer = setTimeout(() => { loaded = null; }, keepMs); timer.unref?.(); };
+  return {
+    available: () => surveyFiles(dataDir).length > 0,
+    status: () => ({ available: surveyFiles(dataDir).length > 0, loaded: !!loaded, help: 'Run ./scripts/get-feud-sets.sh on the Pi to download the survey data (it stays on the Pi).' }),
+    async make(options = {}) {
+      const files = surveyFiles(dataDir);
+      if (!files.length) throw Object.assign(new Error('The survey data is not installed on this Pi yet'), { code: 'no-dataset' });
+      loaded ??= Promise.all(files.map((f) => readFile(f, 'utf8'))).then((texts) => texts.flatMap((t) => t.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean)))
+        .catch((e) => { loaded = null; throw e; });
+      const lines = await loaded;
+      touch();
+      const [made] = makeSets(lines, { sets: 1, seed: Math.floor(rng() * 4294967296), family: options.family !== false, titlePrefix: 'Random survey' });
+      if (!made) throw new Error('Not enough questions match those choices');
+      const when = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      made.set.title = `Random survey · ${when}`;
+      return { set: made.set, date: null };
+    },
+  };
 }

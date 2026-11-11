@@ -36,6 +36,48 @@ function subtitle() {
   }
 }
 
+// ---------- a random board (built on the Pi from the survey data; see games/feud/survey.js) ----------
+const rand = { family: true, busy: false, error: '', info: undefined };
+const api = (method, body) => fetch('/api/games/feud/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+
+/** Whether the survey data is installed on the Pi (asked once, and again on "Check again"). */
+function loadRandomInfo(force = false) {
+  if (!force && rand.info !== undefined) return;
+  rand.info = null;
+  api('GET').then((r) => (r.ok ? r.json() : null)).then((j) => { rand.info = j ?? { available: false }; C.refresh(); }).catch(() => { rand.info = { available: false }; C.refresh(); });
+}
+
+async function roll() {
+  rand.busy = true; rand.error = ''; C.refresh();
+  try {
+    const res = await api('POST', { family: rand.family });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error ?? 'Could not build a board');
+    act('chooseSet', { id: j.id });
+    C.reloadSets?.();
+  } catch (e) {
+    rand.error = e.message;
+  } finally {
+    rand.busy = false; C.refresh();
+  }
+}
+
+function randomCard() {
+  loadRandomInfo();
+  if (rand.info === undefined || rand.info === null) return card(eyebrow('Random board'), h('p', { class: 'dim' }, 'Checking…'));
+  if (!rand.info.available) {
+    return card(eyebrow('Random board'), h('div', { class: 'card-title' }, 'Not set up on this Pi yet'),
+      h('p', { class: 'dim' }, 'Download the public survey questions once, on the Pi, and the host screen can build a fresh board whenever you like. It also makes 20 ready-to-pick sets. The data stays on the Pi.'),
+      h('div', { class: 'answer' }, h('small', {}, 'On the Pi, in the gamenight folder'), h('b', {}, './scripts/get-feud-sets.sh')),
+      button({ label: 'Check again', icon: 'refresh', onclick: () => loadRandomInfo(true) }));
+  }
+  return card(eyebrow('Random board'), h('div', { class: 'card-title' }, 'Build a fresh board'),
+    h('p', { class: 'dim' }, 'Five rounds and five Fast Money questions, picked at random from thousands of real surveys.'),
+    toggle({ label: 'Keep it family-friendly', sub: 'Leaves out dating, drinking, politics and similar topics', checked: rand.family, onchange: (on) => { rand.family = on; C.refresh(); } }),
+    rand.error && h('p', { class: 'pill bad', role: 'alert' }, rand.error),
+    button({ label: rand.busy ? 'Building…' : 'Build a random board', icon: 'shuffle', kind: 'primary', block: true, disabled: rand.busy, onclick: roll }));
+}
+
 // ---------- setup ----------
 function setupView() {
   const [a, b] = room.units;
@@ -57,6 +99,7 @@ function setupView() {
         info?.rounds && pill(`${info.rounds} rounds${info.fastMoney ? ' + Fast Money' : ''}`)),
       info?.questions?.length && h('div', { class: 'chips' }, info.questions.slice(0, 3).map((q) => h('span', { class: 'chip' }, q.replace(/^Name /, '')))),
       button({ label: g.setId ? 'Change set' : 'Choose a set', icon: g.setId ? 'swap' : 'plus', kind: g.setId ? '' : 'primary', onclick: openSetSheet })),
+    randomCard(),
     card(eyebrow('Teams'),
       h('p', { class: 'dim' }, 'Family Feud is always two teams. Players are dealt onto them at random; you can move anyone.'),
       h('div', { class: 'list' }, a && teamCard(a), b && teamCard(b)),

@@ -10,3 +10,4 @@ data/jeopardy/random-*.json
 # Survey data for Family Feud sets, and the sets built from it, stay on the Pi (never commit them).
 data/surveys/
 data/feud/protoqa-*.json
+data/feud/random-*.json
