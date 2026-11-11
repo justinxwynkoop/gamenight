@@ -94,7 +94,7 @@ const SOUND_TYPES = { '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/
 const listSounds = () => readdirSync(SOUNDS_DIR).filter((f) => SOUND_FILE.test(f)).map((f) => ({ name: f.replace(/\.[^.]+$/, ''), url: `/sounds/${f}` }));
 
 // ---------- HTTP ----------
-const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host': 'host.html', '/editor': 'editor.html' };
+const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host': 'host.html', '/editor': 'editor.html', '/check': 'check.html' };
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',

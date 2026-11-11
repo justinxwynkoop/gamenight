@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1030">
+<title>Game Night connection check</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #0a1030; color: #fff; margin: 0; padding: 16px; line-height: 1.4; }
+  h1 { font-size: 1.35rem; margin: 4px 0 8px; }
+  p { margin: 6px 0 12px; color: #cdd6ff; }
+  .row { display: flex; gap: 12px; padding: 12px; margin: 8px 0; background: #16225f; border: 1px solid #2b3a8f; border-radius: 12px; }
+  .ico { font-weight: 800; font-size: 1.2rem; min-width: 1.4em; text-align: center; }
+  .ok .ico { color: #4ade80; } .bad .ico { color: #f87171; } .wait .ico { color: #fbbf24; } .warn .ico { color: #fbbf24; }
+  .body { flex: 1; min-width: 0; }
+  .label { font-weight: 700; }
+  small { display: block; color: #a9b4f0; margin-top: 2px; word-break: break-word; }
+  .verdict { margin-top: 16px; padding: 14px; border-radius: 12px; font-weight: 700; }
+  .verdict.ok { background: #14532d; } .verdict.bad { background: #7f1d1d; }
+  a.btn { display: block; text-align: center; background: #3355ff; color: #fff; text-decoration: none; font-weight: 800; padding: 14px; border-radius: 12px; margin-top: 12px; }
+  ul { margin: 6px 0 0 18px; padding: 0; font-weight: 400; }
+</style>
+</head>
+<body>
+<h1>Game Night connection check</h1>
+<p>Open this on the phone that can't join. Every line should get a green tick. If one shows a red cross, that is what is stopping you; tell the host which line it is.</p>
+<div id="out"></div>
+<noscript><div class="row bad"><span class="ico">✗</span><div class="body"><div class="label">JavaScript is turned off</div><small>The game needs it. Turn it on in your browser's settings.</small></div></div></noscript>
+
+<!-- Deliberately plain, old-style JavaScript, so this page itself works on browsers too old for the game. -->
+<script>
+(function () {
+  var out = document.getElementById('out');
+  var problems = 0;
+  var done = false;
+
+  function row(label, state, detail) {
+    var el = document.createElement('div');
+    el.className = 'row ' + state;
+    var icon = state === 'ok' ? '✓' : state === 'bad' ? '✗' : state === 'warn' ? '!' : '…';
+    el.innerHTML = '<span class="ico"></span><div class="body"><div class="label"></div><small></small></div>';
+    el.querySelector('.ico').textContent = icon;
+    el.querySelector('.label').textContent = label;
+    el.querySelector('small').textContent = detail || '';
+    out.appendChild(el);
+    if (state === 'bad') problems++;
+    return el;
+  }
+  function set(el, state, detail) {
+    el.className = 'row ' + state;
+    el.querySelector('.ico').textContent = state === 'ok' ? '✓' : state === 'bad' ? '✗' : state === 'warn' ? '!' : '…';
+    if (detail !== undefined) el.querySelector('small').textContent = detail;
+    if (state === 'bad') problems++;
+  }
+  function works(code) { try { new Function(code)(); return true; } catch (e) { return false; } }
+
+  // 1. The page itself loaded, which already proves the phone can reach the server.
+  var host = location.host;
+  var dotLocal = /\.local(:\d+)?$/i.test(location.hostname);
+  if (location.protocol === 'https:') {
+    row('This page opened', 'warn', 'You opened it with https://. The game runs on plain http://, so some browsers may block the live connection. Open http://' + host + '/check instead.');
+  } else if (dotLocal) {
+    row('This page opened', 'warn', 'Opened as ' + host + '. Some Android phones cannot open ".local" names reliably. If joining fails, use the numeric address shown on the TV instead.');
+  } else {
+    row('This page opened', 'ok', 'Reached the game at ' + host + '. The phone can see the server.');
+  }
+
+  // 2. Which browser is this?
+  row('Your browser', 'ok', navigator.userAgent);
+
+  // 3. Features the game's pages use.
+  var missing = [];
+  if (!works('var a = null; return a?.b;')) missing.push('optional chaining');
+  if (!works('var a = {}; a.b ??= 1; return a.b;')) missing.push('?? and ??=');
+  if (!('noModule' in HTMLScriptElement.prototype)) missing.push('script modules');
+  if (!(Element.prototype.replaceChildren)) missing.push('replaceChildren');
+  if (!window.WebSocket) missing.push('WebSocket');
+  if (!window.fetch) missing.push('fetch');
+  if (missing.length) {
+    row('Browser is new enough for the game', 'bad', 'Missing: ' + missing.join(', ') + '. Update Chrome (or your browser) from the Play Store, or open this address in Chrome.');
+  } else {
+    row('Browser is new enough for the game', 'ok', 'All the features the game uses are there.');
+  }
+
+  // 4. Module scripts actually run (the game is built from them).
+  var moduleRow = row('Game scripts can run', 'wait', 'Checking…');
+  setTimeout(function () {
+    if (window.__moduleOk) set(moduleRow, 'ok', 'Module scripts ran.');
+    else set(moduleRow, 'bad', 'Module scripts did not run. A very old browser, or an in-app browser (such as one inside a QR scanner), can cause this. Open the address in Chrome.');
+  }, 400);
+
+  // 5. Browser storage (the game remembers who you are).
+  var storeRow;
+  try {
+    localStorage.setItem('gn-check', '1');
+    var okStore = localStorage.getItem('gn-check') === '1';
+    localStorage.removeItem('gn-check');
+    storeRow = row('Browser storage', okStore ? 'ok' : 'warn', okStore ? 'The game can remember you if the page reloads.' : 'Storage did not keep a value. You may lose your place if the page reloads. Private/incognito tabs can cause this.');
+  } catch (e) {
+    row('Browser storage', 'warn', 'Storage is blocked (private/incognito mode?). The game still works, but you may have to rejoin if the page reloads.');
+  }
+
+  // 6. The live connection, which is how buzzing works.
+  var liveRow = row('Live connection to the game', 'wait', 'Connecting…');
+  var started = Date.now();
+  var settled = false;
+  function settle(state, text) { if (settled) return; settled = true; set(liveRow, state, text); finish(); }
+  try {
+    var ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+    ws.onopen = function () { ws.send(JSON.stringify({ t: 'ping' })); };
+    ws.onmessage = function (e) {
+      var m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.t === 'pong') { settle('ok', 'Connected in ' + (Date.now() - started) + ' ms. Buzzing will work.'); try { ws.close(); } catch (x) {} }
+    };
+    ws.onerror = function () { settle('bad', 'The page opened but the live connection was refused. Try turning off any VPN, ad-blocker or private-DNS app, and turn off mobile data, then reload this page.'); };
+    ws.onclose = function () { settle('bad', 'The live connection closed straight away. Try turning off any VPN or ad-blocker app, and mobile data, then reload.'); };
+    setTimeout(function () { settle('bad', 'No answer after 6 seconds. The phone may be sending this over mobile data instead of Wi-Fi. Turn off mobile data (or the "switch to mobile data" option) and reload.'); }, 6000);
+  } catch (e) {
+    settle('bad', 'This browser could not start a live connection: ' + e.message);
+  }
+
+  // 7. What the game itself says its address is.
+  var infoRow = row('Server answers', 'wait', 'Asking…');
+  if (window.fetch) {
+    fetch('/api/info').then(function (r) { return r.json(); }).then(function (j) {
+      set(infoRow, 'ok', 'Players are meant to open ' + j.joinUrl);
+    }).catch(function (e) {
+      set(infoRow, 'bad', 'Could not read the game\'s address: ' + e.message);
+    });
+  }
+
+  function finish() {
+    if (done) return;
+    done = true;
+    setTimeout(function () {
+      var v = document.createElement('div');
+      if (problems === 0) {
+        v.className = 'verdict ok';
+        v.textContent = 'All good. This phone can join. Go back and join the game.';
+        out.appendChild(v);
+        var a = document.createElement('a'); a.className = 'btn'; a.href = '/'; a.textContent = 'Join the game';
+        out.appendChild(a);
+      } else {
+        v.className = 'verdict bad';
+        v.innerHTML = 'Something is blocking this phone. Things to try, in this order:<ul>' +
+          '<li>Turn off mobile data, then reload this page.</li>' +
+          '<li>Turn off any VPN, ad-blocker or private-DNS app.</li>' +
+          '<li>Check you are on the same Wi-Fi as the TV, not a guest network.</li>' +
+          '<li>Type the numeric address by hand in Chrome instead of scanning the code.</li>' +
+          '<li>Tell the host which line above shows a ✗.</li></ul>';
+        out.appendChild(v);
+      }
+    }, 600);
+  }
+})();
+</script>
+<script type="module">window.__moduleOk = true;</script>
+</body>
+</html>

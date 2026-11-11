@@ -57,6 +57,21 @@ Other things the host can do: adjust, set or rename any score; give the buzz to 
 player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
 
+## If a phone can't join
+
+Open **`/check`** on that phone (for example `http://192.168.1.50/check`, using the address
+shown on the TV). It tests, one line at a time, that the page loads, the browser is new
+enough, scripts and storage work, and the live connection (the part buzzing needs) gets
+through, and says what to try for any line that fails. The join page also offers it after a
+few seconds if it cannot connect.
+
+The usual causes, in order: the phone is sending web traffic over **mobile data** instead of
+Wi-Fi (turn mobile data off, especially on Android); a **VPN, ad-blocker or private-DNS app**
+is intercepting local traffic; the phone is on a **guest network**; the address was typed as a
+`.local` name (some Android phones cannot open those, so use the numeric address, which is
+what the QR code uses); or the link opened inside a QR-scanner app's built-in browser instead
+of Chrome.
+
 ## Players and teams
 
 - **Up to 5 players** play as individuals.

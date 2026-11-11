@@ -105,6 +105,9 @@ test('server end to end', async (t) => {
 
   await t.test('static files stay inside public/', async () => {
     assert.equal((await fetch(`${base}/tv`)).status, 200);
+    const check = await fetch(`${base}/check`);                     // the connection checker for phones that can't join
+    assert.equal(check.status, 200);
+    assert.match(await check.text(), /connection check/i);
     assert.equal((await fetch(`${base}/%2e%2e/server.js`)).status, 404);
     assert.equal((await fetch(`${base}/..%2fserver.js`)).status, 404);
   });

@@ -9,6 +9,7 @@ const teamEl = document.getElementById('team');
 const offline = document.getElementById('offline');
 
 let view = null;
+let offlineHint = null;
 let needJoin = false;
 let joinError = '';
 let shown = '';        // 'join' | 'waiting' | 'game'
@@ -20,7 +21,13 @@ const form = { name: store('gn-name') ?? '', color: store('gn-color') ?? '' };
 
 const net = connect({
   hello: () => ({ t: 'hello', role: 'player', token: store('gn-token') }),
-  onStatus: (up) => offline.classList.toggle('hidden', up),
+  onStatus: (up) => {
+    offline.classList.toggle('hidden', up);
+    if (up) { clearTimeout(offlineHint); offlineHint = null; offline.textContent = 'Reconnecting…'; return; }
+    // Still down after a few seconds: say what to try, and link the connection check.
+    // (Every retry reports "down" again, so the timer is only started once per outage.)
+    if (!offlineHint) offlineHint = setTimeout(() => offline.replaceChildren('Can’t reach the game. Same Wi-Fi as the TV? Try turning off mobile data or a VPN. ', h('a', { href: '/check', style: { color: '#fff', fontWeight: '800' } }, 'Test my connection')), 5000);
+  },
   onState: (v) => { view = v; if (v.room.me) needJoin = false; update(); },
   onMessage: (m) => {
     if (m.t === 'need-join') { needJoin = true; update(); }
@@ -29,6 +36,15 @@ const net = connect({
     else instance?.onMessage?.(m);
   },
 });
+
+// Before the first update arrives the page is blank. If it never arrives, say why and what to do.
+setTimeout(() => {
+  if (view) return;
+  screen.replaceChildren(h('div', { class: 'card' },
+    h('h2', {}, 'Can’t reach the game yet'),
+    h('p', {}, 'Make sure this phone is on the same Wi-Fi as the TV (not a guest network). Turn off mobile data and any VPN or ad-blocker app, then reload.'),
+    h('a', { class: 'btn primary', href: '/check', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, 'Test my connection')));
+}, 6000);
 
 function flash(text) {
   const t = h('div', { class: 'toast' }, text);
