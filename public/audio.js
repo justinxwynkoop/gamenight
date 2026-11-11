@@ -72,8 +72,14 @@ const SOUNDS = {
   reveal: () => { tone(523, 0, 0.12, { type: 'triangle', gain: 0.4 }); tone(392, 0.11, 0.25, { type: 'triangle', gain: 0.4 }); },
   dd: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, i === 4 ? 0.7 : 0.16, { type: 'triangle' })),
   final: () => { tone(196, 0, 0.9, { type: 'triangle' }); tone(294, 0.05, 0.9, { type: 'triangle', gain: 0.4 }); },
-  ding: () => { tone(1318, 0, 0.6, { type: 'sine', gain: 0.5 }); tone(1760, 0.07, 0.8, { type: 'sine', gain: 0.35 }); tone(2637, 0.07, 0.5, { type: 'sine', gain: 0.12 }); },
-  strike: () => { tone(120, 0, 0.9, { type: 'sawtooth', gain: 0.45 }); tone(90, 0, 0.9, { type: 'square', gain: 0.3 }); },
+  // Family Feud: a bright bell for a revealed answer, a harsh buzzer for a strike, and game-show stings.
+  ding: () => { tone(1318, 0, 0.9, { type: 'sine', gain: 0.42 }); tone(1976, 0, 0.9, { type: 'sine', gain: 0.22 }); tone(2637, 0, 0.7, { type: 'sine', gain: 0.12 }); tone(660, 0, 0.08, { type: 'triangle', gain: 0.3 }); },
+  strike: () => { tone(110, 0, 0.8, { type: 'sawtooth', gain: 0.45 }); tone(116, 0, 0.8, { type: 'sawtooth', gain: 0.35 }); tone(55, 0, 0.8, { type: 'square', gain: 0.2 }); },
+  strikeout: () => { SOUNDS.strike(); tone(220, 0.85, 0.2, { type: 'sawtooth', gain: 0.3 }); tone(294, 1.05, 0.2, { type: 'sawtooth', gain: 0.3 }); tone(392, 1.25, 0.5, { type: 'sawtooth', gain: 0.35, to: 440 }); },
+  faceoff: () => { tone(784, 0, 0.08, { type: 'square', gain: 0.35 }); tone(1568, 0.07, 0.35, { type: 'triangle', gain: 0.4 }); },
+  roundstart: () => { [[523, 0, 0.12], [659, 0.11, 0.12], [784, 0.22, 0.12]].forEach(([f, at, d]) => tone(f, at, d, { type: 'triangle', gain: 0.45 })); tone(1047, 0.33, 0.6, { type: 'triangle', gain: 0.45 }); tone(784, 0.33, 0.6, { type: 'triangle', gain: 0.3 }); tone(659, 0.33, 0.6, { type: 'triangle', gain: 0.25 }); },
+  winner: () => { [[523, 0, 0.14], [659, 0.14, 0.14], [784, 0.28, 0.14], [1047, 0.42, 0.3], [784, 0.76, 0.14], [1047, 0.9, 0.14]].forEach(([f, at, d]) => tone(f, at, d, { type: 'triangle', gain: 0.45 })); tone(1047, 1.06, 0.9, { type: 'triangle', gain: 0.4 }); tone(784, 1.06, 0.9, { type: 'triangle', gain: 0.3 }); tone(659, 1.06, 0.9, { type: 'triangle', gain: 0.25 }); },
+  zero: () => { [[392, 0], [370, 0.2], [349, 0.4]].forEach(([f, at]) => tone(f, at, 0.22, { type: 'triangle', gain: 0.4 })); tone(294, 0.6, 0.5, { type: 'triangle', gain: 0.4, to: 233 }); },
   fanfare: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.12, i === 6 ? 0.8 : 0.16, { type: 'triangle' })),
 };
 

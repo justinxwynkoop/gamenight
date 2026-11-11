@@ -235,3 +235,18 @@ body.host .toast.err { background: #7f1d1d; }
 .fd-ans:not(.up):not(.late):disabled { opacity: .75; }
 .fd-total { font-size: 2rem; }
 .fd-total b { font-size: 2.6rem; font-variant-numeric: tabular-nums; }
+.fd-ref { display: grid; gap: 4px; }
+.fd-ref .r { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--s2); }
+.fd-ref .r.hit { background: #1b2a86; outline: 2px solid var(--accent); }
+.fd-ref .n { width: 1.4em; text-align: center; color: var(--dim); font-weight: 800; }
+.fd-ref .t { flex: 1; min-width: 0; font-weight: 650; }
+.fd-ref .p { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--gold); }
+.fd-ref .tag { padding: 2px 8px; border-radius: 99px; background: var(--accent); font-size: .72rem; font-weight: 800; }
+.fd-ref .tag.p2 { background: #c2410c; }
+.fd-judge { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: var(--s2); }
+.fd-judge .who { display: flex; align-items: center; gap: 12px; }
+.fd-judge .who .grow { flex: 1; min-width: 0; }
+.fd-judge .who .t { font-weight: 700; }
+.fd-judge .who .s { color: var(--dim); font-size: .85rem; }
+.fd-judge .btns { display: flex; gap: 8px; }
+.fd-judge .btns .b:first-child { flex: 1; }

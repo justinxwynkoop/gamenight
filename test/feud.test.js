@@ -335,11 +335,51 @@ test('Fast Money: the host can type answers that were said out loud, and judge b
   assert.equal(g.run.fm.step, 'reveal');
 });
 
+test('Fast Money: an answer nobody gave scores 0 by itself when the answers are revealed', () => {
+  const ctx = setup(); const { g } = ctx;
+  toFastMoney(ctx);
+  g.fmStart();
+  g.fmSetAnswers('p1', ['apple', '', 'socks', '   ', 'nap']);
+  g.fmNext();                                       // player 2 never answers anything
+  g.fmNext();
+  const rows = g.publicView().fm.rows;
+  assert.equal(rows[1].p1.judged, true);
+  assert.equal(rows[1].p1.points, 0);
+  assert.equal(rows[1].p1.label, 'No answer');
+  assert.equal(rows[3].p1.points, 0);
+  assert.equal(rows[0].p1.judged, false, 'a real answer still waits for the host');
+  assert.ok(rows.every((r) => r.p2.judged && r.p2.points === 0), 'every answer of a player who sent nothing is a zero');
+  assert.equal(g.run.fm.step, 'reveal');
+  assert.equal(g.hostView().fm.rows[0].p1.suggest.rank, 1);
+  for (const q of [0, 2, 4]) { const sg = g.hostView().fm.rows[q].p1.suggest; g.fmJudge('p1', q, sg.points, sg.label); }
+  assert.equal(g.run.fm.step, 'results');
+});
+
+test('Fast Money: if nobody typed anything at all, the reveal goes straight to the result', () => {
+  const ctx = setup(); const { g } = ctx;
+  toFastMoney(ctx);
+  g.fmStart(); g.fmNext(); g.fmNext();
+  assert.equal(g.run.fm.step, 'results');
+  assert.equal(g.fmTotals().total, 0);
+  assert.equal(g.publicView().fm.won, false);
+});
+
+test('Fast Money gives more time by default, since answers are typed', () => {
+  const { g } = setup();
+  assert.equal(g.settings.fastMoneySeconds1, 40);
+  assert.equal(g.settings.fastMoneySeconds2, 45);
+  g.setSettings({ fastMoneySeconds1: 60 });
+  assert.equal(g.settings.fastMoneySeconds1, 60);
+  assert.throws(() => g.setSettings({ fastMoneySeconds1: 500 }), /5 to 180/);
+});
+
 test('Fast Money wins at the goal', () => {
   const ctx = setup(); const { g } = ctx;
   toFastMoney(ctx);
   g.setSettings({ fastMoneyGoal: 50 });
-  g.fmStart(); g.fmNext(); g.fmNext();
+  g.fmStart();
+  g.fmSetAnswers('p1', ['a', 'b', 'c', 'd', 'e']); g.fmNext();
+  g.fmSetAnswers('p2', ['f', 'g', 'h', 'i', 'j']); g.fmNext();
   for (let q = 0; q < 5; q++) { g.fmJudge('p1', q, 10, 'x'); g.fmJudge('p2', q, 0, null); }
   assert.equal(g.publicView().fm.totals.total, 50);
   assert.equal(g.publicView().fm.won, true);
@@ -349,7 +389,7 @@ test('the Fast Money timer expires on tick, and phones may still send answers un
   const ctx = setup(); const { g, room, clock } = ctx;
   const fm = toFastMoney(ctx);
   g.fmStart();
-  clock.advance(21000); g.tick();
+  clock.advance(41000); g.tick();
   assert.equal(g.publicView().fm.timer.timedOut, true);
   g.fmAnswersFrom(fm.players[0], ['a', 'b', 'c', 'd', 'e']);
   assert.equal(g.publicView().fm.submitted.p1, true);

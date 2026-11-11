@@ -21,6 +21,36 @@ function timerParts(timer) {
   return { bar, num };
 }
 
+// ---------- the big X ----------
+// A strike puts a large boxed X in the middle of the screen, which then slides down into the next empty strike box.
+const FX_MS = 2000;
+let strikeFx = null; // { round, n, at }: the latest strike, for the animation
+const fxElapsed = (r) => (strikeFx && strikeFx.round === r.number && strikeFx.n === r.strikes ? performance.now() - strikeFx.at : Infinity);
+const fxActive = (r) => r.strikes > 0 && fxElapsed(r) < FX_MS;
+
+function bigX(r) {
+  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, '✕');
+  requestAnimationFrame(() => {
+    if (!el.isConnected) return;
+    const slots = document.querySelectorAll('.fd-strikes .x');
+    const target = slots[r.strikes - 1]?.getBoundingClientRect();
+    const big = el.getBoundingClientRect();
+    const dx = target ? target.left + target.width / 2 - (big.left + big.width / 2) : 0;
+    const dy = target ? target.top + target.height / 2 - (big.top + big.height / 2) : 0;
+    const sc = target ? target.width / big.width : 0.2;
+    const anim = el.animate([
+      { offset: 0, transform: 'scale(.2)', opacity: 0, easing: 'ease-out' },
+      { offset: 0.11, transform: 'scale(1.08)', opacity: 1, easing: 'ease-in-out' },
+      { offset: 0.16, transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      { offset: 0.62, transform: 'translate(0, 0) scale(1)', opacity: 1, easing: 'cubic-bezier(.5, 0, .2, 1)' },
+      { offset: 1, transform: `translate(${dx}px, ${dy}px) scale(${sc})`, opacity: 1 },
+    ], { duration: FX_MS, fill: 'forwards' });
+    anim.currentTime = Math.min(FX_MS - 1, Math.max(0, fxElapsed(r)));   // a redraw part-way through carries on from where it was
+    anim.onfinish = () => el.remove();
+  });
+  return el;
+}
+
 /** Sound cues for a change of state. prev and view are the raw { room, game } views. */
 export function onChange(prev, view, sound) {
   play = sound.play;
@@ -31,13 +61,15 @@ export function onChange(prev, view, sound) {
     const sameRound = pr && pr.number === r.number;
     const up = (x) => x.answers.filter((a) => a.revealed).length;
     if (sameRound) {
+      if (r.strikes > pr.strikes) strikeFx = { round: r.number, n: r.strikes, at: performance.now() };
       if (up(r) > up(pr)) sound.play('ding');
-      else if (r.strikes > pr.strikes || (pr.step === 'steal' && r.step === 'roundEnd' && r.result?.winner === pr.stealFrom)) sound.play('strike');
-      else if (r.faceoff.attempts.length > pr.faceoff.attempts.length && r.faceoff.attempts.at(-1)?.rank === null) sound.play('wrong');
+      else if (r.strikes > pr.strikes) sound.play(r.strikes >= r.maxStrikes ? 'strikeout' : 'strike');
+      else if (pr.step === 'steal' && r.step === 'roundEnd' && r.result?.winner === pr.stealFrom) sound.play('strike');
+      else if (r.faceoff.attempts.length > pr.faceoff.attempts.length && r.faceoff.attempts.at(-1)?.rank === null) sound.play('strike');
       else if (r.faceoff.open && !pr.faceoff.open) sound.play('open');
-      else if (r.faceoff.turn && !pr.faceoff.turn && !r.faceoff.attempts.length) sound.play('buzz');
+      else if (r.faceoff.turn && !pr.faceoff.turn && !r.faceoff.attempts.length) sound.play('faceoff');
       if (r.step === 'roundEnd' && pr.step !== 'roundEnd') sound.play('correct');
-    } else if (pr || p.status !== 'round') sound.play('reveal');
+    } else if (pr || p.status !== 'round') sound.play('roundstart');
   }
   const pf = p.fm; const f = g.fm;
   if (f) {
@@ -47,12 +79,12 @@ export function onChange(prev, view, sound) {
       const judged = (x) => x.rows.reduce((n, row) => n + (row.p1.judged ? 1 : 0) + (row.p2.judged ? 1 : 0), 0);
       if (judged(f) > judged(pf)) {
         const pts = (x) => x.rows.reduce((n, row) => n + (row.p1.points ?? 0) + (row.p2.points ?? 0), 0);
-        sound.play(pts(f) > pts(pf) ? 'ding' : 'strike');
+        sound.play(pts(f) > pts(pf) ? 'ding' : 'zero');
       }
-      if (f.step === 'results' && pf.step !== 'results') sound.play(f.won ? 'fanfare' : 'wrong');
+      if (f.step === 'results' && pf.step !== 'results') sound.play(f.won ? 'winner' : 'zero');
     }
   }
-  if (g.status === 'done' && p.status !== 'done') sound.play('fanfare');
+  if (g.status === 'done' && p.status !== 'done') sound.play('winner');
 }
 
 const colorOf = (v, id) => unitById({ units: v.room.units }, id)?.color ?? '#fff';
@@ -68,7 +100,11 @@ function teamBox(v, u, r) {
 }
 
 function strikes(r) {
-  return h('div', { class: 'fd-strikes' }, Array.from({ length: r.maxStrikes }, (_, i) => h('div', { class: `x ${i < r.strikes ? 'on' : ''}` }, i < r.strikes ? '✕' : '')));
+  const left = FX_MS - fxElapsed(r);
+  return h('div', { class: 'fd-strikes' }, Array.from({ length: r.maxStrikes }, (_, i) => {
+    const landing = fxActive(r) && i === r.strikes - 1;   // this box fills in when the big X arrives
+    return h('div', { class: `x ${i < r.strikes ? 'on' : ''} ${landing ? 'later' : ''}`, style: landing ? { animationDelay: `${Math.max(0, left) / 1000}s` } : {} }, i < r.strikes ? '✕' : '');
+  }));
 }
 
 function slot(a) {
@@ -103,7 +139,8 @@ function roundScreen(v) {
       b && teamBox(v, b, r)),
     h('div', { class: 'fd-question' }, r.question),
     h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map(slot)),
-    h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())));
+    h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())),
+    fxActive(r) && bigX(r));
 }
 
 // ---------- Fast Money ----------

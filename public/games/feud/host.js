@@ -281,24 +281,40 @@ function openJudgeSheet(row, slot) {
   });
 }
 
+/** Where a player's answer landed on the survey list (1 is the top answer), or null: from the match we suggest, or what was scored. */
+function rankOf(row, slot) {
+  const c = row[slot];
+  if (c.judged) { const i = c.label ? c.choices.findIndex((x) => x.text === c.label) : -1; return i === -1 ? null : i + 1; }
+  return c.suggest && c.suggest.index !== -1 && !c.suggest.dup ? c.suggest.rank : null;
+}
+
 function fmReveal(fm, head) {
   const names = fm.players.map((p) => p.name ?? 'Player');
   const done = fm.rows.reduce((n, r) => n + (r.p1.judged ? 1 : 0) + (r.p2.judged ? 1 : 0), 0);
   const slotRow = (row, slot, who) => {
     const c = row[slot];
+    const rank = rankOf(row, slot);
     if (c.judged) {
-      return h('div', { class: 'rowi' }, icon(c.points > 0 ? 'check' : 'x', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `“${c.typed || '—'}”${c.label ? ` → ${c.label}` : ''}`)),
-        h('span', { class: 'pts' }, String(c.points)), button({ label: 'Change', size: 'sm', onclick: () => openJudgeSheet(row, slot) }));
+      const text = c.typed ? `“${c.typed}”` : 'no answer';
+      return h('div', { class: 'fd-judge done' },
+        h('div', { class: 'who' }, icon(c.points > 0 ? 'check' : 'x', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `${text}${rank ? ` → #${rank} ${c.label}` : ''}`)), h('span', { class: 'pts' }, String(c.points))),
+        h('div', { class: 'btns' }, button({ label: 'Change', size: 'sm', onclick: () => openJudgeSheet(row, slot) })));
     }
     const sg = c.suggest;
-    const accept = sg && (sg.index !== -1 || sg.dup)
-      ? button({ label: sg.dup ? 'Repeat (0)' : `${sg.label} (+${sg.points})`, kind: 'primary', size: 'sm', onclick: () => act('fmJudge', { slot, q: row.q, points: sg.points, label: sg.dup ? 'Repeated answer' : sg.label }) })
-      : null;
-    return h('div', { class: 'rowi' }, icon('clock', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `“${c.typed || '—'}”`)),
-      accept, button({ label: 'Score…', size: 'sm', onclick: () => openJudgeSheet(row, slot) }));
+    const label = sg?.dup ? 'Repeat · 0' : sg && sg.index !== -1 ? `#${sg.rank} ${sg.label} · +${sg.points}` : 'Not on the board · 0';
+    const kind = sg && sg.index !== -1 && !sg.dup ? 'primary' : '';
+    return h('div', { class: 'fd-judge' },
+      h('div', { class: 'who' }, icon('clock', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `“${c.typed || '—'}”`))),
+      h('div', { class: 'btns' },
+        button({ label, kind, onclick: () => act('fmJudge', { slot, q: row.q, points: sg?.dup || !sg || sg.index === -1 ? 0 : sg.points, label: sg?.dup ? 'Repeated answer' : sg && sg.index !== -1 ? sg.label : '' }) }),
+        button({ label: 'Other…', size: 'sm', onclick: () => openJudgeSheet(row, slot) })));
   };
+  // The survey answers for a question, with a tag where each player's answer landed, so the rank is visible at a glance.
+  const survey = (row) => h('div', { class: 'fd-ref' }, row.p1.choices.map((ch, i) => h('div', { class: `r ${[1, 2].some((k) => rankOf(row, `p${k}`) === i + 1) ? 'hit' : ''}` },
+    h('span', { class: 'n' }, String(i + 1)), h('span', { class: 't' }, ch.text), h('span', { class: 'p' }, String(ch.points)),
+    ['p1', 'p2'].map((slot, k) => rankOf(row, slot) === i + 1 && h('span', { class: `tag ${slot}` }, names[k])))));
   const body = [head,
-    ...fm.rows.map((row) => card(eyebrow(`Question ${row.q + 1}`), h('div', { class: 'card-title' }, row.question), slotRow(row, 'p1', names[0]), slotRow(row, 'p2', names[1]))),
+    ...fm.rows.map((row) => card(eyebrow(`Question ${row.q + 1}`), h('div', { class: 'card-title' }, row.question), survey(row), slotRow(row, 'p1', names[0]), slotRow(row, 'p2', names[1]))),
     card(eyebrow('Total'), h('div', { class: 'fd-total' }, h('b', {}, String(fm.totals.total)), h('span', { class: 'dim' }, ` of ${fm.goal}`)),
       h('div', { class: 'progress' }, h('i', { style: { width: `${Math.min(100, (fm.totals.total / fm.goal) * 100)}%` } })),
       fm.step === 'results' && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, fm.won ? 'They did it!' : 'So close', h('small', {}, fm.won ? `${fm.totals.total} points` : `${fm.goal - fm.totals.total} short`))))];
@@ -339,8 +355,9 @@ function settingsCards() {
     card(eyebrow('Fast Money'),
       toggle({ label: 'Play Fast Money', sub: 'The leading team plays the bonus round', checked: s.fastMoney, onchange: (on) => act('setSettings', { fastMoney: on }) }),
       h('div', { class: 'field' }, h('span', {}, 'Points to win'), presets([100, 150, 200, 250], s.fastMoneyGoal, 'fastMoneyGoal')),
-      h('div', { class: 'field' }, h('span', {}, 'Player 1’s time'), presets([15, 20, 25, 30], s.fastMoneySeconds1, 'fastMoneySeconds1', (n) => `${n}s`)),
-      h('div', { class: 'field' }, h('span', {}, 'Player 2’s time'), presets([20, 25, 30, 35], s.fastMoneySeconds2, 'fastMoneySeconds2', (n) => `${n}s`))),
+      h('p', { class: 'dim' }, 'Longer times suit players typing on a phone; shorter ones suit answers said out loud.'),
+      h('div', { class: 'field' }, h('span', {}, 'Player 1’s time'), presets([20, 30, 40, 60], s.fastMoneySeconds1, 'fastMoneySeconds1', (n) => `${n}s`)),
+      h('div', { class: 'field' }, h('span', {}, 'Player 2’s time'), presets([25, 35, 45, 65], s.fastMoneySeconds2, 'fastMoneySeconds2', (n) => `${n}s`))),
   ];
 }
 

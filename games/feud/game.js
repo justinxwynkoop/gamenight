@@ -65,7 +65,7 @@ export function matchAnswer(answers, typed) {
 export class FeudGame {
   constructor(room) {
     this.room = room;
-    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 20, fastMoneySeconds2: 25 };
+    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45 };   // typing five answers on a phone takes longer than saying them
     this.setId = null;
     this.set = null;
     this.run = this.#blankRun('lobby');
@@ -152,8 +152,8 @@ export class FeudGame {
     if (typeof multipliers === 'boolean') this.settings.multipliers = multipliers;
     if (typeof fastMoney === 'boolean') this.settings.fastMoney = fastMoney;
     if (fastMoneyGoal !== undefined) this.settings.fastMoneyGoal = inRange(fastMoneyGoal, 10, 1000, 'Fast Money goal');
-    if (fastMoneySeconds1 !== undefined) this.settings.fastMoneySeconds1 = inRange(fastMoneySeconds1, 5, 120, 'First player\'s time');
-    if (fastMoneySeconds2 !== undefined) this.settings.fastMoneySeconds2 = inRange(fastMoneySeconds2, 5, 120, 'Second player\'s time');
+    if (fastMoneySeconds1 !== undefined) this.settings.fastMoneySeconds1 = inRange(fastMoneySeconds1, 5, 180, 'First player\'s time');
+    if (fastMoneySeconds2 !== undefined) this.settings.fastMoneySeconds2 = inRange(fastMoneySeconds2, 5, 180, 'Second player\'s time');
     this.#changed();
   }
   chooseSet(id) {
@@ -441,8 +441,18 @@ export class FeudGame {
   }
   fmNext() {
     const fm = this.#fm();
-    if (fm.step === 'p1') { fm.step = 'p2'; this.#startTimer(fm, this.settings.fastMoneySeconds2); } else if (fm.step === 'p2') { fm.step = 'reveal'; fm.timer = null; } else fail('Nothing further');
+    if (fm.step === 'p1') { fm.step = 'p2'; this.#startTimer(fm, this.settings.fastMoneySeconds2); } else if (fm.step === 'p2') { fm.step = 'reveal'; fm.timer = null; this.#zeroBlanks(); } else fail('Nothing further');
     this.#changed();
+  }
+  /** An answer nobody gave scores 0 without the host having to say so (the host can still change it). */
+  #zeroBlanks() {
+    const fm = this.run.fm;
+    for (const s of SLOTS) {
+      for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
+        if (fm.points[s][q] === null && !(fm.answers[s]?.[q] ?? '').trim()) { fm.points[s][q] = 0; fm.labels[s][q] = 'No answer'; }
+      }
+    }
+    if (SLOTS.every((s) => fm.points[s].every((v) => v !== null))) fm.step = 'results';
   }
   #cleanAnswers(list) {
     return Array.from({ length: FAST_MONEY_QUESTIONS }, (_, i) => cleanName(Array.isArray(list) ? list[i] : '', 40));
@@ -463,7 +473,7 @@ export class FeudGame {
     this.#changed();
   }
   #fmQuestion(q) { return this.set.fastMoney[q] ?? fail('There is no such question'); }
-  /** What a typed answer probably means, for the host to confirm: { index, points, label, dup }. */
+  /** What a typed answer probably means, for the host to confirm: { index, rank (1 is the top answer), points, label, dup }. */
   fmSuggest(slot, q) {
     const fm = this.run.fm;
     const typed = fm?.answers[slot]?.[q] ?? '';
@@ -475,7 +485,7 @@ export class FeudGame {
       const otherIndex = matchAnswer(answers, other);
       dup = !!typed && ((index !== -1 && index === otherIndex) || (normalize(typed) !== '' && normalize(typed) === normalize(other)));
     }
-    return { index, points: index === -1 || dup ? 0 : answers[index].points, label: index === -1 ? null : answers[index].text, dup };
+    return { index, rank: index === -1 ? null : index + 1, points: index === -1 || dup ? 0 : answers[index].points, label: index === -1 ? null : answers[index].text, dup };
   }
   /** The host scores one answer: a survey answer's points, or 0 for "not on the board". */
   fmJudge(slot, q, points, label) {
