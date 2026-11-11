@@ -36,8 +36,11 @@ The host first picks the game (skipped while only one is installed). Whether
 people play on their own or in teams is worked out for you (see
 [Players and teams](#players-and-teams)).
 
-1. **Lobby.** Players scan the QR code, enter a name and pick a colour. The host
-   picks the question set.
+1. **Setup.** Players scan the QR code, enter a name and pick a colour. On the
+   host page the host chooses **1 round or 2 rounds** before Final Jeopardy, then a
+   question set for each round (a set can't be used twice). Final Jeopardy comes
+   from the last round's set. **Start game** stays greyed out, with the reason
+   shown, until every round has a board and someone has joined.
 2. **Board.** The host taps a square. The clue shows on the TV; the answer shows
    only on the host page.
 3. **Buzzers.** The host reads the clue, then taps **Open buzzers**. First press
@@ -53,9 +56,23 @@ people play on their own or in teams is worked out for you (see
    playing the final round is marked "sitting out". The host judges each answer;
    wagers and answers appear on the TV only as they are judged.
 
+Two-round games: **Round 2 (Double Jeopardy!)** has every value doubled and two
+Daily Doubles; whoever has the lowest score picks first. When the first board is
+cleared the host taps **Start Double Jeopardy** (or **Start Final Jeopardy** to
+skip ahead; both ask first if squares are left).
+
 Other things the host can do: adjust, set or rename any score; give the buzz to a
 player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
+
+## The host screen
+
+`/host` is laid out like an app: **Game**, **Players**, **Scores** and **Settings**
+tabs (a bar along the bottom on a phone, a rail down the side on a tablet or
+laptop). The one thing to do next is always a large button pinned at the bottom
+(Start game, Open buzzers, Correct / Wrong, Back to the board...). Choices open as
+slide-up sheets. Game rules and timers live under Settings, and ending the game
+is tucked away at the bottom of Settings behind a confirmation.
 
 ## If a phone can't join
 
@@ -353,7 +370,9 @@ buzzer connection. A game supplies its rules and its screens.
    `unit.score` on `room.units()`. Keep it free of sockets and files so it can be
    tested like `games/jeopardy/game.js`.
 2. **Screens.** Add `public/games/<id>/` with `tv.js` (`render(view)` returns an
-   element), `host.js` (`render(view, ctx)` returns `{ label, toolbar, cards }`),
+   element), `host.js` (`render(view, ctx)` returns `{ title, sub, body, dock, settings, danger }`:
+   the Game tab's content, the action bar pinned under it, cards for the Settings tab and
+   buttons for its danger zone; `ctx` gives `act`, `sets`, `setInfo`, `openSheet`, `confirm`, `go`...),
    `player.js` (`mount(container, ctx)` returns `{ update(view), onMessage(msg),
    destroy() }`) and `editor.js` (`mount(container, api)`). `public/games/jeopardy/`
    is the working example.
