@@ -126,15 +126,18 @@ dealt onto them at random and the host can move anyone.
    The top answer wins the face-off outright; otherwise the other player gets a go and the better answer
    wins. If both miss, replay it or pick a winner.
 3. **Play or pass.** The winners choose. Their team then names answers; the host taps each one and it
-   flips on the TV. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
+   flips on the TV. A **strike** puts a big boxed X in the middle of the TV, which then slides down into
+   the next empty strike box. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
    whole pot, a miss leaves it with the first team.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
    rounds.
-5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (20 and 25
-   seconds by default), typing on their phone, or the host types what they say. The host then scores
-   every answer: the game suggests the matching survey answer (and zero for a repeat of player 1's
-   answer) and the host confirms. Reach 200 points to win.
+5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
+   seconds by default, since typing takes longer than talking; change them under Settings), typing on
+   their phone, or the host types what they say. Answers left blank score 0 by themselves when the
+   reveal starts. For the rest, each survey list is shown with a tag where each player's answer landed
+   (so the rank is visible without opening anything), and the host confirms with one tap: the game
+   suggests the matching survey answer (and zero for a repeat of player 1's answer). Reach 200 points to win.
 6. **Undo.** A mis-tap is easy on a phone, so **Undo** takes back the last reveal, strike or choice,
    including the points.
 
@@ -242,7 +245,9 @@ To use your own audio, put files in `data/sounds/` on the Pi. Use these names (`
 `.ogg` or `.m4a`) and the game uses your file instead of the built-in sound:
 
 `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`
-(Final Jeopardy sting), `fanfare` (winner), and two music files:
+(Final Jeopardy sting), `fanfare` (winner), and for Family Feud `ding` (an answer flips), `strike` (the
+buzzer), `strikeout` (the third strike), `faceoff` (a face-off buzz), `roundstart`, `winner` and
+`zero` (a Fast Money answer worth nothing), plus two music files:
 
 - **`think`**: plays during the Final Jeopardy countdown and stops when time is up. A 30-second
   file matches the default time (it loops if the countdown is longer).
