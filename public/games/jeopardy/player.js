@@ -75,30 +75,47 @@ export function mount(container, { send, flash }) {
     } else peek.classList.add('hidden');
   }
 
+  /** Everyone's score, highest first, so a wager can be judged against the rest. Your own row is marked. */
+  function scoreboard(v) {
+    const sorted = [...v.units].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    const inFinal = new Set(v.final.finalists.map((x) => x.id));
+    return h('div', { class: 'card' }, h('h2', {}, 'Scores'),
+      h('div', { class: 'list' }, sorted.map((u) => h('div', { class: `item ${u.id === v.me.unitId ? 'me' : ''}` },
+        h('span', { class: 'swatch', style: { background: u.color } }),
+        h('span', { class: 'nm' }, u.id === v.me.unitId ? `${u.name} (you)` : u.name),
+        !inFinal.has(u.id) && h('span', { class: 'tag' }, 'sitting out'),
+        h('span', { class: 'pts' }, money(u.score))))));
+  }
+
+  /** A Final Jeopardy screen: whatever the step needs, with everyone's scores underneath. */
+  function withScores(v, node) {
+    return h('div', { style: { display: 'contents' } }, node, scoreboard(v));
+  }
+
   function finalScreen(v) {
     const f = v.final;
     const mine = f.finalists.find((x) => x.id === v.me.unitId);
     const key = `final-${f.step}-${mine ? 'in' : 'out'}`;
     if (!mine) {
-      return { key: 'final-out', node: h('div', { class: 'card' }, h('h2', {}, 'Final Jeopardy'),
-        h('p', {}, 'Only players with a positive score play the final round. Watch the TV!')) };
+      return { key: 'final-out', node: withScores(v, h('div', { class: 'card' }, h('h2', {}, 'Final Jeopardy'),
+        h('p', {}, 'Only players with a positive score play the final round. Watch the TV!'))) };
     }
     if (f.step === 'wager') {
       const max = Math.max(0, unitById(v, v.me.unitId)?.score ?? 0);
       const input = h('input', { type: 'number', inputMode: 'numeric', min: 0, max, placeholder: `0 – ${max}` });
-      return { key, node: h('div', { class: 'card' }, h('h2', {}, `Final Jeopardy · ${f.category}`),
+      return { key, node: withScores(v, h('div', { class: 'card' }, h('h2', {}, `Final Jeopardy · ${f.category}`),
         h('label', {}, `Your wager (up to ${money(max)})`), input,
         mine.wagered && h('p', { class: 'tag' }, 'Wager locked in. You can change it until the host moves on.'),
-        h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: () => send({ t: 'final-wager', amount: Number(input.value || 0) }) }, 'Lock in wager')) };
+        h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: () => send({ t: 'final-wager', amount: Number(input.value || 0) }) }, 'Lock in wager'))) };
     }
     if (f.step === 'clue') {
       const input = h('textarea', { maxLength: 200, placeholder: 'Your answer' });
-      return { key, node: h('div', { class: 'card' }, h('h2', {}, f.category), h('p', { class: 'clue-peek' }, f.text),
+      return { key, node: withScores(v, h('div', { class: 'card' }, h('h2', {}, f.category), h('p', { class: 'clue-peek' }, f.text),
         h('label', {}, 'Your answer'), input,
         mine.answered && h('p', { class: 'tag' }, 'Answer saved. You can change it until time is up.'),
-        h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: () => send({ t: 'final-answer', text: input.value }) }, 'Submit answer')) };
+        h('button', { class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick: () => send({ t: 'final-answer', text: input.value }) }, 'Submit answer'))) };
     }
-    return { key, node: h('div', { class: 'card' }, h('h2', {}, 'Final Jeopardy'), h('p', {}, 'Eyes on the TV for the reveal!')) };
+    return { key, node: withScores(v, h('div', { class: 'card' }, h('h2', {}, 'Final Jeopardy'), h('p', {}, 'Eyes on the TV for the reveal!'))) };
   }
 
   function refresh() {

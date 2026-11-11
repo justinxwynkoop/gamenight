@@ -1,6 +1,17 @@
 // Small helpers shared by the room and every game.
 
 export const MAX_PLAYERS = 30;
+/** Up to this many players play as individuals; with more than this, the room splits them into teams. */
+export const INDIVIDUAL_MAX = 5;
+/** Players per team. More players than two teams hold (2 × this) bring in the third and fourth team. */
+export const TEAM_SIZE = 5;
+/** The teams, in the order they appear. Red and Blue are always there in team play; Green and Yellow join for four teams. */
+export const TEAM_DEFS = [
+  { key: 'red', name: 'Red', color: '#ef4444' },
+  { key: 'blue', name: 'Blue', color: '#3b82f6' },
+  { key: 'green', name: 'Green', color: '#22c55e' },
+  { key: 'yellow', name: 'Yellow', color: '#eab308' },
+];
 export const COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4',
   '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#a3e635', '#f8fafc',

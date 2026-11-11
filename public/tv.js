@@ -71,8 +71,8 @@ function effects(prev, v) {
 function lobby(v) {
   const { room, game } = v;
   const chips = room.mode === 'teams'
-    ? room.teams.map((t) => h('span', { class: 'chip', style: { background: t.color, color: ink(t.color) } },
-      `${t.name} · ${unitById(room, t.id)?.members ?? 0}`))
+    ? room.units.map((u) => h('div', { class: 'teamcard', style: { background: u.color, color: ink(u.color) } },
+      `${u.name} · ${u.members}`, u.memberNames?.length ? h('small', {}, u.memberNames.join(', ')) : null))
     : room.units.map((u) => h('span', { class: `chip ${u.connected ? '' : 'off'}`, style: { background: u.color, color: ink(u.color) } }, u.name));
   return h('div', { class: 'tv-layout full' }, h('div', { class: 'tv-main' }, h('div', { class: 'lobby' },
     h('div', {},

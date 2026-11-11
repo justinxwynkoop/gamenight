@@ -160,13 +160,17 @@ function final(v) {
       f.step === 'results' && h('div', { class: 'answer', style: { marginTop: '1.5vmin', fontSize: '4vmin' } }, f.answer));
   }
   if (f.step !== 'clue') {
-    body.push(h('div', { class: 'final-grid' }, f.finalists.map((fu) => {
-      const u = unitById(v, fu.id);
-      const judged = fu.result !== null;
+    // While wagers are made, show everyone's score (not just the finalists') so a wager can be judged against the rest.
+    const rows = f.step === 'wager'
+      ? byScore(v.units).map((u) => ({ u, fu: f.finalists.find((x) => x.id === u.id) ?? null }))
+      : f.finalists.map((fu) => ({ u: unitById(v, fu.id), fu }));
+    body.push(h('div', { class: 'final-grid' }, rows.map(({ u, fu }) => {
+      const judged = !!fu && fu.result !== null;
+      const status = !fu ? 'Sitting out' : judged ? `“${fu.answer || '—'}”` : f.step === 'wager' ? (fu.wagered ? 'Wager locked in ✓' : 'Wagering…') : '…';
       return h('div', { class: `frow ${judged ? (fu.result ? 'ok' : 'no') : ''}` },
         h('span', {}, h('span', { class: 'swatch', style: { background: u.color } }), ' ', u.name),
-        h('span', {}, judged ? `“${fu.answer || '—'}”` : f.step === 'wager' ? (fu.wagered ? 'Wager locked in ✓' : 'Wagering…') : '…'),
-        h('span', {}, judged ? money(fu.wager) : ''),
+        h('span', { style: fu ? {} : { opacity: 0.6 } }, status),
+        h('span', {}, judged ? money(fu.wager) : f.step === 'wager' ? money(u.score) : ''),
         h('span', { class: 'res' }, judged ? (fu.result ? '✔' : '✘') : ''));
     })));
   }

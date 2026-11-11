@@ -18,21 +18,24 @@
 // The game scores by changing `unit.score` on room.units(): players in
 // individual mode, teams in team mode.
 
-import { GameError, fail, cleanName, int, COLORS, MAX_PLAYERS, newToken } from './lib.js';
+import { GameError, fail, cleanName, int, COLORS, MAX_PLAYERS, INDIVIDUAL_MAX, TEAM_SIZE, TEAM_DEFS, newToken } from './lib.js';
 
 const VERSION = 2;
 
 export class Room {
-  constructor({ games = {}, now = () => performance.now(), onChange = () => {}, loadContent = () => null, listContent = () => [] } = {}) {
+  constructor({ games = {}, now = () => performance.now(), onChange = () => {}, loadContent = () => null, listContent = () => [], random = Math.random } = {}) {
+    this.rng = random; // for dealing players onto teams; tests pass a fixed one
     this.games = games;
     this.clock = now;
     this.onChange = onChange;
     this.loadContent = loadContent; // (gameId, setId) => object | null
     this.listContent = listContent; // (gameId) => [{id, title}]
     this.nextId = 1;
-    this.mode = 'players'; // 'players' | 'teams'
+    this.mode = 'players'; // what is actually being played: 'players' | 'teams'
+    this.modeSetting = 'auto'; // the host's choice: 'auto' | 'players' | 'teams'. Auto means teams once there are more than INDIVIDUAL_MAX players.
+    this.teamCount = 2; // the host's choice, 2 or 4 (more than 2 × TEAM_SIZE players always means 4)
     this.players = []; // {id, token, name, color, teamId, score, kind}
-    this.teams = []; // {id, name, color, score}
+    this.teams = []; // {id, key, name, color, score}
     this.gameId = null;
     this.game = null;
     this.settings = { sound: true, volume: 70 }; // sound plays on the TV
@@ -47,7 +50,8 @@ export class Room {
   // ---------- persistence ----------
   toJSON() {
     return {
-      version: VERSION, nextId: this.nextId, mode: this.mode, players: this.players, teams: this.teams, settings: this.settings,
+      version: VERSION, nextId: this.nextId, mode: this.mode, modeSetting: this.modeSetting, teamCount: this.teamCount,
+      players: this.players, teams: this.teams, settings: this.settings,
       gameId: this.gameId, game: this.game?.toJSON() ?? null,
     };
   }
@@ -56,8 +60,10 @@ export class Room {
     if (!data || typeof data !== 'object' || data.version !== VERSION) return false;
     this.nextId = data.nextId ?? 1;
     this.mode = data.mode ?? 'players';
+    this.modeSetting = data.modeSetting ?? (this.mode === 'teams' ? 'teams' : 'players'); // saves from before auto teams
+    this.teamCount = data.teamCount === 4 ? 4 : 2;
     this.players = data.players ?? [];
-    this.teams = data.teams ?? [];
+    this.teams = (data.teams ?? []).map((t, i) => ({ key: TEAM_DEFS[i]?.key ?? `team${i + 1}`, ...t }));
     this.settings = { sound: true, volume: 70, ...data.settings };
     this.gameId = null; this.game = null;
     if (data.gameId && this.games[data.gameId]) {
@@ -93,13 +99,14 @@ export class Room {
     if (!name) fail('Enter a name');
     if (this.players.length >= MAX_PLAYERS) fail('The game is full');
     if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail('That name is taken');
-    if (this.mode === 'teams' && !this.teams.some((t) => t.id === teamId)) fail('Pick a team');
     color = COLORS.includes(color) ? color : this.#freeColor();
     const player = {
       id: this.#id('p'), token: newToken(), name, color, kind, score: 0,
-      teamId: this.mode === 'teams' ? teamId : null,
+      // Normally nobody chooses: the room puts you on a team. A valid team given here is respected (a buzzer, say).
+      teamId: this.mode === 'teams' && this.teams.some((t) => t.id === teamId) ? teamId : null,
     };
     this.players.push(player);
+    this.#reconcile();
     this.changed();
     return player;
   }
@@ -121,25 +128,90 @@ export class Room {
     this.game.init?.();
     this.changed();
   }
+  /** How to play: 'auto' (individuals up to INDIVIDUAL_MAX players, teams beyond that), or force 'players' or 'teams'. */
   setMode(mode) {
-    if (!['players', 'teams'].includes(mode)) fail('Unknown mode');
+    if (!['auto', 'players', 'teams'].includes(mode)) fail('Unknown mode');
     this.#lobbyOnly('Change the mode');
+    this.modeSetting = mode;
+    this.#reconcile();
+    this.changed();
+  }
+  /** Two teams (Red, Blue) or four (adding Green, Yellow). With more than 2 × TEAM_SIZE players it is always four. */
+  setTeamCount(count) {
+    const n = int(count);
+    if (![2, 4].includes(n)) fail('Choose 2 or 4 teams');
+    this.#lobbyOnly('Change the number of teams');
+    if (n === 2 && this.players.length > 2 * TEAM_SIZE) fail(`With more than ${2 * TEAM_SIZE} players you need four teams`);
+    this.teamCount = n;
+    this.#reconcile();
+    this.changed();
+  }
+  /** Deal everyone onto the teams again, at random. */
+  shuffleTeams() {
+    this.#lobbyOnly('Shuffle the teams');
+    if (this.mode !== 'teams') fail('Not playing in teams');
+    this.#deal();
+    this.changed();
+  }
+
+  // ---------- keeping teams in step with the roster ----------
+  #effectiveMode() {
+    if (this.modeSetting === 'auto') return this.players.length > INDIVIDUAL_MAX ? 'teams' : 'players';
+    return this.modeSetting;
+  }
+  #wantedTeamCount() { return this.teamCount === 4 || this.players.length > 2 * TEAM_SIZE ? 4 : 2; }
+  /**
+   * Makes mode, teams and who is on which team match the roster and the host's choices.
+   * Before the game starts it may switch between individuals and teams, add or drop Green and Yellow,
+   * and deal everyone out again at random when the make-up of the teams changes. Once a game is
+   * running nothing is rearranged; a player who joins is just put on the smallest team.
+   */
+  #reconcile() {
+    if (this.inProgress()) { if (this.mode === 'teams') this.#placeUnassigned(); return; }
+    const mode = this.#effectiveMode();
+    const modeChanged = mode !== this.mode;
     this.mode = mode;
-    this.players.forEach((p) => { p.teamId = null; });
-    if (mode === 'teams' && !this.teams.length) ['Team 1', 'Team 2'].forEach((n) => this.addTeam(n));
-    this.changed();
+    if (mode === 'players') {
+      this.teams = [];
+      this.players.forEach((p) => { p.teamId = null; });
+      return;
+    }
+    const before = this.teams.length;
+    this.#ensureTeams(this.#wantedTeamCount());
+    if (modeChanged || this.teams.length !== before) this.#deal(); else this.#placeUnassigned();
   }
-  addTeam(name) {
-    name = cleanName(name);
-    if (!name) fail('Team needs a name');
-    if (this.teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) fail('That team name is taken');
-    this.teams.push({ id: this.#id('t'), name, color: this.#freeColor(), score: 0 });
-    this.changed();
+  /** Exactly the first `count` teams, keeping any a host renamed. Players on a dropped team become unassigned. */
+  #ensureTeams(count) {
+    this.teams = TEAM_DEFS.slice(0, count).map((def) => this.teams.find((t) => t.key === def.key)
+      ?? { id: this.#id('t'), key: def.key, name: def.name, color: def.color, score: 0 });
+    const ids = new Set(this.teams.map((t) => t.id));
+    this.players.forEach((p) => { if (!ids.has(p.teamId)) p.teamId = null; });
   }
-  removeTeam(id) {
-    this.teams = this.teams.filter((t) => t.id !== id);
-    this.players.forEach((p) => { if (p.teamId === id) p.teamId = null; });
-    this.changed();
+  #shuffled(list) {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(this.rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  /** Everyone onto a team at random, as even as possible (team sizes differ by at most one). */
+  #deal() {
+    const n = this.teams.length;
+    if (!n) return;
+    this.#shuffled(this.players).forEach((p, i) => { p.teamId = this.teams[i % n].id; });
+  }
+  /** Players with no team go on the smallest team; if several are tied, at random. */
+  #placeUnassigned() {
+    if (!this.teams.length) return;
+    const valid = new Set(this.teams.map((t) => t.id));
+    for (const p of this.players) {
+      if (valid.has(p.teamId)) continue;
+      const sizes = this.teams.map((t) => this.players.filter((x) => x.teamId === t.id).length);
+      const least = Math.min(...sizes);
+      const options = this.teams.filter((_, i) => sizes[i] === least);
+      p.teamId = options[Math.floor(this.rng() * options.length)].id;
+    }
   }
   setPlayerTeam(playerId, teamId) {
     const p = this.player(playerId);
@@ -158,13 +230,14 @@ export class Room {
     this.player(id);
     this.players = this.players.filter((p) => p.id !== id);
     this.connected.delete(id);
+    this.#reconcile();
     this.changed();
   }
   /** Lobby only: forget every player and team (a new party). */
   clearRoster() {
     this.#lobbyOnly('Clear the players');
-    this.players = []; this.teams = []; this.connected.clear();
-    if (this.mode === 'teams') ['Team 1', 'Team 2'].forEach((n) => this.addTeam(n));
+    this.players = []; this.connected.clear();
+    this.#reconcile();
     this.changed();
   }
   adjustScore(id, { delta, set }) {
@@ -195,8 +268,8 @@ export class Room {
     switch (action) {
       case 'chooseGame': return this.chooseGame(args.id);
       case 'setMode': return this.setMode(args.mode);
-      case 'addTeam': return this.addTeam(args.name);
-      case 'removeTeam': return this.removeTeam(args.id);
+      case 'setTeamCount': return this.setTeamCount(args.count);
+      case 'shuffleTeams': return this.shuffleTeams();
       case 'setPlayerTeam': return this.setPlayerTeam(args.playerId, args.teamId);
       case 'renameUnit': return this.renameUnit(args.id, args.name);
       case 'removePlayer': return this.removePlayer(args.id);
@@ -227,11 +300,17 @@ export class Room {
     const members = (u) => (this.mode === 'teams' ? this.players.filter((p) => p.teamId === u.id).length : 1);
     return this.units().map((u) => ({
       id: u.id, name: u.name, color: u.color, score: u.score, connected: connected(u), members: members(u),
+      // Who is on a team, so players can see who they are playing with.
+      ...(this.mode === 'teams' ? { memberNames: this.players.filter((p) => p.teamId === u.id).map((p) => p.name) } : {}),
     }));
   }
   #roomView() {
     return {
       mode: this.mode,
+      modeSetting: this.modeSetting,
+      teamCount: this.teams.length,
+      individualMax: INDIVIDUAL_MAX,
+      teamSize: TEAM_SIZE,
       teams: this.teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
       units: this.#unitViews(),
       gameId: this.gameId,

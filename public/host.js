@@ -116,17 +116,29 @@ function gamePicker() {
 // ---------- players & teams ----------
 function rosterCard() {
   const { room } = view;
-  const teamName = h('input', { placeholder: 'New team name', maxLength: 20, 'data-k': 'team' });
+  const count = room.players.length;
+  const teams = room.mode === 'teams';
+  const modes = [['auto', 'Auto'], ['players', 'Individual players'], ['teams', 'Teams']];
+  const playingAs = teams ? `${room.teams.length} teams` : 'individual players';
   return h('div', { class: 'card' }, h('h2', {}, 'Players & teams'),
     h('div', { class: 'row' },
-      ['players', 'teams'].map((m) => h('button', { class: `btn ${room.mode === m ? 'primary' : ''}`, onclick: () => act('setMode', { mode: m }) }, m === 'players' ? 'Individual players' : 'Teams')),
-      h('button', { class: 'btn small', style: { marginLeft: 'auto' }, onclick: () => { if (confirm('Remove all players and teams?')) act('clearRoster'); } }, 'Clear players')),
-    room.mode === 'teams' && [
-      h('div', { class: 'list', style: { marginTop: '10px' } }, room.teams.map((t) => h('div', { class: 'item' }, sw(t.color), h('span', { class: 'nm' }, t.name),
-        h('span', { class: 'tag' }, `${room.units.find((u) => u.id === t.id)?.members ?? 0} players`),
-        h('button', { class: 'btn small', onclick: () => act('removeTeam', { id: t.id }) }, 'Remove')))),
-      h('div', { class: 'row', style: { marginTop: '8px' } }, h('div', { class: 'grow' }, teamName),
-        h('button', { class: 'btn', onclick: () => { act('addTeam', { name: teamName.value }); teamName.value = ''; } }, 'Add team'))]);
+      modes.map(([m, label]) => h('button', { class: `btn ${room.modeSetting === m ? 'primary' : ''}`, onclick: () => act('setMode', { mode: m }) }, label)),
+      h('button', { class: 'btn small', style: { marginLeft: 'auto' }, onclick: () => { if (confirm('Remove all players?')) act('clearRoster'); } }, 'Clear players')),
+    h('p', { class: 'tag', style: { margin: '8px 0 0' } }, room.modeSetting === 'auto'
+      ? `Auto: up to ${room.individualMax} players play on their own; with more, everyone is put on a random team. Now: ${playingAs} (${count} players).`
+      : `Now: ${playingAs} (${count} players).`),
+    teams && [
+      h('div', { class: 'row', style: { marginTop: '10px' } },
+        h('span', { class: 'tag' }, 'Number of teams'),
+        [2, 4].map((c) => h('button', {
+          class: `btn ${room.teams.length === c ? 'primary' : ''}`, disabled: c === 2 && count > 2 * room.teamSize,
+          onclick: () => act('setTeamCount', { count: c }),
+        }, `${c} teams`)),
+        h('button', { class: 'btn small', style: { marginLeft: 'auto' }, onclick: () => act('shuffleTeams') }, 'Shuffle teams')),
+      count > 2 * room.teamSize && h('p', { class: 'tag', style: { margin: '6px 0 0' } }, `More than ${2 * room.teamSize} players, so there are four teams.`),
+      h('div', { class: 'list', style: { marginTop: '10px' } }, room.units.map((u) => h('div', { class: 'item' }, sw(u.color), h('span', { class: 'nm' }, u.name),
+        h('span', { class: 'tag' }, `${u.members} ${u.members === 1 ? 'player' : 'players'}${u.memberNames?.length ? `: ${u.memberNames.join(', ')}` : ''}`)))),
+      h('p', { class: 'tag', style: { margin: '6px 0 0' } }, 'Move someone to another team from the Players list below.')]);
 }
 
 function soundCard() {
@@ -154,10 +166,10 @@ function playersCard() {
   const teams = room.mode === 'teams';
   return h('details', { class: 'card', open: playersOpen ?? !room.inProgress, ontoggle: (e) => { playersOpen = e.target.open; } }, h('summary', {}, `Players (${room.players.length})`),
     h('div', { class: 'list', style: { marginTop: '8px' } }, room.players.length ? room.players.map((p) => h('div', { class: 'item' },
-      sw(p.color), h('span', { class: 'nm' }, p.name), p.kind === 'buzzer' && h('span', { class: 'pill' }, 'buzzer'),
+      sw((teams && room.teams.find((t) => t.id === p.teamId)?.color) || p.color), h('span', { class: 'nm' }, p.name), p.kind === 'buzzer' && h('span', { class: 'pill' }, 'buzzer'),
       h('span', { class: `pill ${p.connected ? 'live' : ''}` }, p.connected ? 'online' : 'offline'),
       teams && h('select', { style: { width: 'auto', minHeight: '34px' }, onchange: (e) => act('setPlayerTeam', { playerId: p.id, teamId: e.target.value }) },
-        h('option', { value: '' }, 'No team'), room.teams.map((t) => h('option', { value: t.id, selected: t.id === p.teamId }, t.name))),
+        room.teams.map((t) => h('option', { value: t.id, selected: t.id === p.teamId }, t.name))),
       !teams && !room.inProgress && h('button', { class: 'btn small', onclick: () => { const n = prompt('Rename to:', p.name); if (n) act('renameUnit', { id: p.id, name: n }); } }, 'Rename'),
       h('button', { class: 'btn small bad', onclick: () => { if (confirm(`Remove ${p.name}?`)) act('removePlayer', { id: p.id }); } }, 'Remove'))) : h('p', { class: 'tag' }, 'Nobody yet. Players scan the QR code on the TV.')));
 }

@@ -32,11 +32,12 @@ network. `npm test` runs the game-rule tests and a full server test.
 
 ## How a game goes (Jeopardy)
 
-The host first picks the game (skipped while only one is installed) and whether
-players play individually or in teams.
+The host first picks the game (skipped while only one is installed). Whether
+people play on their own or in teams is worked out for you (see
+[Players and teams](#players-and-teams)).
 
-1. **Lobby.** Players scan the QR code, enter a name and pick a colour (or a
-   team). The host picks the question set and individual or team mode.
+1. **Lobby.** Players scan the QR code, enter a name and pick a colour. The host
+   picks the question set.
 2. **Board.** The host taps a square. The clue shows on the TV; the answer shows
    only on the host page.
 3. **Buzzers.** The host reads the clue, then taps **Open buzzers**. First press
@@ -47,12 +48,30 @@ players play individually or in teams.
 5. **Daily Doubles.** The clue stays hidden until the host enters the wager.
    Max wager is the player's score or the top board value, whichever is higher.
 6. **Final Jeopardy.** Players with a positive score wager and type an answer on
-   their phone. The host judges each; wagers and answers appear on the TV only
-   as they are judged.
+   their phone. Everyone's scores (players and teams) show on the TV and on every
+   phone while wagering, so a wager can be judged against the rest; anyone not
+   playing the final round is marked "sitting out". The host judges each answer;
+   wagers and answers appear on the TV only as they are judged.
 
 Other things the host can do: adjust, set or rename any score; give the buzz to a
 player directly (dead phone); re-open buzzers after a mistaken press; switch the
 TV between the board and a full leaderboard; remove players.
+
+## Players and teams
+
+- **Up to 5 players** play as individuals.
+- **6 or more** and the game is split into two teams, **Red** and **Blue**, picked
+  at random (as even as possible). Nobody chooses a team.
+- **More than 10 players** (more than 5 on a team) and **Green** and **Yellow**
+  come in too, for four teams. The host can also choose four teams sooner.
+- On a phone, the player's **team colour lights up**: a frame round the screen and
+  a banner with the team name and teammates.
+- **The host** has an **Auto / Individual players / Teams** switch (Auto is the
+  default and does the above), a **2 teams / 4 teams** choice, **Shuffle teams**
+  to deal again at random, and can move any player to another team from the
+  Players list. Rearranging only happens in the lobby; once a game starts nothing
+  moves, and anyone who joins late is put on the smallest team.
+- Teams can be renamed from the host page (scores list) and keep their colour.
 
 **Timers.** There are three, all shown on the TV and on the host page.
 

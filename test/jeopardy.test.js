@@ -308,6 +308,19 @@ test('no answer timer means no Daily Double timer either', () => {
   assert.equal(g.publicView().clue.timer, null);
 });
 
+test('during Final Jeopardy wagers every player or team can see every score, finalists or not', () => {
+  const { room, g, ps } = setup({ players: ['Ann', 'Bo', 'Cy'] });
+  start(g);
+  ps[0].score = 1200; ps[1].score = 300; ps[2].score = -100;       // Cy cannot play the final round
+  g.run.status = 'board';
+  g.startFinal();
+  const pub = room.publicView();
+  assert.deepEqual(pub.game.final.finalists.map((f) => f.id), [ps[0].id, ps[1].id]);
+  assert.deepEqual(pub.room.units.map((u) => [u.name, u.score]), [['Ann', 1200], ['Bo', 300], ['Cy', -100]]);
+  // a phone gets the same list, so it can show the scores while the player decides a wager
+  assert.deepEqual(room.playerView(ps[2].id).room.units.map((u) => u.score), [1200, 300, -100]);
+});
+
 test('Final Jeopardy has a countdown that starts with the clue', () => {
   const { g, ps, clock } = setup();
   start(g); ps[0].score = 500;
