@@ -19,6 +19,11 @@ enum JoinAddress {
         joinURL.hasSuffix("/") ? joinURL + "host" : joinURL + "/host"
     }
 
+    /// The connection checker for a phone that can't join: "http://192.168.1.50:3000/" → ".../check".
+    static func checkPage(from joinURL: String) -> String {
+        joinURL.hasSuffix("/") ? joinURL + "check" : joinURL + "/check"
+    }
+
     /// "http://192.168.1.50:3000/" → "192.168.1.50:3000", for showing under a QR code.
     static func display(_ urlString: String) -> String {
         var text = urlString

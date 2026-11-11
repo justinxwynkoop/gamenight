@@ -191,6 +191,11 @@ final class FormattingTests: XCTestCase {
         XCTAssertEqual(Money.format(-12500), "−$12,500")
     }
 
+    func testCheckPageAddress() {
+        XCTAssertEqual(JoinAddress.checkPage(from: "http://192.168.1.50:3000/"), "http://192.168.1.50:3000/check")
+        XCTAssertEqual(JoinAddress.display(JoinAddress.checkPage(from: "http://192.168.1.115/")), "192.168.1.115/check")
+    }
+
     func testHostPageAddress() {
         XCTAssertEqual(JoinAddress.hostPage(from: "http://192.168.1.50:3000/"), "http://192.168.1.50:3000/host")
         XCTAssertEqual(JoinAddress.hostPage(from: "http://gamenight.local"), "http://gamenight.local/host")
