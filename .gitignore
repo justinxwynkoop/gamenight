@@ -4,3 +4,6 @@ data/config.json
 data/sounds/
 data/server.log
 data/server.pid
+# The clue file used for random boards, and the boards built from it, stay on the Pi (never commit them).
+data/clues/
+data/jeopardy/random-*.json

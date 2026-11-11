@@ -74,6 +74,46 @@ laptop). The one thing to do next is always a large button pinned at the bottom
 slide-up sheets. Game rules and timers live under Settings, and ending the game
 is tucked away at the bottom of Settings behind a confirmation.
 
+## Random boards
+
+The host screen can build a fresh board from real past clues, so you never run out.
+It needs a clue file that is **kept only on the Pi** (it is about 80 MB and is not part of
+this repository). Install it once, on the Pi:
+
+```bash
+cd ~/gamenight && ./scripts/get-clues.sh
+```
+
+That downloads `combined_season1-42.tsv` from the public
+[jeopardy_clue_dataset](https://github.com/jwolle1/jeopardy_clue_dataset) into
+`data/clues/`. Both that folder and the boards built from it (`data/jeopardy/random-*.json`)
+are git-ignored. The clues belong to their owners: use them for your own family nights and
+don't publish or share the file or the boards.
+
+On the host screen, setup now has a **Random boards** card (it says "Not set up on this Pi
+yet" until the file is there). Choose:
+
+| Choice | Options |
+|---|---|
+| Where the clues come from | Regular episodes, Kids and Teen games, or Tournaments and special events |
+| How recent | any year, 2001+, 2010+, 2018+ |
+| Categories | **A mix** (six categories from six different games) or **One real game** (all six from one show; with two rounds both come from the same show; real Daily Doubles are kept) |
+| Family-friendly | on by default; leaves out clues with adult topics (a simple word filter, so still glance at a clue before reading it) |
+
+**Build the board** fills every round; each round's card also has a **Random** button to
+re-roll just that one. The newest 12 random boards are kept and older ones are removed.
+
+**About difficulty.** The clue file has no difficulty rating for a clue or a category, so
+there is no "easy / hard" setting. What it does have is used instead: within each category
+the clues run from the lowest value (easier) to the highest (harder), as on the show;
+Double Jeopardy! categories come from the show's second round; and *Kids and Teen games*
+are written for younger players. Tournament games use the same kind of clues but with
+stronger players, so they are not necessarily harder.
+
+The first board after a quiet spell takes a few seconds while the file loads (it is dropped
+from memory after 10 idle minutes; it needs roughly 150 MB while loaded, so a Pi with 1 GB
+or more is fine). The server stays responsive while it loads.
+
 ## If a phone can't join
 
 Open **`/check`** on that phone (for example `http://192.168.1.50/check`, using the address

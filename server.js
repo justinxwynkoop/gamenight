@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { mkdirSync, readFileSync, writeFileSync, readdirSync, existsSync, renameSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, readdirSync, existsSync, renameSync, unlinkSync, statSync } from 'node:fs';
 import { WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
 import { Room } from './room.js';
@@ -129,6 +129,48 @@ main{padding:24px;max-width:520px}h1{margin:0 0 4px}p{color:#9aa8e6;line-height:
 <p>Close this window before guests arrive; the PIN shows answers to anyone who has it.</p></main></body></html>`;
 }
 
+// ---------- random boards (built from a clue file that lives only on this machine) ----------
+const RANDOM = Object.fromEntries(Object.values(GAMES).filter((g) => g.randomBoards).map((g) => [g.id, g.randomBoards(DATA_DIR)]));
+const KEEP_RANDOM_SETS = 12;
+function pruneRandomSets(gameId) {
+  const dir = path.join(DATA_DIR, gameId);
+  const files = readdirSync(dir).filter((f) => /^random-[a-z0-9-]+\.json$/.test(f)).map((f) => ({ f, t: statSync(path.join(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+  for (const { f } of files.slice(KEEP_RANDOM_SETS)) {
+    const id = f.slice(0, -5);
+    if (room.gameId === gameId && room.game?.usesContent?.(id)) continue;
+    unlinkSync(path.join(dir, f));
+    room.contentChanged(gameId, id);
+  }
+}
+async function handleRandomBoard(req, res, gameId) {
+  const source = RANDOM[gameId];
+  if (!source) return send(res, 404, { error: 'This game has no random boards' });
+  if (req.method === 'GET') return send(res, 200, source.status());
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
+  let o;
+  try { o = JSON.parse((await readBody(req)) || '{}'); } catch { return send(res, 400, { error: 'Bad request' }); }
+  const options = {
+    ...(typeof o.source === 'string' && { source: o.source }),
+    ...(Number.isInteger(o.since) && o.since >= 1984 && o.since <= 2100 && { since: o.since }),
+    ...((o.round === 1 || o.round === 2) && { round: o.round }),
+    ...((o.mode === 'mix' || o.mode === 'episode') && { mode: o.mode }),
+    ...(typeof o.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.date) && { date: o.date }),
+    ...(o.bothRounds === true && { bothRounds: true }),
+    ...(o.family === false && { family: false }),
+    ...(Array.isArray(o.avoid) && { avoid: o.avoid.slice(0, 12).map((n) => String(n).slice(0, 40)) }),
+  };
+  try {
+    const { set, date } = await source.make(options);
+    const id = `random-${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36).padStart(2, '0')}`;
+    writeFileSync(setPath(gameId, id), JSON.stringify(set, null, 2));
+    room.contentChanged(gameId, id);
+    pruneRandomSets(gameId);
+    return send(res, 200, { id, title: set.title, date, categories: set.categories.map((c) => c.name), final: set.final.category });
+  } catch (e) {
+    return send(res, e.code === 'no-dataset' ? 404 : 422, { error: e.message, code: e.code });
+  }
+}
+
 async function handleApi(req, res, url) {
   if (url.pathname === '/api/info') return send(res, 200, { joinUrl: currentJoinUrl(), wifi: !!wifiString });
   if (url.pathname === '/api/sounds') return send(res, 200, listSounds());
@@ -140,6 +182,8 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/games') return send(res, 200, Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description })));
   // Everything below exposes answers: host PIN required.
   if (!pinOk(req.headers['x-host-pin'])) return send(res, 401, { error: 'Wrong or missing host PIN' });
+  const rb = url.pathname.match(/^\/api\/games\/([a-z0-9-]+)\/random$/);
+  if (rb) return handleRandomBoard(req, res, rb[1]);
   const m = url.pathname.match(/^\/api\/games\/([a-z0-9-]+)\/sets(?:\/([^/]+))?$/);
   if (!m || !GAMES[m[1]]) return send(res, 404, { error: 'Not found' });
   const [, gameId, id] = m;

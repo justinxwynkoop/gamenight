@@ -93,7 +93,7 @@ function confirmSheet({ title, message, confirmLabel = 'Yes', kind = 'bad', onCo
 function goTab(tab) { ui.tab = tab; store('gn-host-tab', tab); ui.sheet = null; render(); }
 
 function makeCtx() {
-  return { act, sets, flash, setInfo, openSheet, closeSheet, confirm: confirmSheet, go: goTab, refresh: render, pin: () => pin };
+  return { act, sets, flash, setInfo, openSheet, closeSheet, confirm: confirmSheet, go: goTab, refresh: render, pin: () => pin, reloadSets: () => view?.room.gameId && loadSets(view.room.gameId) };
 }
 
 // ---------- drawing ----------

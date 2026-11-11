@@ -49,6 +49,66 @@ function subtitle() {
   }
 }
 
+// ---------- random boards (built on the Pi from the clue file; see games/jeopardy/clues.js) ----------
+const rand = { source: 'everyday', since: 2001, mode: 'mix', family: true, busy: false, error: '', info: undefined };
+const SOURCE_CHOICES = [{ value: 'everyday', label: 'Regular', sub: 'normal episodes' }, { value: 'kids', label: 'Kids & Teen', sub: 'made for younger players' }, { value: 'special', label: 'Tournaments', sub: 'special events' }];
+const ERA_CHOICES = [{ value: 1984, label: 'Any year' }, { value: 2001, label: '2001+' }, { value: 2010, label: '2010+' }, { value: 2018, label: '2018+' }];
+const api = (method, body) => fetch('/api/games/jeopardy/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+
+/** Whether the clue file is installed on the Pi (asked once, and again on "Check again"). */
+function loadRandomInfo(force = false) {
+  if (!force && rand.info !== undefined) return;
+  rand.info = null;
+  api('GET').then((r) => (r.ok ? r.json() : null)).then((j) => { rand.info = j ?? { available: false }; C.refresh(); }).catch(() => { rand.info = { available: false }; C.refresh(); });
+}
+
+/** Build a board for each of these rounds and put it in place. */
+async function roll(rounds) {
+  rand.busy = true; rand.error = ''; C.refresh();
+  try {
+    let date = null;
+    const avoid = [];
+    for (const r of rounds) {
+      const other = C.setInfo(r === 1 ? v.setId2 : v.setId);
+      const ask = (withDate) => api('POST', {
+        source: rand.source, since: rand.since, mode: rand.mode, family: rand.family, round: r, bothRounds: rounds.length === 2 && !date,
+        ...(withDate && date ? { date } : {}), avoid: [...avoid, ...(rounds.length === 1 && other ? other.categories : [])],
+      });
+      let res = await ask(true);
+      if (!res.ok && date) res = await ask(false);   // that episode has no board for this round: take any
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? 'Could not build a board');
+      date = j.date; avoid.push(...j.categories);
+      act('chooseSet', { id: j.id, round: r });
+    }
+    C.reloadSets?.();
+  } catch (e) {
+    rand.error = e.message;
+  } finally {
+    rand.busy = false; C.refresh();
+  }
+}
+
+function randomCard(two) {
+  loadRandomInfo();
+  if (rand.info === undefined || rand.info === null) return card(eyebrow('Random boards'), h('p', { class: 'dim' }, 'Checking…'));
+  if (!rand.info.available) {
+    return card(eyebrow('Random boards'), h('div', { class: 'card-title' }, 'Not set up on this Pi yet'),
+      h('p', { class: 'dim' }, 'Download the public clue file once, on the Pi, and the host screen can build a fresh board whenever you like. The file stays on the Pi.'),
+      h('div', { class: 'answer' }, h('small', {}, 'On the Pi, in the gamenight folder'), h('b', {}, './scripts/get-clues.sh')),
+      button({ label: 'Check again', icon: 'refresh', onclick: () => loadRandomInfo(true) }));
+  }
+  return card(eyebrow('Random boards'), h('div', { class: 'card-title' }, 'Build a fresh board'),
+    h('p', { class: 'dim' }, 'Real clues from past games. Each category runs from easier clues at the top to harder ones at the bottom, as on the show.'),
+    h('div', { class: 'field' }, h('span', {}, 'Where the clues come from'), seg(SOURCE_CHOICES, rand.source, (x) => { rand.source = x; C.refresh(); })),
+    h('div', { class: 'field' }, h('span', {}, 'How recent'), seg(ERA_CHOICES, rand.since, (x) => { rand.since = x; C.refresh(); })),
+    h('div', { class: 'field' }, h('span', {}, 'Categories'), seg([{ value: 'mix', label: 'A mix', sub: 'six different games' }, { value: 'episode', label: 'One real game', sub: 'six from one show' }], rand.mode, (x) => { rand.mode = x; C.refresh(); })),
+    toggle({ label: 'Keep it family-friendly', sub: 'Leaves out clues with adult topics', checked: rand.family, onchange: (on) => { rand.family = on; C.refresh(); } }),
+    rand.error && h('p', { class: 'pill bad', role: 'alert' }, rand.error),
+    button({ label: rand.busy ? 'Building…' : two ? 'Build both boards' : 'Build the board', icon: 'shuffle', kind: 'primary', block: true, disabled: rand.busy, onclick: () => roll(two ? [1, 2] : [1]) }),
+    rand.busy && h('p', { class: 'dim' }, 'The first board after a while takes a few seconds.'));
+}
+
 // ---------- setup (lobby) ----------
 function setupView() {
   const two = v.settings.rounds === 2;
@@ -69,6 +129,7 @@ function setupView() {
         flowStep('Final', 'Final Jeopardy!'))),
     boardCard(1),
     two && boardCard(2),
+    randomCard(two),
     (v.setId || v.setId2) && h('div', { class: 'note' }, icon('star', 16), h('span', {}, `Final Jeopardy: ${last?.final ?? '…'} · from ${last?.title ?? 'the last board'}`)),
     card(eyebrow('Players'),
       h('div', { class: 'card-title' }, v.players.length ? `${v.players.length} ${v.players.length === 1 ? 'player' : 'players'} · ${teams ? `${v.teams.length} teams` : 'individuals'}` : 'No one yet'),
@@ -99,7 +160,9 @@ function boardCard(round) {
       ? [h('div', { class: 'setname' }, title ?? 'Loading…'),
         info && h('div', { class: 'chips' }, info.categories.map((n) => h('span', { class: 'chip' }, n)))]
       : h('p', { class: 'dim' }, 'No board chosen yet.'),
-    button({ label: id ? 'Change board' : 'Choose a board', kind: id ? '' : 'primary', icon: id ? 'swap' : 'plus', onclick: () => openBoardSheet(round) }));
+    h('div', { class: 'dock-row' },
+      button({ label: id ? 'Change board' : 'Choose a board', kind: id ? '' : 'primary', icon: id ? 'swap' : 'plus', onclick: () => openBoardSheet(round) }),
+      rand.info?.available && button({ label: rand.busy ? 'Building…' : 'Random', icon: 'shuffle', disabled: rand.busy, onclick: () => roll([round]) })));
 }
 
 function openBoardSheet(round) {
