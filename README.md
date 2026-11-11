@@ -149,6 +149,28 @@ rounds of a question with 3 to 8 ranked answers (points are how many out of 100 
 "also accept" words for matching, and exactly five Fast Money questions. Five sample sets ship with the
 repo; their survey numbers are made up, not real survey results.
 
+### More Family Feud questions
+
+The sample sets are small, so the repo can also build many more from the public
+[ProtoQA](https://github.com/iesl/protoqa-data) data: about 9,700 survey questions with ranked answers
+and points (CC BY 4.0, Boratko et al., 2020; most of it was collected from Family Feud fan sites). It is
+**not** kept in this repository. On the Pi:
+
+```bash
+cd ~/gamenight && ./scripts/get-feud-sets.sh
+```
+
+That downloads the data into `data/surveys/` and builds 20 **Survey Mix** sets (each 5 rounds plus 5
+Fast Money questions) into `data/feud/`; they appear in the host's set list. Both folders are git-ignored,
+so none of it is ever committed. Run it again with a different batch: `./scripts/get-feud-sets.sh 30 7`
+(30 sets, seed 7; the same seed gives the same sets, and the old `protoqa-*` sets are replaced). The data
+holds enough for about 600 sets.
+
+Questions are tidied (Title Case becomes a sentence), the top eight answers are kept, and a word filter
+leaves out dating, drinking, politics, money worries and similar topics, since many original Family
+Feud questions are for adults. It isn't perfect, so glance at a question before reading it out, and use
+Undo and the editor freely. Use the data for your own family nights; don't publish it.
+
 ## If a phone can't join
 
 Open **`/check`** on that phone (for example `http://192.168.1.50/check`, using the address
