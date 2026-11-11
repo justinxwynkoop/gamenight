@@ -265,10 +265,47 @@ test('a Daily Double answer is timed too, and awarding a buzz by hand starts the
   const { g, ps } = setup();
   start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
   g.select(2, 3); g.setDailyDoubleWager(400);
-  assert.equal(g.publicView().clue.timer.totalMs, 10000);
+  assert.equal(g.publicView().clue.timer.totalMs, 20000);   // double the 10 seconds a buzz gets
   g.wrong(); g.closeClue();
   g.select(0, 0); g.awardBuzz(ps[1].id);
   assert.equal(g.publicView().clue.timer.totalMs, 10000);
+});
+
+test('a Daily Double gives double the answer time that was set', () => {
+  const { g, ps, clock } = setup();
+  g.setSettings({ answerSeconds: 5 });
+  start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3); g.setDailyDoubleWager(400);
+  const timer = g.publicView().clue.timer;
+  assert.equal(timer.kind, 'answer');
+  assert.equal(timer.totalMs, 10000);                       // 5 seconds set, so 10 here
+  clock.advance(6000); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, false);  // still running past the normal 5
+  clock.advance(5000); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, true);   // out of time at 10
+});
+
+test('restarting a Daily Double timer gives the doubled time again; ordinary clues keep the set time', () => {
+  const { g, ps, clock } = setup();
+  g.setSettings({ answerSeconds: 5 });
+  start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3); g.setDailyDoubleWager(200);
+  clock.advance(12000); g.tick();
+  assert.equal(g.publicView().clue.timer.timedOut, true);
+  g.restartTimer();
+  assert.equal(g.publicView().clue.timer.totalMs, 10000);
+  assert.equal(g.publicView().clue.timer.timedOut, false);
+  g.wrong(); g.closeClue();
+  g.select(0, 0); g.awardBuzz(ps[1].id);                    // not a Daily Double
+  assert.equal(g.publicView().clue.timer.totalMs, 5000);
+});
+
+test('no answer timer means no Daily Double timer either', () => {
+  const { g, ps } = setup();
+  g.setSettings({ answerSeconds: 0 });
+  start(g); g.run.dd = ['2,3']; g.run.control = ps[0].id;
+  g.select(2, 3); g.setDailyDoubleWager(300);
+  assert.equal(g.publicView().clue.timer, null);
 });
 
 test('Final Jeopardy has a countdown that starts with the clue', () => {

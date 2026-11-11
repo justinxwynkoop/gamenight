@@ -69,7 +69,7 @@ function setupCard(v) {
     h('div', { class: 'row' }, [10, 0].map((n) => h('button', {
       class: `btn ${v.settings.buzzSeconds === n ? 'primary' : ''}`, onclick: () => act('setSettings', { buzzSeconds: n }),
     }, n ? `${n} seconds` : 'No timer'))),
-    h('label', {}, 'Time to answer after a buzz'),
+    h('label', {}, 'Time to answer after a buzz (Daily Doubles get double)'),
     h('div', { class: 'row' }, [5, 10].map((n) => h('button', {
       class: `btn ${v.settings.answerSeconds === n ? 'primary' : ''}`, onclick: () => act('setSettings', { answerSeconds: n }),
     }, `${n} seconds`))),

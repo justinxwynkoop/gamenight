@@ -213,7 +213,7 @@ export class JeopardyGame {
     cl.value = n;
     cl.step = 'answering';
     cl.buzzedBy = u.id;
-    this.#startTimer(cl, this.settings.answerSeconds);
+    this.#startTimer(cl, this.#answerSeconds(cl));
     this.#changed();
   }
 
@@ -251,7 +251,7 @@ export class JeopardyGame {
     cl.buzzedBy = u.id;
     cl.buzzedPlayer = p.id;
     cl.buzzedAt = t;
-    this.#startTimer(cl, this.settings.answerSeconds);
+    this.#startTimer(cl, this.#answerSeconds(cl));
     this.#changed();
     return { ok: true, unitId: u.id, playerId: p.id };
   }
@@ -301,7 +301,7 @@ export class JeopardyGame {
     cl.buzzedBy = u.id;
     cl.buzzedPlayer = null;
     cl.buzzedAt = this.room.now();
-    this.#startTimer(cl, this.settings.answerSeconds);
+    this.#startTimer(cl, this.#answerSeconds(cl));
     this.#changed();
   }
   /** Re-open buzzers for everyone (host undo / mistaken press). Locked-out units stay out. */
@@ -316,6 +316,13 @@ export class JeopardyGame {
   }
   // ---------- timers ----------
   /**
+   * Seconds to answer the clue in play. A Daily Double gets double the normal answer time
+   * (5 seconds set in the lobby means 10 for a Daily Double). 0 still means no timer.
+   */
+  #answerSeconds(cl) {
+    return cl.dd ? this.settings.answerSeconds * 2 : this.settings.answerSeconds;
+  }
+  /**
    * Starts (or, with 0 seconds, clears) a countdown on a clue or on the final round.
    * kind is 'buzz' (the window for someone to buzz in), 'answer' (time to answer) or 'final'.
    */
@@ -329,7 +336,7 @@ export class JeopardyGame {
     const cl = this.run.clue;
     const f = this.run.final;
     if (this.run.status === 'clue' && cl?.step === 'open') this.#startTimer(cl, this.settings.buzzSeconds, 'buzz');
-    else if (this.run.status === 'clue' && cl?.step === 'answering') this.#startTimer(cl, this.settings.answerSeconds);
+    else if (this.run.status === 'clue' && cl?.step === 'answering') this.#startTimer(cl, this.#answerSeconds(cl));
     else if (this.run.status === 'final' && f?.step === 'clue') this.#startTimer(f, this.settings.finalSeconds, 'final');
     else fail('There is nothing to time right now');
     this.#changed();

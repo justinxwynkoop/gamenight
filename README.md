@@ -65,7 +65,9 @@ TV between the board and a full leaderboard; remove players.
    TV, the host page and the buzzing player's phone.
 3. **Final Jeopardy timer**, described below.
 
-The answer timer is **5 or 10 seconds** (10 by default), chosen by the host in the lobby. At zero the
+The answer timer is **5 or 10 seconds** (10 by default), chosen by the host in the lobby. **A Daily Double
+gets double that** (10 seconds if you chose 5, 20 if you chose 10), including when the host restarts its
+timer. At zero the
 TV flashes TIME'S UP and plays a buzzer, and the host still decides: tap Correct or Wrong, or
 **Restart timer** to give more time. Tick **Time-out counts as wrong** if you'd rather it be scored
 automatically. The Final Jeopardy countdown (30 seconds by default, adjustable in the lobby) starts
