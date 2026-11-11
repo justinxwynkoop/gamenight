@@ -78,6 +78,16 @@ test('server end to end', async (t) => {
     assert.equal(file.headers.get('content-type'), 'audio/mpeg');
     assert.deepEqual([...Buffer.from(await file.arrayBuffer())], [1, 2, 3, 4]);
     assert.equal((await fetch(`${base}/sounds/notes.txt`)).status, 404);
+    // A game's own sounds live in data/sounds/<game>/, are listed with that game, and only for games that exist.
+    mkdirSync(path.join(dataDir, 'sounds', 'feud'), { recursive: true });
+    mkdirSync(path.join(dataDir, 'sounds', 'nogame'), { recursive: true });
+    writeFileSync(path.join(dataDir, 'sounds', 'feud', 'ding.mp3'), Buffer.from([7, 7]));
+    writeFileSync(path.join(dataDir, 'sounds', 'nogame', 'ding.mp3'), Buffer.from([8]));
+    assert.deepEqual(await (await fetch(`${base}/api/sounds`)).json(), [{ name: 'think', url: '/sounds/think.mp3' }, { name: 'ding', url: '/sounds/feud/ding.mp3', game: 'feud' }]);
+    assert.deepEqual([...Buffer.from(await (await fetch(`${base}/sounds/feud/ding.mp3`)).arrayBuffer())], [7, 7]);
+    assert.equal((await fetch(`${base}/sounds/nogame/ding.mp3`)).status, 404);
+    assert.equal((await fetch(`${base}/sounds/feud/..%2fthink.mp3`)).status, 404);
+    assert.equal((await fetch(`${base}/sounds/feud/missing.mp3`)).status, 404);
     assert.equal((await fetch(`${base}/sounds/..%2fstate.json`)).status, 404);
     assert.equal((await fetch(`${base}/sounds/missing.mp3`)).status, 404);
   });

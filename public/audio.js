@@ -6,7 +6,8 @@
 let ctx = null;
 let master = null;
 const cfg = { enabled: true, volume: 0.7 };
-const custom = {};  // name -> decoded audio the family dropped into data/sounds/
+const custom = {};  // "name" or "game/name" -> decoded audio the family dropped into data/sounds/ (or data/sounds/<game>/)
+let game = null;    // the game being played; its own sounds win over the shared ones
 let musicNode = null;
 let musicOwner = null;   // who started the music, so one screen can't switch off another's
 let resolveReady = () => {};
@@ -47,10 +48,10 @@ async function loadCustom() {
   const c = ensure();
   if (!c) return;
   const list = await (await fetch('/api/sounds')).json();
-  await Promise.all(list.map(async ({ name, url }) => {
+  await Promise.all(list.map(async ({ name, url, game: owner }) => {
     try {
       const data = await (await fetch(url)).arrayBuffer();
-      custom[name] = await new Promise((ok, no) => c.decodeAudioData(data, ok, no));
+      custom[owner ? `${owner}/${name}` : name] = await new Promise((ok, no) => c.decodeAudioData(data, ok, no));
     } catch { /* a file the browser can't decode: keep the built-in sound */ }
   }));
 }
@@ -64,6 +65,13 @@ function playBuffer(buf, loop = false) {
 
 // A sound with no file of its own borrows another's if the family provided one (the third strike and a Fast Money zero use the strike buzzer).
 const ALIAS = { strikeout: 'strike', zero: 'strike' };
+
+/** The file to use for these names: this game's own folder first, then the shared one. */
+function findCustom(...names) {
+  for (const n of names) if (game && custom[`${game}/${n}`]) return custom[`${game}/${n}`];
+  for (const n of names) if (custom[n]) return custom[n];
+  return null;
+}
 
 const SOUNDS = {
   open: () => tone(880, 0, 0.09, { type: 'triangle', gain: 0.4 }),
@@ -92,6 +100,8 @@ export const audio = {
   loaded: false,
   /** Resolves once the files in data/sounds/ have been fetched and decoded (or there are none). */
   ready: new Promise((ok) => { resolveReady = ok; }),
+  /** Which game is on screen, so its own folder of sounds is used. */
+  setGame(id) { game = id ?? null; },
   /** Apply the host's room settings: { sound: boolean, volume: 0-100 }. */
   configure(s = {}) {
     if (typeof s.sound === 'boolean') { cfg.enabled = s.sound; if (!s.sound) audio.stopMusic(); }
@@ -106,7 +116,7 @@ export const audio = {
     if (!cfg.enabled || cfg.volume <= 0) return;
     const c = ensure();
     if (!c || c.state !== 'running') return; // never queue sounds that would fire late, all at once, when audio unlocks
-    const buf = custom[name] ?? custom[ALIAS[name]];
+    const buf = findCustom(name) ?? (ALIAS[name] ? findCustom(ALIAS[name]) : null);
     if (buf) playBuffer(buf); else SOUNDS[name]?.();
   },
   /**
@@ -114,7 +124,7 @@ export const audio = {
    * `owner` tags who started it; `loop` keeps it going until stopped. Returns whether it started.
    */
   music(name, { owner = null, loop = false, fallback = null } = {}) {
-    const buf = [name, ...[].concat(fallback ?? [])].map((n) => custom[n]).find(Boolean);
+    const buf = findCustom(name, ...[].concat(fallback ?? []));
     if (!cfg.enabled || cfg.volume <= 0 || !buf) return false;
     const c = ensure();
     if (!c || c.state !== 'running') return false;

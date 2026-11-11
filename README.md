@@ -244,29 +244,37 @@ notice appears until you do).
 
 ### Your own sounds
 
-To use your own audio, put files in `data/sounds/` on the Pi. Use these names (`.mp3`, `.wav`,
-`.ogg` or `.m4a`) and the game uses your file instead of the built-in sound:
+To use your own audio, put files on the Pi in `data/sounds/`. Files go in one folder per game, so
+each game keeps its own sounds:
 
-`open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`
-(Final Jeopardy sting), `fanfare` (winner), and for Family Feud `ding` (an answer flips), `strike` (the
-buzzer; also used for the third strike and a Fast Money zero), `strikeout`, `faceoff` (a face-off buzz),
-`fastmoney` (plays when Fast Money begins), `fmpoints` (Fast Money points shown), `roundstart`, `winner`
-and `zero`, plus these music files:
+```
+data/sounds/jeopardy/    Jeopardy's sounds
+data/sounds/feud/        Family Feud's sounds
+data/sounds/             sounds every game shares (used when a game has none of its own)
+```
 
-- **`think`**: plays during the Final Jeopardy countdown and stops when time is up. A 30-second
-  file matches the default time (it loops if the countdown is longer).
-- **`feud-lobby`**: like `lobby`, but only when Family Feud is the game (then it is used instead of `lobby`).
-- **`lobby`**: loops on the TV while players are joining, before the game starts, and stops when
-  it starts. If there is no `lobby` file, `think` is used here too, so one file covers both.
+(The folders are created when the server starts.) A file in a game's folder wins over a shared one with
+the same name, and a sound with no file anywhere falls back to the built-in one. Use these names
+(`.mp3`, `.wav`, `.ogg` or `.m4a`):
 
-Music only plays if you provide a file. Files are read when the TV page loads, so reload it
-after adding some. Anything with a different name is ignored.
+- **Jeopardy:** `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double),
+  `final` (Final Jeopardy sting), `fanfare` (winner).
+- **Family Feud:** `ding` (an answer flips), `strike` (the buzzer; also used for the third strike and
+  a Fast Money zero), `strikeout` (the third strike), `faceoff` (a face-off buzz), `open` (buzzers
+  open), `fastmoney` (plays when Fast Money begins), `fmpoints` (Fast Money points shown),
+  `roundstart`, `winner`, `zero`, `timeup`, `tick`, `correct` (a round won).
+- **Music, any game:** `lobby` loops on the TV while players are joining, before the game starts, and
+  stops when it starts (`think` is used if there is no `lobby`, so one file covers both). `think`
+  plays during the Final Jeopardy countdown; a 30-second file matches the default time.
+
+Music only plays if you provide a file. Files are read when the TV page loads, so reload it after
+adding some. Anything with a different name is ignored.
 
 **Getting a file onto the Pi.** From your computer, with the Pi on the same network (Windows 10 and
 later, macOS and Linux all have `scp`):
 
 ```bash
-scp think.mp3 YOURUSERNAME@gamenight.local:~/gamenight/data/sounds/think.mp3
+scp think.mp3 YOURUSERNAME@gamenight.local:~/gamenight/data/sounds/jeopardy/think.mp3
 ```
 
 Or copy it with a USB stick into `~/gamenight/data/sounds/` on the Pi.
@@ -427,7 +435,7 @@ server.js               HTTP, WebSocket, saving, QR codes, question-set API
 public/                 the four pages (tv, host, play, editor): thin shells
 public/games/jeopardy/  Jeopardy's own TV, host, phone and editor screens
 data/<game>/            question sets for each game
-data/sounds/            your own sound files (not in git)
+data/sounds/            your own sound files, in a folder per game (not in git)
 test/                   node --test suites (room, Jeopardy rules, full server)
 deploy/                 desktop launcher + setup script, systemd unit
 ```

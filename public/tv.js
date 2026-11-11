@@ -51,18 +51,22 @@ connect({
  * While players are joining (before the game starts) loop the lobby music: a file called "lobby" if
  * there is one, otherwise "think". It stops when the game starts. Safe to call on every update.
  */
+let lobbyOwner = null;
 function lobbyMusic(v) {
+  audio.setGame(v.game?.game ?? null);   // each game can have its own sounds in data/sounds/<game>/
   const inLobby = !v.game || !v.room.inProgress;
-  if (!inLobby) { audio.stopMusic('lobby'); audio.stopMusic('lobby-feud'); return; }
-  const feud = v.game?.game === 'feud';   // Family Feud can have its own file ("feud-lobby"), else the shared one
-  const owner = feud ? 'lobby-feud' : 'lobby';
-  if (audio.musicOwner !== owner) audio.music(feud ? 'feud-lobby' : 'lobby', { owner, loop: true, fallback: feud ? ['lobby', 'think'] : 'think' });
+  if (!inLobby) { if (lobbyOwner) audio.stopMusic(lobbyOwner); lobbyOwner = null; return; }
+  const owner = `lobby:${v.game?.game ?? ''}`;   // a different game's lobby music replaces this one
+  if (lobbyOwner && lobbyOwner !== owner) audio.stopMusic(lobbyOwner);
+  lobbyOwner = owner;
+  if (audio.musicOwner !== owner) audio.music('lobby', { owner, loop: true, fallback: 'think' });
 }
 audio.ready.then(() => { if (last) lobbyMusic(last); });
 
 /** Sound cues: the settings, the host's test button, then whatever the active game wants to play. */
 function effects(prev, v) {
   audio.configure(v.room.settings);
+  audio.setGame(v.game?.game ?? null);
   lobbyMusic(v);
   if (!prev) return;
   if (prev.room.settings?.ping !== v.room.settings?.ping) audio.play('correct');

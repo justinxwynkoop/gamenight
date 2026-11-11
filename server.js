@@ -21,6 +21,7 @@ const SOUNDS_DIR = path.join(DATA_DIR, 'sounds');
 const PORT = Number(process.env.PORT ?? 3000);
 for (const id of Object.keys(GAMES)) mkdirSync(path.join(DATA_DIR, id), { recursive: true });
 mkdirSync(SOUNDS_DIR, { recursive: true });
+for (const id of Object.keys(GAMES)) mkdirSync(path.join(SOUNDS_DIR, id), { recursive: true });   // each game's own sounds go in data/sounds/<game>/
 
 // ---------- config: host PIN ----------
 function loadConfig() {
@@ -89,9 +90,15 @@ try { room.restore(JSON.parse(readFileSync(STATE_FILE, 'utf8'))); } catch { /* f
 if (!room.gameId && Object.keys(GAMES).length === 1) room.chooseGame(Object.keys(GAMES)[0]);
 
 // ---------- custom sounds: data/sounds/<name>.mp3|wav|ogg|m4a replace the built-in ones ----------
+// A file in data/sounds/ is used by every game; a file in data/sounds/<game>/ (jeopardy, feud) only by that game, and wins over the shared one.
 const SOUND_FILE = /^[a-z0-9-]+\.(mp3|wav|ogg|m4a)$/;
 const SOUND_TYPES = { '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4' };
-const listSounds = () => readdirSync(SOUNDS_DIR).filter((f) => SOUND_FILE.test(f)).map((f) => ({ name: f.replace(/\.[^.]+$/, ''), url: `/sounds/${f}` }));
+const soundsIn = (dir, urlBase, game) => readdirSync(dir).filter((f) => SOUND_FILE.test(f))
+  .map((f) => ({ name: f.replace(/\.[^.]+$/, ''), url: `${urlBase}${f}`, ...(game ? { game } : {}) }));
+const listSounds = () => [
+  ...soundsIn(SOUNDS_DIR, '/sounds/'),
+  ...Object.keys(GAMES).flatMap((id) => (existsSync(path.join(SOUNDS_DIR, id)) ? soundsIn(path.join(SOUNDS_DIR, id), `/sounds/${id}/`, id) : [])),
+];
 
 // ---------- HTTP ----------
 const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host': 'host.html', '/editor': 'editor.html', '/check': 'check.html' };
@@ -218,9 +225,11 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await hostInfoPage(), 'text/html; charset=utf-8');
     }
     if (url.pathname.startsWith('/sounds/')) {
-      const file = url.pathname.slice('/sounds/'.length);
-      if (!SOUND_FILE.test(file) || !existsSync(path.join(SOUNDS_DIR, file))) return send(res, 404, 'Not found', 'text/plain');
-      return send(res, 200, readFileSync(path.join(SOUNDS_DIR, file)), SOUND_TYPES[path.extname(file)]);
+      const m = url.pathname.slice('/sounds/'.length).match(/^(?:([a-z0-9-]+)\/)?([^/]+)$/);
+      const [, game, file] = m ?? [];
+      const full = m && SOUND_FILE.test(file) && (!game || GAMES[game]) ? path.join(SOUNDS_DIR, game ?? '', file) : null;
+      if (!full || !existsSync(full)) return send(res, 404, 'Not found', 'text/plain');
+      return send(res, 200, readFileSync(full), SOUND_TYPES[path.extname(file)]);
     }
     const file = PAGES[url.pathname] ?? decodeURIComponent(url.pathname.slice(1));
     const full = path.resolve(PUBLIC_DIR, file);
