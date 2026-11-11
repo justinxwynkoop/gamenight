@@ -51,7 +51,7 @@ final class DisplayScreenTests: XCTestCase {
     }
 
     func testUnsupportedGame() throws {
-        XCTAssertEqual(try screen("other-game"), .unsupported(id: "feud"))
+        XCTAssertEqual(try screen("other-game"), .unsupported(id: "bingo"))
     }
 }
 

@@ -13,6 +13,8 @@ enum SoundCue: String, CaseIterable, Hashable {
     case dd          // Daily Double
     case finalSting = "final"
     case fanfare     // the winner
+    case ding        // Family Feud: a survey answer flips over
+    case strike      // Family Feud: the big X
 
     /// Every file name the server may supply: the cues above plus two music tracks.
     static var customNames: Set<String> {
@@ -87,6 +89,17 @@ enum SoundSynth {
             return notes.enumerated().map { index, note in
                 ToneSpec(frequency: note, start: Double(index) * 0.12, duration: index == 6 ? 0.8 : 0.16, wave: .triangle)
             }
+        case .ding:
+            return [
+                ToneSpec(frequency: 1318, start: 0, duration: 0.6, wave: .sine, gain: 0.5),
+                ToneSpec(frequency: 1760, start: 0.07, duration: 0.8, wave: .sine, gain: 0.35),
+                ToneSpec(frequency: 2637, start: 0.07, duration: 0.5, wave: .sine, gain: 0.12),
+            ]
+        case .strike:
+            return [
+                ToneSpec(frequency: 120, start: 0, duration: 0.9, wave: .sawtooth, gain: 0.45),
+                ToneSpec(frequency: 90, start: 0, duration: 0.9, wave: .square, gain: 0.3),
+            ]
         }
     }
 

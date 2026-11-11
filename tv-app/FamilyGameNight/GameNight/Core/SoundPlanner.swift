@@ -22,6 +22,10 @@ enum SoundPlanner {
         if previous.room.settings.ping != next.room.settings.ping {
             plan.cues.append(.correct)
         }
+        if let before = previous.feud, let after = next.feud {
+            planFeud(from: before, to: after, into: &plan)
+            return plan
+        }
         guard let before = previous.jeopardy, let after = next.jeopardy else { return plan }
 
         if let clue = after.clue {
@@ -82,6 +86,62 @@ enum SoundPlanner {
         return plan
     }
 
+    /// Family Feud: a port of `onChange()` in the gamenight repo's public/games/feud/tv.js.
+    private static func planFeud(from before: FeudState, to after: FeudState, into plan: inout SoundPlan) {
+        if let round = after.round {
+            if let was = before.round, was.number == round.number {
+                let up = round.answers.filter(\.revealed).count
+                let wasUp = was.answers.filter(\.revealed).count
+                if up > wasUp {
+                    plan.cues.append(.ding)
+                } else if round.strikes > was.strikes
+                            || (was.step == .steal && round.step == .roundEnd && round.result?.winner == was.stealFrom) {
+                    plan.cues.append(.strike)
+                } else if round.faceoff.attempts.count > was.faceoff.attempts.count
+                            && round.faceoff.attempts.last?.rank == nil {
+                    plan.cues.append(.wrong)
+                } else if round.faceoff.open && !was.faceoff.open {
+                    plan.cues.append(.open)
+                } else if round.faceoff.turn != nil && was.faceoff.turn == nil && round.faceoff.attempts.isEmpty {
+                    plan.cues.append(.buzz)
+                }
+                if round.step == .roundEnd && was.step != .roundEnd {
+                    plan.cues.append(.correct)
+                }
+            } else if before.round != nil || before.status != .round {
+                plan.cues.append(.reveal)   // a new round begins
+            }
+        }
+
+        if let fm = after.fm {
+            if let was = before.fm {
+                if (fm.timer?.timedOut ?? false) && !(was.timer?.timedOut ?? false) {
+                    plan.cues.append(.timeup)
+                }
+                if judgedCount(fm) > judgedCount(was) {
+                    plan.cues.append(pointsTotal(fm) > pointsTotal(was) ? .ding : .strike)
+                }
+                if fm.step == .results && was.step != .results {
+                    plan.cues.append((fm.won ?? false) ? .fanfare : .wrong)
+                }
+            } else {
+                plan.cues.append(.finalSting)
+            }
+        }
+
+        if after.status == .done && before.status != .done {
+            plan.cues.append(.fanfare)
+        }
+    }
+
+    private static func judgedCount(_ fm: FastMoneyState) -> Int {
+        fm.rows.reduce(0) { $0 + ($1.p1.judged ? 1 : 0) + ($1.p2.judged ? 1 : 0) }
+    }
+
+    private static func pointsTotal(_ fm: FastMoneyState) -> Int {
+        fm.rows.reduce(0) { $0 + ($1.p1.points ?? 0) + ($1.p2.points ?? 0) }
+    }
+
     private static func runningCountdown(in round: FinalState?) -> TimerState? {
         guard let round, round.step == .clue, let timer = round.timer, !timer.timedOut else { return nil }
         return timer
@@ -97,6 +157,11 @@ enum SoundPlanner {
     /// The countdown on screen right now, if any: a clue's buzz-in or answer timer, or
     /// the Final Jeopardy timer. Its last five seconds tick.
     static func activeTimer(in state: ServerState) -> TimerState? {
+        if let feud = state.feud {
+            guard DisplayScreen.screen(for: state) == .feudFastMoney, let fm = feud.fm,
+                  fm.step == .p1 || fm.step == .p2, let timer = fm.timer, !timer.timedOut else { return nil }
+            return timer
+        }
         guard let game = state.jeopardy else { return nil }
         switch DisplayScreen.screen(for: state) {
         case .clue:

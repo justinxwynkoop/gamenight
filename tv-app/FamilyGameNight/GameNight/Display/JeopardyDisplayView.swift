@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// The Jeopardy TV display: draws whatever the server says is happening.
+/// The TV display: draws whatever the server says is happening, for Jeopardy or Family Feud (the host
+/// chooses the game on their phone; both home-screen tiles open this same display).
 ///
 /// Nothing here is interactive. Menu returns to the game picker. Play/Pause opens a
 /// small panel to change the server or leave, since the remote has no other way to
@@ -123,6 +124,16 @@ struct JeopardyDisplayView: View {
             LeaderboardScreen(state: state)
         case .winner:
             WinnerScreen(state: state)
+        case .feudRound:
+            if let round = state.feud?.round {
+                FeudRoundScreen(state: state, round: round, joinURL: client.joinURL)
+            }
+        case .feudFastMoney:
+            if let fm = state.feud?.fm {
+                FeudFastMoneyScreen(state: state, fm: fm, receivedAt: client.stateReceivedAt)
+            }
+        case .feudWinner:
+            FeudWinnerScreen(state: state, result: state.feud?.result)
         case .unsupported(let id):
             UnsupportedGameScreen(id: id)
         }

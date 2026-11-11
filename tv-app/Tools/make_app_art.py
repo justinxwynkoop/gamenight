@@ -1,5 +1,5 @@
 """Draws the Family Game Night app icon, Top Shelf images and the two home
-screen tiles (Singo Night, Jeopardy).
+screen tiles (Singo Night, Jeopardy, Family Feud).
 
 Usage: python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
 
@@ -341,6 +341,57 @@ def jeopardy_tile(w, h):
     return img.convert("RGB")
 
 
+def feud_tile(w, h):
+    """The survey board: deep red, a wall of flipped-over gold answers, and the title across the middle."""
+    img = vgrad(w, h, (214, 36, 46), (88, 8, 30))
+    img.alpha_composite(radial(w, h, w * 0.5, h * 0.2, h * 0.9, (255, 150, 120), 0.30))
+
+    board = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(board)
+    cols, rows = 2, 4
+    gap = h * 0.02
+    mx, my = w * 0.035, h * 0.06
+    cw = (w - 2 * mx - gap * (cols - 1)) / cols
+    ch = (h - 2 * my - gap * (rows - 1)) / rows
+    bd.rounded_rectangle([mx - gap, my - gap, w - mx + gap, h - my + gap], radius=h * 0.05, fill=(20, 4, 24, 255))
+    num_font = ImageFont.truetype(BEBAS, int(ch * 0.62))
+    pts_font = ImageFont.truetype(BEBAS, int(ch * 0.55))
+    flipped = {(0, 0), (0, 1), (1, 0), (1, 2)}          # which answers are turned over
+    points = {(0, 0): 38, (0, 1): 24, (1, 0): 12, (1, 2): 7}
+    for c in range(cols):
+        for r in range(rows):
+            x, y = mx + c * (cw + gap), my + r * (ch + gap)
+            up = (c, r) in flipped
+            top, bottom = ((247, 205, 80), (214, 152, 22)) if up else ((44, 70, 222), (22, 42, 176))
+            slot = vgrad(int(cw), int(ch), top, bottom)
+            mask = Image.new("L", slot.size, 0)
+            ImageDraw.Draw(mask).rounded_rectangle([0, 0, slot.width - 1, slot.height - 1], radius=ch * 0.22, fill=255)
+            board.paste(slot, (int(x), int(y)), mask)
+            n = c * rows + r + 1
+            cx, cy = x + ch * 0.5, y + ch / 2
+            bd.ellipse([cx - ch * 0.32, cy - ch * 0.32, cx + ch * 0.32, cy + ch * 0.32], fill=(10, 14, 70, 255) if not up else (27, 19, 0, 255))
+            bd.text((cx, cy + ch * 0.02), str(n), font=num_font, fill=(255, 205, 64, 255), anchor="mm")
+            if up:
+                bd.rounded_rectangle([x + cw - ch * 1.25, y + ch * 0.2, x + cw - ch * 0.15, y + ch * 0.8], radius=ch * 0.12, fill=(27, 19, 0, 255))
+                bd.text((x + cw - ch * 0.7, y + ch * 0.52), str(points[(c, r)]), font=pts_font, fill=(255, 226, 122, 255), anchor="mm")
+                bd.rounded_rectangle([x + ch * 0.95, y + ch * 0.38, x + cw * 0.58, y + ch * 0.62], radius=ch * 0.12, fill=(27, 19, 0, 70))
+    img.alpha_composite(board)
+
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.25, w * 1.02, h * 0.81], radius=h * 0.12, fill=(52, 2, 24, 238))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.05)))
+
+    front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    title_font = ImageFont.truetype(BEBAS, int(h * 0.36))
+    gradient_text(front, (w / 2, h * 0.47), "FAMILY FEUD", title_font, (255, 255, 255), (255, 214, 120),
+                  stroke=int(h * 0.011), stroke_fill=(110, 6, 24, 255), shadow=0.035, glow=(255, 170, 130, 150))
+    tag_font = ImageFont.truetype(mi.SUB_FONT, int(h * 0.062))
+    gradient_text(front, (w / 2, h * 0.705), "SURVEY SAYS", tag_font, (255, 224, 110), (255, 178, 40),
+                  shadow=0.06, spacing=h * 0.034)
+    img.alpha_composite(front)
+    return img.convert("RGB")
+
+
 # ---------- Writing the asset catalog ----------
 
 def save_stack(root, name, size, scales):
@@ -406,6 +457,7 @@ def main():
     save_shelf(brand, "Top Shelf Image Wide", (2320, 720))
     save_tile(assets, "Tile-Singo", singo_tile)
     save_tile(assets, "Tile-Jeopardy", jeopardy_tile)
+    save_tile(assets, "Tile-Feud", feud_tile)
 
 
 if __name__ == "__main__":

@@ -29,13 +29,13 @@ struct HomeView: View {
                 Text("Family Game Night")
                     .font(.system(size: 88, weight: .heavy))
 
-                HStack(spacing: 90) {
+                HStack(spacing: 60) {
                     ForEach(FamilyGame.allCases) { game in
                         Button { open(game) } label: {
                             Image(game.tileImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 560, height: 336)
+                                .frame(width: 480, height: 288)
                                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                         }
                         .buttonStyle(TileButtonStyle())
@@ -73,6 +73,8 @@ struct GameHost: View {
         switch game {
         case .singo: SingoRootView(onExit: exit)
         case .jeopardy: JeopardyRootView(onExit: exit)
+        // Same display: it shows whichever game the host has started, so Feud needs no screen of its own here.
+        case .feud: JeopardyRootView(onExit: exit)
         }
     }
 }

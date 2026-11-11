@@ -43,8 +43,8 @@ final class SoundSynthTests: XCTestCase {
 
     func testFileNamesTheServerMayProvide() {
         XCTAssertEqual(SoundCue.finalSting.rawValue, "final")
-        XCTAssertTrue(SoundCue.customNames.isSuperset(of: ["open", "buzz", "correct", "wrong", "timeup", "tick", "reveal", "dd", "final", "fanfare", "think", "lobby"]))
-        XCTAssertEqual(SoundCue.customNames.count, 12)
+        XCTAssertTrue(SoundCue.customNames.isSuperset(of: ["open", "buzz", "correct", "wrong", "timeup", "tick", "reveal", "dd", "final", "fanfare", "ding", "strike", "think", "lobby"]))
+        XCTAssertEqual(SoundCue.customNames.count, 14)
     }
 
     func testWavContainer() {

@@ -1,0 +1,157 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444"
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6"
+      }
+    ],
+    "units": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Ben",
+          "Cat"
+        ]
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Ann",
+          "Dev"
+        ]
+      }
+    ],
+    "gameId": "feud",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "feud",
+    "scoreFormat": "points",
+    "lobbyTitle": "Family Night Basics",
+    "settings": {
+      "targetScore": 300,
+      "multipliers": true,
+      "fastMoney": true,
+      "fastMoneyGoal": 200,
+      "fastMoneySeconds1": 20,
+      "fastMoneySeconds2": 25
+    },
+    "status": "round",
+    "title": "Family Night Basics",
+    "rounds": 5,
+    "hasFastMoney": true,
+    "round": {
+      "number": 1,
+      "multiplier": 1,
+      "question": "Name something you do before leaving the house",
+      "step": "play",
+      "strikes": 0,
+      "maxStrikes": 3,
+      "pot": 54,
+      "control": "t6",
+      "stealFrom": null,
+      "answers": [
+        {
+          "n": 1,
+          "revealed": true,
+          "late": false,
+          "text": "Brush teeth",
+          "points": 30
+        },
+        {
+          "n": 2,
+          "revealed": true,
+          "late": false,
+          "text": "Put on shoes",
+          "points": 24
+        },
+        {
+          "n": 3,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 4,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 5,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 6,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        }
+      ],
+      "faceoff": {
+        "open": false,
+        "turn": null,
+        "winner": "t6",
+        "attempts": [
+          {
+            "unitId": "t5",
+            "rank": 1
+          },
+          {
+            "unitId": "t6",
+            "rank": 0
+          }
+        ],
+        "reps": [
+          {
+            "unitId": "t5",
+            "playerId": "p2",
+            "name": "Ben"
+          },
+          {
+            "unitId": "t6",
+            "playerId": "p1",
+            "name": "Ann"
+          }
+        ]
+      },
+      "result": null,
+      "target": 300
+    },
+    "fm": null
+  }
+}

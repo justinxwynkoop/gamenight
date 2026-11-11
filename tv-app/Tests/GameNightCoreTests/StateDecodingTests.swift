@@ -131,7 +131,7 @@ final class StateDecodingTests: XCTestCase {
     }
 
     func testUnknownGameIsUnsupportedNotAnError() throws {
-        XCTAssertEqual(try Fixture.state("other-game").game, .unsupported(id: "feud"))
+        XCTAssertEqual(try Fixture.state("other-game").game, .unsupported(id: "bingo"))
     }
 
     // MARK: Board and clues

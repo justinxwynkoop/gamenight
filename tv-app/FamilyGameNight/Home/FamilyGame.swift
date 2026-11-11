@@ -7,6 +7,7 @@ import SwiftUI
 enum FamilyGame: String, CaseIterable, Identifiable {
     case singo
     case jeopardy
+    case feud
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         switch self {
         case .singo: return "Singo Night"
         case .jeopardy: return "Jeopardy"
+        case .feud: return "Family Feud"
         }
     }
 
@@ -22,6 +24,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         switch self {
         case .singo: return "Name the song from a short clip. Plays from your Apple Music playlists."
         case .jeopardy: return "Trivia board with phone buzzers. The host runs it from a phone."
+        case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
         }
     }
 
@@ -30,6 +33,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         switch self {
         case .singo: return "Tile-Singo"
         case .jeopardy: return "Tile-Jeopardy"
+        case .feud: return "Tile-Feud"
         }
     }
 
@@ -38,6 +42,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         switch self {
         case .singo: return Color(red: 0.55, green: 0.22, blue: 0.85)
         case .jeopardy: return Color(red: 0.12, green: 0.30, blue: 0.85)
+        case .feud: return Color(red: 0.85, green: 0.22, blue: 0.20)
         }
     }
 }

@@ -1,0 +1,183 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444"
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6"
+      }
+    ],
+    "units": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444",
+        "score": 383,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Ben",
+          "Cat"
+        ]
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6",
+        "score": 100,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Ann",
+          "Dev"
+        ]
+      }
+    ],
+    "gameId": "feud",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "feud",
+    "scoreFormat": "points",
+    "lobbyTitle": "Family Night Basics",
+    "settings": {
+      "targetScore": 300,
+      "multipliers": true,
+      "fastMoney": true,
+      "fastMoneyGoal": 200,
+      "fastMoneySeconds1": 20,
+      "fastMoneySeconds2": 25
+    },
+    "status": "fastmoney",
+    "title": "Family Night Basics",
+    "rounds": 5,
+    "hasFastMoney": true,
+    "round": null,
+    "fm": {
+      "team": "t5",
+      "step": "results",
+      "timer": null,
+      "goal": 200,
+      "players": [
+        {
+          "slot": "p1",
+          "id": "p2",
+          "name": "Ben"
+        },
+        {
+          "slot": "p2",
+          "id": "p3",
+          "name": "Cat"
+        }
+      ],
+      "submitted": {
+        "p1": true,
+        "p2": true
+      },
+      "rows": [
+        {
+          "q": 0,
+          "question": "Name a fruit you can eat on the go",
+          "p1": {
+            "judged": true,
+            "points": 34,
+            "label": "Apple",
+            "typed": "apple"
+          },
+          "p2": {
+            "judged": true,
+            "points": 30,
+            "label": "Banana",
+            "typed": "banana"
+          }
+        },
+        {
+          "q": 1,
+          "question": "Name a pet people keep at home",
+          "p1": {
+            "judged": true,
+            "points": 46,
+            "label": "Dog",
+            "typed": "dog"
+          },
+          "p2": {
+            "judged": true,
+            "points": 34,
+            "label": "Cat",
+            "typed": "cat"
+          }
+        },
+        {
+          "q": 2,
+          "question": "Name something you wear on your feet",
+          "p1": {
+            "judged": true,
+            "points": 36,
+            "label": "Shoes",
+            "typed": "sneakers"
+          },
+          "p2": {
+            "judged": true,
+            "points": 34,
+            "label": "Socks",
+            "typed": "socks"
+          }
+        },
+        {
+          "q": 3,
+          "question": "Name a room in a house",
+          "p1": {
+            "judged": true,
+            "points": 30,
+            "label": "Kitchen",
+            "typed": "kitchen"
+          },
+          "p2": {
+            "judged": true,
+            "points": 8,
+            "label": "Garage",
+            "typed": "garage"
+          }
+        },
+        {
+          "q": 4,
+          "question": "Name something you do on a rainy day",
+          "p1": {
+            "judged": true,
+            "points": 16,
+            "label": "Take a nap",
+            "typed": "nap"
+          },
+          "p2": {
+            "judged": true,
+            "points": 18,
+            "label": "Read a book",
+            "typed": "read"
+          }
+        }
+      ],
+      "totals": {
+        "p1": 162,
+        "p2": 124,
+        "total": 286
+      },
+      "won": true
+    }
+  }
+}

@@ -5,7 +5,7 @@ struct LobbyScreen: View {
     let state: ServerState
     let joinURL: URL?
 
-    private var title: String { state.jeopardy?.lobbyTitle ?? "Game Night" }
+    private var title: String { state.lobbyTitle }
 
     private var prompt: String {
         if case .noGame = state.game { return "Waiting for the host to pick a game." }

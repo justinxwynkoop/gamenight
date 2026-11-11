@@ -6,6 +6,7 @@ A private Apple TV app for family game nights. Open it and pick a game:
 | ---- | ---------- | ------ |
 | **Singo Night** | Bingo with songs. Plays a short clip of each song from an Apple Music playlist, fades in hints, then reveals the answer. | Working (moved in from the `singo` repo) |
 | **Jeopardy** | Trivia board on the TV, phones as buzzers. The Apple TV is the TV display for the [`gamenight`](https://github.com/justinxwynkoop/gamenight) server. | Built (display only); see [Jeopardy on the TV](#jeopardy-on-the-tv) |
+| **Family Feud** | Two teams guess the top survey answers: face-off, strikes, steal and Fast Money. It uses the same TV display as Jeopardy. | Built (display only); see [Family Feud on the TV](#family-feud-on-the-tv) |
 
 On the home screen, moving the remote highlights a tile: it grows, and the
 background glows in that game's colour. Click to open a game. Menu goes back to
@@ -215,7 +216,26 @@ Or open `Package.swift` in Xcode and press ⌘U.
 `Tests/GameNightCoreTests/Fixtures/` holds the messages the Game Night server
 sends, recorded from a scripted game (join, clues, buzzes, Daily Double, Final
 Jeopardy, winner) so the tests read real data. If the server's messages change,
-record new ones with `Tools/record-fixtures.mjs` (individual play) and `Tools/record-team-fixtures.mjs` (team play); their headers say how.
+record new ones with `Tools/record-fixtures.mjs` (individual play), `Tools/record-team-fixtures.mjs` (team play), `Tools/record-round-fixtures.mjs` (two rounds) and `Tools/record-feud-fixtures.mjs` (Family Feud); their headers say how.
+
+## Family Feud on the TV
+
+The Family Feud tile opens the same TV display as Jeopardy (they share the saved server address). The
+display draws whichever game the host has started on the server, so either tile works; the host picks
+**Family Feud** in the game picker on their phone. Setup is the same as for Jeopardy (see above), and
+the server needs the Family Feud version of `gamenight` (it adds `games/feud` and its question sets).
+
+What the TV shows: the two team scores and the points on the board, the survey question, the answers
+as numbered slots that flip over, three strike boxes, a banner for what is happening (face-off, who
+plays, steal, round result), and Fast Money (the questions with a countdown, then the two players'
+answers revealed beside the points, a running total and whether they reached the goal). The winner
+screen adds the Fast Money result. Sounds follow the web TV: a ding for each answer, the big X for a
+strike, the buzzers, and the fanfare. The new sound names for the server's `data/sounds/` are `ding`
+and `strike`.
+
+`Tools/record-feud-fixtures.mjs` records the Family Feud states used by the tests (see the header for how).
+The expected sounds in `FeudTests.swift` come from running the web TV's own `onChange()` on the same
+recorded states.
 
 ## Jeopardy on the TV
 
@@ -279,7 +299,7 @@ TV's own volume still sets how loud it is in the room.
 **Your own sounds.** Anything you put in the server's `data/sounds/` folder
 replaces the built-in sound of the same name, and the Apple TV downloads it when
 Jeopardy opens (so re-open Jeopardy after adding files). Names: `open`, `buzz`,
-`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, plus two
+`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, `ding`, `strike`, plus two
 music files: `think` (loops during the Final Jeopardy countdown) and `lobby`
 (loops while players join; `think` is used if there is no `lobby`). Use `.mp3`,
 `.wav` or `.m4a`; the Apple TV can't play `.ogg`, so those are skipped and the
@@ -292,8 +312,8 @@ built-in sound is used. Music only plays if you provide a file.
 3. ✅ Jeopardy: board, clues, Daily Double, Final Jeopardy, leaderboard, winner.
 4. ✅ Jeopardy: sound effects (see [Sound](#sound)).
 5. **Find the server automatically** with Bonjour instead of typing an address.
-6. **Family Feud.** A new game module in the `gamenight` server, plus a SwiftUI
-   screen here.
+6. ✅ Family Feud: the game in the `gamenight` server, and its TV screens here (see
+   [Family Feud on the TV](#family-feud-on-the-tv)).
 
 The host picks which game is active from their phone; the Apple TV shows
 whatever is active.

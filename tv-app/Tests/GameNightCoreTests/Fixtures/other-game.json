@@ -3,7 +3,7 @@
     "mode": "players",
     "teams": [],
     "units": [],
-    "gameId": "feud",
+    "gameId": "bingo",
     "inProgress": false,
     "settings": {
       "sound": true,
@@ -12,8 +12,8 @@
     }
   },
   "game": {
-    "game": "feud",
-    "lobbyTitle": "Family Feud",
+    "game": "bingo",
+    "lobbyTitle": "Bingo",
     "status": "lobby",
     "rounds": []
   }

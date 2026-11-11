@@ -9,6 +9,9 @@ enum DisplayScreen: Equatable {
     case finalRound
     case leaderboard
     case winner
+    case feudRound
+    case feudFastMoney
+    case feudWinner
     case unsupported(id: String)
 
     static func screen(for state: ServerState) -> DisplayScreen {
@@ -17,6 +20,14 @@ enum DisplayScreen: Equatable {
             return .lobby
         case .unsupported(let id):
             return .unsupported(id: id)
+        case .feud(let game):
+            if !state.room.inProgress { return .lobby }
+            switch game.status {
+            case .done: return .feudWinner
+            case .fastmoney where game.fm != nil: return .feudFastMoney
+            case .round where game.round != nil: return .feudRound
+            default: return .lobby
+            }
         case .jeopardy(let game):
             if !state.room.inProgress { return .lobby }
             if game.status == .done { return .winner }
