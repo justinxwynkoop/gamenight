@@ -249,6 +249,8 @@ struct ServerSound: Decodable, Equatable {
     var name: String
     /// Where to download it, relative to the server, e.g. "/sounds/buzz.mp3".
     var url: String
+    /// The game whose folder it came from ("jeopardy", "feud"), or nil for a file every game shares.
+    var game: String?
 }
 
 /// GET /api/info

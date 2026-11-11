@@ -23,9 +23,9 @@ enum SoundCue: String, CaseIterable, Hashable {
     case fmpoints    // Family Feud: Fast Money points are shown
     case fastmoney   // Family Feud: Fast Money is about to begin
 
-    /// Every file name the server may supply: the cues above plus the music tracks.
+    /// Every file name the server may supply: the cues above plus the music tracks. (The server keeps each game's files in their own folder.)
     static var customNames: Set<String> {
-        Set(allCases.map(\.rawValue)).union(["think", "lobby", "feud-lobby"])
+        Set(allCases.map(\.rawValue)).union(["think", "lobby"])
     }
 
     /// Another cue's file to use when the family supplied no file for this one (the third strike

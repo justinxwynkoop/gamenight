@@ -9,18 +9,20 @@ import Foundation
 /// The host's room settings (sound on/off, volume) are applied on every update.
 @MainActor
 final class SoundDirector {
-    private enum MusicOwner { case lobby, feudLobby, finalRound }
+    private enum MusicOwner { case lobby, finalRound }
 
     private var enabled = true
     private var volume = 0.7   // 0...1, from the host's setting
 
-    /// Files from the server, keyed by name ("buzz", "think", ...).
+    /// Files from the server, keyed by name ("buzz", "think", ...), or "game/name" for a file from one game's own folder.
     private var custom: [String: Data] = [:]
     private var synthesized: [SoundCue: Data] = [:]
     private var playing: Set<AVAudioPlayer> = []
 
     private var music: AVAudioPlayer?
     private var musicOwner: MusicOwner?
+    /// The game the playing music was chosen for, so switching games in the lobby changes the tune.
+    private var musicGame: String?
 
     private var lastState: ServerState?
     private var lastStateAt = Date()
@@ -89,10 +91,9 @@ final class SoundDirector {
     private func refreshLobbyMusic() {
         guard let state = lastState else { return }
         if SoundPlanner.wantsLobbyMusic(state) {
-            startMusic(state.feud != nil ? .feudLobby : .lobby, restart: false)
+            startMusic(.lobby, restart: false)
         } else {
             stopMusic(owner: .lobby)
-            stopMusic(owner: .feudLobby)
         }
     }
 
@@ -102,7 +103,7 @@ final class SoundDirector {
         guard enabled, volume > 0 else { return }
         let data: Data
         let gain: Double
-        if let file = custom[cue.rawValue] ?? cue.fallbackFile.flatMap({ custom[$0] }) {
+        if let file = customSound([cue.rawValue]) ?? cue.fallbackFile.flatMap({ customSound([$0]) }) {
             data = file
             gain = 0.5          // the web TV plays everything through a 0.5 master gain
         } else {
@@ -139,14 +140,13 @@ final class SoundDirector {
     /// is no lobby file) in the lobby, and "think" during the Final Jeopardy countdown.
     private func startMusic(_ owner: MusicOwner, restart: Bool) {
         guard enabled, volume > 0 else { return }
-        let names: [String]
-        switch owner {
-        case .lobby: names = ["lobby", "think"]
-        case .feudLobby: names = ["feud-lobby", "lobby", "think"]   // Family Feud can have its own
-        case .finalRound: names = ["think"]
+        let names = owner == .lobby ? ["lobby", "think"] : ["think"]
+        let data = customSound(names)
+        if !restart, data != nil, musicOwner == owner, musicGame == currentGame, music?.isPlaying == true { return }
+        guard let data else {
+            if musicOwner == owner { stopMusic() }   // the game now on screen has no music of this kind
+            return
         }
-        guard let data = names.compactMap({ custom[$0] }).first else { return }
-        if !restart, musicOwner == owner, music?.isPlaying == true { return }
         stopMusic()
         guard let player = try? AVAudioPlayer(data: data) else { return }
         player.numberOfLoops = -1
@@ -154,6 +154,19 @@ final class SoundDirector {
         player.play()
         music = player
         musicOwner = owner
+        musicGame = currentGame
+    }
+
+    /// The game on screen, whose own folder of sounds comes first.
+    private var currentGame: String? { lastState?.room.gameId }
+
+    /// The file to use for the first of these names that has one: the current game's own folder first, then the shared one.
+    private func customSound(_ names: [String]) -> Data? {
+        if let game = currentGame {
+            for name in names { if let data = custom["\(game)/\(name)"] { return data } }
+        }
+        for name in names { if let data = custom[name] { return data } }
+        return nil
     }
 
     private func stopMusic(owner: MusicOwner? = nil) {
@@ -161,6 +174,7 @@ final class SoundDirector {
         music?.stop()
         music = nil
         musicOwner = nil
+        musicGame = nil
     }
 
     // MARK: - Countdown ticks
@@ -200,7 +214,7 @@ final class SoundDirector {
                 guard let url = URL(string: file.url, relativeTo: base)?.absoluteURL else { continue }
                 do {
                     let (data, _) = try await session.data(from: url)
-                    if (try? AVAudioPlayer(data: data)) != nil { custom[file.name] = data }
+                    if (try? AVAudioPlayer(data: data)) != nil { custom[file.game.map { "\($0)/\(file.name)" } ?? file.name] = data }
                 } catch {
                     continue
                 }

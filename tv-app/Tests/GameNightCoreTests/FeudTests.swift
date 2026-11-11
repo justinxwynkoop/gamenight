@@ -230,6 +230,14 @@ final class FeudSoundTests: XCTestCase {
         XCTAssertEqual(seconds(.fastmoney), 0.62 + 0.8 + 0.05, accuracy: 0.001)
     }
 
+    func testTheServerListsFilesPerGame() throws {
+        let json = #"[{"name":"think","url":"/sounds/think.mp3"},{"name":"ding","url":"/sounds/feud/ding.mp3","game":"feud"}]"#
+        let files = try JSONDecoder().decode([ServerSound].self, from: Data(json.utf8))
+        XCTAssertNil(files[0].game)
+        XCTAssertEqual(files[1].game, "feud")
+        XCTAssertEqual(files[1].url, "/sounds/feud/ding.mp3")
+    }
+
     func testSomeSoundsBorrowTheStrikeBuzzerFile() {
         XCTAssertEqual(SoundCue.strikeout.fallbackFile, "strike")
         XCTAssertEqual(SoundCue.zero.fallbackFile, "strike")
