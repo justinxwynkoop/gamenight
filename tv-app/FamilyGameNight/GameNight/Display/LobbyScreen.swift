@@ -41,7 +41,12 @@ struct LobbyScreen: View {
                     }
                 }
                 .padding(.top, 8)
+
+                Spacer(minLength: 16)
+                HostCodeBlock(joinURL: joinURL)
+                    .frame(maxWidth: 820)
             }
+            .frame(maxHeight: .infinity, alignment: .top)
             Spacer(minLength: 0)
             Group {
                 if let joinURL {

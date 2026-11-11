@@ -40,6 +40,7 @@ struct JeopardyDisplayView: View {
             if showMenu {
                 DisplayMenu(
                     address: client.address?.text ?? "",
+                    joinURL: client.joinURL,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
                     onClose: { showMenu = false }
@@ -131,6 +132,7 @@ struct JeopardyDisplayView: View {
 /// Opened with Play/Pause.
 private struct DisplayMenu: View {
     let address: String
+    let joinURL: URL?
     let onChangeServer: () -> Void
     let onExit: () -> Void
     let onClose: () -> Void
@@ -145,6 +147,8 @@ private struct DisplayMenu: View {
                 Text("Connected to \(address)")
                     .font(JP.text(32, .medium))
                     .foregroundStyle(JP.softWhite)
+                HostCodeBlock(joinURL: joinURL)
+                    .frame(maxWidth: 820)
                 HStack(spacing: 30) {
                     Button("Close", action: onClose)
                     Button("Change server", action: onChangeServer)

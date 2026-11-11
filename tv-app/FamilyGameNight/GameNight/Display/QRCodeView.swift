@@ -35,6 +35,38 @@ struct QRCodeView: View {
     }
 }
 
+/// A small code for the host's phone, so nobody has to remember the server's address.
+/// It opens the host page only. The PIN is deliberately not shown: the host page
+/// reveals every answer, and everyone is looking at this screen.
+struct HostCodeBlock: View {
+    let joinURL: URL?
+
+    var body: some View {
+        if let joinURL {
+            let page = JoinAddress.hostPage(from: joinURL.absoluteString)
+            HStack(spacing: 22) {
+                QRCodeView(text: page)
+                    .frame(width: 130, height: 130)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Host")
+                        .font(JP.text(32))
+                    Text("Scan to open the host page. You'll need the PIN.")
+                        .font(JP.text(24, .medium))
+                        .foregroundStyle(JP.muted)
+                    Text(JoinAddress.display(page))
+                        .font(JP.text(22, .medium))
+                        .foregroundStyle(JP.softWhite)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(18)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.07)))
+        }
+    }
+}
+
 /// "Scan to join" with the code and the address as text, for the board's sidebar.
 struct JoinCodeBlock: View {
     let joinURL: URL?

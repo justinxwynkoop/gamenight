@@ -13,6 +13,12 @@ enum Money {
 }
 
 enum JoinAddress {
+    /// The host page for a server: "http://192.168.1.50:3000/" → "http://192.168.1.50:3000/host".
+    /// The address only; the host still has to enter the PIN on that page.
+    static func hostPage(from joinURL: String) -> String {
+        joinURL.hasSuffix("/") ? joinURL + "host" : joinURL + "/host"
+    }
+
     /// "http://192.168.1.50:3000/" → "192.168.1.50:3000", for showing under a QR code.
     static func display(_ urlString: String) -> String {
         var text = urlString

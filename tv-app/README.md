@@ -231,8 +231,13 @@ only draws what the server tells it.
    (typing is easiest with an iPhone nearby: the Apple TV offers its keyboard).
    Say Allow if it asks to find devices on your network. The address is
    remembered.
-3. Scan the QR code on the TV with a phone to join. Open `/host` on another
-   phone (PIN 1234) to pick the question set and start.
+3. Scan the QR code on the TV with a phone to join. The host scans the small
+   **Host** code on the lobby screen (also in the Play/Pause panel during a game)
+   to open the host page, enters the PIN once (the phone remembers it), and picks
+   the question set and starts. The PIN is deliberately not shown on the TV: the
+   host page shows every answer, and everyone can see the screen. Tip: have the
+   host add that page to their phone's home screen, and give the Pi a fixed
+   address in your router, so it is one tap from then on.
 
 **Remote:** Menu goes back to the game picker. Play/Pause opens a small panel to
 change the server or leave. The TV shows a "Reconnecting…" badge if the server
