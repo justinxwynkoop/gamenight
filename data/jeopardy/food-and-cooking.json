@@ -1,0 +1,190 @@
+{
+  "title": "Food & Cooking Sampler",
+  "categories": [
+    {
+      "name": "Fruits & Veggies",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This long, yellow fruit is a favorite of monkeys.",
+          "answer": "A banana"
+        },
+        {
+          "value": 400,
+          "clue": "This red fruit, usually treated like a vegetable, is the main ingredient in ketchup.",
+          "answer": "A tomato"
+        },
+        {
+          "value": 600,
+          "clue": "Bugs Bunny’s favorite food is this orange vegetable.",
+          "answer": "A carrot"
+        },
+        {
+          "value": 800,
+          "clue": "This leafy green vegetable gave Popeye his strength.",
+          "answer": "Spinach"
+        },
+        {
+          "value": 1000,
+          "clue": "Avocado is the main ingredient in this Mexican dip.",
+          "answer": "Guacamole"
+        }
+      ]
+    },
+    {
+      "name": "Around the World",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This Italian dish is a round, flat bread topped with sauce and cheese.",
+          "answer": "Pizza"
+        },
+        {
+          "value": 400,
+          "clue": "Sushi comes from this country.",
+          "answer": "Japan"
+        },
+        {
+          "value": 600,
+          "clue": "Tacos come from this country.",
+          "answer": "Mexico"
+        },
+        {
+          "value": 800,
+          "clue": "Paella is a rice dish from this country.",
+          "answer": "Spain"
+        },
+        {
+          "value": 1000,
+          "clue": "Pad Thai is a noodle dish from this country.",
+          "answer": "Thailand"
+        }
+      ]
+    },
+    {
+      "name": "Breakfast",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "These round, flat cakes are served with syrup.",
+          "answer": "Pancakes"
+        },
+        {
+          "value": 400,
+          "clue": "This hot breakfast is made by cooking rolled oats.",
+          "answer": "Oatmeal"
+        },
+        {
+          "value": 600,
+          "clue": "An egg cooked with the yolk facing up is called this.",
+          "answer": "Sunny-side up"
+        },
+        {
+          "value": 800,
+          "clue": "You cook waffles in this special appliance.",
+          "answer": "A waffle iron"
+        },
+        {
+          "value": 1000,
+          "clue": "French toast is bread dipped in this mixture and then fried.",
+          "answer": "Eggs and milk"
+        }
+      ]
+    },
+    {
+      "name": "Desserts",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This frozen treat comes in scoops, cones and sundaes.",
+          "answer": "Ice cream"
+        },
+        {
+          "value": 400,
+          "clue": "Cakes and cookies are made with this white powder, often from wheat.",
+          "answer": "Flour"
+        },
+        {
+          "value": 600,
+          "clue": "This dark sweet is made from cacao beans.",
+          "answer": "Chocolate"
+        },
+        {
+          "value": 800,
+          "clue": "At the fair, you can eat sugar that is spun into this fluffy treat on a cone or stick.",
+          "answer": "Cotton candy"
+        },
+        {
+          "value": 1000,
+          "clue": "This colorful French sandwich cookie is made with almond flour and has a creamy filling.",
+          "answer": "A macaron"
+        }
+      ]
+    },
+    {
+      "name": "Kitchen Tools",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "You eat soup with this utensil.",
+          "answer": "A spoon"
+        },
+        {
+          "value": 400,
+          "clue": "This sharp tool is used on a cutting board.",
+          "answer": "A knife"
+        },
+        {
+          "value": 600,
+          "clue": "This appliance makes bread crisp and brown.",
+          "answer": "A toaster"
+        },
+        {
+          "value": 800,
+          "clue": "This bowl with holes drains water from cooked pasta.",
+          "answer": "A colander"
+        },
+        {
+          "value": 1000,
+          "clue": "This tool has curved wires and is used to beat eggs or cream.",
+          "answer": "A whisk"
+        }
+      ]
+    },
+    {
+      "name": "Snacks & Sandwiches",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This salty snack is sliced potatoes, fried and sold in bags.",
+          "answer": "Potato chips"
+        },
+        {
+          "value": 400,
+          "clue": "Popcorn is made from this grain.",
+          "answer": "Corn"
+        },
+        {
+          "value": 600,
+          "clue": "A classic sandwich is peanut butter and this sweet fruit spread.",
+          "answer": "Jelly (or jam)"
+        },
+        {
+          "value": 800,
+          "clue": "Tortilla chips smothered in melted cheese are called this.",
+          "answer": "Nachos"
+        },
+        {
+          "value": 1000,
+          "clue": "This sandwich is grilled with melted cheese between two slices of bread.",
+          "answer": "A grilled cheese"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Pasta",
+    "clue": "In Lady and the Tramp, the two dogs share a plate of this long, thin pasta.",
+    "answer": "Spaghetti"
+  }
+}

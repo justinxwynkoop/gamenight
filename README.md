@@ -104,8 +104,25 @@ saved to `data/state.json` and survives a server restart.
 Use `/editor`: six categories of five clues, a Final Jeopardy clue, and optional
 Daily Double flags. If no Daily Double is flagged, one is placed at random each
 game. Sets are plain JSON files in `data/<game>/` (for Jeopardy, `data/jeopardy/`),
-so you can also edit or share them as files. `data/jeopardy/family-night.json`
-is a sample.
+so you can also edit or share them as files. Eleven family-friendly samplers
+ship with the repo (each is six categories of five clues plus a Final Jeopardy, from easy
+at $200 to harder at $1,000; Daily Doubles are placed at random):
+
+| Set | Covers |
+| --- | --- |
+| `family-night` | a bit of everything |
+| `animal-kingdom` | pets, wild Africa, ocean life, birds, bugs, babies |
+| `movies-and-cartoons` | Disney, Pixar, cartoons, sidekicks, superheroes, lyrics |
+| `around-the-usa` | capitals, landmarks, nicknames, rivers, parks, symbols |
+| `science-lab` | space, the body, chemistry, weather, dinosaurs, inventions |
+| `food-and-cooking` | produce, world dishes, breakfast, desserts, tools, snacks |
+| `sports-night` | Olympics, baseball, basketball, football, soccer, gear |
+| `world-geography` | capitals, continents, oceans, places, flags, languages |
+| `history-highlights` | Egypt and Rome, the Revolution, explorers, women, Greece, the 1900s |
+| `music-and-pop-culture` | instruments, rhymes, legends, musicals, music basics, games |
+| `holidays-and-seasons` | Christmas, Halloween, Thanksgiving, spring, summer, celebrations |
+
+The host picks one in the lobby.
 
 ## Sound
 

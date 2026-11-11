@@ -51,7 +51,7 @@ test('server end to end', async (t) => {
     assert.equal((await fetch(`${base}/api/games/jeopardy/sets`, { headers: { 'x-host-pin': 'nope' } })).status, 401);
     const ok = await fetch(`${base}/api/games/jeopardy/sets`, { headers: { 'x-host-pin': PIN } });
     assert.equal(ok.status, 200);
-    assert.equal((await ok.json())[0].id, 'family-night');
+    assert.ok((await ok.json()).some((set) => set.id === 'family-night'));   // the shipped sample sets are listed
     // Invalid set is rejected
     const bad = await fetch(`${base}/api/games/jeopardy/sets/broken`, { method: 'PUT', headers: { 'x-host-pin': PIN }, body: '{"title":"x"}' });
     assert.equal(bad.status, 400);
@@ -125,6 +125,7 @@ test('server end to end', async (t) => {
   bo.send({ t: 'join', name: 'Bo' });
   const annToken = (await ann.until((c) => c.msgs.find((m) => m.t === 'joined'))).token;
   await bo.until((c) => c.msgs.find((m) => m.t === 'joined'));
+  host.act('chooseSet', { id: 'family-night' });   // the first set found is no longer this one
   host.act('startGame');
   await tv.until((c) => c.view?.game?.status === 'board', 'board');
 

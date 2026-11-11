@@ -1,0 +1,190 @@
+{
+  "title": "Movies & Cartoons Sampler",
+  "categories": [
+    {
+      "name": "Disney Classics",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In this Disney movie, a lion cub named Simba grows up to be king.",
+          "answer": "The Lion King"
+        },
+        {
+          "value": 400,
+          "clue": "This princess lost a glass slipper at the ball.",
+          "answer": "Cinderella"
+        },
+        {
+          "value": 600,
+          "clue": "In this 1937 Disney movie, a princess lives with seven dwarfs.",
+          "answer": "Snow White (and the Seven Dwarfs)"
+        },
+        {
+          "value": 800,
+          "clue": "This wooden puppet’s nose grows when he tells a lie.",
+          "answer": "Pinocchio"
+        },
+        {
+          "value": 1000,
+          "clue": "Mickey Mouse stars as the Sorcerer’s Apprentice in this 1940 film set to classical music.",
+          "answer": "Fantasia"
+        }
+      ]
+    },
+    {
+      "name": "Pixar",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Woody and Buzz Lightyear are toys that come to life in this movie series.",
+          "answer": "Toy Story"
+        },
+        {
+          "value": 400,
+          "clue": "In this movie, a clownfish named Marlin crosses the ocean to find his son.",
+          "answer": "Finding Nemo"
+        },
+        {
+          "value": 600,
+          "clue": "In this movie, a rat named Remy dreams of being a chef in Paris.",
+          "answer": "Ratatouille"
+        },
+        {
+          "value": 800,
+          "clue": "A flying house lifted by thousands of balloons is the star of this 2009 movie.",
+          "answer": "Up"
+        },
+        {
+          "value": 1000,
+          "clue": "Joy, Sadness, Anger, Fear and Disgust live inside a girl’s head in this movie.",
+          "answer": "Inside Out"
+        }
+      ]
+    },
+    {
+      "name": "Cartoon Characters",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This yellow cartoon family lives in the town of Springfield.",
+          "answer": "The Simpsons"
+        },
+        {
+          "value": 400,
+          "clue": "This cartoon sponge lives in a pineapple under the sea.",
+          "answer": "SpongeBob SquarePants"
+        },
+        {
+          "value": 600,
+          "clue": "This carrot-munching rabbit asks, “What’s up, Doc?”",
+          "answer": "Bugs Bunny"
+        },
+        {
+          "value": 800,
+          "clue": "This big, easily scared Great Dane solves mysteries with Shaggy.",
+          "answer": "Scooby-Doo"
+        },
+        {
+          "value": 1000,
+          "clue": "In this Australian cartoon, the Heeler family includes Bluey, Bingo, Bandit and Chilli.",
+          "answer": "Bluey"
+        }
+      ]
+    },
+    {
+      "name": "Movie Sidekicks",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In Aladdin, this blue character grants three wishes.",
+          "answer": "The Genie"
+        },
+        {
+          "value": 400,
+          "clue": "In Frozen, this snowman loves warm hugs.",
+          "answer": "Olaf"
+        },
+        {
+          "value": 600,
+          "clue": "In Shrek, this talkative animal is Shrek’s loud best friend.",
+          "answer": "Donkey"
+        },
+        {
+          "value": 800,
+          "clue": "In Finding Nemo, this blue tang forgets things easily.",
+          "answer": "Dory"
+        },
+        {
+          "value": 1000,
+          "clue": "In Mulan, this tiny dragon is Mulan’s guardian.",
+          "answer": "Mushu"
+        }
+      ]
+    },
+    {
+      "name": "Superheroes",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This hero wears a red cape and a blue suit with an “S” on the chest, and he flies.",
+          "answer": "Superman"
+        },
+        {
+          "value": 400,
+          "clue": "This hero got his powers from the bite of a radioactive spider.",
+          "answer": "Spider-Man"
+        },
+        {
+          "value": 600,
+          "clue": "This hero’s secret identity is Bruce Wayne.",
+          "answer": "Batman"
+        },
+        {
+          "value": 800,
+          "clue": "This Amazon princess carries a Lasso of Truth.",
+          "answer": "Wonder Woman"
+        },
+        {
+          "value": 1000,
+          "clue": "Iron Man, Thor, Hulk and Captain America team up as this group.",
+          "answer": "The Avengers"
+        }
+      ]
+    },
+    {
+      "name": "Finish the Lyric",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In Frozen, Elsa sings, “Let it ___.”",
+          "answer": "Go"
+        },
+        {
+          "value": 400,
+          "clue": "In The Lion King, the carefree saying is “Hakuna ___.”",
+          "answer": "Matata"
+        },
+        {
+          "value": 600,
+          "clue": "In Mary Poppins, “A spoonful of ___ helps the medicine go down.”",
+          "answer": "Sugar"
+        },
+        {
+          "value": 800,
+          "clue": "In Beauty and the Beast, the candelabra sings, “Be our ___.”",
+          "answer": "Guest"
+        },
+        {
+          "value": 1000,
+          "clue": "In Encanto, the song says, “We don’t talk about ___.”",
+          "answer": "Bruno"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Disney Villains",
+    "clue": "In 101 Dalmatians, this villain wants to make a fur coat out of puppies.",
+    "answer": "Cruella de Vil"
+  }
+}

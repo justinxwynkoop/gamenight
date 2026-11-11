@@ -1,0 +1,190 @@
+{
+  "title": "Music & Pop Culture Sampler",
+  "categories": [
+    {
+      "name": "Instruments",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "A standard guitar has this many strings.",
+          "answer": "Six"
+        },
+        {
+          "value": 400,
+          "clue": "This instrument has 88 black and white keys.",
+          "answer": "The piano"
+        },
+        {
+          "value": 600,
+          "clue": "This brass instrument has a long slide that moves in and out.",
+          "answer": "The trombone"
+        },
+        {
+          "value": 800,
+          "clue": "The violin, viola, cello and this largest, deepest instrument make up the string family.",
+          "answer": "The double bass"
+        },
+        {
+          "value": 1000,
+          "clue": "Drums, cymbals and xylophones belong to this family of instruments.",
+          "answer": "Percussion"
+        }
+      ]
+    },
+    {
+      "name": "Nursery Rhymes",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "“Twinkle, twinkle, little ___.”",
+          "answer": "Star"
+        },
+        {
+          "value": 400,
+          "clue": "“Mary had a little ___.”",
+          "answer": "Lamb"
+        },
+        {
+          "value": 600,
+          "clue": "Humpty Dumpty sat on this.",
+          "answer": "A wall"
+        },
+        {
+          "value": 800,
+          "clue": "Jack and Jill went up this to fetch a pail of water.",
+          "answer": "A hill"
+        },
+        {
+          "value": 1000,
+          "clue": "Little Miss Muffet sat on this while eating her curds and whey.",
+          "answer": "A tuffet"
+        }
+      ]
+    },
+    {
+      "name": "Music Legends",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "John, Paul, George and Ringo made up this British band.",
+          "answer": "The Beatles"
+        },
+        {
+          "value": 400,
+          "clue": "Michael Jackson is known as the King of this kind of music.",
+          "answer": "Pop"
+        },
+        {
+          "value": 600,
+          "clue": "Elvis Presley is known as the King of this kind of music.",
+          "answer": "Rock and roll"
+        },
+        {
+          "value": 800,
+          "clue": "Known as the “Queen of Soul,” she sang “Respect.”",
+          "answer": "Aretha Franklin"
+        },
+        {
+          "value": 1000,
+          "clue": "This singer released the albums 1989 and Midnights and went on the Eras Tour.",
+          "answer": "Taylor Swift"
+        }
+      ]
+    },
+    {
+      "name": "Musicals",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In this musical, Elphaba is the green-skinned witch.",
+          "answer": "Wicked"
+        },
+        {
+          "value": 400,
+          "clue": "In this musical, the Von Trapp children sing “Do-Re-Mi.”",
+          "answer": "The Sound of Music"
+        },
+        {
+          "value": 600,
+          "clue": "This Andrew Lloyd Webber musical has performers dressed as felines.",
+          "answer": "Cats"
+        },
+        {
+          "value": 800,
+          "clue": "Lin-Manuel Miranda wrote this musical about a Founding Father who is on the $10 bill.",
+          "answer": "Hamilton"
+        },
+        {
+          "value": 1000,
+          "clue": "This musical features an orphan girl, her dog Sandy and the song “Tomorrow.”",
+          "answer": "Annie"
+        }
+      ]
+    },
+    {
+      "name": "Music Basics",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Do, re, mi, fa, sol, la, ti, do is an example of one of these.",
+          "answer": "A scale"
+        },
+        {
+          "value": 400,
+          "clue": "A group of people who sing together is called this.",
+          "answer": "A choir"
+        },
+        {
+          "value": 600,
+          "clue": "Music is written on this set of five lines.",
+          "answer": "A staff"
+        },
+        {
+          "value": 800,
+          "clue": "This Italian word for the speed of a piece of music means “time.”",
+          "answer": "Tempo"
+        },
+        {
+          "value": 1000,
+          "clue": "A conductor leads the orchestra with this thin stick.",
+          "answer": "A baton"
+        }
+      ]
+    },
+    {
+      "name": "Games & Characters",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This yellow Pokémon says “Pika Pika.”",
+          "answer": "Pikachu"
+        },
+        {
+          "value": 400,
+          "clue": "This character is Mario’s brother, and he wears green.",
+          "answer": "Luigi"
+        },
+        {
+          "value": 600,
+          "clue": "Players mine and build with blocks in this very popular video game.",
+          "answer": "Minecraft"
+        },
+        {
+          "value": 800,
+          "clue": "This boy wizard goes to school at Hogwarts.",
+          "answer": "Harry Potter"
+        },
+        {
+          "value": 1000,
+          "clue": "In this J.R.R. Tolkien story, Frodo has to destroy a powerful ring.",
+          "answer": "The Lord of the Rings"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Famous Composers",
+    "clue": "This German composer kept writing music, including the Ninth Symphony with “Ode to Joy,” after he went deaf.",
+    "answer": "Ludwig van Beethoven"
+  }
+}

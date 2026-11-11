@@ -1,0 +1,190 @@
+{
+  "title": "History Highlights Sampler",
+  "categories": [
+    {
+      "name": "Ancient Egypt & Rome",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Egypt’s ancient kings and queens were called this.",
+          "answer": "Pharaohs"
+        },
+        {
+          "value": 400,
+          "clue": "The ancient Egyptians preserved bodies as these wrapped figures.",
+          "answer": "Mummies"
+        },
+        {
+          "value": 600,
+          "clue": "This Roman dictator was stabbed in 44 BC on the Ides of March.",
+          "answer": "Julius Caesar"
+        },
+        {
+          "value": 800,
+          "clue": "The Egyptians wrote using picture symbols called this.",
+          "answer": "Hieroglyphics"
+        },
+        {
+          "value": 1000,
+          "clue": "In A.D. 79, Mount Vesuvius buried the city of Pompeii in this modern country.",
+          "answer": "Italy"
+        }
+      ]
+    },
+    {
+      "name": "The American Revolution",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In 1776, the colonies declared independence from this country.",
+          "answer": "Great Britain"
+        },
+        {
+          "value": 400,
+          "clue": "He was the first president of the United States.",
+          "answer": "George Washington"
+        },
+        {
+          "value": 600,
+          "clue": "He wrote most of the Declaration of Independence.",
+          "answer": "Thomas Jefferson"
+        },
+        {
+          "value": 800,
+          "clue": "In 1773, colonists dumped tea into Boston Harbor at this famous protest.",
+          "answer": "The Boston Tea Party"
+        },
+        {
+          "value": 1000,
+          "clue": "According to legend, Betsy Ross sewed the first one of these.",
+          "answer": "The American flag"
+        }
+      ]
+    },
+    {
+      "name": "Explorers",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In 1492, this explorer sailed across the Atlantic and reached the Americas.",
+          "answer": "Christopher Columbus"
+        },
+        {
+          "value": 400,
+          "clue": "This Portuguese explorer’s expedition was the first to sail around the world, though he did not survive the trip.",
+          "answer": "Ferdinand Magellan"
+        },
+        {
+          "value": 600,
+          "clue": "Meriwether Lewis and this partner explored the American West.",
+          "answer": "William Clark"
+        },
+        {
+          "value": 800,
+          "clue": "This Norse explorer reached North America around the year 1000.",
+          "answer": "Leif Erikson"
+        },
+        {
+          "value": 1000,
+          "clue": "This Venetian traveled to China in the 1200s and wrote about what he saw.",
+          "answer": "Marco Polo"
+        }
+      ]
+    },
+    {
+      "name": "Famous Women",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In 1955, she refused to give up her bus seat in Montgomery, Alabama.",
+          "answer": "Rosa Parks"
+        },
+        {
+          "value": 400,
+          "clue": "During the Crimean War, this nurse became the founder of modern nursing.",
+          "answer": "Florence Nightingale"
+        },
+        {
+          "value": 600,
+          "clue": "In 1932, she became the first woman to fly solo across the Atlantic Ocean.",
+          "answer": "Amelia Earhart"
+        },
+        {
+          "value": 800,
+          "clue": "This scientist won two Nobel Prizes and discovered the elements polonium and radium.",
+          "answer": "Marie Curie"
+        },
+        {
+          "value": 1000,
+          "clue": "This British queen ruled for 63 years in the 1800s, and an era was named for her.",
+          "answer": "Queen Victoria"
+        }
+      ]
+    },
+    {
+      "name": "Ancient Greece",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "The very first Olympic Games were held in this ancient country.",
+          "answer": "Greece"
+        },
+        {
+          "value": 400,
+          "clue": "The city of Athens is named after this goddess of wisdom.",
+          "answer": "Athena"
+        },
+        {
+          "value": 600,
+          "clue": "In the story of Troy, Greek soldiers hid inside a giant one of these.",
+          "answer": "A wooden horse"
+        },
+        {
+          "value": 800,
+          "clue": "This philosopher, the teacher of Plato, was sentenced to drink hemlock.",
+          "answer": "Socrates"
+        },
+        {
+          "value": 1000,
+          "clue": "This Greek thinker was the tutor of Alexander the Great.",
+          "answer": "Aristotle"
+        }
+      ]
+    },
+    {
+      "name": "The 1900s",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In 1969, astronauts first landed here.",
+          "answer": "On the Moon"
+        },
+        {
+          "value": 400,
+          "clue": "This “unsinkable” ship sank on her first voyage in 1912.",
+          "answer": "The Titanic"
+        },
+        {
+          "value": 600,
+          "clue": "The Berlin Wall, which divided a German city, came down in this year.",
+          "answer": "1989"
+        },
+        {
+          "value": 800,
+          "clue": "World War I ended in this year.",
+          "answer": "1918"
+        },
+        {
+          "value": 1000,
+          "clue": "In 1963, Dr. Martin Luther King Jr. gave his “I Have a Dream” speech in this U.S. city.",
+          "answer": "Washington, D.C."
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "U.S. Presidents",
+    "clue": "This president led the country through the Civil War and gave the Gettysburg Address.",
+    "answer": "Abraham Lincoln"
+  }
+}

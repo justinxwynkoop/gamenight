@@ -1,0 +1,190 @@
+{
+  "title": "World Geography Sampler",
+  "categories": [
+    {
+      "name": "Capital Cities",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Paris is the capital of this country.",
+          "answer": "France"
+        },
+        {
+          "value": 400,
+          "clue": "Beijing is the capital of this country.",
+          "answer": "China"
+        },
+        {
+          "value": 600,
+          "clue": "Madrid is the capital of this country.",
+          "answer": "Spain"
+        },
+        {
+          "value": 800,
+          "clue": "Cairo is the capital of this country.",
+          "answer": "Egypt"
+        },
+        {
+          "value": 1000,
+          "clue": "Brasília, not Rio de Janeiro, is the capital of this country.",
+          "answer": "Brazil"
+        }
+      ]
+    },
+    {
+      "name": "Continents",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This is the largest continent.",
+          "answer": "Asia"
+        },
+        {
+          "value": 400,
+          "clue": "This icy continent at the South Pole is home to penguins.",
+          "answer": "Antarctica"
+        },
+        {
+          "value": 600,
+          "clue": "Kangaroos live on this continent.",
+          "answer": "Australia"
+        },
+        {
+          "value": 800,
+          "clue": "The Amazon rainforest is on this continent.",
+          "answer": "South America"
+        },
+        {
+          "value": 1000,
+          "clue": "The Sahara Desert is on this continent.",
+          "answer": "Africa"
+        }
+      ]
+    },
+    {
+      "name": "Oceans & Seas",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This is the largest ocean.",
+          "answer": "The Pacific Ocean"
+        },
+        {
+          "value": 400,
+          "clue": "This ocean lies between the Americas and Europe and Africa.",
+          "answer": "The Atlantic Ocean"
+        },
+        {
+          "value": 600,
+          "clue": "This ocean is named after a country in Asia.",
+          "answer": "The Indian Ocean"
+        },
+        {
+          "value": 800,
+          "clue": "This is the smallest ocean, around the North Pole.",
+          "answer": "The Arctic Ocean"
+        },
+        {
+          "value": 1000,
+          "clue": "This sea between Europe and Africa has many islands and calm blue water.",
+          "answer": "The Mediterranean Sea"
+        }
+      ]
+    },
+    {
+      "name": "Famous Places",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This tall iron tower stands in Paris.",
+          "answer": "The Eiffel Tower"
+        },
+        {
+          "value": 400,
+          "clue": "The Great Pyramid at Giza was built as a tomb for one of these ancient Egyptian rulers.",
+          "answer": "A pharaoh"
+        },
+        {
+          "value": 600,
+          "clue": "This very long wall was built to protect northern China.",
+          "answer": "The Great Wall of China"
+        },
+        {
+          "value": 800,
+          "clue": "Gladiators once fought in this huge ancient arena in Rome.",
+          "answer": "The Colosseum"
+        },
+        {
+          "value": 1000,
+          "clue": "This white marble tomb in India was built by Shah Jahan for his wife.",
+          "answer": "The Taj Mahal"
+        }
+      ]
+    },
+    {
+      "name": "Flags",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "A red maple leaf is the symbol on this country’s flag.",
+          "answer": "Canada"
+        },
+        {
+          "value": 400,
+          "clue": "The flag of the United Kingdom is nicknamed the Union this.",
+          "answer": "Jack"
+        },
+        {
+          "value": 600,
+          "clue": "This Asian country’s flag is a red circle on a white background.",
+          "answer": "Japan"
+        },
+        {
+          "value": 800,
+          "clue": "Green, white and red vertical stripes make up the flag of this European country.",
+          "answer": "Italy"
+        },
+        {
+          "value": 1000,
+          "clue": "The oldest national flag still in use, a white cross on red, belongs to this Nordic country.",
+          "answer": "Denmark"
+        }
+      ]
+    },
+    {
+      "name": "Languages",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Most people in Mexico speak this language.",
+          "answer": "Spanish"
+        },
+        {
+          "value": 400,
+          "clue": "Most people in Brazil speak this language.",
+          "answer": "Portuguese"
+        },
+        {
+          "value": 600,
+          "clue": "“Guten Tag” is a greeting in this language.",
+          "answer": "German"
+        },
+        {
+          "value": 800,
+          "clue": "This language, with more native speakers than any other, is spoken in China.",
+          "answer": "Mandarin Chinese"
+        },
+        {
+          "value": 1000,
+          "clue": "“Ciao” is a friendly greeting in this language.",
+          "answer": "Italian"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Rivers",
+    "clue": "This is the longest river in Africa, flowing north through Egypt to the Mediterranean.",
+    "answer": "The Nile"
+  }
+}

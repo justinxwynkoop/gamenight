@@ -1,0 +1,190 @@
+{
+  "title": "Animal Kingdom Sampler",
+  "categories": [
+    {
+      "name": "Pets & Farm",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This farm animal gives us milk and says “moo.”",
+          "answer": "A cow"
+        },
+        {
+          "value": 400,
+          "clue": "A baby sheep is called this.",
+          "answer": "A lamb"
+        },
+        {
+          "value": 600,
+          "clue": "When a cat is happy and relaxed, it makes this soft rumbling sound.",
+          "answer": "A purr"
+        },
+        {
+          "value": 800,
+          "clue": "This small orange pet fish is often kept in a bowl.",
+          "answer": "A goldfish"
+        },
+        {
+          "value": 1000,
+          "clue": "A male chicken, who crows in the morning, is called this.",
+          "answer": "A rooster"
+        }
+      ]
+    },
+    {
+      "name": "Wild Africa",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This tall animal has a very long neck for reaching leaves at the tops of trees.",
+          "answer": "A giraffe"
+        },
+        {
+          "value": 400,
+          "clue": "Known as the “king of the jungle,” this big cat lives in a group called a pride.",
+          "answer": "A lion"
+        },
+        {
+          "value": 600,
+          "clue": "The largest land animal on Earth, it has a trunk and big ears.",
+          "answer": "An elephant"
+        },
+        {
+          "value": 800,
+          "clue": "This striped animal looks like a horse in pajamas, and no two have the same pattern.",
+          "answer": "A zebra"
+        },
+        {
+          "value": 1000,
+          "clue": "The horn of this African animal is made of keratin, the same material as your fingernails.",
+          "answer": "A rhinoceros (rhino)"
+        }
+      ]
+    },
+    {
+      "name": "Ocean Life",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This sea creature has eight arms.",
+          "answer": "An octopus"
+        },
+        {
+          "value": 400,
+          "clue": "The largest animal on Earth is this mammal that lives in the ocean.",
+          "answer": "The blue whale"
+        },
+        {
+          "value": 600,
+          "clue": "This sea creature has a hard shell, two big claws and walks sideways.",
+          "answer": "A crab"
+        },
+        {
+          "value": 800,
+          "clue": "In seahorses, this parent is the one who carries the eggs and gives birth.",
+          "answer": "The father (the male)"
+        },
+        {
+          "value": 1000,
+          "clue": "This see-through sea creature has no brain and no heart, and stings with its tentacles.",
+          "answer": "A jellyfish"
+        }
+      ]
+    },
+    {
+      "name": "Birds",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This bird says “quack.”",
+          "answer": "A duck"
+        },
+        {
+          "value": 400,
+          "clue": "This huge bird cannot fly but can run very fast, and it lays the biggest eggs of any bird.",
+          "answer": "An ostrich"
+        },
+        {
+          "value": 600,
+          "clue": "This black-and-white bird from Antarctica swims instead of flying.",
+          "answer": "A penguin"
+        },
+        {
+          "value": 800,
+          "clue": "This white-headed bird of prey is the national bird of the United States.",
+          "answer": "The bald eagle"
+        },
+        {
+          "value": 1000,
+          "clue": "Owls do most of their hunting at this time of day.",
+          "answer": "At night"
+        }
+      ]
+    },
+    {
+      "name": "Bugs & Crawlies",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This insect has colorful wings and starts life as a caterpillar.",
+          "answer": "A butterfly"
+        },
+        {
+          "value": 400,
+          "clue": "These insects live in a hive with a queen and make honey.",
+          "answer": "Bees"
+        },
+        {
+          "value": 600,
+          "clue": "A spider has this many legs.",
+          "answer": "Eight"
+        },
+        {
+          "value": 800,
+          "clue": "On summer nights, this insect blinks a light.",
+          "answer": "A firefly (lightning bug)"
+        },
+        {
+          "value": 1000,
+          "clue": "A caterpillar changes into a butterfly inside this case, called a chrysalis. A moth’s version is a cocoon.",
+          "answer": "A chrysalis"
+        }
+      ]
+    },
+    {
+      "name": "Baby Animals",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "A baby dog is called this.",
+          "answer": "A puppy"
+        },
+        {
+          "value": 400,
+          "clue": "A baby cat is called this.",
+          "answer": "A kitten"
+        },
+        {
+          "value": 600,
+          "clue": "A baby kangaroo is called this.",
+          "answer": "A joey"
+        },
+        {
+          "value": 800,
+          "clue": "A baby frog starts life as this swimming creature with a tail.",
+          "answer": "A tadpole"
+        },
+        {
+          "value": 1000,
+          "clue": "A baby swan is called this.",
+          "answer": "A cygnet"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Fast Animals",
+    "clue": "This spotted African big cat is the fastest land animal, reaching about 60 miles per hour.",
+    "answer": "The cheetah"
+  }
+}

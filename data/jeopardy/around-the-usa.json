@@ -1,0 +1,190 @@
+{
+  "title": "Around the USA Sampler",
+  "categories": [
+    {
+      "name": "State Capitals",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This city is the capital of California.",
+          "answer": "Sacramento"
+        },
+        {
+          "value": 400,
+          "clue": "This city is the capital of Texas.",
+          "answer": "Austin"
+        },
+        {
+          "value": 600,
+          "clue": "This city is the capital of Florida.",
+          "answer": "Tallahassee"
+        },
+        {
+          "value": 800,
+          "clue": "This city is the capital of New York State.",
+          "answer": "Albany"
+        },
+        {
+          "value": 1000,
+          "clue": "This city is the capital of Pennsylvania.",
+          "answer": "Harrisburg"
+        }
+      ]
+    },
+    {
+      "name": "Landmarks",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This giant statue in New York Harbor was a gift from France.",
+          "answer": "The Statue of Liberty"
+        },
+        {
+          "value": 400,
+          "clue": "Four presidents’ faces are carved into this mountain in South Dakota.",
+          "answer": "Mount Rushmore"
+        },
+        {
+          "value": 600,
+          "clue": "This famous orange-red suspension bridge crosses the entrance to San Francisco Bay.",
+          "answer": "The Golden Gate Bridge"
+        },
+        {
+          "value": 800,
+          "clue": "This giant stainless-steel arch towers over St. Louis, Missouri.",
+          "answer": "The Gateway Arch"
+        },
+        {
+          "value": 1000,
+          "clue": "This tower in Seattle was built for the 1962 World’s Fair.",
+          "answer": "The Space Needle"
+        }
+      ]
+    },
+    {
+      "name": "State Nicknames",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This state is nicknamed the Sunshine State.",
+          "answer": "Florida"
+        },
+        {
+          "value": 400,
+          "clue": "This state is nicknamed the Lone Star State.",
+          "answer": "Texas"
+        },
+        {
+          "value": 600,
+          "clue": "This state is nicknamed the Golden State.",
+          "answer": "California"
+        },
+        {
+          "value": 800,
+          "clue": "This state is nicknamed the Empire State.",
+          "answer": "New York"
+        },
+        {
+          "value": 1000,
+          "clue": "This far northern state is nicknamed the Last Frontier.",
+          "answer": "Alaska"
+        }
+      ]
+    },
+    {
+      "name": "Rivers & Lakes",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Superior, Michigan, Huron, Erie and Ontario are known as these.",
+          "answer": "The Great Lakes"
+        },
+        {
+          "value": 400,
+          "clue": "This river carved the Grand Canyon.",
+          "answer": "The Colorado River"
+        },
+        {
+          "value": 600,
+          "clue": "Niagara Falls is on the border between the United States and this country.",
+          "answer": "Canada"
+        },
+        {
+          "value": 800,
+          "clue": "You float easily in this super-salty lake in Utah.",
+          "answer": "The Great Salt Lake"
+        },
+        {
+          "value": 1000,
+          "clue": "Of the five Great Lakes, this one is the largest by surface area.",
+          "answer": "Lake Superior"
+        }
+      ]
+    },
+    {
+      "name": "National Parks",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This park in Wyoming is home to the Old Faithful geyser.",
+          "answer": "Yellowstone"
+        },
+        {
+          "value": 400,
+          "clue": "A huge canyon cut by a river is the star of this Arizona park.",
+          "answer": "The Grand Canyon"
+        },
+        {
+          "value": 600,
+          "clue": "This California park has giant waterfalls and a rock called Half Dome.",
+          "answer": "Yosemite"
+        },
+        {
+          "value": 800,
+          "clue": "Named for its misty mountains, this park sits on the Tennessee–North Carolina line.",
+          "answer": "Great Smoky Mountains"
+        },
+        {
+          "value": 1000,
+          "clue": "This Florida park is a giant wetland with alligators and sawgrass.",
+          "answer": "The Everglades"
+        }
+      ]
+    },
+    {
+      "name": "Symbols & Holidays",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "The American flag has this many stripes.",
+          "answer": "Thirteen"
+        },
+        {
+          "value": 400,
+          "clue": "The American flag has this many stars.",
+          "answer": "Fifty"
+        },
+        {
+          "value": 600,
+          "clue": "This bird is the national bird of the United States.",
+          "answer": "The bald eagle"
+        },
+        {
+          "value": 800,
+          "clue": "This document begins “We the People” and is the highest law of the land.",
+          "answer": "The Constitution"
+        },
+        {
+          "value": 1000,
+          "clue": "Americans celebrate Independence Day on this date.",
+          "answer": "July 4th"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "U.S. Geography",
+    "clue": "This is the smallest of the 50 states by area.",
+    "answer": "Rhode Island"
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "title": "Sports Night Sampler",
+  "categories": [
+    {
+      "name": "The Olympics",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "The Olympic symbol is made of this many linked rings.",
+          "answer": "Five"
+        },
+        {
+          "value": 400,
+          "clue": "The Summer Olympics are held every this many years.",
+          "answer": "Four"
+        },
+        {
+          "value": 600,
+          "clue": "An Olympic champion stands on the top step of this.",
+          "answer": "The podium"
+        },
+        {
+          "value": 800,
+          "clue": "The first modern Olympic Games, in 1896, were held in this country.",
+          "answer": "Greece"
+        },
+        {
+          "value": 1000,
+          "clue": "In this Winter Olympic sport, teams slide stones on ice while teammates sweep in front of them.",
+          "answer": "Curling"
+        }
+      ]
+    },
+    {
+      "name": "Baseball",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "In baseball, you hit the ball with this.",
+          "answer": "A bat"
+        },
+        {
+          "value": 400,
+          "clue": "A batter is out after this many strikes.",
+          "answer": "Three"
+        },
+        {
+          "value": 600,
+          "clue": "A baseball team has this many players on the field at once.",
+          "answer": "Nine"
+        },
+        {
+          "value": 800,
+          "clue": "The pitcher throws from this raised patch of dirt.",
+          "answer": "The pitcher’s mound"
+        },
+        {
+          "value": 1000,
+          "clue": "A baseball game is divided into these, usually nine of them.",
+          "answer": "Innings"
+        }
+      ]
+    },
+    {
+      "name": "Basketball",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "You score points by shooting the ball through this.",
+          "answer": "The hoop (or basket)"
+        },
+        {
+          "value": 400,
+          "clue": "A shot from beyond the arc is worth this many points.",
+          "answer": "Three"
+        },
+        {
+          "value": 600,
+          "clue": "Bouncing the ball while you move is called this.",
+          "answer": "Dribbling"
+        },
+        {
+          "value": 800,
+          "clue": "A basketball team has this many players on the court at once.",
+          "answer": "Five"
+        },
+        {
+          "value": 1000,
+          "clue": "A free throw is worth this many points.",
+          "answer": "One"
+        }
+      ]
+    },
+    {
+      "name": "Football",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "A touchdown is worth this many points.",
+          "answer": "Six"
+        },
+        {
+          "value": 400,
+          "clue": "The Super Bowl is the championship of this sport.",
+          "answer": "American football"
+        },
+        {
+          "value": 600,
+          "clue": "The player who throws the ball is called this.",
+          "answer": "The quarterback"
+        },
+        {
+          "value": 800,
+          "clue": "Between the goal lines, an American football field is this many yards long.",
+          "answer": "100"
+        },
+        {
+          "value": 1000,
+          "clue": "A kick through the goalposts after a touchdown, worth one point, is called this.",
+          "answer": "The extra point"
+        }
+      ]
+    },
+    {
+      "name": "Soccer",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Only this player is allowed to use their hands in the penalty area.",
+          "answer": "The goalkeeper"
+        },
+        {
+          "value": 400,
+          "clue": "A soccer team has this many players on the field at once.",
+          "answer": "Eleven"
+        },
+        {
+          "value": 600,
+          "clue": "Putting the ball into the net earns a team one of these.",
+          "answer": "A goal"
+        },
+        {
+          "value": 800,
+          "clue": "A free kick from 12 yards out, after a foul in the box, is called this.",
+          "answer": "A penalty kick"
+        },
+        {
+          "value": 1000,
+          "clue": "This South American country has won the most men’s World Cups, with five.",
+          "answer": "Brazil"
+        }
+      ]
+    },
+    {
+      "name": "Gear & Games",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "You hit a tennis ball with this.",
+          "answer": "A racket"
+        },
+        {
+          "value": 400,
+          "clue": "Golfers rest the ball on this tiny peg to hit the first shot.",
+          "answer": "A tee"
+        },
+        {
+          "value": 600,
+          "clue": "In bowling, knocking down all ten pins with the first ball is called this.",
+          "answer": "A strike"
+        },
+        {
+          "value": 800,
+          "clue": "In this sport, players hit a shuttlecock over a net.",
+          "answer": "Badminton"
+        },
+        {
+          "value": 1000,
+          "clue": "In ice hockey, players hit this flat black disk.",
+          "answer": "A puck"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Tennis",
+    "clue": "This tournament, played on grass in London, is the oldest in tennis.",
+    "answer": "Wimbledon"
+  }
+}

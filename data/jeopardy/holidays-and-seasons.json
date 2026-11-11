@@ -1,0 +1,190 @@
+{
+  "title": "Holidays & Seasons Sampler",
+  "categories": [
+    {
+      "name": "Christmas",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Santa Claus travels in this vehicle pulled by reindeer.",
+          "answer": "A sleigh"
+        },
+        {
+          "value": 400,
+          "clue": "This red-nosed reindeer leads Santa’s sleigh.",
+          "answer": "Rudolph"
+        },
+        {
+          "value": 600,
+          "clue": "Many families decorate this evergreen with lights and ornaments.",
+          "answer": "A Christmas tree"
+        },
+        {
+          "value": 800,
+          "clue": "In the song, “On the ___ day of Christmas, my true love gave to me a partridge in a pear tree.”",
+          "answer": "First"
+        },
+        {
+          "value": 1000,
+          "clue": "Christmas Day falls on this date.",
+          "answer": "December 25th"
+        }
+      ]
+    },
+    {
+      "name": "Halloween",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Kids say “Trick or ___” to get candy.",
+          "answer": "Treat"
+        },
+        {
+          "value": 400,
+          "clue": "A carved pumpkin with a candle inside is called this.",
+          "answer": "A jack-o’-lantern"
+        },
+        {
+          "value": 600,
+          "clue": "In stories, witches fly on this.",
+          "answer": "A broomstick"
+        },
+        {
+          "value": 800,
+          "clue": "These flying mammals sleep upside down and are a Halloween favorite.",
+          "answer": "Bats"
+        },
+        {
+          "value": 1000,
+          "clue": "Halloween is on October this date.",
+          "answer": "31st"
+        }
+      ]
+    },
+    {
+      "name": "Thanksgiving",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "This big bird is the traditional main dish.",
+          "answer": "A turkey"
+        },
+        {
+          "value": 400,
+          "clue": "This orange pie is a favorite Thanksgiving dessert.",
+          "answer": "Pumpkin pie"
+        },
+        {
+          "value": 600,
+          "clue": "The Pilgrims sailed to America in 1620 on this ship.",
+          "answer": "The Mayflower"
+        },
+        {
+          "value": 800,
+          "clue": "Americans celebrate Thanksgiving in this month.",
+          "answer": "November"
+        },
+        {
+          "value": 1000,
+          "clue": "Cranberries are cooked into this tart red sauce.",
+          "answer": "Cranberry sauce"
+        }
+      ]
+    },
+    {
+      "name": "Valentine’s & Spring",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Valentine’s Day is in this month.",
+          "answer": "February"
+        },
+        {
+          "value": 400,
+          "clue": "People give these red flowers on Valentine’s Day.",
+          "answer": "Roses"
+        },
+        {
+          "value": 600,
+          "clue": "This chubby, winged baby with a bow and arrow is a symbol of love.",
+          "answer": "Cupid"
+        },
+        {
+          "value": 800,
+          "clue": "This springtime bunny hides colored eggs.",
+          "answer": "The Easter Bunny"
+        },
+        {
+          "value": 1000,
+          "clue": "Day and night are almost equal in length on the first day of spring, the spring ___.",
+          "answer": "Equinox"
+        }
+      ]
+    },
+    {
+      "name": "Summer Fun",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "Fireworks light up the sky on this July holiday.",
+          "answer": "The Fourth of July (Independence Day)"
+        },
+        {
+          "value": 400,
+          "clue": "The longest day of the year, when summer begins, is called the summer ___.",
+          "answer": "Solstice"
+        },
+        {
+          "value": 600,
+          "clue": "Many families cook burgers and hot dogs on this outdoor appliance.",
+          "answer": "A grill (or barbecue)"
+        },
+        {
+          "value": 800,
+          "clue": "You put this lotion on your skin to protect it from the sun.",
+          "answer": "Sunscreen"
+        },
+        {
+          "value": 1000,
+          "clue": "This sparkling stick is held by hand and lit on the Fourth of July.",
+          "answer": "A sparkler"
+        }
+      ]
+    },
+    {
+      "name": "Celebrations",
+      "clues": [
+        {
+          "value": 200,
+          "clue": "On your birthday, you blow out these on your cake.",
+          "answer": "Candles"
+        },
+        {
+          "value": 400,
+          "clue": "Blindfolded kids swing a stick at this paper animal filled with candy.",
+          "answer": "A piñata"
+        },
+        {
+          "value": 600,
+          "clue": "“Happy ___ to you!” is sung to the person having a party.",
+          "answer": "Birthday"
+        },
+        {
+          "value": 800,
+          "clue": "On New Year’s Eve, a glittering ball drops in this New York City square.",
+          "answer": "Times Square"
+        },
+        {
+          "value": 1000,
+          "clue": "People sing “Auld Lang Syne” at midnight on this holiday.",
+          "answer": "New Year’s Eve"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Winter Holidays",
+    "clue": "On this Jewish holiday, a menorah is lit for eight nights.",
+    "answer": "Hanukkah"
+  }
+}
