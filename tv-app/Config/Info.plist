@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Jeopardy talks to the Game Night server over plain http/ws on your own network.
+	<!-- The games talk to the Game Night server over plain http/ws on your own network.
 	     Apple blocks that by default; this allows it for local addresses only
 	     (IP addresses, .local names) and leaves the block on for the internet. -->
 	<key>NSAppTransportSecurity</key>
@@ -11,6 +11,6 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Family Game Night connects to your Game Night server on this network to show Jeopardy on the TV.</string>
+	<string>Family Game Night connects to your Game Night server on this network to show your game on the TV.</string>
 </dict>
 </plist>

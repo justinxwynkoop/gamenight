@@ -37,8 +37,12 @@ final class SoundDirector {
 
     /// Called when the display appears. `state` is whatever the server last sent.
     func activate(state: ServerState?, receivedAt: Date) {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        // Xcode warns that configuring the audio session on the main thread can hang the screen, so do it elsewhere.
+        Task.detached(priority: .utility) {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default)
+            try? session.setActive(true)
+        }
         if let state {
             configure(state.room.settings)
             lastState = state

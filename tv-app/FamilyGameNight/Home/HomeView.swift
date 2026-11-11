@@ -72,9 +72,9 @@ struct GameHost: View {
     var body: some View {
         switch game {
         case .singo: SingoRootView(onExit: exit)
-        case .jeopardy: JeopardyRootView(onExit: exit)
+        case .jeopardy: JeopardyRootView(title: "Jeopardy", onExit: exit)
         // Same display: it shows whichever game the host has started, so Feud needs no screen of its own here.
-        case .feud: JeopardyRootView(onExit: exit)
+        case .feud: JeopardyRootView(title: "Family Feud", onExit: exit)
         }
     }
 }

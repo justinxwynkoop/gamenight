@@ -9,6 +9,8 @@ import UIKit
 /// reach those while a game is on screen.
 struct JeopardyDisplayView: View {
     let client: GameNightClient
+    /// The tile that was opened, for the connecting screen's heading.
+    var title: String = "Game Night"
     let onChangeServer: () -> Void
     let onExit: () -> Void
 
@@ -92,6 +94,7 @@ struct JeopardyDisplayView: View {
         } else {
             ConnectingScreen(
                 client: client,
+                title: title,
                 onRetry: retry,
                 onChangeServer: onChangeServer,
                 onExit: onExit

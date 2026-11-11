@@ -3,6 +3,8 @@ import SwiftUI
 /// Shown until the first update arrives, or when the server can't be reached.
 struct ConnectingScreen: View {
     let client: GameNightClient
+    /// The game whose tile was opened ("Jeopardy" or "Family Feud"), shown as the heading.
+    var title: String = "Game Night"
     let onRetry: () -> Void
     let onChangeServer: () -> Void
     let onExit: () -> Void
@@ -11,7 +13,7 @@ struct ConnectingScreen: View {
 
     var body: some View {
         VStack(spacing: 40) {
-            Text("Jeopardy")
+            Text(title)
                 .font(JP.display(120))
                 .foregroundStyle(JP.gold)
 
@@ -69,7 +71,7 @@ struct UnsupportedGameScreen: View {
                 .font(JP.display(90))
                 .foregroundStyle(JP.gold)
                 .multilineTextAlignment(.center)
-            Text("The server is running “\(id)”, which this version of Family Game Night can't show. Ask the host to pick Jeopardy, or update the app.")
+            Text("The server is running “\(id)”, which this version of Family Game Night can't show. Ask the host to pick Jeopardy or Family Feud, or update the app.")
                 .font(JP.text(38, .medium))
                 .foregroundStyle(JP.softWhite)
                 .multilineTextAlignment(.center)

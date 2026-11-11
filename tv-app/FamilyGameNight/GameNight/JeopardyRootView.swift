@@ -4,6 +4,8 @@ import SwiftUI
 /// the game on the TV. Everything else (buzzing, judging, picking clues) happens
 /// on phones, against the Game Night server (github.com/justinxwynkoop/gamenight).
 struct JeopardyRootView: View {
+    /// The tile that opened this ("Jeopardy" or "Family Feud"). The display itself follows whatever the host starts.
+    var title: String = "Game Night"
     let onExit: () -> Void
 
     @State private var client = GameNightClient()
@@ -23,6 +25,7 @@ struct JeopardyRootView: View {
             } else {
                 JeopardyDisplayView(
                     client: client,
+                    title: title,
                     onChangeServer: { editing = true },
                     onExit: onExit
                 )
