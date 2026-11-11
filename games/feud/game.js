@@ -96,6 +96,8 @@ export class FeudGame {
     this.set = this.setId ? this.room.loadContent(GAME, this.setId) : null;
     this.run = { ...this.#blankRun('lobby'), ...data.run };
     if (this.run.status !== 'lobby' && !this.set) this.run = this.#blankRun('lobby');
+    const fm0 = this.run.fm;
+    if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => (v === null ? 0 : 2)), p2: fm0.points.p2.map((v) => (v === null ? 0 : 2)) };
     const tm = this.run.fm?.timer;
     if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;   // the clock restarted with the server
   }
@@ -127,7 +129,8 @@ export class FeudGame {
       case 'fmStart': return this.fmStart();
       case 'fmSetAnswers': return this.fmSetAnswers(a.slot, a.answers);
       case 'fmNext': return this.fmNext();
-      case 'fmJudge': return this.fmJudge(a.slot, int(a.q), a.points, a.label);
+      case 'fmShowAnswer': return this.fmShowAnswer(a.slot, int(a.q));
+      case 'fmShowPoints': return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
       case 'fmRestartTimer': return this.fmRestartTimer();
       case 'finishGame': return this.finishGame();
       default: throw new GameError(`Unknown action ${action}`);
@@ -392,7 +395,9 @@ export class FeudGame {
     const leader = a.score === b.score ? null : (a.score > b.score ? a : b);
     if (this.settings.fastMoney && this.set.fastMoney?.length === FAST_MONEY_QUESTIONS) {
       run.status = 'fastmoney';
-      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', players: [], answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, timer: null };
+      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', players: [], answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
+        // How much of each answer the TV has shown: 0 nothing, 1 what was said, 2 the points too ("survey says").
+        shown: { p1: Array(FAST_MONEY_QUESTIONS).fill(0), p2: Array(FAST_MONEY_QUESTIONS).fill(0) }, timer: null };
       if (leader) this.#defaultFmPlayers();
     } else {
       run.status = 'done';
@@ -452,7 +457,6 @@ export class FeudGame {
         if (fm.points[s][q] === null && !(fm.answers[s]?.[q] ?? '').trim()) { fm.points[s][q] = 0; fm.labels[s][q] = 'No answer'; }
       }
     }
-    if (SLOTS.every((s) => fm.points[s].every((v) => v !== null))) fm.step = 'results';
   }
   #cleanAnswers(list) {
     return Array.from({ length: FAST_MONEY_QUESTIONS }, (_, i) => cleanName(Array.isArray(list) ? list[i] : '', 40));
@@ -487,22 +491,46 @@ export class FeudGame {
     }
     return { index, rank: index === -1 ? null : index + 1, points: index === -1 || dup ? 0 : answers[index].points, label: index === -1 ? null : answers[index].text, dup };
   }
-  /** The host scores one answer: a survey answer's points, or 0 for "not on the board". */
-  fmJudge(slot, q, points, label) {
+  #isBlank(fm, slot, q) { return !(fm.answers[slot]?.[q] ?? '').trim(); }
+  #fmReveal() {
     const fm = this.#fm();
+    if (!['reveal', 'results'].includes(fm.step)) fail('Reveal the answers once both players are done');
+    return fm;
+  }
+  /** First tap: the TV types out what the player said. An answer nobody gave goes straight to its 0. */
+  fmShowAnswer(slot, q) {
+    const fm = this.#fmReveal();
     this.#fmSlot(slot);
-    if (fm.step !== 'reveal') fail('Judge the answers once both players are done');
     this.#fmQuestion(q);
-    const pts = int(points);
+    if (fm.shown[slot][q] >= 1) fail('That answer is already up');
+    if (this.#isBlank(fm, slot, q)) { fm.points[slot][q] = 0; fm.labels[slot][q] = 'No answer'; fm.shown[slot][q] = 2; } else fm.shown[slot][q] = 1;
+    this.#afterReveal(fm);
+    this.#changed();
+  }
+  /** Second tap ("survey says"): the TV shows the points. The host can give the points and the matching answer, or leave them to the suggestion. Can be used again to correct a score. */
+  fmShowPoints(slot, q, points, label) {
+    const fm = this.#fmReveal();
+    this.#fmSlot(slot);
+    this.#fmQuestion(q);
+    if (fm.shown[slot][q] < 1) fail('Show what they said first');
+    let pts; let name;
+    if (points === undefined || points === null || points === '') {
+      const sg = this.fmSuggest(slot, q);
+      pts = sg.points; name = sg.dup ? 'Repeated answer' : sg.label;
+    } else { pts = int(points); name = label; }
     if (!(pts >= 0 && pts <= 100)) fail('Points must be 0 to 100');
     fm.points[slot][q] = pts;
-    fm.labels[slot][q] = cleanName(label, 40) || null;
-    if (SLOTS.every((s) => fm.points[s].every((v) => v !== null))) fm.step = 'results';
+    fm.labels[slot][q] = cleanName(name, 40) || null;
+    fm.shown[slot][q] = 2;
+    this.#afterReveal(fm);
     this.#changed();
+  }
+  #afterReveal(fm) {
+    if (fm.step === 'reveal' && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = 'results';
   }
   fmTotals() {
     const fm = this.run.fm;
-    const sum = (s) => fm.points[s].reduce((t, v) => t + (v ?? 0), 0);
+    const sum = (s) => fm.points[s].reduce((t, v, q) => t + (fm.shown[s][q] === 2 ? v ?? 0 : 0), 0);
     return { p1: sum('p1'), p2: sum('p2'), total: sum('p1') + sum('p2') };
   }
   finishGame() {
@@ -575,12 +603,13 @@ export class FeudGame {
     const rows = Array.from({ length: FAST_MONEY_QUESTIONS }, (_, q) => {
       const row = { q, question: fm.step === 'pick' || fm.step === 'team' ? null : this.set.fastMoney[q].question };
       for (const s of SLOTS) {
-        const judged = fm.points[s][q] !== null;
+        const shown = fm.shown[s][q];
+        const judged = shown === 2;
         row[s] = {
-          judged, points: judged ? fm.points[s][q] : null, label: judged ? fm.labels[s][q] : null,
-          // What was typed is private until the host scores it (the host sees it all along).
-          typed: judged || host ? fm.answers[s]?.[q] ?? '' : null,
-          ...(host && fm.answers[s] ? { suggest: this.fmSuggest(s, q) } : {}),
+          shown, judged, points: judged ? fm.points[s][q] : null, label: judged ? fm.labels[s][q] : null,
+          // What was said stays private until the host shows it (the host sees it all along).
+          typed: shown >= 1 || host ? fm.answers[s]?.[q] ?? '' : null,
+          ...(host && fm.answers[s] ? { suggest: this.fmSuggest(s, q), blank: this.#isBlank(fm, s, q) } : {}),
           ...(host ? { choices: ranked(this.set.fastMoney[q]).map((a) => ({ text: a.text, points: a.points })) } : {}),
         };
       }

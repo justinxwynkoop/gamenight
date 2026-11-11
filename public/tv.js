@@ -53,8 +53,10 @@ connect({
  */
 function lobbyMusic(v) {
   const inLobby = !v.game || !v.room.inProgress;
-  if (!inLobby) { audio.stopMusic('lobby'); return; }
-  if (audio.musicOwner !== 'lobby') audio.music('lobby', { owner: 'lobby', loop: true, fallback: 'think' });
+  if (!inLobby) { audio.stopMusic('lobby'); audio.stopMusic('lobby-feud'); return; }
+  const feud = v.game?.game === 'feud';   // Family Feud can have its own file ("feud-lobby"), else the shared one
+  const owner = feud ? 'lobby-feud' : 'lobby';
+  if (audio.musicOwner !== owner) audio.music(feud ? 'feud-lobby' : 'lobby', { owner, loop: true, fallback: feud ? ['lobby', 'think'] : 'think' });
 }
 audio.ready.then(() => { if (last) lobbyMusic(last); });
 

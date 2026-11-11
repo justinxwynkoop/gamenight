@@ -62,6 +62,9 @@ function playBuffer(buf, loop = false) {
   return src;
 }
 
+// A sound with no file of its own borrows another's if the family provided one (the third strike and a Fast Money zero use the strike buzzer).
+const ALIAS = { strikeout: 'strike', zero: 'strike' };
+
 const SOUNDS = {
   open: () => tone(880, 0, 0.09, { type: 'triangle', gain: 0.4 }),
   buzz: () => { tone(1046, 0, 0.14); tone(1568, 0.09, 0.3); },
@@ -76,6 +79,8 @@ const SOUNDS = {
   ding: () => { tone(1318, 0, 0.9, { type: 'sine', gain: 0.42 }); tone(1976, 0, 0.9, { type: 'sine', gain: 0.22 }); tone(2637, 0, 0.7, { type: 'sine', gain: 0.12 }); tone(660, 0, 0.08, { type: 'triangle', gain: 0.3 }); },
   strike: () => { tone(110, 0, 0.8, { type: 'sawtooth', gain: 0.45 }); tone(116, 0, 0.8, { type: 'sawtooth', gain: 0.35 }); tone(55, 0, 0.8, { type: 'square', gain: 0.2 }); },
   strikeout: () => { SOUNDS.strike(); tone(220, 0.85, 0.2, { type: 'sawtooth', gain: 0.3 }); tone(294, 1.05, 0.2, { type: 'sawtooth', gain: 0.3 }); tone(392, 1.25, 0.5, { type: 'sawtooth', gain: 0.35, to: 440 }); },
+  fmpoints: () => { tone(1568, 0, 0.18, { type: 'triangle', gain: 0.4 }); tone(2093, 0.1, 0.55, { type: 'triangle', gain: 0.4 }); tone(3136, 0.1, 0.4, { type: 'sine', gain: 0.12 }); },
+  fastmoney: () => { [[392, 0], [523, 0.15], [659, 0.3], [784, 0.45]].forEach(([f, at]) => tone(f, at, 0.14, { type: 'triangle', gain: 0.45 })); tone(1047, 0.62, 0.8, { type: 'triangle', gain: 0.4 }); tone(784, 0.62, 0.8, { type: 'triangle', gain: 0.3 }); tone(659, 0.62, 0.8, { type: 'triangle', gain: 0.25 }); },
   faceoff: () => { tone(784, 0, 0.08, { type: 'square', gain: 0.35 }); tone(1568, 0.07, 0.35, { type: 'triangle', gain: 0.4 }); },
   roundstart: () => { [[523, 0, 0.12], [659, 0.11, 0.12], [784, 0.22, 0.12]].forEach(([f, at, d]) => tone(f, at, d, { type: 'triangle', gain: 0.45 })); tone(1047, 0.33, 0.6, { type: 'triangle', gain: 0.45 }); tone(784, 0.33, 0.6, { type: 'triangle', gain: 0.3 }); tone(659, 0.33, 0.6, { type: 'triangle', gain: 0.25 }); },
   winner: () => { [[523, 0, 0.14], [659, 0.14, 0.14], [784, 0.28, 0.14], [1047, 0.42, 0.3], [784, 0.76, 0.14], [1047, 0.9, 0.14]].forEach(([f, at, d]) => tone(f, at, d, { type: 'triangle', gain: 0.45 })); tone(1047, 1.06, 0.9, { type: 'triangle', gain: 0.4 }); tone(784, 1.06, 0.9, { type: 'triangle', gain: 0.3 }); tone(659, 1.06, 0.9, { type: 'triangle', gain: 0.25 }); },
@@ -101,14 +106,15 @@ export const audio = {
     if (!cfg.enabled || cfg.volume <= 0) return;
     const c = ensure();
     if (!c || c.state !== 'running') return; // never queue sounds that would fire late, all at once, when audio unlocks
-    if (custom[name]) playBuffer(custom[name]); else SOUNDS[name]?.();
+    const buf = custom[name] ?? custom[ALIAS[name]];
+    if (buf) playBuffer(buf); else SOUNDS[name]?.();
   },
   /**
    * Music for a stretch of the game. Only plays if a file with this name (or the fallback name) was provided.
    * `owner` tags who started it; `loop` keeps it going until stopped. Returns whether it started.
    */
   music(name, { owner = null, loop = false, fallback = null } = {}) {
-    const buf = custom[name] ?? (fallback ? custom[fallback] : null);
+    const buf = [name, ...[].concat(fallback ?? [])].map((n) => custom[n]).find(Boolean);
     if (!cfg.enabled || cfg.volume <= 0 || !buf) return false;
     const c = ensure();
     if (!c || c.state !== 'running') return false;

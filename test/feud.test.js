@@ -307,12 +307,12 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   assert.equal(h[1].p2.suggest.label, 'Cat');
 
   for (let q = 0; q < 5; q++) for (const s of ['p1', 'p2']) {
-    const sg = g.hostView().fm.rows[q][s].suggest;
-    g.fmJudge(s, q, sg.points, sg.label);
+    g.fmShowAnswer(s, q);                                // what they said
+    g.fmShowPoints(s, q);                                // "survey says": the suggestion's points
   }
   assert.equal(fm.step, 'results');
   const v = g.publicView().fm;
-  assert.equal(v.rows[0].p1.typed, 'apple');              // shown once scored
+  assert.equal(v.rows[0].p1.typed, 'apple');              // shown once the host shows it
   const t = g.fmTotals();
   assert.equal(t.total, t.p1 + t.p2);
   assert.equal(v.won, t.total >= 200);
@@ -329,36 +329,67 @@ test('Fast Money: the host can type answers that were said out loud, and judge b
   g.fmNext();
   g.fmSetAnswers('p2', ['pear', '', '', '', '']);
   g.fmNext();
-  g.fmJudge('p1', 0, 16, 'Grapes');
-  assert.throws(() => g.fmJudge('p1', 0, 500), /0 to 100/);
-  assert.throws(() => g.fmJudge('p3', 0, 5), /Unknown/);
+  assert.throws(() => g.fmShowPoints('p1', 0, 16, 'Grapes'), /Show what they said first/);
+  g.fmShowAnswer('p1', 0);
+  g.fmShowPoints('p1', 0, 16, 'Grapes');
+  assert.equal(g.publicView().fm.rows[0].p1.points, 16);
+  assert.throws(() => g.fmShowPoints('p1', 0, 500), /0 to 100/);
+  assert.throws(() => g.fmShowAnswer('p3', 0), /Unknown/);
+  assert.throws(() => g.fmShowAnswer('p1', 0), /already up/);
   assert.equal(g.run.fm.step, 'reveal');
+  g.fmShowPoints('p1', 0, 12, 'Orange');            // the host can still correct a score
+  assert.equal(g.publicView().fm.rows[0].p1.points, 12);
 });
 
-test('Fast Money: an answer nobody gave scores 0 by itself when the answers are revealed', () => {
+test('Fast Money: an answer nobody gave is a 0 that needs just one tap to show', () => {
   const ctx = setup(); const { g } = ctx;
   toFastMoney(ctx);
   g.fmStart();
   g.fmSetAnswers('p1', ['apple', '', 'socks', '   ', 'nap']);
   g.fmNext();                                       // player 2 never answers anything
   g.fmNext();
-  const rows = g.publicView().fm.rows;
-  assert.equal(rows[1].p1.judged, true);
-  assert.equal(rows[1].p1.points, 0);
-  assert.equal(rows[1].p1.label, 'No answer');
-  assert.equal(rows[3].p1.points, 0);
-  assert.equal(rows[0].p1.judged, false, 'a real answer still waits for the host');
-  assert.ok(rows.every((r) => r.p2.judged && r.p2.points === 0), 'every answer of a player who sent nothing is a zero');
+  const rows = () => g.publicView().fm.rows;
+  assert.equal(rows()[1].p1.shown, 0, 'nothing is shown until the host reveals it');
+  assert.equal(rows()[1].p1.judged, false);
+  g.fmShowAnswer('p1', 1);                          // a blank goes straight to its 0
+  assert.equal(rows()[1].p1.shown, 2);
+  assert.equal(rows()[1].p1.points, 0);
+  assert.equal(rows()[1].p1.label, 'No answer');
+  assert.equal(rows()[1].p1.typed, '');
+  assert.equal(rows()[0].p1.shown, 0, 'a real answer waits for the host');
   assert.equal(g.run.fm.step, 'reveal');
   assert.equal(g.hostView().fm.rows[0].p1.suggest.rank, 1);
-  for (const q of [0, 2, 4]) { const sg = g.hostView().fm.rows[q].p1.suggest; g.fmJudge('p1', q, sg.points, sg.label); }
+  assert.equal(g.hostView().fm.rows[1].p1.blank, true);
+  for (const [s, q] of [['p1', 0], ['p1', 2], ['p1', 3], ['p1', 4]]) { g.fmShowAnswer(s, q); if (rows()[q][s].shown === 1) g.fmShowPoints(s, q); }
+  for (let q = 0; q < 5; q++) g.fmShowAnswer('p2', q);   // every one of player 2's is blank
   assert.equal(g.run.fm.step, 'results');
 });
 
-test('Fast Money: if nobody typed anything at all, the reveal goes straight to the result', () => {
+test('Fast Money: the TV only gets what has been revealed, and the total counts only shown points', () => {
+  const ctx = setup(); const { g } = ctx;
+  toFastMoney(ctx);
+  g.fmStart();
+  g.fmSetAnswers('p1', ['apple', 'dog', 'socks', 'kitchen', 'nap']); g.fmNext();
+  g.fmSetAnswers('p2', ['banana', 'cat', 'shoes', 'garage', 'read']); g.fmNext();
+  const cell = () => g.publicView().fm.rows[0].p1;
+  assert.deepEqual([cell().shown, cell().typed, cell().points, cell().label], [0, null, null, null]);
+  g.fmShowAnswer('p1', 0);
+  assert.deepEqual([cell().shown, cell().typed, cell().points, cell().label, cell().judged], [1, 'apple', null, null, false]);
+  assert.equal(g.publicView().fm.totals.total, 0, 'points that are not shown yet do not count');
+  g.fmShowPoints('p1', 0);
+  assert.deepEqual([cell().shown, cell().points, cell().label, cell().judged], [2, 34, 'Apple', true]);
+  assert.equal(g.publicView().fm.totals.total, 34);
+  // The host's own view has everything all along.
+  assert.equal(g.hostView().fm.rows[1].p1.typed, 'dog');
+  assert.equal(g.hostView().fm.rows[1].p1.shown, 0);
+});
+
+test('Fast Money: if nobody typed anything at all, the host still reveals the zeros one by one', () => {
   const ctx = setup(); const { g } = ctx;
   toFastMoney(ctx);
   g.fmStart(); g.fmNext(); g.fmNext();
+  assert.equal(g.run.fm.step, 'reveal');
+  for (let q = 0; q < 5; q++) for (const s of ['p1', 'p2']) g.fmShowAnswer(s, q);
   assert.equal(g.run.fm.step, 'results');
   assert.equal(g.fmTotals().total, 0);
   assert.equal(g.publicView().fm.won, false);
@@ -380,7 +411,7 @@ test('Fast Money wins at the goal', () => {
   g.fmStart();
   g.fmSetAnswers('p1', ['a', 'b', 'c', 'd', 'e']); g.fmNext();
   g.fmSetAnswers('p2', ['f', 'g', 'h', 'i', 'j']); g.fmNext();
-  for (let q = 0; q < 5; q++) { g.fmJudge('p1', q, 10, 'x'); g.fmJudge('p2', q, 0, null); }
+  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q, 10, 'x'); g.fmShowAnswer('p2', q); g.fmShowPoints('p2', q, 0, null); }
   assert.equal(g.publicView().fm.totals.total, 50);
   assert.equal(g.publicView().fm.won, true);
 });

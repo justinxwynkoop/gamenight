@@ -167,16 +167,20 @@ body.play { box-shadow: inset 0 0 0 6px var(--team, transparent); }
 .fd-mid .pl { color: var(--dim); font-size: 2vmin; }
 .fd-question { text-align: center; font-size: 4.6vmin; font-weight: 800; line-height: 1.2; padding: 1vmin 4vmin; text-shadow: .3vmin .3vmin 0 #000a; }
 .fd-board { display: grid; grid-auto-flow: column; grid-template-columns: 1fr 1fr; gap: 1.2vmin 2vmin; min-height: 0; }
-.fd-slot { display: grid; grid-template-columns: 8vmin 1fr 12vmin; align-items: center; gap: 1.6vmin; padding: 0 2vmin; border-radius: 1.4vmin; background: linear-gradient(#2b44d9, #1d33c9); border: .4vmin solid #5b72ff; font-size: 4.2vmin; font-weight: 900; text-transform: uppercase; min-height: 0; }
+.fd-slot { position: relative; perspective: 140vmin; min-height: 0; }
+.fd-slot .inner { position: absolute; inset: 0; transform-style: preserve-3d; }
+.fd-slot.up .inner, .fd-slot.late .inner { transform: rotateX(180deg); }
+.fd-slot.flipping .inner { animation: fd-card .7s ease-in-out both; }
+@keyframes fd-card { from { transform: rotateX(0deg); } to { transform: rotateX(180deg); } }
+.fd-slot .face { position: absolute; inset: 0; display: grid; align-items: center; gap: 1.6vmin; padding: 0 2vmin; border-radius: 1.4vmin; border: .4vmin solid #5b72ff; font-size: 4.2vmin; font-weight: 900; text-transform: uppercase; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.fd-slot .front { grid-template-columns: 8vmin 1fr; background: linear-gradient(#2b44d9, #1d33c9); }
+.fd-slot .back { grid-template-columns: 8vmin 1fr 12vmin; transform: rotateX(180deg); background: linear-gradient(#f5c84b, #d99a14); border-color: #fff1a8; color: #1b1300; }
 .fd-slot .num { display: grid; place-items: center; width: 6vmin; height: 6vmin; border-radius: 50%; background: #0a1030; color: var(--gold); font-size: 3.4vmin; }
+.fd-slot .back .num { background: #1b1300; }
 .fd-slot .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.fd-slot .pt { text-align: center; padding: .6vmin 0; border-radius: 1vmin; background: #0a1030; color: var(--gold); font-variant-numeric: tabular-nums; }
-.fd-slot .blank { visibility: hidden; }
-.fd-slot.up { background: linear-gradient(#f5c84b, #d99a14); border-color: #fff1a8; color: #1b1300; animation: fd-flip .5s ease-out; }
-.fd-slot.up .num { background: #1b1300; }
-.fd-slot.up .pt { background: #1b1300; color: #ffe27a; }
-.fd-slot.late { background: #0e1650; border-color: #26358f; color: #8a98e6; }
-.fd-slot.late .pt, .fd-slot.late .num { color: #8a98e6; }
+.fd-slot .pt { text-align: center; padding: .6vmin 0; border-radius: 1vmin; background: #1b1300; color: #ffe27a; font-variant-numeric: tabular-nums; }
+.fd-slot.late .back { background: #0e1650; border-color: #26358f; color: #8a98e6; }
+.fd-slot.late .back .num, .fd-slot.late .back .pt { background: #0a1030; color: #8a98e6; }
 @keyframes fd-flip { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
 .fd-foot { display: grid; grid-template-columns: auto 1fr 14vmin; gap: 2vmin; align-items: center; }
 .fd-strikes { display: flex; gap: 1vmin; }
@@ -212,7 +216,11 @@ body.play { box-shadow: inset 0 0 0 6px var(--team, transparent); }
 .fd-fm .q { display: grid; place-items: center; text-align: center; padding: 0 1.4vmin; font-size: 2.6vmin; font-weight: 700; color: #cdd6ff; }
 .fd-fm .c { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1.4vmin; padding: 1.2vmin 2vmin; min-height: 9vmin; border-radius: 1.2vmin; background: #0d1540; border: .4vmin solid #26358f; font-size: 4vmin; font-weight: 900; text-transform: uppercase; }
 .fd-fm .c .p { min-width: 8vmin; text-align: center; padding: .4vmin 1vmin; border-radius: 1vmin; background: #0a1030; color: var(--gold); }
-.fd-fm .c.on { background: linear-gradient(#f5c84b, #d99a14); color: #1b1300; border-color: #fff1a8; animation: fd-flip .5s ease-out; }
+.fd-fm .c.said { background: #0d1540; border-color: #5b72ff; color: #fff; }
+.fd-fm .c.on { background: linear-gradient(#f5c84b, #d99a14); color: #1b1300; border-color: #fff1a8; }
+.fd-fm .c.on.pop { animation: fd-flip .5s ease-out both; }
+.fd-fm .c .a.typing::after { content: '▍'; margin-left: .3vmin; animation: fd-blink .5s steps(1) infinite; }
+@keyframes fd-blink { 50% { opacity: 0; } }
 .fd-fm .c.on .p { background: #1b1300; color: #ffe27a; }
 .fd-fm .c.on.zero { background: #7f1d1d; color: #fff; border-color: #fca5a5; }
 .fd-fmfoot { display: grid; grid-template-columns: auto 1fr; gap: 3vmin; align-items: center; }

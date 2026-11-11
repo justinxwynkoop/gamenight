@@ -134,10 +134,13 @@ dealt onto them at random and the host can move anyone.
    rounds.
 5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
-   their phone, or the host types what they say. Answers left blank score 0 by themselves when the
-   reveal starts. For the rest, each survey list is shown with a tag where each player's answer landed
-   (so the rank is visible without opening anything), and the host confirms with one tap: the game
-   suggests the matching survey answer (and zero for a repeat of player 1's answer). Reach 200 points to win.
+   their phone, or the host types what they say. The reveal then goes as on the show, one answer at a
+   time: the host reads the question, taps **Reveal what they said** (the TV types the answer out on the
+   board), says "survey says", then taps the points button (the TV shows the points). Each survey list is
+   shown on the host screen with a tag where each player's answer landed, so the rank is visible without
+   opening anything, and the points button already says what it will score (for example **#1 Apple ·
+   +34**; the game also scores a repeat of player 1's answer as zero). An answer left blank is a zero
+   that needs just one tap, and shows as NO ANSWER. Reach 200 points to win.
 6. **Undo.** A mis-tap is easy on a phone, so **Undo** takes back the last reveal, strike or choice,
    including the points.
 
@@ -246,11 +249,13 @@ To use your own audio, put files in `data/sounds/` on the Pi. Use these names (`
 
 `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`
 (Final Jeopardy sting), `fanfare` (winner), and for Family Feud `ding` (an answer flips), `strike` (the
-buzzer), `strikeout` (the third strike), `faceoff` (a face-off buzz), `roundstart`, `winner` and
-`zero` (a Fast Money answer worth nothing), plus two music files:
+buzzer; also used for the third strike and a Fast Money zero), `strikeout`, `faceoff` (a face-off buzz),
+`fastmoney` (plays when Fast Money begins), `fmpoints` (Fast Money points shown), `roundstart`, `winner`
+and `zero`, plus these music files:
 
 - **`think`**: plays during the Final Jeopardy countdown and stops when time is up. A 30-second
   file matches the default time (it loops if the countdown is longer).
+- **`feud-lobby`**: like `lobby`, but only when Family Feud is the game (then it is used instead of `lobby`).
 - **`lobby`**: loops on the TV while players are joining, before the game starts, and stops when
   it starts. If there is no `lobby` file, `think` is used here too, so one file covers both.
 

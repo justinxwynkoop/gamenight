@@ -269,7 +269,7 @@ function openJudgeSheet(row, slot) {
       const r = g.fm.rows[row.q];
       const cell = r[slot];
       const sg = cell.suggest;
-      const pick = (points, label) => { act('fmJudge', { slot, q: row.q, points, label }); C.closeSheet(); };
+      const pick = (points, label) => { act('fmShowPoints', { slot, q: row.q, points, label }); C.closeSheet(); };
       return [
         h('p', { class: 'dim' }, `${g.fm.players[slot === 'p1' ? 0 : 1].name ?? 'Player'} said: “${cell.typed || '—'}”`),
         h('div', { class: 'list' },
@@ -291,22 +291,28 @@ function rankOf(row, slot) {
 function fmReveal(fm, head) {
   const names = fm.players.map((p) => p.name ?? 'Player');
   const done = fm.rows.reduce((n, r) => n + (r.p1.judged ? 1 : 0) + (r.p2.judged ? 1 : 0), 0);
+  // Each answer is revealed in two taps, as on the show: what the player said (the TV types it out), then "survey says" and the points.
   const slotRow = (row, slot, who) => {
     const c = row[slot];
     const rank = rankOf(row, slot);
+    const sg = c.suggest;
     if (c.judged) {
       const text = c.typed ? `“${c.typed}”` : 'no answer';
       return h('div', { class: 'fd-judge done' },
         h('div', { class: 'who' }, icon(c.points > 0 ? 'check' : 'x', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `${text}${rank ? ` → #${rank} ${c.label}` : ''}`)), h('span', { class: 'pts' }, String(c.points))),
         h('div', { class: 'btns' }, button({ label: 'Change', size: 'sm', onclick: () => openJudgeSheet(row, slot) })));
     }
-    const sg = c.suggest;
-    const label = sg?.dup ? 'Repeat · 0' : sg && sg.index !== -1 ? `#${sg.rank} ${sg.label} · +${sg.points}` : 'Not on the board · 0';
-    const kind = sg && sg.index !== -1 && !sg.dup ? 'primary' : '';
+    const hint = sg?.dup ? 'repeats Player 1' : sg && sg.index !== -1 ? `→ #${sg.rank} ${sg.label}` : c.blank ? '' : 'not on the board';
+    if (c.shown === 0) {
+      return h('div', { class: 'fd-judge' },
+        h('div', { class: 'who' }, icon('clock', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, c.blank ? 'no answer' : `“${c.typed}” ${hint}`))),
+        h('div', { class: 'btns' }, button({ label: c.blank ? 'Reveal (no answer · 0)' : 'Reveal what they said', icon: 'play', kind: 'primary', onclick: () => act('fmShowAnswer', { slot, q: row.q }) })));
+    }
+    const label = sg?.dup ? 'Survey says… Repeat · 0' : sg && sg.index !== -1 ? `Survey says… #${sg.rank} ${sg.label} · +${sg.points}` : 'Survey says… not on the board · 0';
     return h('div', { class: 'fd-judge' },
-      h('div', { class: 'who' }, icon('clock', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `“${c.typed || '—'}”`))),
+      h('div', { class: 'who' }, icon('star', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, `“${c.typed}” is up on the TV`))),
       h('div', { class: 'btns' },
-        button({ label, kind, onclick: () => act('fmJudge', { slot, q: row.q, points: sg?.dup || !sg || sg.index === -1 ? 0 : sg.points, label: sg?.dup ? 'Repeated answer' : sg && sg.index !== -1 ? sg.label : '' }) }),
+        button({ label, kind: 'ok', onclick: () => act('fmShowPoints', { slot, q: row.q }) }),
         button({ label: 'Other…', size: 'sm', onclick: () => openJudgeSheet(row, slot) })));
   };
   // The survey answers for a question, with a tag where each player's answer landed, so the rank is visible at a glance.
@@ -322,7 +328,7 @@ function fmReveal(fm, head) {
     body,
     dock: [fm.step === 'results'
       ? button({ label: 'Show the winner', icon: 'award', kind: 'ok', size: 'lg', block: true, onclick: () => act('finishGame') })
-      : h('div', { class: 'dock-note' }, `${done} of 10 answers scored`)],
+      : h('div', { class: 'dock-note' }, `${done} of 10 answers revealed`)],
   };
 }
 

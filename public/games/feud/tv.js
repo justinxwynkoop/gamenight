@@ -51,6 +51,34 @@ function bigX(r) {
   return el;
 }
 
+// ---------- animations that must carry on through a redraw ----------
+// The page redraws everything on each update, so an animation's start time is kept here and a redraw
+// part-way through resumes it from the right point (a negative animation delay) instead of restarting.
+const FLIP_MS = 700;
+const POINTS_MS = 600;
+const TYPE_MS = 55;
+const started = new Map(); // key -> performance.now() when it began
+const since = (key) => (started.has(key) ? performance.now() - started.get(key) : Infinity);
+const typing = []; // { el, text, key }: answers being typed out
+setInterval(() => {
+  for (let i = typing.length - 1; i >= 0; i--) {
+    const t = typing[i];
+    if (!t.el.isConnected) { typing.splice(i, 1); continue; }
+    const n = Math.min(t.text.length, Math.floor(since(t.key) / TYPE_MS));
+    t.el.textContent = t.text.slice(0, n);
+    if (n >= t.text.length) { t.el.classList.remove('typing'); typing.splice(i, 1); }
+  }
+}, 40);
+/** An answer that types itself out, a letter at a time. */
+function typed(key, text) {
+  const el = h('span', { class: 'a' });
+  const elapsed = since(key);
+  const n = Number.isFinite(elapsed) ? Math.min(text.length, Math.floor(elapsed / TYPE_MS)) : text.length;
+  el.textContent = text.slice(0, n);
+  if (n < text.length) { el.classList.add('typing'); typing.push({ el, text, key }); }
+  return el;
+}
+
 /** Sound cues for a change of state. prev and view are the raw { room, game } views. */
 export function onChange(prev, view, sound) {
   play = sound.play;
@@ -61,6 +89,7 @@ export function onChange(prev, view, sound) {
     const sameRound = pr && pr.number === r.number;
     const up = (x) => x.answers.filter((a) => a.revealed).length;
     if (sameRound) {
+      r.answers.forEach((a, i) => { if ((a.revealed || a.late) && !(pr.answers[i].revealed || pr.answers[i].late)) started.set(`flip:${r.number}:${a.n}`, performance.now()); });
       if (r.strikes > pr.strikes) strikeFx = { round: r.number, n: r.strikes, at: performance.now() };
       if (up(r) > up(pr)) sound.play('ding');
       else if (r.strikes > pr.strikes) sound.play(r.strikes >= r.maxStrikes ? 'strikeout' : 'strike');
@@ -73,13 +102,20 @@ export function onChange(prev, view, sound) {
   }
   const pf = p.fm; const f = g.fm;
   if (f) {
-    if (!pf) sound.play('final');
+    if (!pf) sound.play('fastmoney');
     else {
+      for (const [row, was] of f.rows.map((x, i) => [x, pf.rows[i]])) {
+        for (const slotName of ['p1', 'p2']) {
+          const c = row[slotName]; const w = was[slotName];
+          if (c.shown >= 1 && w.shown < 1 && c.typed) started.set(`say:${slotName}:${row.q}`, performance.now());
+          if (c.shown === 2 && w.shown < 2) started.set(`pts:${slotName}:${row.q}`, performance.now());
+        }
+      }
       if (f.timer?.timedOut && !pf.timer?.timedOut) sound.play('timeup');
       const judged = (x) => x.rows.reduce((n, row) => n + (row.p1.judged ? 1 : 0) + (row.p2.judged ? 1 : 0), 0);
       if (judged(f) > judged(pf)) {
         const pts = (x) => x.rows.reduce((n, row) => n + (row.p1.points ?? 0) + (row.p2.points ?? 0), 0);
-        sound.play(pts(f) > pts(pf) ? 'ding' : 'zero');
+        sound.play(pts(f) > pts(pf) ? 'fmpoints' : 'zero');
       }
       if (f.step === 'results' && pf.step !== 'results') sound.play(f.won ? 'winner' : 'zero');
     }
@@ -107,11 +143,14 @@ function strikes(r) {
   }));
 }
 
-function slot(a) {
-  return h('div', { class: `fd-slot ${a.revealed ? 'up' : ''} ${a.late ? 'late' : ''}` },
-    h('div', { class: 'num' }, String(a.n)),
-    a.text !== null ? h('div', { class: 'txt' }, a.text) : h('div', { class: 'txt blank' }),
-    a.points !== null ? h('div', { class: 'pt' }, String(a.points)) : h('div', { class: 'pt blank' }));
+function slot(a, round) {
+  const up = a.revealed || a.late;
+  const t = since(`flip:${round}:${a.n}`);
+  const flipping = up && t < FLIP_MS;
+  return h('div', { class: `fd-slot ${a.revealed ? 'up' : ''} ${a.late ? 'late' : ''} ${flipping ? 'flipping' : ''}` },
+    h('div', { class: 'inner', style: flipping ? { animationDelay: `-${Math.round(t)}ms` } : {} },
+      h('div', { class: 'face front' }, h('div', { class: 'num' }, String(a.n))),
+      h('div', { class: 'face back' }, h('div', { class: 'num' }, String(a.n)), h('div', { class: 'txt' }, a.text ?? ''), h('div', { class: 'pt' }, a.points !== null ? String(a.points) : ''))));
 }
 
 function banner(v, r) {
@@ -138,7 +177,7 @@ function roundScreen(v) {
       h('div', { class: 'fd-mid' }, h('div', { class: 'rd' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''}`), h('div', { class: 'pot' }, String(r.pot)), h('div', { class: 'pl' }, 'points on the board')),
       b && teamBox(v, b, r)),
     h('div', { class: 'fd-question' }, r.question),
-    h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map(slot)),
+    h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map((a) => slot(a, r.number))),
     h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())),
     fxActive(r) && bigX(r));
 }
@@ -162,9 +201,17 @@ function fmScreen(v) {
       h('div', { class: 'fd-clock' }, f.timer?.timedOut ? 'TIME’S UP' : num), bar);
   }
   // reveal & results
-  const cell = (c) => h('div', { class: `c ${c.judged ? 'on' : ''} ${c.judged && c.points === 0 ? 'zero' : ''}` }, h('span', { class: 'a' }, c.judged ? (c.label || c.typed || '—') : ''), h('span', { class: 'p' }, c.judged ? String(c.points) : ''));
+  // Three stages, driven by the host: nothing, what the player said (typed out), then the points ("survey says").
+  const cell = (c, slotName, q) => {
+    const said = c.shown >= 1;
+    const done = c.shown === 2;
+    const pop = done && since(`pts:${slotName}:${q}`) < POINTS_MS;
+    return h('div', { class: `c ${said && !done ? 'said' : ''} ${done ? 'on' : ''} ${done && c.points === 0 ? 'zero' : ''} ${pop ? 'pop' : ''}`, style: pop ? { animationDelay: `-${Math.round(since(`pts:${slotName}:${q}`))}ms` } : {} },
+      said ? typed(`say:${slotName}:${q}`, c.typed || c.label || 'No answer') : h('span', { class: 'a' }),
+      h('span', { class: 'p' }, done ? String(c.points) : ''));
+  };
   return h('div', { class: 'fd-screen' }, head,
-    h('div', { class: 'fd-fm' }, f.rows.map((row) => h('div', { class: 'row' }, cell(row.p1), h('div', { class: 'q' }, row.question), cell(row.p2)))),
+    h('div', { class: 'fd-fm' }, f.rows.map((row) => h('div', { class: 'row' }, cell(row.p1, 'p1', row.q), h('div', { class: 'q' }, row.question), cell(row.p2, 'p2', row.q)))),
     h('div', { class: 'fd-fmfoot' },
       h('div', { class: 'tot' }, h('b', {}, String(f.totals.total)), h('span', {}, ` / ${f.goal}`)),
       f.step === 'results' && h('div', { class: `fd-banner ${f.won ? 'win' : ''}`, style: f.won ? { background: '#15803d' } : {} }, f.won ? 'You did it!' : 'So close!')));
