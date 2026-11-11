@@ -245,6 +245,29 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(state.room.units.map(\.score), [600, -400, 200, 0])
     }
 
+    // MARK: Rounds
+
+    func testTwoRoundGameCarriesTheRound() throws {
+        let first = try Fixture.jeopardy("rounds-board-1")
+        XCTAssertEqual(first.round, 1)
+        XCTAssertEqual(first.rounds, 2)
+        XCTAssertEqual(first.roundTitle, "Jeopardy!")
+        let second = try Fixture.jeopardy("rounds-board-2")
+        XCTAssertEqual(second.round, 2)
+        XCTAssertEqual(second.roundTitle, "Double Jeopardy!")
+        XCTAssertEqual(second.board[0][0].value, 400, "round two is worth double")
+    }
+
+    func testSidebarNamesTheRoundOnlyInTwoRoundGames() throws {
+        XCTAssertEqual(try Fixture.jeopardy("rounds-board-1").sidebarTitle, "Jeopardy!")
+        XCTAssertEqual(try Fixture.jeopardy("rounds-board-2").sidebarTitle, "Double Jeopardy!")
+        // Recorded before rounds existed: no round fields, so it is one round and shows the set's name.
+        let old = try Fixture.jeopardy("board")
+        XCTAssertNil(old.rounds)
+        XCTAssertFalse(old.isTwoRounds)
+        XCTAssertEqual(old.sidebarTitle, "Family Night Sampler")
+    }
+
     // MARK: Leniency
 
     func testUnknownValuesDoNotBreakDecoding() throws {

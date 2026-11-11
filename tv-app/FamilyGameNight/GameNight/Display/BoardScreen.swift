@@ -14,7 +14,7 @@ struct BoardScreen: View {
     var body: some View {
         HStack(spacing: 48) {
             BoardGrid(game: game)
-            ScoreSidebar(units: state.room.units, title: game.title ?? "Scores", marks: marks, width: 400) {
+            ScoreSidebar(units: state.room.units, title: game.sidebarTitle, marks: marks, width: 400) {
                 JoinCodeBlock(joinURL: joinURL)
             }
         }

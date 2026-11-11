@@ -132,6 +132,12 @@ struct JeopardyState: Decodable, Equatable {
     /// "board" or "leaderboard": what the host has the TV showing between clues.
     var view: String
     var title: String?
+    /// Which round is being played (1 or 2) and how many there are before Final Jeopardy.
+    /// Older servers don't send these, so a game is treated as one round.
+    var round: Int?
+    var rounds: Int?
+    /// "Jeopardy!" or "Double Jeopardy!".
+    var roundTitle: String?
     /// Unit id of whoever picks the next clue.
     var control: String?
     var categories: [String]
@@ -141,8 +147,19 @@ struct JeopardyState: Decodable, Equatable {
     var finalRound: FinalState?
 
     private enum CodingKeys: String, CodingKey {
-        case game, lobbyTitle, status, view, title, control, categories, board, clue
+        case game, lobbyTitle, status, view, title, round, rounds, roundTitle, control, categories, board, clue
         case finalRound = "final"
+    }
+}
+
+extension JeopardyState {
+    var isTwoRounds: Bool { (rounds ?? 1) >= 2 }
+
+    /// What the board's side panel is headed with: the round's name in a two-round game
+    /// (so everyone can tell Double Jeopardy! from the first round), else the question set's name.
+    var sidebarTitle: String {
+        if isTwoRounds, let roundTitle, !roundTitle.isEmpty { return roundTitle }
+        return title ?? "Scores"
     }
 }
 

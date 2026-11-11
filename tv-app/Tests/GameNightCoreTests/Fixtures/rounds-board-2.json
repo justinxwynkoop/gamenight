@@ -1,0 +1,199 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Ann",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Ben",
+        "color": "#f97316",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Family Night Sampler",
+    "settings": {
+      "rounds": 2,
+      "earlyPenalty": true,
+      "penaltyMs": 500,
+      "buzzSeconds": 10,
+      "answerSeconds": 10,
+      "finalSeconds": 30,
+      "autoWrong": false
+    },
+    "status": "board",
+    "view": "board",
+    "round": 2,
+    "rounds": 2,
+    "roundTitle": "Double Jeopardy!",
+    "title": "Around the USA Sampler",
+    "control": "p2",
+    "categories": [
+      "State Capitals",
+      "Landmarks",
+      "State Nicknames",
+      "Rivers & Lakes",
+      "National Parks",
+      "Symbols & Holidays"
+    ],
+    "board": [
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ],
+      [
+        {
+          "value": 400,
+          "used": false
+        },
+        {
+          "value": 800,
+          "used": false
+        },
+        {
+          "value": 1200,
+          "used": false
+        },
+        {
+          "value": 1600,
+          "used": false
+        },
+        {
+          "value": 2000,
+          "used": false
+        }
+      ]
+    ],
+    "clue": null,
+    "final": null
+  }
+}
