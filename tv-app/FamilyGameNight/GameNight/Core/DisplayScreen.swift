@@ -21,13 +21,7 @@ enum DisplayScreen: Equatable {
         case .unsupported(let id):
             return .unsupported(id: id)
         case .feud(let game):
-            if !state.room.inProgress { return .lobby }
-            switch game.status {
-            case .done: return .feudWinner
-            case .fastmoney where game.fm != nil: return .feudFastMoney
-            case .round where game.round != nil: return .feudRound
-            default: return .lobby
-            }
+            return feudScreen(for: game, inProgress: state.room.inProgress)   // Feud/Core/FeudDisplay.swift
         case .jeopardy(let game):
             if !state.room.inProgress { return .lobby }
             if game.status == .done { return .winner }

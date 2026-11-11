@@ -3,6 +3,30 @@ import SwiftUI
 // Family Feud on the TV: the face-off, the survey board with strikes and the steal, Fast Money,
 // and the winner. These follow the web TV (public/games/feud/tv.js in the gamenight repo).
 
+/// The Family Feud screen for the current state. The TV display hands every Feud screen to this.
+struct FeudContent: View {
+    let state: ServerState
+    let joinURL: URL?
+    let receivedAt: Date
+
+    var body: some View {
+        switch DisplayScreen.screen(for: state) {
+        case .feudRound:
+            if let round = state.feud?.round {
+                FeudRoundScreen(state: state, round: round, joinURL: joinURL)
+            }
+        case .feudFastMoney:
+            if let fm = state.feud?.fm {
+                FeudFastMoneyScreen(state: state, fm: fm, receivedAt: receivedAt)
+            }
+        case .feudWinner:
+            FeudWinnerScreen(state: state, result: state.feud?.result)
+        default:
+            EmptyView()
+        }
+    }
+}
+
 // MARK: - A round
 
 /// A strike on its way: the big X appears in the middle, holds, then slides down into the next empty strike box.

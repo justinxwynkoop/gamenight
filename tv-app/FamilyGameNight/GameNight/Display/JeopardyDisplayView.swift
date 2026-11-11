@@ -127,16 +127,8 @@ struct JeopardyDisplayView: View {
             LeaderboardScreen(state: state)
         case .winner:
             WinnerScreen(state: state)
-        case .feudRound:
-            if let round = state.feud?.round {
-                FeudRoundScreen(state: state, round: round, joinURL: client.joinURL)
-            }
-        case .feudFastMoney:
-            if let fm = state.feud?.fm {
-                FeudFastMoneyScreen(state: state, fm: fm, receivedAt: client.stateReceivedAt)
-            }
-        case .feudWinner:
-            FeudWinnerScreen(state: state, result: state.feud?.result)
+        case .feudRound, .feudFastMoney, .feudWinner:
+            FeudContent(state: state, joinURL: client.joinURL, receivedAt: client.stateReceivedAt)   // Feud/Display/FeudScreens.swift
         case .unsupported(let id):
             UnsupportedGameScreen(id: id)
         }

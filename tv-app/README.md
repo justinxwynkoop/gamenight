@@ -153,7 +153,7 @@ FamilyGameNight/
     Core/                    Game rules, no Apple frameworks (unit tested)
     Music/                   MusicKit, playback, round controller
     Views/                   SwiftUI screens
-  GameNight/                 The Jeopardy TV display
+  GameNight/                 The TV display (shared by the server's games) and Jeopardy
     JeopardyRootView.swift   Asks for the server address once, then shows the display
     GameNightClient.swift    WebSocket connection to the server (joins as the TV)
     ServerSettings.swift     Remembers the server address
@@ -170,10 +170,18 @@ FamilyGameNight/
       JeopardyDisplayView    Picks the screen for the current state
       Lobby, Board, Clue (and Daily Double), Final, Leaderboard, Winner
       Status screens, address entry, QR code, score panel, timers, theme
+  Feud/                      Family Feud (everything specific to it lives here)
+    Core/                    No Apple frameworks (unit tested)
+      FeudState.swift        The data the server sends for Family Feud, as Swift types
+      FeudSounds.swift       Its sound cues and built-in sounds; the Fast Money tick
+      FeudDisplay.swift      Which Family Feud screen to show
+    Display/
+      FeudScreens.swift      The round (flipping answers, strikes, the big X), Fast Money, the winner
   Assets.xcassets            App icon, Top Shelf, home screen tiles
 Config/Info.plist            Local-network permission and plain-http allowance
 Tests/SingoCoreTests/        Tests for Singo's Core
 Tests/GameNightCoreTests/    Tests for the display's logic; Fixtures/ are real server messages
+  Feud/                      Family Feud's tests
 Tools/                       Art generators (Pillow) and the fixture recorder
 ```
 
@@ -184,7 +192,8 @@ show up in Xcode on their own.
 
 1. Add a case to `FamilyGame` (title, blurb, tile image name, accent colour).
 2. Add its tile art to `Assets.xcassets` (1120×672, shown at 560×336).
-3. Add its screen to `GameHost` in `HomeView.swift`. The screen gets an `exit`
+3. Add its screen to `GameHost` in `HomeView.swift` (a game the server runs, like Family Feud, reuses the
+   TV display in `GameNight/` and keeps its own models, sounds and screens in a folder of its own, as `Feud/` does). The screen gets an `exit`
    closure to call when the player presses Menu on its first screen.
 
 ## Art
