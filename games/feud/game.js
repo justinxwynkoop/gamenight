@@ -529,7 +529,7 @@ export class FeudGame {
     const run = this.run;
     const set = this.set;
     const view = {
-      game: GAME, lobbyTitle: set?.title ?? 'Family Feud', settings: this.settings, status: run.status,
+      game: GAME, scoreFormat: 'points', lobbyTitle: set?.title ?? 'Family Feud', settings: this.settings, status: run.status,
       title: set?.title ?? null, rounds: set?.rounds.length ?? 0, hasFastMoney: !!set?.fastMoney?.length,
       round: null, fm: null,
     };

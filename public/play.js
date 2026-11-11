@@ -1,6 +1,6 @@
 // The phone page. It owns joining and the header (name, score), and hands the
 // rest of the screen to the active game's module (/games/<id>/player.js).
-import { h, money, ink, COLORS, connect, store, unitById } from './common.js';
+import { h, scoreText, ink, COLORS, connect, store, unitById } from './common.js';
 
 const screen = document.getElementById('screen');
 const you = document.getElementById('you');
@@ -79,7 +79,7 @@ function updateHeader() {
   const mine = unitById(view.room, me.unitId);
   you.replaceChildren(h('span', { class: 'swatch', style: { background: mine?.color ?? me.color } }), ' ', me.name);
   if (view.room.mode === 'teams' && mine) you.append(h('span', { class: 'tag' }, ` · ${mine.name}`));
-  scoreEl.textContent = mine ? money(mine.score) : '';
+  scoreEl.textContent = mine ? scoreText(view, mine.score) : '';
   showTeam(view.room.mode === 'teams' ? mine : null);
 }
 

@@ -72,6 +72,8 @@ const SOUNDS = {
   reveal: () => { tone(523, 0, 0.12, { type: 'triangle', gain: 0.4 }); tone(392, 0.11, 0.25, { type: 'triangle', gain: 0.4 }); },
   dd: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, i === 4 ? 0.7 : 0.16, { type: 'triangle' })),
   final: () => { tone(196, 0, 0.9, { type: 'triangle' }); tone(294, 0.05, 0.9, { type: 'triangle', gain: 0.4 }); },
+  ding: () => { tone(1318, 0, 0.6, { type: 'sine', gain: 0.5 }); tone(1760, 0.07, 0.8, { type: 'sine', gain: 0.35 }); tone(2637, 0.07, 0.5, { type: 'sine', gain: 0.12 }); },
+  strike: () => { tone(120, 0, 0.9, { type: 'sawtooth', gain: 0.45 }); tone(90, 0, 0.9, { type: 'square', gain: 0.3 }); },
   fanfare: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.12, i === 6 ? 0.8 : 0.16, { type: 'triangle' })),
 };
 

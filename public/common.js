@@ -19,6 +19,8 @@ export function h(tag, props = {}, ...kids) {
 }
 
 export const money = (n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US');
+/** A score as the active game shows it: dollars for Jeopardy, plain points for Family Feud. */
+export const scoreText = (view, n) => (view?.game?.scoreFormat === 'points' ? String(n) : money(n));
 
 /** Readable text colour (black or white) for a background hex colour. */
 export function ink(hex) {

@@ -2,7 +2,7 @@
 // Scores and Settings tabs; this module supplies what the Game tab shows (setup, board, a clue, Final Jeopardy,
 // the result), the pinned action bar for each, and the game's own timer settings.
 import { h, money, unitById } from '../../common.js';
-import { icon, button, seg, toggle, dot, pill, card, eyebrow } from '../../ui.js';
+import { icon, button, seg, toggle, dot, pill, card, eyebrow, timerPill } from '../../ui.js';
 import { flat } from './flat.js';
 
 let v = null;          // the flat view for this render
@@ -13,20 +13,6 @@ let boardFilter = '';  // the search box in the "choose a board" sheet
 const nameOf = (id) => unitById(v, id)?.name ?? '?';
 const topValue = () => Math.max(1000, ...v.board.flat().map((c) => c.value));
 const dockRow = (...kids) => h('div', { class: 'dock-row' }, kids.flat().filter(Boolean));
-
-// A live countdown label: the server sends the time left when something changes and we count down from there.
-let ticking = null; // { leftMs, at, el }
-setInterval(() => {
-  if (ticking?.el.isConnected) ticking.el.textContent = `${Math.max(0, Math.ceil((ticking.leftMs - (performance.now() - ticking.at)) / 1000))}s`;
-}, 250);
-function timerPill(timer) {
-  ticking = null;
-  if (!timer) return null;
-  if (timer.timedOut) return pill('Time’s up', 'bad');
-  const el = pill(`${Math.ceil(timer.leftMs / 1000)}s`, 'live');
-  ticking = { leftMs: timer.leftMs, at: performance.now(), el };
-  return el;
-}
 
 /** What the page needs from this game. */
 export function render(raw, ctx) {

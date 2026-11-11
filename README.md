@@ -114,6 +114,35 @@ The first board after a quiet spell takes a few seconds while the file loads (it
 from memory after 10 idle minutes; it needs roughly 150 MB while loaded, so a Pi with 1 GB
 or more is fine). The server stays responsive while it loads.
 
+## Family Feud
+
+Pick **Family Feud** in the game picker. It is always **two teams** (Red and Blue); players are
+dealt onto them at random and the host can move anyone.
+
+1. **Setup.** Choose a question set, the winning score (200 to 500) and whether to play Fast Money.
+2. **Face-off.** One player from each team steps up (a different player each round; the host can
+   change who). The host reads the question and opens the buzzers; only those two phones can buzz.
+   The first one answers out loud and the host taps the matching survey answer, or **Not on the board**.
+   The top answer wins the face-off outright; otherwise the other player gets a go and the better answer
+   wins. If both miss, replay it or pick a winner.
+3. **Play or pass.** The winners choose. Their team then names answers; the host taps each one and it
+   flips on the TV. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
+   whole pot, a miss leaves it with the first team.
+4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
+   triple (switch off under Settings). First team to the winning score, or the last round, ends the
+   rounds.
+5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (20 and 25
+   seconds by default), typing on their phone, or the host types what they say. The host then scores
+   every answer: the game suggests the matching survey answer (and zero for a repeat of player 1's
+   answer) and the host confirms. Reach 200 points to win.
+6. **Undo.** A mis-tap is easy on a phone, so **Undo** takes back the last reveal, strike or choice,
+   including the points.
+
+Question sets live in `data/feud/` and are written in the editor (`/editor?game=feud`). Each has 3 to 8
+rounds of a question with 3 to 8 ranked answers (points are how many out of 100 said it), optional
+"also accept" words for matching, and exactly five Fast Money questions. Five sample sets ship with the
+repo; their survey numbers are made up, not real survey results.
+
 ## If a phone can't join
 
 Open **`/check`** on that phone (for example `http://192.168.1.50/check`, using the address
@@ -406,6 +435,9 @@ buzzer connection. A game supplies its rules and its screens.
    `hostView()` (what the TV and phones may see / what the host may see),
    `toJSON()` and `restore()`. Optional: `init()`, `contentChanged(setId)` and `tick()` (called a few times a second, for timers).
    A game's TV screen can also export `onChange(prev, view, sound)` to play sounds.
+   A game that can only be played by a set number of teams adds `needs: { teams: 2 }` to
+   its module (the room then always plays in teams, and the host cannot change that), and
+   its `publicView()` can set `scoreFormat: 'points'` so scores show without a `$`.
    The full contract is the comment at the top of `room.js`. Score by changing
    `unit.score` on `room.units()`. Keep it free of sockets and files so it can be
    tested like `games/jeopardy/game.js`.
@@ -415,7 +447,7 @@ buzzer connection. A game supplies its rules and its screens.
    buttons for its danger zone; `ctx` gives `act`, `sets`, `setInfo`, `openSheet`, `confirm`, `go`...),
    `player.js` (`mount(container, ctx)` returns `{ update(view), onMessage(msg),
    destroy() }`) and `editor.js` (`mount(container, api)`). `public/games/jeopardy/`
-   is the working example.
+   and `public/games/feud/` are the working examples.
 3. **Register it** in `games/index.js`. The host page then offers it in the game
    picker, and `/editor?game=<id>` edits its content, stored under `data/<id>/`.
 

@@ -72,3 +72,17 @@ export const dot = (color, size = 14) => h('span', { class: 'dotc', style: { bac
 export const pill = (text, kind = '') => h('span', { class: `pill ${kind}` }, text);
 export const eyebrow = (text) => h('div', { class: 'eyebrow' }, text);
 export const card = (...kids) => h('section', { class: 'card' }, kids);
+
+// A live countdown pill: the server sends the time left when something changes, and we count down from there.
+let ticking = null; // { leftMs, at, el }
+setInterval(() => {
+  if (ticking?.el.isConnected) ticking.el.textContent = `${Math.max(0, Math.ceil((ticking.leftMs - (performance.now() - ticking.at)) / 1000))}s`;
+}, 250);
+export function timerPill(timer) {
+  ticking = null;
+  if (!timer) return null;
+  if (timer.timedOut) return pill('Time’s up', 'bad');
+  const el = pill(`${Math.ceil(timer.leftMs / 1000)}s`, 'live');
+  ticking = { leftMs: timer.leftMs, at: performance.now(), el };
+  return el;
+}

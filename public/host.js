@@ -1,7 +1,7 @@
 // The host page: sign-in, the app frame (top bar, tabs, pinned action bar, slide-up sheets) and the screens
 // every game shares: Players, Scores and Settings. What the Game tab shows, and the game's own settings,
 // come from the active game's module (/games/<id>/host.js).
-import { h, money, connect, store, unitById } from './common.js';
+import { h, money, scoreText, connect, store, unitById } from './common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow } from './ui.js';
 
 const app = document.getElementById('app');
@@ -58,7 +58,7 @@ async function loadSets(id) {
     if (r.ok && setsFor === id) { sets = await r.json(); render(); }
   } catch { /* offline */ }
 }
-/** A question set's title, category names and Final Jeopardy category, or null until it has loaded. */
+/** A question set's title and what is in it (categories and Final for Jeopardy; round questions and Fast Money for Feud), or null until it has loaded. */
 function setInfo(id) {
   if (!id || !view?.room.gameId) return null;
   const hit = setInfos[id];
@@ -67,7 +67,7 @@ function setInfo(id) {
   setInfos[id] = 'loading';
   fetch(`/api/games/${view.room.gameId}/sets/${id}`, { headers: { 'x-host-pin': pin } })
     .then((r) => (r.ok ? r.json() : null))
-    .then((s) => { setInfos[id] = s ? { title: s.title, categories: s.categories.map((c) => c.name), final: s.final?.category ?? null } : { title: id, categories: [], final: null }; render(); })
+    .then((s) => { setInfos[id] = s ? { title: s.title, categories: (s.categories ?? []).map((c) => c.name), final: s.final?.category ?? null, rounds: s.rounds?.length ?? null, questions: (s.rounds ?? []).map((r) => r.question), fastMoney: !!s.fastMoney?.length } : { title: id, categories: [], final: null, rounds: null, questions: [], fastMoney: false }; render(); })
     .catch(() => { delete setInfos[id]; });
   return null;
 }
@@ -218,7 +218,12 @@ function playersTab() {
   const teamOf = (p) => room.teams.find((t) => t.id === p.teamId);
   const cards = [];
 
-  const how = [
+  const how = room.fixedTeams ? [
+    eyebrow('How to play'),
+    h('div', { class: 'card-title' }, `${room.fixedTeams} teams`),
+    h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by ${room.fixedTeams} teams. Players are dealt onto them at random.`),
+    lobby && button({ label: 'Shuffle teams', icon: 'shuffle', onclick: () => act('shuffleTeams') }),
+  ] : [
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, teams ? `${room.teams.length} teams` : 'Individual players'),
     seg([{ value: 'auto', label: 'Auto' }, { value: 'players', label: 'Individuals' }, { value: 'teams', label: 'Teams' }],
@@ -227,7 +232,7 @@ function playersTab() {
       ? `Auto: up to ${room.individualMax} players play on their own. With more, everyone is put on a random team.`
       : 'You chose this. Switch to Auto to let the game decide from the number of players.'),
   ];
-  if (teams) {
+  if (teams && !room.fixedTeams) {
     how.push(
       seg([{ value: 2, label: '2 teams', sub: 'Red, Blue' }, { value: 4, label: '4 teams', sub: '+ Green, Yellow' }], room.teams.length,
         (c) => act('setTeamCount', { count: c })),
@@ -285,7 +290,7 @@ function scoresTab() {
     h('div', { class: 'list' }, ranked.map((u, i) => h('button', { type: 'button', class: 'rowi', onclick: () => openScoreSheet(u.id) },
       h('span', { class: 'rank' }, String(i + 1)), dot(u.color, 16),
       h('div', { class: 'grow' }, h('div', { class: 't' }, u.name), u.memberNames?.length && h('div', { class: 's' }, u.memberNames.join(', '))),
-      h('span', { class: `pts ${u.score < 0 ? 'neg' : ''}` }, money(u.score)), icon('chevron', 18)))))];
+      h('span', { class: `pts ${u.score < 0 ? 'neg' : ''}` }, scoreText(view, u.score)), icon('chevron', 18)))))];
 }
 
 function openScoreSheet(id) {
@@ -298,11 +303,12 @@ function openScoreSheet(id) {
       const exact = h('input', { type: 'number', inputMode: 'numeric', placeholder: String(u.score), 'data-k': 'exact', 'aria-label': 'Set score to' });
       const name = h('input', { value: u.name, maxLength: 20, 'data-k': 'uname', 'aria-label': 'Name' });
       const delta = (n) => act('adjustScore', { id, delta: n });
+      const pointsGame = view.game?.scoreFormat === 'points';
       return [
-        h('div', { class: 'rowi' }, dot(u.color, 18), h('div', { class: 'grow t' }, u.name), h('span', { class: `pts ${u.score < 0 ? 'neg' : ''}` }, money(u.score))),
+        h('div', { class: 'rowi' }, dot(u.color, 18), h('div', { class: 'grow t' }, u.name), h('span', { class: `pts ${u.score < 0 ? 'neg' : ''}` }, scoreText(view, u.score))),
         h('div', { class: 'eyebrow' }, 'Quick change'),
-        h('div', { class: 'dock-row' }, [-500, -200, -100].map((n) => button({ label: money(n).replace('-$', '−$'), kind: 'bad', size: 'sm', onclick: () => delta(n) }))),
-        h('div', { class: 'dock-row' }, [100, 200, 500].map((n) => button({ label: `+${money(n)}`, kind: 'ok', size: 'sm', onclick: () => delta(n) }))),
+        h('div', { class: 'dock-row' }, (pointsGame ? [-50, -20, -10] : [-500, -200, -100]).map((n) => button({ label: scoreText(view, n).replace('-', '−'), kind: 'bad', size: 'sm', onclick: () => delta(n) }))),
+        h('div', { class: 'dock-row' }, (pointsGame ? [10, 20, 50] : [100, 200, 500]).map((n) => button({ label: `+${scoreText(view, n)}`, kind: 'ok', size: 'sm', onclick: () => delta(n) }))),
         h('div', { class: 'eyebrow' }, 'Another amount'),
         h('div', { class: 'inline' }, amount,
           button({ label: 'Add', kind: 'ok', onclick: () => { if (amount.value) delta(Number(amount.value)); } }),

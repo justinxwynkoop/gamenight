@@ -1,0 +1,158 @@
+// Family Feud on the TV: the face-off, the survey board, strikes and the steal, Fast Money and the winner.
+import { h, ink, unitById, qrImg } from '../../common.js';
+
+// ---------- countdown (Fast Money) ----------
+let live = null; // { leftMs, totalMs, at, bar, num, shown }
+let play = () => {};
+setInterval(() => {
+  if (!live) return;
+  const left = Math.max(0, live.leftMs - (performance.now() - live.at));
+  if (live.bar) { live.bar.firstChild.style.width = `${(left / live.totalMs) * 100}%`; live.bar.classList.toggle('low', left <= 5000); }
+  const secs = Math.ceil(left / 1000);
+  if (live.num) live.num.textContent = String(secs);
+  if (secs !== live.shown) { live.shown = secs; if (secs > 0 && secs <= 5 && left < live.totalMs) play('tick'); }
+}, 100);
+function timerParts(timer) {
+  if (!timer || timer.timedOut) { live = null; return { bar: null, num: null }; }
+  const bar = h('div', { class: 'fd-timer' }, h('i'));
+  const num = h('span', { class: 'fd-tnum' }, String(Math.ceil(timer.leftMs / 1000)));
+  live = { leftMs: timer.leftMs, totalMs: timer.totalMs, at: performance.now(), bar, num, shown: Math.ceil(timer.leftMs / 1000) };
+  bar.firstChild.style.width = `${(timer.leftMs / timer.totalMs) * 100}%`;
+  return { bar, num };
+}
+
+/** Sound cues for a change of state. prev and view are the raw { room, game } views. */
+export function onChange(prev, view, sound) {
+  play = sound.play;
+  const p = prev.game; const g = view.game;
+  if (!p || !g) return;
+  const pr = p.round; const r = g.round;
+  if (r) {
+    const sameRound = pr && pr.number === r.number;
+    const up = (x) => x.answers.filter((a) => a.revealed).length;
+    if (sameRound) {
+      if (up(r) > up(pr)) sound.play('ding');
+      else if (r.strikes > pr.strikes || (pr.step === 'steal' && r.step === 'roundEnd' && r.result?.winner === pr.stealFrom)) sound.play('strike');
+      else if (r.faceoff.attempts.length > pr.faceoff.attempts.length && r.faceoff.attempts.at(-1)?.rank === null) sound.play('wrong');
+      else if (r.faceoff.open && !pr.faceoff.open) sound.play('open');
+      else if (r.faceoff.turn && !pr.faceoff.turn && !r.faceoff.attempts.length) sound.play('buzz');
+      if (r.step === 'roundEnd' && pr.step !== 'roundEnd') sound.play('correct');
+    } else if (pr || p.status !== 'round') sound.play('reveal');
+  }
+  const pf = p.fm; const f = g.fm;
+  if (f) {
+    if (!pf) sound.play('final');
+    else {
+      if (f.timer?.timedOut && !pf.timer?.timedOut) sound.play('timeup');
+      const judged = (x) => x.rows.reduce((n, row) => n + (row.p1.judged ? 1 : 0) + (row.p2.judged ? 1 : 0), 0);
+      if (judged(f) > judged(pf)) {
+        const pts = (x) => x.rows.reduce((n, row) => n + (row.p1.points ?? 0) + (row.p2.points ?? 0), 0);
+        sound.play(pts(f) > pts(pf) ? 'ding' : 'strike');
+      }
+      if (f.step === 'results' && pf.step !== 'results') sound.play(f.won ? 'fanfare' : 'wrong');
+    }
+  }
+  if (g.status === 'done' && p.status !== 'done') sound.play('fanfare');
+}
+
+const colorOf = (v, id) => unitById({ units: v.room.units }, id)?.color ?? '#fff';
+const unitOf = (v, id) => v.room.units.find((u) => u.id === id) ?? null;
+const nameOf = (v, id) => unitOf(v, id)?.name ?? '';
+
+function teamBox(v, u, r) {
+  const playing = r && r.control === u.id;
+  return h('div', { class: `fd-score ${playing ? 'on' : ''}`, style: { '--c': u.color, background: u.color, color: ink(u.color) } },
+    h('div', { class: 'n' }, u.name),
+    h('div', { class: 'p' }, String(u.score)),
+    h('div', { class: 's' }, playing ? (r.step === 'steal' ? 'STEAL' : 'PLAYING') : ' '));
+}
+
+function strikes(r) {
+  return h('div', { class: 'fd-strikes' }, Array.from({ length: r.maxStrikes }, (_, i) => h('div', { class: `x ${i < r.strikes ? 'on' : ''}` }, i < r.strikes ? '✕' : '')));
+}
+
+function slot(a) {
+  return h('div', { class: `fd-slot ${a.revealed ? 'up' : ''} ${a.late ? 'late' : ''}` },
+    h('div', { class: 'num' }, String(a.n)),
+    a.text !== null ? h('div', { class: 'txt' }, a.text) : h('div', { class: 'txt blank' }),
+    a.points !== null ? h('div', { class: 'pt' }, String(a.points)) : h('div', { class: 'pt blank' }));
+}
+
+function banner(v, r) {
+  const f = r.faceoff;
+  const cls = []; let text = ''; let sub = null; let color = null;
+  if (r.step === 'faceoff') {
+    if (f.open) { cls.push('open'); text = 'Face-off — buzz in!'; sub = f.reps.map((p) => p.name).filter(Boolean).join('  vs  '); }
+    else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); }
+    else if (f.attempts.length >= 2) { text = 'Nobody got it. Face-off again!'; }
+    else { text = 'Face-off'; sub = f.reps.map((p) => p.name).filter(Boolean).join('  vs  '); }
+  } else if (r.step === 'choose') { text = `${nameOf(v, f.winner)} won the face-off!`; color = colorOf(v, f.winner); sub = 'Play or pass?'; }
+  else if (r.step === 'play') { text = `${nameOf(v, r.control)} — name an answer`; color = colorOf(v, r.control); }
+  else if (r.step === 'steal') { cls.push('steal'); text = `Steal! ${nameOf(v, r.control)}, one guess`; }
+  else if (r.step === 'roundEnd') { text = `${nameOf(v, r.result?.winner)} wins ${r.result?.awarded ?? 0}${r.multiplier > 1 ? ` (×${r.multiplier})` : ''}`; color = colorOf(v, r.result?.winner); cls.push('win'); }
+  return h('div', { class: `fd-banner ${cls.join(' ')}`, style: color ? { background: color, color: ink(color) } : {} }, h('span', {}, text), sub && h('small', {}, sub));
+}
+
+function roundScreen(v) {
+  const g = v.game; const r = g.round;
+  const [a, b] = v.room.units;
+  const rows = Math.ceil(r.answers.length / 2);
+  return h('div', { class: 'fd-screen' },
+    h('div', { class: 'fd-top' }, a && teamBox(v, a, r),
+      h('div', { class: 'fd-mid' }, h('div', { class: 'rd' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''}`), h('div', { class: 'pot' }, String(r.pot)), h('div', { class: 'pl' }, 'points on the board')),
+      b && teamBox(v, b, r)),
+    h('div', { class: 'fd-question' }, r.question),
+    h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map(slot)),
+    h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())));
+}
+
+// ---------- Fast Money ----------
+function fmScreen(v) {
+  const g = v.game; const f = g.fm;
+  const team = unitOf(v, f.team);
+  const head = h('div', { class: 'fd-fmhead' }, h('div', { class: 't' }, 'Fast Money'), team && h('div', { class: 'tm', style: { background: team.color, color: ink(team.color) } }, team.name));
+  if (f.step === 'team' || f.step === 'pick') {
+    return h('div', { class: 'fd-screen center' }, head, h('div', { class: 'fd-big' }, f.step === 'team' ? 'Tied! Who plays Fast Money?' : `${f.players.map((p) => p.name ?? '…').join(' & ')}`),
+      h('p', { class: 'fd-sub' }, `Reach ${f.goal} points to win`));
+  }
+  if (f.step === 'p1' || f.step === 'p2') {
+    const who = f.players[f.step === 'p1' ? 0 : 1];
+    const { bar, num } = timerParts(f.timer);
+    return h('div', { class: 'fd-screen center' }, head,
+      h('div', { class: 'fd-big' }, `${who.name ?? 'Player'}, you’re up!`),
+      f.step === 'p2' && h('p', { class: 'fd-sub' }, 'Don’t repeat your partner’s answers'),
+      h('div', { class: 'fd-qs' }, f.rows.map((row, i) => h('div', { class: 'q' }, h('span', { class: 'n' }, String(i + 1)), row.question))),
+      h('div', { class: 'fd-clock' }, f.timer?.timedOut ? 'TIME’S UP' : num), bar);
+  }
+  // reveal & results
+  const cell = (c) => h('div', { class: `c ${c.judged ? 'on' : ''} ${c.judged && c.points === 0 ? 'zero' : ''}` }, h('span', { class: 'a' }, c.judged ? (c.label || c.typed || '—') : ''), h('span', { class: 'p' }, c.judged ? String(c.points) : ''));
+  return h('div', { class: 'fd-screen' }, head,
+    h('div', { class: 'fd-fm' }, f.rows.map((row) => h('div', { class: 'row' }, cell(row.p1), h('div', { class: 'q' }, row.question), cell(row.p2)))),
+    h('div', { class: 'fd-fmfoot' },
+      h('div', { class: 'tot' }, h('b', {}, String(f.totals.total)), h('span', {}, ` / ${f.goal}`)),
+      f.step === 'results' && h('div', { class: `fd-banner ${f.won ? 'win' : ''}`, style: f.won ? { background: '#15803d' } : {} }, f.won ? 'You did it!' : 'So close!')));
+}
+
+function doneScreen(v) {
+  const g = v.game;
+  const sorted = [...v.room.units].sort((a, b) => b.score - a.score);
+  const tie = sorted[0] && sorted[1] && sorted[0].score === sorted[1].score;
+  const fm = g.result?.fastMoney;
+  const w = sorted[0];
+  return h('div', { class: 'fd-screen center' },
+    h('div', { class: 'fd-big' }, tie ? 'It’s a tie!' : 'Winner'),
+    !tie && w && h('div', { class: 'fd-winner', style: { color: w.color } }, w.name),
+    h('div', { class: 'fd-final' }, sorted.map((u) => h('div', { class: 'r', style: { borderColor: u.color } }, h('span', {}, u.name), h('b', {}, String(u.score))))),
+    fm?.played && h('p', { class: 'fd-sub' }, `Fast Money: ${fm.total} of ${fm.goal} — ${fm.won ? 'they won the bonus round!' : 'just short'}`));
+}
+
+/** Returns the element to show for the current state. The TV page swaps it in. */
+export function render(view, ctx) {
+  if (ctx?.sound) play = ctx.sound.play;
+  live = null; // each screen sets up its own countdown, if it has one
+  const g = view.game;
+  if (g.status === 'done') return doneScreen(view);
+  if (g.status === 'fastmoney' && g.fm) return fmScreen(view);
+  if (g.status === 'round' && g.round) return roundScreen(view);
+  return h('div', { class: 'fd-screen center' }, h('div', { class: 'fd-big' }, 'Family Feud'));
+}

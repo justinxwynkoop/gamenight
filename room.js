@@ -321,6 +321,7 @@ export class Room {
       mode: this.mode,
       modeSetting: this.modeSetting,
       teamCount: this.teams.length,
+      fixedTeams: this.#neededTeams(),   // a game that insists on this many teams (0: the host chooses)
       individualMax: INDIVIDUAL_MAX,
       teamSize: TEAM_SIZE,
       teams: this.teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
