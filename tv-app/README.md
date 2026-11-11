@@ -156,10 +156,13 @@ FamilyGameNight/
     JeopardyRootView.swift   Asks for the server address once, then shows the display
     GameNightClient.swift    WebSocket connection to the server (joins as the TV)
     ServerSettings.swift     Remembers the server address
+    SoundDirector.swift      Plays the sounds and music, downloads your own files
     Core/                    No Apple frameworks (unit tested)
       ServerState.swift      The data the server sends, as Swift types
       DisplayScreen.swift    Which screen to show; ranking and placing
       Countdown.swift        Local countdown between server updates
+      SoundSynth.swift       The built-in sounds, made from tones
+      SoundPlanner.swift     Which sound goes with which change; countdown ticks
       ServerAddress.swift    Parsing what you type: host, port, URLs
       Formatting.swift       Money, join address, player colours
     Display/                 SwiftUI screens
@@ -240,19 +243,42 @@ answering, answer revealed, with a draining countdown), Daily Double, Final
 Jeopardy (wagers, clue and timer, judged answers), leaderboard, winner. Team
 mode shows teams. If the server runs a game this app doesn't know, it says so.
 
+**Sound:** see [Sound](#sound).
+
 **Fonts:** the display uses the system's heavy condensed font. To use Anton (the
 face in the design mockups), add `Anton-Regular.ttf` to the app target, list it
 under "Fonts provided by application" in the Info settings, and it is picked up
 automatically.
+
+## Sound
+
+The Jeopardy display plays the same sounds as the web TV: buzzers open, a buzz-in,
+correct, wrong, Daily Double, Final Jeopardy, time's up, a tick for the last five
+seconds of a countdown, and a fanfare for the winner. They are built from simple
+tones in code (`GameNight/Core/SoundSynth.swift`, the same recipes as the web
+TV's `public/audio.js`), so there are no audio files to ship. Which sound goes
+with which change is `GameNight/Core/SoundPlanner.swift`, a port of the web TV's
+logic, tested against the recorded server messages.
+
+The host controls it from their phone: sound on/off and volume apply to the
+Apple TV, and the host's **Test on TV** button plays a sound here too. The Apple
+TV's own volume still sets how loud it is in the room.
+
+**Your own sounds.** Anything you put in the server's `data/sounds/` folder
+replaces the built-in sound of the same name, and the Apple TV downloads it when
+Jeopardy opens (so re-open Jeopardy after adding files). Names: `open`, `buzz`,
+`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, plus two
+music files: `think` (loops during the Final Jeopardy countdown) and `lobby`
+(loops while players join; `think` is used if there is no `lobby`). Use `.mp3`,
+`.wav` or `.m4a`; the Apple TV can't play `.ogg`, so those are skipped and the
+built-in sound is used. Music only plays if you provide a file.
 
 ## Roadmap
 
 1. ✅ Home screen with the game tiles; Singo Night running inside it.
 2. ✅ Jeopardy: connect to the server and show the lobby.
 3. ✅ Jeopardy: board, clues, Daily Double, Final Jeopardy, leaderboard, winner.
-4. **Jeopardy: sound.** Port the sound cues (the web TV decides them by comparing
-   the old and new state) and play your custom sounds from the server's
-   `/sounds/` files.
+4. ✅ Jeopardy: sound effects (see [Sound](#sound)).
 5. **Find the server automatically** with Bonjour instead of typing an address.
 6. **Family Feud.** A new game module in the `gamenight` server, plus a SwiftUI
    screen here.
@@ -271,6 +297,8 @@ whatever is active.
   itself. Menu and Play/Pause behave as described above. Text is readable from
   across the room (sizes are in tvOS points at 1920×1080; adjust in `Display/`).
 - The Local Network permission prompt appears the first time Jeopardy connects.
+- Sound: buzzers opening, buzz-in, correct/wrong and the countdown ticks play
+  through the TV, and the host's sound toggle and volume take effect.
 
 ## Singo notes
 

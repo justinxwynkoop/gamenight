@@ -211,6 +211,13 @@ struct StateMessage: Decodable {
     var view: ServerState
 }
 
+/// One entry of GET /api/sounds: a file the family put in the server's data/sounds/ folder.
+struct ServerSound: Decodable, Equatable {
+    var name: String
+    /// Where to download it, relative to the server, e.g. "/sounds/buzz.mp3".
+    var url: String
+}
+
 /// GET /api/info
 struct ServerInfo: Decodable, Equatable {
     /// The address phones should open (what the QR code encodes).

@@ -12,6 +12,7 @@ struct JeopardyDisplayView: View {
     let onExit: () -> Void
 
     @State private var showMenu = false
+    @State private var sound = SoundDirector()
 
     var body: some View {
         ZStack {
@@ -54,8 +55,22 @@ struct JeopardyDisplayView: View {
             if showMenu { showMenu = false } else { onExit() }
         }
         .onPlayPauseCommand { showMenu.toggle() }
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .onChange(of: client.state) { previous, next in
+            guard let next else { return }
+            sound.stateChanged(from: previous, to: next, receivedAt: client.stateReceivedAt)
+        }
+        // Fetches the family's own sound files from the server (and again if the server changes).
+        .task(id: client.address) {
+            await sound.loadCustomSounds(from: client.address)
+        }
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
+            sound.activate(state: client.state, receivedAt: client.stateReceivedAt)
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+            sound.deactivate()
+        }
     }
 
     @ViewBuilder
