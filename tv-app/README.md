@@ -230,8 +230,9 @@ as numbered slots that flip over, three strike boxes, a banner for what is happe
 plays, steal, round result), and Fast Money (the questions with a countdown, then the two players'
 answers revealed beside the points, a running total and whether they reached the goal). The winner
 screen adds the Fast Money result. Sounds follow the web TV: a ding for each answer, the big X for a
-strike, the buzzers, and the fanfare. The new sound names for the server's `data/sounds/` are `ding`
-and `strike`.
+strike, the buzzers, and the fanfare. The Family Feud sound names for the server's `data/sounds/` are `ding`, `strike`,
+`strikeout`, `faceoff`, `roundstart`, `winner` and `zero`. A strike puts a big boxed X in the middle of
+the screen, which then slides down into the next empty strike box.
 
 `Tools/record-feud-fixtures.mjs` records the Family Feud states used by the tests (see the header for how).
 The expected sounds in `FeudTests.swift` come from running the web TV's own `onChange()` on the same
@@ -299,7 +300,7 @@ TV's own volume still sets how loud it is in the room.
 **Your own sounds.** Anything you put in the server's `data/sounds/` folder
 replaces the built-in sound of the same name, and the Apple TV downloads it when
 Jeopardy opens (so re-open Jeopardy after adding files). Names: `open`, `buzz`,
-`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, `ding`, `strike`, plus two
+`correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd`, `final`, `fanfare`, `ding`, `strike`, `strikeout`, `faceoff`, `roundstart`, `winner`, `zero`, plus two
 music files: `think` (loops during the Final Jeopardy countdown) and `lobby`
 (loops while players join; `think` is used if there is no `lobby`). Use `.mp3`,
 `.wav` or `.m4a`; the Apple TV can't play `.ogg`, so those are skipped and the

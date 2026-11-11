@@ -93,5 +93,16 @@ for (let q = 0; q < 5; q++) for (const slot of ['p1', 'p2']) {
 await snap('feud-fm-results');
 await act('finishGame');
 await snap('feud-done');
+
+// A second game where Fast Money players leave answers blank: those score 0 by themselves when revealed.
+await act('endGame');
+await act('startGame');
+await act('adjustScore', { id: red, delta: 100 });
+await act('endRounds');
+await act('fmStart');
+await act('fmSetAnswers', { slot: 'p1', answers: ['apple', '', 'sneakers', '', 'nap'] });
+await act('fmNext');
+await act('fmNext');                               // player 2 sent nothing
+await snap('feud-fm-blanks');
 server.kill();
 process.exit(0);

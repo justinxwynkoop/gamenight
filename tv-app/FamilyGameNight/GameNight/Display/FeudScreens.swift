@@ -5,14 +5,83 @@ import SwiftUI
 
 // MARK: - A round
 
+/// A strike on its way: the big X appears in the middle, holds, then slides down into the next empty strike box.
+struct StrikeFlight: Equatable {
+    enum Phase { case hidden, center, docked }
+    let id = UUID()
+    var index: Int
+    var phase: Phase = .hidden
+}
+
 struct FeudRoundScreen: View {
     let state: ServerState
     let round: FeudRound
     let joinURL: URL?
 
+    @State private var flight: StrikeFlight?
+
     private var units: [ScoreUnit] { state.room.units }
 
+    // The layout of the foot of the screen, which the big X flies to: 60 points in from the left, 40 up from the
+    // bottom, a 140-point row, with 112-point strike boxes 14 points apart (see `content` and `FeudStrikes`).
+    private static let side: CGFloat = 60
+    private static let bottom: CGFloat = 40
+    private static let footHeight: CGFloat = 140
+    private static let box: CGFloat = 112
+    private static let gap: CGFloat = 14
+    private static let bigSize: CGFloat = 520
+
     var body: some View {
+        ZStack {
+            content
+            bigX
+        }
+        .onChange(of: round.strikes) { old, new in
+            if new > old { launchStrike(index: new - 1) }
+        }
+    }
+
+    private func launchStrike(index: Int) {
+        let started = StrikeFlight(index: index)
+        flight = started
+        Task { @MainActor in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                if flight?.id == started.id { flight?.phase = .center }
+            }
+            try? await Task.sleep(for: .milliseconds(1250))
+            withAnimation(.easeInOut(duration: 0.65)) {
+                if flight?.id == started.id { flight?.phase = .docked }
+            }
+            try? await Task.sleep(for: .milliseconds(700))
+            if flight?.id == started.id { flight = nil }
+        }
+    }
+
+    @ViewBuilder
+    private var bigX: some View {
+        if let flight {
+            GeometryReader { proxy in
+                let size = Self.bigSize
+                let targetX = Self.side + Self.box / 2 + CGFloat(flight.index) * (Self.box + Self.gap) - proxy.size.width / 2
+                let targetY = proxy.size.height - Self.bottom - Self.footHeight / 2 - proxy.size.height / 2
+                Text("✕")
+                    .font(.system(size: 420, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: size, height: size)
+                    .background(RoundedRectangle(cornerRadius: 64, style: .continuous).fill(Color(hex: 0xDC2626)))
+                    .overlay(RoundedRectangle(cornerRadius: 64, style: .continuous).stroke(Color(hex: 0xFCA5A5), lineWidth: 14))
+                    .shadow(color: Color(hex: 0xDC2626).opacity(0.7), radius: 80)
+                    .scaleEffect(flight.phase == .hidden ? 0.2 : (flight.phase == .center ? 1 : Self.box / size))
+                    .opacity(flight.phase == .hidden ? 0 : 1)
+                    .offset(x: flight.phase == .docked ? targetX : 0, y: flight.phase == .docked ? targetY : 0)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 20) {
             HStack(spacing: 28) {
                 if let first = units.first { FeudTeamBox(unit: first, round: round) }
@@ -33,17 +102,17 @@ struct FeudRoundScreen: View {
                 .frame(maxHeight: .infinity)
 
             HStack(spacing: 28) {
-                FeudStrikes(strikes: round.strikes, max: round.maxStrikes)
+                FeudStrikes(strikes: round.strikes, max: round.maxStrikes, hiddenIndex: flight?.index)
                 FeudBanner(state: state, round: round)
                 if let joinURL {
                     QRCodeView(text: joinURL.absoluteString)
                         .frame(width: 140, height: 140)
                 }
             }
-            .frame(height: 140)
+            .frame(height: Self.footHeight)
         }
-        .padding(.horizontal, 60)
-        .padding(.vertical, 40)
+        .padding(.horizontal, Self.side)
+        .padding(.vertical, Self.bottom)
     }
 
     private var potBlock: some View {
@@ -155,11 +224,13 @@ struct FeudSlot: View {
 struct FeudStrikes: View {
     let strikes: Int
     let max: Int
+    /// The box the big X is still on its way to; it stays empty until the X lands.
+    var hiddenIndex: Int?
 
     var body: some View {
         HStack(spacing: 14) {
             ForEach(0..<max, id: \.self) { index in
-                let on = index < strikes
+                let on = index < strikes && index != hiddenIndex
                 Text(on ? "✕" : "")
                     .font(JP.display(84))
                     .foregroundStyle(.white)
@@ -377,7 +448,7 @@ struct FeudFastMoneyCell: View {
         let on = cell.judged
         let zero = on && (cell.points ?? 0) == 0
         HStack(spacing: 18) {
-            Text(on ? (cell.label ?? cell.typed ?? "—").uppercased() : "")
+            Text(on ? FastMoneyCell.shownText(cell) : "")
                 .font(JP.text(48, .heavy))
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)

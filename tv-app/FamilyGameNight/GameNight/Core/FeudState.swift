@@ -154,3 +154,13 @@ struct FeudFastMoneyResult: Decodable, Equatable {
     var won: Bool
     var played: Bool
 }
+
+extension FastMoneyCell {
+    /// What a scored cell shows on the TV: the survey answer it matched, else what was typed, else "No answer".
+    static func shownText(_ cell: FastMoneyCell) -> String {
+        for candidate in [cell.label, cell.typed] {
+            if let text = candidate?.trimmingCharacters(in: .whitespaces), !text.isEmpty { return text.uppercased() }
+        }
+        return "NO ANSWER"
+    }
+}

@@ -15,6 +15,11 @@ enum SoundCue: String, CaseIterable, Hashable {
     case fanfare     // the winner
     case ding        // Family Feud: a survey answer flips over
     case strike      // Family Feud: the big X
+    case strikeout   // Family Feud: the third strike, and the steal that follows
+    case faceoff     // Family Feud: a face-off player buzzes in
+    case roundstart  // Family Feud: a new round begins
+    case winner      // Family Feud: the winning jingle
+    case zero        // Family Feud: Fast Money answer worth nothing
 
     /// Every file name the server may supply: the cues above plus two music tracks.
     static var customNames: Set<String> {
@@ -91,17 +96,61 @@ enum SoundSynth {
             }
         case .ding:
             return [
-                ToneSpec(frequency: 1318, start: 0, duration: 0.6, wave: .sine, gain: 0.5),
-                ToneSpec(frequency: 1760, start: 0.07, duration: 0.8, wave: .sine, gain: 0.35),
-                ToneSpec(frequency: 2637, start: 0.07, duration: 0.5, wave: .sine, gain: 0.12),
+                ToneSpec(frequency: 1318, start: 0, duration: 0.9, wave: .sine, gain: 0.42),
+                ToneSpec(frequency: 1976, start: 0, duration: 0.9, wave: .sine, gain: 0.22),
+                ToneSpec(frequency: 2637, start: 0, duration: 0.7, wave: .sine, gain: 0.12),
+                ToneSpec(frequency: 660, start: 0, duration: 0.08, wave: .triangle, gain: 0.3),
             ]
         case .strike:
+            return strikeTones
+        case .strikeout:
+            var tones = strikeTones
+            tones.append(ToneSpec(frequency: 220, start: 0.85, duration: 0.2, wave: .sawtooth, gain: 0.3))
+            tones.append(ToneSpec(frequency: 294, start: 1.05, duration: 0.2, wave: .sawtooth, gain: 0.3))
+            tones.append(ToneSpec(frequency: 392, start: 1.25, duration: 0.5, wave: .sawtooth, gain: 0.35, slideTo: 440))
+            return tones
+        case .faceoff:
             return [
-                ToneSpec(frequency: 120, start: 0, duration: 0.9, wave: .sawtooth, gain: 0.45),
-                ToneSpec(frequency: 90, start: 0, duration: 0.9, wave: .square, gain: 0.3),
+                ToneSpec(frequency: 784, start: 0, duration: 0.08, wave: .square, gain: 0.35),
+                ToneSpec(frequency: 1568, start: 0.07, duration: 0.35, wave: .triangle, gain: 0.4),
             ]
+        case .roundstart:
+            var tones: [ToneSpec] = []
+            let run: [(Double, Double)] = [(523, 0), (659, 0.11), (784, 0.22)]
+            for (note, start) in run {
+                tones.append(ToneSpec(frequency: note, start: start, duration: 0.12, wave: .triangle, gain: 0.45))
+            }
+            tones.append(ToneSpec(frequency: 1047, start: 0.33, duration: 0.6, wave: .triangle, gain: 0.45))
+            tones.append(ToneSpec(frequency: 784, start: 0.33, duration: 0.6, wave: .triangle, gain: 0.3))
+            tones.append(ToneSpec(frequency: 659, start: 0.33, duration: 0.6, wave: .triangle, gain: 0.25))
+            return tones
+        case .winner:
+            var tones: [ToneSpec] = []
+            let tune: [(Double, Double, Double)] = [(523, 0, 0.14), (659, 0.14, 0.14), (784, 0.28, 0.14), (1047, 0.42, 0.3), (784, 0.76, 0.14), (1047, 0.9, 0.14)]
+            for (note, start, length) in tune {
+                tones.append(ToneSpec(frequency: note, start: start, duration: length, wave: .triangle, gain: 0.45))
+            }
+            tones.append(ToneSpec(frequency: 1047, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.4))
+            tones.append(ToneSpec(frequency: 784, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.3))
+            tones.append(ToneSpec(frequency: 659, start: 1.06, duration: 0.9, wave: .triangle, gain: 0.25))
+            return tones
+        case .zero:
+            var tones: [ToneSpec] = []
+            let steps: [(Double, Double)] = [(392, 0), (370, 0.2), (349, 0.4)]
+            for (note, start) in steps {
+                tones.append(ToneSpec(frequency: note, start: start, duration: 0.22, wave: .triangle, gain: 0.4))
+            }
+            tones.append(ToneSpec(frequency: 294, start: 0.6, duration: 0.5, wave: .triangle, gain: 0.4, slideTo: 233))
+            return tones
         }
     }
+
+    /// The Family Feud buzzer: two sawtooth notes a hair apart (they beat against each other) over a low square.
+    private static let strikeTones: [ToneSpec] = [
+        ToneSpec(frequency: 110, start: 0, duration: 0.8, wave: .sawtooth, gain: 0.45),
+        ToneSpec(frequency: 116, start: 0, duration: 0.8, wave: .sawtooth, gain: 0.35),
+        ToneSpec(frequency: 55, start: 0, duration: 0.8, wave: .square, gain: 0.2),
+    ]
 
     /// Mono samples between -1 and 1.
     static func render(_ cue: SoundCue, sampleRate: Int = SoundSynth.sampleRate) -> [Float] {

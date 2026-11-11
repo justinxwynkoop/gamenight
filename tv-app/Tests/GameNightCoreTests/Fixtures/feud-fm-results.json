@@ -61,8 +61,8 @@
       "multipliers": true,
       "fastMoney": true,
       "fastMoneyGoal": 200,
-      "fastMoneySeconds1": 20,
-      "fastMoneySeconds2": 25
+      "fastMoneySeconds1": 40,
+      "fastMoneySeconds2": 45
     },
     "status": "fastmoney",
     "title": "Family Night Basics",

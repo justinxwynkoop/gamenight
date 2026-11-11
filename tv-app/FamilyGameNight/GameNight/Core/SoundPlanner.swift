@@ -94,22 +94,23 @@ enum SoundPlanner {
                 let wasUp = was.answers.filter(\.revealed).count
                 if up > wasUp {
                     plan.cues.append(.ding)
-                } else if round.strikes > was.strikes
-                            || (was.step == .steal && round.step == .roundEnd && round.result?.winner == was.stealFrom) {
-                    plan.cues.append(.strike)
+                } else if round.strikes > was.strikes {
+                    plan.cues.append(round.strikes >= round.maxStrikes ? .strikeout : .strike)
+                } else if was.step == .steal && round.step == .roundEnd && round.result?.winner == was.stealFrom {
+                    plan.cues.append(.strike)   // the steal failed
                 } else if round.faceoff.attempts.count > was.faceoff.attempts.count
                             && round.faceoff.attempts.last?.rank == nil {
-                    plan.cues.append(.wrong)
+                    plan.cues.append(.strike)
                 } else if round.faceoff.open && !was.faceoff.open {
                     plan.cues.append(.open)
                 } else if round.faceoff.turn != nil && was.faceoff.turn == nil && round.faceoff.attempts.isEmpty {
-                    plan.cues.append(.buzz)
+                    plan.cues.append(.faceoff)
                 }
                 if round.step == .roundEnd && was.step != .roundEnd {
                     plan.cues.append(.correct)
                 }
             } else if before.round != nil || before.status != .round {
-                plan.cues.append(.reveal)   // a new round begins
+                plan.cues.append(.roundstart)   // a new round begins
             }
         }
 
@@ -119,10 +120,10 @@ enum SoundPlanner {
                     plan.cues.append(.timeup)
                 }
                 if judgedCount(fm) > judgedCount(was) {
-                    plan.cues.append(pointsTotal(fm) > pointsTotal(was) ? .ding : .strike)
+                    plan.cues.append(pointsTotal(fm) > pointsTotal(was) ? .ding : .zero)
                 }
                 if fm.step == .results && was.step != .results {
-                    plan.cues.append((fm.won ?? false) ? .fanfare : .wrong)
+                    plan.cues.append((fm.won ?? false) ? .winner : .zero)
                 }
             } else {
                 plan.cues.append(.finalSting)
@@ -130,7 +131,7 @@ enum SoundPlanner {
         }
 
         if after.status == .done && before.status != .done {
-            plan.cues.append(.fanfare)
+            plan.cues.append(.winner)
         }
     }
 

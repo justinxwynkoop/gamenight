@@ -110,6 +110,18 @@ final class FeudDecodingTests: XCTestCase {
         XCTAssertEqual(Standings.winners(done.room.units).map(\.name), ["Red"])
     }
 
+    func testBlankFastMoneyAnswersAreAlreadyZero() throws {
+        let fm = try XCTUnwrap(try Fixture.feud("feud-fm-blanks").fm)
+        XCTAssertEqual(fm.step, .reveal)
+        // Player 2 sent nothing, so all five are zeros. Player 1's two blanks are zeros too; the real answers wait.
+        XCTAssertTrue(fm.rows.allSatisfy { $0.p2.judged && $0.p2.points == 0 && $0.p2.label == "No answer" })
+        XCTAssertEqual(fm.rows.map { $0.p1.judged }, [false, true, false, true, false])
+        XCTAssertEqual(fm.rows[1].p1.points, 0)
+        XCTAssertEqual(fm.rows[1].p1.typed, "")
+        XCTAssertEqual(fm.totals.total, 0)
+        XCTAssertEqual(FastMoneyCell.shownText(fm.rows[1].p1), "NO ANSWER")
+    }
+
     func testUnknownValuesDoNotBreakDecoding() throws {
         var text = try String(decoding: Fixture.data("feud-play"), as: UTF8.self)
         text = text.replacingOccurrences(of: "\"step\": \"play\"", with: "\"step\": \"something-new\"")
@@ -141,9 +153,9 @@ final class FeudSoundTests: XCTestCase {
     }
 
     func testTheFaceoff() throws {
-        XCTAssertEqual(try cues("feud-lobby", "feud-faceoff"), [.reveal])
+        XCTAssertEqual(try cues("feud-lobby", "feud-faceoff"), [.roundstart])
         XCTAssertEqual(try cues("feud-faceoff", "feud-faceoff-open"), [.open])
-        XCTAssertEqual(try cues("feud-faceoff-open", "feud-faceoff-turn"), [.buzz])
+        XCTAssertEqual(try cues("feud-faceoff-open", "feud-faceoff-turn"), [.faceoff])
         XCTAssertEqual(try cues("feud-faceoff-turn", "feud-faceoff-second"), [.ding])
         XCTAssertEqual(try cues("feud-faceoff-second", "feud-choose"), [.ding])
         XCTAssertEqual(try cues("feud-choose", "feud-play"), [])
@@ -152,10 +164,10 @@ final class FeudSoundTests: XCTestCase {
     func testAnswersStrikesAndTheEndOfARound() throws {
         XCTAssertEqual(try cues("feud-play", "feud-play-answer"), [.ding])
         XCTAssertEqual(try cues("feud-play-answer", "feud-strike-1"), [.strike])
-        XCTAssertEqual(try cues("feud-strike-1", "feud-steal"), [.strike])
+        XCTAssertEqual(try cues("feud-strike-1", "feud-steal"), [.strikeout], "the third strike")
         XCTAssertEqual(try cues("feud-steal", "feud-roundend"), [.ding, .correct])
         XCTAssertEqual(try cues("feud-roundend", "feud-roundend-all"), [])
-        XCTAssertEqual(try cues("feud-roundend-all", "feud-round2-done"), [.reveal])
+        XCTAssertEqual(try cues("feud-roundend-all", "feud-round2-done"), [.roundstart])
     }
 
     func testFastMoney() throws {
@@ -163,8 +175,8 @@ final class FeudSoundTests: XCTestCase {
         XCTAssertEqual(try cues("feud-fm-pick", "feud-fm-p1"), [])
         XCTAssertEqual(try cues("feud-fm-p1", "feud-fm-p2"), [])
         XCTAssertEqual(try cues("feud-fm-reveal", "feud-fm-partial"), [.ding])
-        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-results"), [.ding, .fanfare])
-        XCTAssertEqual(try cues("feud-fm-results", "feud-done"), [.fanfare])
+        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-results"), [.ding, .winner])
+        XCTAssertEqual(try cues("feud-fm-results", "feud-done"), [.winner])
     }
 
     func testTheFirstStateMakesNoSound() throws {
@@ -186,7 +198,12 @@ final class FeudSoundTests: XCTestCase {
 
     func testTheNewSoundsHaveTheWebRecipes() {
         func seconds(_ cue: SoundCue) -> Double { Double(SoundSynth.render(cue).count) / Double(SoundSynth.sampleRate) }
-        XCTAssertEqual(seconds(.ding), 0.07 + 0.8 + 0.05, accuracy: 0.001)
-        XCTAssertEqual(seconds(.strike), 0.9 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.ding), 0.9 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.strike), 0.8 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.strikeout), 1.25 + 0.5 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.faceoff), 0.07 + 0.35 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.roundstart), 0.33 + 0.6 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.winner), 1.06 + 0.9 + 0.05, accuracy: 0.001)
+        XCTAssertEqual(seconds(.zero), 0.6 + 0.5 + 0.05, accuracy: 0.001)
     }
 }
