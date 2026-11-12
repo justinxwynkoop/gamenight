@@ -40,9 +40,23 @@ After the first upload, shipping a new version is one command from Terminal (it 
 cd ~/Documents/familygamenight && Tools/upload-testflight.sh
 ```
 
-It needs Xcode signed in with an Apple ID on the team. Run `Tools/install-sounds.sh` and `Tools/install-sets.sh` first if you
-want your sounds and extra sets in the build. Everyone in the TestFlight group gets the update automatically once
-Apple has processed it (about 5 to 15 minutes).
+Versions count up as **X.x**: 1.1, then 1.2, 1.3 and so on, each with build number 1. (After 1.9 comes 1.10, which Apple
+treats as higher.)
+
+| Command | Uploads |
+| --- | --- |
+| `Tools/upload-testflight.sh` | the next version (1.1 after 1.0, 1.2 after 1.1 ...) |
+| `Tools/upload-testflight.sh --major` | the next major version (2.0 after 1.4) |
+| `Tools/upload-testflight.sh --rebuild` | the same version again, with the next build number (for example if Apple refused an upload) |
+| `Tools/upload-testflight.sh --version 1.7` | a version you choose; it must be higher than the last one |
+
+The script remembers the last version in `Config/testflight-version.txt` and prints the `git` command to save the new one:
+run it, so the next upload (from any Mac) carries on from there. It needs Xcode signed in with an Apple ID on the team. Run
+`Tools/install-sounds.sh` and `Tools/install-sets.sh` first if you want your sounds and extra sets in the build. Everyone in
+the TestFlight group gets the update automatically once Apple has processed it (about 5 to 15 minutes).
+
+**Do not archive from Xcode's own menu after this.** Its build number would be lower than the first upload's, and Apple would
+refuse it. Use the script (or the GitHub workflow below).
 
 ## Way 2: from GitHub (no Mac)
 
@@ -52,7 +66,8 @@ Apple has processed it (about 5 to 15 minutes).
 2. In this repository on GitHub: **Settings → Secrets and variables → Actions → New repository secret**, and add three:
    `ASC_KEY_ID` (the Key ID), `ASC_ISSUER_ID` (the Issuer ID), and `ASC_KEY_P8` (open the `.p8` file in a text editor and
    paste all of it, including the BEGIN and END lines).
-3. **Actions → Send to TestFlight → Run workflow.** It checks the app exists, makes a TestFlight group called **Family**
+3. **Actions → Send to TestFlight → Run workflow**, and type the version (for example `1.2`; it must be higher than the last
+   one in `Config/testflight-version.txt`). It checks the app exists, makes a TestFlight group called **Family**
    if there is none, then builds, signs and uploads. A warning that the app does not exist yet means step "create the app"
    above is still to do.
 
@@ -75,9 +90,9 @@ Family Game Night. New builds arrive on their own (and can be turned off in Test
 ## Good to know
 
 - **A build lasts 90 days.** After that it stops opening; upload a new one (Way 1 or Way 2) before then.
-- **Build numbers must go up.** The upload script and the GitHub workflow both use the date and time as the build number,
-  so each is higher than the last. (The very first upload from Xcode was build 1.) In Xcode's own Distribute wizard, leave
-  "Manage Version and Build Number" ticked.
+- **Version and build.** TestFlight shows the version (1.2) and the build number in brackets, 1.2 (1). Apple only needs a
+  build number to be unique within one version, so each new version starts again at 1. The first version, 1.0, ended up with
+  build 2611120829 because an earlier script used the date; that stays in the history and does not matter.
 - **Export compliance** is already answered in the app (it uses only Apple's own encryption), so TestFlight does not ask
   each time.
 - Internal testers need no Apple review. A *public link* for people outside the team (an "external" group) does need a

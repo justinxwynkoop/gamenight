@@ -10,6 +10,10 @@ name: Send to TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to upload, like 1.2 (it must be higher than the last one uploaded; see Config/testflight-version.txt)'
+        required: true
 
 concurrency: testflight
 
@@ -59,12 +63,13 @@ jobs:
           TEAM_ID: ${{ steps.asc.outputs.team_id }}
         run: |
           set -o pipefail
-          BUILD="$(date +%y%m%d%H%M)"
+          VERSION="${{ inputs.version }}"
+          BUILD="${{ github.run_number }}"
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
           xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \
             -destination 'generic/platform=tvOS' -archivePath build/FamilyGameNight.xcarchive \
-            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=$BUILD \
+            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$BUILD \
             $AUTH archive | tail -n 40
           cat > build/ExportOptions.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -79,7 +84,7 @@ jobs:
           PLIST
           xcodebuild -exportArchive -archivePath build/FamilyGameNight.xcarchive \
             -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH | tail -n 40
-          echo "Uploaded build $BUILD. It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
+          echo "Uploaded version $VERSION (build $BUILD). It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
       - name: Remove the key file
         if: always()
         run: rm -rf ~/private_keys
