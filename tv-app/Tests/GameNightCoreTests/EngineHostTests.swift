@@ -153,4 +153,25 @@ final class EngineHostTests: XCTestCase {
         XCTAssertEqual(try players(game: "jeopardy"), ["Ann"], "the same game resumes")
         XCTAssertEqual(try players(game: "feud"), [], "another game starts empty")
     }
+
+    func testTheFamilysOwnSetsAreKeptAndComeBack() throws {
+        let wire = Wire()
+        var kept: String?
+        let host = try EngineHost(script: Self.script, pin: "4321", content: ["feud": ["tiny": Self.tinySet]],
+                                  onSend: { wire.sent.append(($0, $1)) }, onSets: { kept = $0 })
+        say(host, "h", #"{"t":"hello","role":"host","pin":"4321"}"#)
+        let doc = Self.tinySet.replacingOccurrences(of: "Tiny", with: "Made on a phone")
+        say(host, "h", #"{"t":"rpc","id":1,"op":"putSet","args":{"game":"feud","id":"phone-made","doc":\#(doc)}}"#)
+        say(host, "h", #"{"t":"rpc","id":2,"op":"deleteSet","args":{"game":"feud","id":"tiny"}}"#)
+        let changes = try XCTUnwrap(kept)
+
+        let again = Wire()
+        let restored = try EngineHost(script: Self.script, pin: "4321", content: ["feud": ["tiny": Self.tinySet]], userSets: changes,
+                                      onSend: { again.sent.append(($0, $1)) })
+        say(restored, "h", #"{"t":"hello","role":"host","pin":"4321"}"#)
+        say(restored, "h", #"{"t":"rpc","id":3,"op":"listSets","args":{"game":"feud"}}"#)
+        let reply = try XCTUnwrap(again.last("rpc-reply", to: "h"))
+        let titles = (reply["data"] as? [[String: Any]])?.compactMap { $0["title"] as? String }
+        XCTAssertEqual(titles, ["Made on a phone"], "the saved set is there and the deleted one stays deleted")
+    }
 }

@@ -254,3 +254,27 @@ final class BundledSoundsTests: XCTestCase {
         XCTAssertTrue(BundledSounds.load(from: Bundle(for: BundledSoundsTests.self)).isEmpty)
     }
 }
+
+final class LocalSetsTests: XCTestCase {
+    func testFileNames() {
+        XCTAssertEqual(LocalSets.parse(stem: "feud__protoqa-004")?.game, "feud")
+        XCTAssertEqual(LocalSets.parse(stem: "feud__protoqa-004")?.id, "protoqa-004")
+        XCTAssertEqual(LocalSets.parse(stem: "jeopardy__my-board")?.id, "my-board")
+        XCTAssertNil(LocalSets.parse(stem: "sets"))
+        XCTAssertNil(LocalSets.parse(stem: "other__x"))
+        XCTAssertNil(LocalSets.parse(stem: "feud__Bad Name"))
+        XCTAssertNil(LocalSets.parse(stem: "feud__-x"))
+    }
+
+    func testLocalFilesOverrideShippedSetsWithTheSameName() {
+        let merged = LocalSets.merged(["feud": ["a": "shipped", "b": "shipped"]], ["feud": ["b": "local", "c": "local"], "jeopardy": ["j": "local"]])
+        XCTAssertEqual(merged["feud"]?["a"], "shipped")
+        XCTAssertEqual(merged["feud"]?["b"], "local")
+        XCTAssertEqual(merged["feud"]?["c"], "local")
+        XCTAssertEqual(merged["jeopardy"]?["j"], "local")
+    }
+
+    func testAnEmptyBundleHasNoLocalSets() {
+        XCTAssertTrue(LocalSets.load(from: Bundle(for: LocalSetsTests.self)).isEmpty)
+    }
+}

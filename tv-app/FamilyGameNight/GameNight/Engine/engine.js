@@ -2067,11 +2067,11 @@
   }
 
   // engine/relay.js
-  var CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  var CODE_CHARS = "0123456789";
   var CLIENT_ID = /^[A-Za-z0-9_-]{6,40}$/;
   function newRoomCode(random = Math.random) {
     let code = "";
-    for (let i = 0; i < 4; i++) code += CODE_LETTERS[Math.floor(random() * CODE_LETTERS.length)];
+    for (let i = 0; i < 4; i++) code += CODE_CHARS[Math.floor(random() * CODE_CHARS.length)];
     return code;
   }
   function createRelayHost({ engine: engine2, code, broadcast, now, quietMs = 25e3 }) {
@@ -2118,10 +2118,21 @@
   }
 
   // engine/core.js
+  var SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
   function createEngine({ games, pin, now, send, save = () => {
-  }, saved = null, content = {}, onError, code = newRoomCode(), broadcast = null }) {
+  }, saved = null, content = {}, userSets = {}, onSetsChanged = () => {
+  }, onError, code = newRoomCode(), broadcast = null }) {
     const sets = {};
     for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
+    const changes = {};
+    for (const [gameId, byId] of Object.entries(userSets)) {
+      for (const [id, set] of Object.entries(byId ?? {})) {
+        if (!games[gameId] || !SET_ID.test(id)) continue;
+        (changes[gameId] ?? (changes[gameId] = {}))[id] = set;
+        if (set) (sets[gameId] ?? (sets[gameId] = {}))[id] = set;
+        else delete sets[gameId]?.[id];
+      }
+    }
     let queued = false;
     const room = new Room({
       games,
@@ -2153,6 +2164,7 @@
     const clock = now ?? (() => room.now());
     let relay = null;
     const rpc = (op, args) => {
+      var _a, _b, _c;
       switch (op) {
         case "listSets":
           return games[args.game] ? room.listContent(args.game) : [];
@@ -2160,6 +2172,30 @@
           const set = games[args.game] && sets[args.game]?.[args.id];
           if (!set) throw new GameError("No such set");
           return set;
+        }
+        case "games":
+          return Object.values(games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+        case "putSet": {
+          const game = games[args.game] ?? (() => {
+            throw new GameError("No such game");
+          })();
+          if (!SET_ID.test(String(args.id))) throw new GameError("Set id must be lowercase letters, numbers and dashes");
+          game.validateContent(args.doc);
+          (sets[_a = args.game] ?? (sets[_a] = {}))[args.id] = args.doc;
+          (changes[_b = args.game] ?? (changes[_b] = {}))[args.id] = args.doc;
+          room.contentChanged?.(args.game, args.id);
+          onSetsChanged(changes);
+          return { ok: true };
+        }
+        case "deleteSet": {
+          if (!games[args.game]) throw new GameError("No such game");
+          if (!SET_ID.test(String(args.id))) throw new GameError("Set id must be lowercase letters, numbers and dashes");
+          if (room.gameId === args.game && room.inProgress() && room.game?.usesContent?.(args.id)) throw new GameError("That set is in play");
+          delete sets[args.game]?.[args.id];
+          (changes[_c = args.game] ?? (changes[_c] = {}))[args.id] = null;
+          room.contentChanged?.(args.game, args.id);
+          onSetsChanged(changes);
+          return { ok: true };
         }
         default:
           throw new GameError("Not available here");
@@ -2209,7 +2245,7 @@
   globalThis.Engine = {
     /** The games this engine can run, for the host's menus. */
     games: () => JSON.stringify(Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
-    /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } } }. The room code is the relay's. */
+    /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } } }. The room code is the relay's. */
     start(optionsJson) {
       const o = parse(optionsJson);
       if (o.saved && o.game) {
@@ -2225,6 +2261,10 @@
         pin: o.pin,
         saved: o.saved ?? null,
         content: o.content ?? {},
+        userSets: o.userSets ?? {},
+        onSetsChanged: (c) => {
+          if (__native.saveSets) __native.saveSets(JSON.stringify(c));
+        },
         now: () => performance.now(),
         code: o.code || void 0,
         broadcast: (topic, event, payload) => __native.broadcast(topic, event, JSON.stringify(payload)),

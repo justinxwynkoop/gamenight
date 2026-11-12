@@ -90,6 +90,21 @@ final class GameNightClient {
 
     private static let savedRoomKey = "gamenight.localRoom"
     private static let roomCodeKey = "gamenight.roomCode"
+    private static let userSetsKey = "gamenight.userSets"
+
+    /// A room code kept from an earlier run, if it is the four digits rooms use now (older rooms used letters).
+    private static func storedRoomCode() -> String? {
+        guard let code = UserDefaults.standard.string(forKey: roomCodeKey), code.count == 4, code.allSatisfy(\.isNumber) else { return nil }
+        return code
+    }
+
+    /// Starts over with a new random room code and an empty room (phones must type the new code).
+    func newRoom() {
+        guard isLocal else { return }
+        UserDefaults.standard.removeObject(forKey: Self.roomCodeKey)
+        UserDefaults.standard.removeObject(forKey: Self.savedRoomKey)
+        startLocal(game: localGame)
+    }
 
     /// A note for the corner of the screen when something is not right, or nil.
     var bannerNote: String? {
@@ -115,9 +130,10 @@ final class GameNightClient {
                 script: script,
                 pin: pin,
                 saved: UserDefaults.standard.string(forKey: Self.savedRoomKey),
-                content: Self.bundledSets(),
-                code: UserDefaults.standard.string(forKey: Self.roomCodeKey),
+                content: LocalSets.merged(Self.bundledSets(), LocalSets.load()),
+                code: Self.storedRoomCode(),
                 game: game,
+                userSets: UserDefaults.standard.string(forKey: Self.userSetsKey),
                 onSend: { [weak self] id, json in
                     // Only the TV's own display is local; phones and the host are answered through the relay.
                     if id == "tv" { self?.handle(Data(json.utf8)) }
@@ -125,7 +141,8 @@ final class GameNightClient {
                 onBroadcast: { [weak relay] topic, event, json in
                     relay?.send(topic, event: event, payloadJSON: json)
                 },
-                onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) }
+                onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) },
+                onSets: { json in UserDefaults.standard.set(json, forKey: Self.userSetsKey) }
             )
             engine = host
             realtime = relay

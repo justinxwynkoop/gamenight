@@ -50,6 +50,7 @@ struct JeopardyDisplayView: View {
                     roomCode: client.roomCode,
                     phonesNote: client.isLocal ? (client.relayUp ? "Phones: connected" : "Phones: not connected\(client.relayIssue.map { " (\($0))" } ?? "")") : nil,
                     joinURL: client.joinURL,
+                    onNewRoom: client.isLocal ? { showMenu = false; client.newRoom() } : nil,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
                     onClose: { showMenu = false }
@@ -156,11 +157,13 @@ private struct DisplayMenu: View {
     /// "Phones: connected" or why not, when the game runs on this Apple TV.
     var phonesNote: String? = nil
     let joinURL: URL?
+    /// Starts a new room with a new random code (only when the game runs on this Apple TV).
+    var onNewRoom: (() -> Void)? = nil
     let onChangeServer: () -> Void
     let onExit: () -> Void
     let onClose: () -> Void
 
-    private enum Choice { case close, change, exit }
+    private enum Choice { case close, newRoom, change, exit }
     /// The board behind this panel holds the remote's focus until we ask for it, so the buttons could not be reached.
     @FocusState private var focus: Choice?
 
@@ -198,6 +201,7 @@ private struct DisplayMenu: View {
                     .frame(maxWidth: 820)
                 HStack(spacing: 30) {
                     Button("Close", action: onClose).focused($focus, equals: .close)
+                    if let onNewRoom { Button("New room code", action: onNewRoom).focused($focus, equals: .newRoom) }
                     Button("Change server", action: onChangeServer).focused($focus, equals: .change)
                     Button("Back to games", action: onExit).focused($focus, equals: .exit)
                 }

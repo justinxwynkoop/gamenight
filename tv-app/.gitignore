@@ -11,3 +11,5 @@ __pycache__/
 FamilyGameNight/GameNight/Sounds/*.mp3
 FamilyGameNight/GameNight/Sounds/*.m4a
 FamilyGameNight/GameNight/Sounds/*.wav
+# Extra question sets copied in on your Mac by Tools/install-sets.sh (some come from public survey data), never committed.
+FamilyGameNight/GameNight/Sets/*.json

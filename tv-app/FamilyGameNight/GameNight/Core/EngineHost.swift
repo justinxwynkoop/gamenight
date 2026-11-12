@@ -36,6 +36,8 @@ public final class EngineHost {
     ///   - pin: the host PIN (a host screen must say it to take control)
     ///   - saved: the text `onSave` last gave, or nil
     ///   - content: question sets as JSON text, `[gameId: [setId: json]]`
+    ///   - userSets: the family's own changes to the question sets, as the last `onSets` gave them: `{game: {id: set | null}}`
+    ///   - onSets: the family saved, imported or deleted a set (from the online editor): keep this text
     ///   - game: the game the TV's tile is for ("jeopardy" or "feud"). A saved room that was playing another game is not resumed.
     ///   - code: the room code phones type (four letters); the engine makes one if this is nil
     ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
@@ -46,9 +48,11 @@ public final class EngineHost {
         content: [String: [String: String]] = [:],
         code: String? = nil,
         game: String? = nil,
+        userSets: String? = nil,
         onSend: @escaping (_ clientId: String, _ json: String) -> Void,
         onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
-        onSave: @escaping (_ json: String) -> Void = { _ in }
+        onSave: @escaping (_ json: String) -> Void = { _ in },
+        onSets: @escaping (_ json: String) -> Void = { _ in }
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
         let problems = Problems()
@@ -68,6 +72,8 @@ public final class EngineHost {
         func set(_ name: String, _ block: AnyObject) { native.setObject(block, forKeyedSubscript: name as NSString) }
         set("send", unsafeBitCast(send, to: AnyObject.self))
         set("broadcast", unsafeBitCast(broadcast, to: AnyObject.self))
+        let saveSets: @convention(block) (String) -> Void = { onSets($0) }
+        set("saveSets", unsafeBitCast(saveSets, to: AnyObject.self))
         set("save", unsafeBitCast(save, to: AnyObject.self))
         set("now", unsafeBitCast(now, to: AnyObject.self))
         set("random", unsafeBitCast(random, to: AnyObject.self))
@@ -87,6 +93,7 @@ public final class EngineHost {
         if let saved { options["saved"] = saved }
         if let code { options["code"] = code }
         if let game { options["game"] = game }
+        if let userSets, let object = Self.object(userSets) { options["userSets"] = object }
         engine.invokeMethod("start", withArguments: [Self.json(options)])
         if let first = problems.list.first { throw EngineError.scriptFailed(first) }
     }
