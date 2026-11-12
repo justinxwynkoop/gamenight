@@ -17,8 +17,12 @@ jobs:
         run: swift --version
       - name: Run the tests
         run: |
-          set -o pipefail
-          swift test 2>&1 | tail -n 150
+          swift test > test.log 2>&1 && status=0 || status=$?
+          echo "---- failures ----"
+          grep -E "error:|failed \(" test.log || echo "none"
+          echo "---- summary ----"
+          grep -E "Executed [0-9]+ tests" test.log | tail -n 3
+          exit $status
 
   tvos:
     name: Build the Apple TV app

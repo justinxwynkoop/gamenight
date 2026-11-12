@@ -312,7 +312,7 @@ final class TitleHintTests: XCTestCase {
         XCTAssertEqual(TitleHint.text(for: "Hey Jude", style: .blanks), "_ _ _   _ _ _ _")
         XCTAssertEqual(TitleHint.text(for: "Hey Jude", style: .firstLetter), "H _ _   _ _ _ _")
         XCTAssertEqual(TitleHint.text(for: "hey jude", style: .firstLetterOfEachWord), "H _ _   J _ _ _")
-        XCTAssertEqual(TitleHint.text(for: "99 Luftballons", style: .firstLetter), "9 _   _ _ _ _ _ _ _ _ _ _")
+        XCTAssertEqual(TitleHint.text(for: "99 Luftballons", style: .firstLetter), "9 _   _ _ _ _ _ _ _ _ _ _ _")
     }
 
     func testHintKeepsPunctuationAndDropsExtras() {

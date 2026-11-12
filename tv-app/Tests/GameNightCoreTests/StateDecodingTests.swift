@@ -74,7 +74,7 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertTrue(room.isTeamMode)
         XCTAssertEqual(room.units.map(\.members), [3, 2])
         XCTAssertEqual(room.units.map(\.connected), [true, false])
-        XCTAssertEqual(room.unit("t2")?.name, "Team 2")
+        XCTAssertEqual(room.unit("t2")?.name, "Blue")
         XCTAssertNil(room.unit("nobody"))
         XCTAssertNil(room.unit(nil))
     }
