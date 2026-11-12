@@ -16,7 +16,9 @@ export class Realtime {
     this.onBroadcast = onBroadcast;
     this.onStatus = onStatus;
     this.onJoined = onJoined;
-    this.setTimer = setTimer; this.clearTimer = clearTimer;
+    // Wrapped, not stored as methods: a browser's setTimeout throws "Illegal invocation" when called on another object.
+    this.setTimer = (fn, ms) => setTimer(fn, ms);
+    this.clearTimer = (id) => clearTimer(id);
     this.channels = new Map(); // name -> { joinRef, joined, queue: [] }
     this.ref = 0;
     this.retry = 0;
