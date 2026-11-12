@@ -19,6 +19,11 @@ export function h(tag, props = {}, ...kids) {
   return el;
 }
 
+/** Puts these in the container, like replaceChildren, but accepts lists, null and false the way h() does (replaceChildren would print them as text). */
+export function setKids(container, ...kids) {
+  container.replaceChildren(...kids.flat(Infinity).filter((k) => k != null && k !== false).map((k) => (k instanceof Node ? k : document.createTextNode(String(k)))));
+}
+
 export const money = (n) => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US');
 /** A score as the active game shows it: dollars for Jeopardy, plain points for Family Feud. */
 export const scoreText = (view, n) => (view?.game?.scoreFormat === 'points' ? String(n) : money(n));

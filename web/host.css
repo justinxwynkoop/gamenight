@@ -42,7 +42,7 @@ body.host .offline { z-index: 80; }
 .dock-row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
 .dock-note { color: var(--dim); font-size: .9rem; text-align: center; }
 .tabs {
-  grid-area: tabs; display: grid; grid-template-columns: repeat(4, 1fr);
+  grid-area: tabs; display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--s1); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
 }
 .tab {

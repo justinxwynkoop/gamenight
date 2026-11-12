@@ -82,7 +82,7 @@ try {
   console.log('during a clue the phone shows the buzz button instead');
   engine.room.act('endGame', {});
 
-  const host = await browser.newPage(); watch(host, 'host');
+  const host = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(host, 'host');
   await host.goto(`${base}/host?r=ABCD`);
   await until(async () => (await host.locator('input').count()) > 0, 'the host PIN form');
   await host.locator('input').first().fill('4321');
@@ -93,6 +93,12 @@ try {
   await until(() => engine.room.gameId === 'feud', 'the host to choose Family Feud');
   console.log('host chose Family Feud through the relay');
 
+  // From the host page, the Questions tab opens the editor with the PIN and room already known (one address to remember).
+  await host.getByRole('button', { name: /questions/i }).click();
+  await until(async () => (await host.locator('summary').count()) > 0, 'the editor to open from the host page without asking for the PIN again');
+  console.log('host page → Questions tab → editor, no PIN or room code asked again');
+  if (process.env.SHOT2) await host.screenshot({ path: process.env.SHOT2 });
+
   // The question editor, online: PIN, then import a set by pasting it, then see it in the TV's list.
   const editor = await browser.newPage(); watch(editor, 'editor');
   await editor.goto(`${base}/editor?game=feud&r=ABCD`);
@@ -101,6 +107,7 @@ try {
   await editor.keyboard.press('Enter');
   const paste = editor.locator('textarea[placeholder^="Paste a link"]');
   await until(async () => (await paste.count()) > 0, 'the editor and its import box');
+  await editor.getByText('Import sets', { exact: false }).first().click();   // the import box is folded away until opened
   await paste.fill(JSON.stringify({ ...feud, title: 'E2E Set' }));
   await editor.getByRole('button', { name: 'Import' }).click();
   await until(async () => /Imported 1/.test(await editor.locator('body').innerText()), 'the import to finish');

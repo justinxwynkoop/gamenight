@@ -25,6 +25,7 @@ const TABS = [
   { id: 'players', label: 'Players', icon: 'users' },
   { id: 'scores', label: 'Scores', icon: 'award' },
   { id: 'settings', label: 'Settings', icon: 'sliders' },
+  { id: 'questions', label: 'Questions', icon: 'edit', href: true },   // opens the question editor (same PIN and room, nothing to type again)
 ];
 
 // ---------- connection ----------
@@ -171,7 +172,8 @@ function tabsNav() {
   const { room } = view;
   const live = view.game && ['clue', 'final'].includes(view.game.status);
   return h('nav', { class: 'tabs', 'aria-label': 'Sections' }, TABS.map((t) => h('button', {
-    type: 'button', class: 'tab', 'aria-current': ui.tab === t.id ? 'page' : null, onclick: () => goTab(t.id),
+    type: 'button', class: 'tab', 'aria-current': ui.tab === t.id ? 'page' : null,
+    onclick: () => { if (t.href) location.href = `/editor${view.room.gameId ? `?game=${view.room.gameId}` : ''}`; else goTab(t.id); },
   }, icon(t.icon, 22), h('span', {}, t.label),
   t.id === 'players' && room.players.length > 0 && h('span', { class: 'count' }, String(room.players.length)),
   t.id === 'game' && live && ui.tab !== 'game' && h('span', { class: 'count' }, '!'))));

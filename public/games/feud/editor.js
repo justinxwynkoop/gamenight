@@ -1,6 +1,6 @@
 // The Family Feud question editor: survey questions with ranked answers (and points), plus the five Fast Money questions.
 // The page (editor.js) handles the PIN and passes `api` for loading and saving sets.
-import { h } from '../../common.js';
+import { h, setKids } from '../../common.js';
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 const blankQ = () => ({ question: '', answers: Array.from({ length: 5 }, () => ({ text: '', points: 10 })) });
@@ -73,7 +73,7 @@ export function mount(container, api) {
   function render() {
     const picker = h('select', { onchange: (e) => { if (e.target.value === '') { doc = blank(); id = ''; isNew = true; msg = null; render(); } else open(e.target.value); } },
       h('option', { value: '' }, '＋ New question set'), sets.map((s) => h('option', { value: s.id, selected: !isNew && s.id === id }, s.title)));
-    container.replaceChildren(
+    setKids(container, 
       h('div', { class: 'card bar' }, h('strong', {}, 'Question sets'), picker),
       h('div', { class: 'card' },
         h('label', {}, 'Title'), field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. Grandma’s House' }),

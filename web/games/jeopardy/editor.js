@@ -1,6 +1,6 @@
 // The Jeopardy question editor: six categories of five clues, plus Final Jeopardy.
 // The page (editor.js) handles the PIN and passes `api` for loading and saving sets.
-import { h } from '../../common.js';
+import { h, setKids } from '../../common.js';
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 
@@ -66,7 +66,7 @@ function field(tag, obj, key, props = {}) {
         })(), 'Daily Double')),
       field('textarea', cl, 'clue', { placeholder: 'Clue (what the host reads)' }),
       field('input', cl, 'answer', { placeholder: 'Answer (host only)' })))));
-  container.replaceChildren(
+  setKids(container, 
     h('div', { class: 'card bar' }, h('strong', {}, 'Question sets'), picker),
     h('div', { class: 'card' },
       h('label', {}, 'Title'), field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. Holiday Trivia' }),

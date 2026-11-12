@@ -42,8 +42,9 @@ function importCard(api) {
         ...failed.map((f) => h('div', { class: 'err' }, f)));
     } catch (e) { out.replaceChildren(h('div', { class: 'err' }, e.message)); }
   };
-  return h('div', { class: 'card' }, h('h2', {}, 'Import sets'), input,
-    h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: go }, 'Import'), out);
+  // Folded away so it does not push the editor down, but right at the top where it is easy to find.
+  return h('details', { class: 'card' }, h('summary', { style: { cursor: 'pointer', fontWeight: '700' } }, 'Import sets (from a link, a GitHub folder or pasted text)'),
+    h('div', { style: { marginTop: '10px' } }, input, h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: go }, 'Import'), out));
 }
 
 function login() {
@@ -62,15 +63,15 @@ async function boot() {
     await apiFor(gameId).list(); // checks the PIN before showing anything
     const mod = await import(`/games/${gameId}/editor.js`);
     const box = h('div', { style: { display: 'contents' } });
+    const api = apiFor(gameId);
     app.replaceChildren(h('div', { class: 'wrap' },
       h('div', { class: 'card bar' },
         h('div', { class: 'row' }, h('a', { class: 'btn small', href: '/host', style: { textDecoration: 'none' } }, '← Host'), h('strong', {}, 'Question editor')),
         games.length > 1 && h('select', { style: { width: 'auto' }, onchange: (e) => { location.search = `?game=${e.target.value}`; } },
           games.map((g) => h('option', { value: g.id, selected: g.id === gameId }, g.name)))),
+      importCard(api),
       box));
-    const api = apiFor(gameId);
     mod.mount(box, api);
-    app.firstChild.append(importCard(api));
   } catch (e) {
     error = e instanceof AuthError ? (pin ? e.message : '') : e.message;
     login();
