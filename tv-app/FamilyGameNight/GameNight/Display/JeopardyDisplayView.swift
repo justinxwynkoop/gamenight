@@ -16,6 +16,9 @@ struct JeopardyDisplayView: View {
 
     @State private var showMenu = false
     @State private var sound = SoundDirector()
+    /// The game screens have no buttons, so the screen itself must hold the remote's focus: only then does Menu come
+    /// here (and back to the game picker) instead of going to the Apple TV's own home screen.
+    @FocusState private var boardFocused: Bool
 
     var body: some View {
         ZStack {
@@ -65,6 +68,11 @@ struct JeopardyDisplayView: View {
             }
         }
         .onPlayPauseCommand { showMenu.toggle() }
+        // Take the focus when the display opens, when the first state arrives (the screen is only focusable
+        // then), and whenever the Play/Pause panel closes and its buttons stop holding it.
+        .onAppear { boardFocused = true }
+        .onChange(of: client.state != nil) { _, hasState in if hasState { boardFocused = true } }
+        .onChange(of: showMenu) { _, shown in if !shown { boardFocused = true } }
         .onChange(of: client.state) { previous, next in
             guard let next else { return }
             sound.stateChanged(from: previous, to: next, receivedAt: client.stateReceivedAt)
@@ -94,6 +102,7 @@ struct JeopardyDisplayView: View {
             }
             .focusable(!showMenu)
             .focusEffectDisabled()
+            .focused($boardFocused)
         } else {
             ConnectingScreen(
                 client: client,
