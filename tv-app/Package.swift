@@ -9,6 +9,8 @@ import PackageDescription
 
 let package = Package(
     name: "FamilyGameNightCore",
+    // Only for `swift test` on a Mac: the Apple TV engine host uses WebSockets and JavaScriptCore.
+    platforms: [.macOS(.v13), .iOS(.v16), .tvOS(.v16)],
     products: [
         .library(name: "SingoCore", targets: ["SingoCore"]),
         .library(name: "GameNightCore", targets: ["GameNightCore"]),
