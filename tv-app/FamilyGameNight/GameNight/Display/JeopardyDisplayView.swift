@@ -45,6 +45,7 @@ struct JeopardyDisplayView: View {
                     address: client.address?.text ?? "",
                     hostPin: client.hostPin,
                     roomCode: client.roomCode,
+                    phonesNote: client.isLocal ? (client.relayUp ? "Phones: connected" : "Phones: not connected\(client.relayIssue.map { " (\($0))" } ?? "")") : nil,
                     joinURL: client.joinURL,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
@@ -143,6 +144,8 @@ private struct DisplayMenu: View {
     /// Set when the game runs on this Apple TV: the PIN the host types on their phone. It lives only in this menu.
     var hostPin: String? = nil
     var roomCode: String? = nil
+    /// "Phones: connected" or why not, when the game runs on this Apple TV.
+    var phonesNote: String? = nil
     let joinURL: URL?
     let onChangeServer: () -> Void
     let onExit: () -> Void
@@ -171,6 +174,12 @@ private struct DisplayMenu: View {
                     Text("Host PIN  \(hostPin)")
                         .font(JP.text(64))
                         .foregroundStyle(JP.gold)
+                    if let phonesNote {
+                        Text(phonesNote)
+                            .font(JP.text(28, .medium))
+                            .foregroundStyle(JP.muted)
+                            .multilineTextAlignment(.center)
+                    }
                 } else {
                     Text("Connected to \(address)")
                         .font(JP.text(32, .medium))

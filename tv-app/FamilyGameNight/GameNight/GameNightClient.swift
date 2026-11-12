@@ -32,6 +32,8 @@ final class GameNightClient {
     private(set) var roomCode: String?
     /// Whether the link to the online relay is up (phones can only reach this TV while it is).
     private(set) var relayUp = false
+    /// Why the link to the online relay is not working, when it is known.
+    private(set) var relayIssue: String?
     /// Set when the server sent a state this app could not read.
     private(set) var readError: String?
 
@@ -77,6 +79,7 @@ final class GameNightClient {
         hostPin = nil
         roomCode = nil
         relayUp = false
+        relayIssue = nil
         connection = .idle
         state = nil
         joinURL = nil
@@ -91,7 +94,7 @@ final class GameNightClient {
     /// A note for the corner of the screen when something is not right, or nil.
     var bannerNote: String? {
         if state != nil, connection != .connected { return "Reconnecting…" }
-        if isLocal, !relayUp { return "Connecting phones…" }
+        if isLocal, !relayUp { return relayIssue.map { "Phones not connected (\($0))" } ?? "Connecting phones…" }
         return nil
     }
 
@@ -131,6 +134,7 @@ final class GameNightClient {
             UserDefaults.standard.set(host.roomCode, forKey: Self.roomCodeKey)
             joinURL = RelayConfig.joinURL(code: host.roomCode)
             relay.onStatus = { [weak self] up in self?.relayUp = up }
+            relay.onIssue = { [weak self] text in self?.relayIssue = text }
             relay.onBroadcast = { [weak self] topic, event, json in
                 self?.engine?.deliver(topic: topic, event: event, json: json)
             }

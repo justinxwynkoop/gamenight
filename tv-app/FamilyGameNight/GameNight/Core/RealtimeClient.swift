@@ -17,6 +17,8 @@ final class RealtimeClient: NSObject, URLSessionWebSocketDelegate {
     var onBroadcast: ((String, String, String) -> Void)?
     /// true when the link to Supabase is up
     var onStatus: ((Bool) -> Void)?
+    /// A plain-words reason the link is not working (shown on the TV so a problem can be told apart), or nil when fine.
+    var onIssue: ((String?) -> Void)?
 
     private let supabaseURL: String
     private let supabaseKey: String
@@ -65,6 +67,7 @@ final class RealtimeClient: NSObject, URLSessionWebSocketDelegate {
     }
 
     private func setUp(_ up: Bool) {
+        if up { onIssue?(nil) }
         if isUp != up { isUp = up; onStatus?(up) }
     }
 
@@ -103,7 +106,8 @@ final class RealtimeClient: NSObject, URLSessionWebSocketDelegate {
                     @unknown default: break
                     }
                     self.listen(t)
-                case .failure:
+                case .failure(let error):
+                    self.onIssue?("socket: \((error as NSError).domain) \((error as NSError).code)")
                     self.dropped()
                 }
             }
@@ -224,6 +228,8 @@ final class RealtimeClient: NSObject, URLSessionWebSocketDelegate {
                     flushQueue(ch)
                 } else {
                     NSLog("GameNight: join refused for \(ch.name): \(payload)")
+                    let response = (payload["response"] as? [String: Any])?["reason"] as? String
+                    onIssue?("join refused: \(response ?? String(describing: payload).prefix(120).description)")
                     rejoinLater(ch)
                 }
             }
