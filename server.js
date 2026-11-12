@@ -11,6 +11,7 @@ import QRCode from 'qrcode';
 import { Room } from './room.js';
 import { GameError, pickAddress } from './lib.js';
 import { GAMES } from './games/index.js';
+import { createHub } from './engine/hub.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(here, 'data');
@@ -242,88 +243,32 @@ const server = http.createServer(async (req, res) => {
 });
 
 // ---------- WebSocket ----------
+function broadcast() { hub.broadcast(); }   // used by the room's onChange above; the hub is defined just below
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16 * 1024 });
-const sockets = new Set();
+const sockets = new Map(); // client id -> socket
+let nextSocketId = 1;
 const sendJson = (ws, msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
-
-function viewFor(ws, cache) {
-  if (ws.role === 'host') return (cache.host ??= room.hostView());
-  const pub = (cache.pub ??= room.publicView());
-  return ws.role === 'player' ? room.playerView(ws.playerId, pub) : pub;
-}
-function broadcast() {
-  const cache = {};
-  for (const ws of sockets) if (ws.role) sendJson(ws, { t: 'state', view: viewFor(ws, cache) });
-}
-function sendState(ws) { sendJson(ws, { t: 'state', view: viewFor(ws, {}) }); }
-
-function attachPlayer(ws, player) {
-  ws.playerId = player.id;
-  room.setConnected(player.id, true);
-}
-const liveSockets = (playerId) => [...sockets].filter((s) => s.playerId === playerId).length;
-
-function handle(ws, msg) {
-  switch (msg.t) {
-    case 'hello': {
-      if (msg.role === 'tv') ws.role = 'tv';
-      else if (msg.role === 'host') {
-        if (!pinOk(msg.pin)) { sendJson(ws, { t: 'bad-pin' }); return; }
-        ws.role = 'host';
-      } else if (msg.role === 'player') {
-        ws.role = 'player';
-        const p = room.playerByToken(msg.token);
-        if (p) attachPlayer(ws, p);
-        else sendJson(ws, { t: 'need-join' });
-      } else return;
-      sendState(ws);
-      return;
-    }
-    case 'join': {
-      if (ws.role !== 'player') return;
-      const p = room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === 'buzzer' ? 'buzzer' : 'phone' });
-      attachPlayer(ws, p);
-      sendJson(ws, { t: 'joined', token: p.token });
-      return;
-    }
-    case 'act': {
-      if (ws.role !== 'host') return;
-      room.act(msg.action, msg.args ?? {});
-      return;
-    }
-    case 'ping': sendJson(ws, { t: 'pong' }); return;
-    default: {
-      // Anything else from a joined player belongs to the active game (a buzz, a wager, ...).
-      if (ws.role === 'player' && ws.playerId) {
-        const reply = room.playerMessage(ws.playerId, msg);
-        if (reply) sendJson(ws, reply);
-      }
-    }
-  }
-}
+// Everything said to and heard from a screen or phone goes through the hub (engine/hub.js), which does not care
+// that this transport happens to be a WebSocket.
+const hub = createHub({ room, pinOk, send: (id, msg) => { const ws = sockets.get(id); if (ws) sendJson(ws, msg); } });
 
 wss.on('connection', (ws) => {
   ws._socket.setNoDelay(true); // do not let Nagle batch up a buzz
   ws.isAlive = true;
-  sockets.add(ws);
+  const id = `ws${nextSocketId++}`;
+  sockets.set(id, ws);
+  hub.open(id);
   ws.on('pong', () => { ws.isAlive = true; });
   ws.on('message', (data) => {
     let msg;
     try { msg = JSON.parse(data.toString()); } catch { return; }
-    if (!msg || typeof msg !== 'object') return;
-    try { handle(ws, msg); } catch (e) {
-      if (e instanceof GameError) sendJson(ws, { t: 'error', message: e.message });
-      else { console.error(e); sendJson(ws, { t: 'error', message: 'Something went wrong' }); }
-    }
+    hub.receive(id, msg);
   });
-  ws.on('close', () => {
-    sockets.delete(ws);
-    if (ws.playerId && !liveSockets(ws.playerId)) room.setConnected(ws.playerId, false);
-  });
+  ws.on('close', () => { sockets.delete(id); hub.close(id); });
   ws.on('error', () => {});
 });
 setInterval(() => {
-  for (const ws of sockets) {
+  for (const ws of sockets.values()) {
     if (!ws.isAlive) { ws.terminate(); continue; }
     ws.isAlive = false;
     try { ws.ping(); } catch { /* closing */ }
