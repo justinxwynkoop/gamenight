@@ -24,6 +24,7 @@ export class Realtime {
     this.socket = null;
     this.heartbeatTimer = null; this.pendingHeartbeat = null; this.reconnectTimer = null;
     this.closed = false;
+    this.lastIssue = null; // plain words about the last thing that went wrong, for the page to show
   }
 
   #nextRef() { return String(++this.ref); }
@@ -45,7 +46,7 @@ export class Realtime {
     };
     socket.onmessage = (ev) => { if (this.socket === socket) this.#handle(typeof ev.data === 'string' ? ev.data : String(ev.data)); };
     socket.onclose = () => { if (this.socket === socket) this.#dropped(); };
-    socket.onerror = () => {};
+    socket.onerror = () => { this.lastIssue = 'could not reach Supabase'; };
   }
 
   close() {
@@ -128,7 +129,7 @@ export class Realtime {
     if (event === 'phx_reply') {
       if (ref && ref === ch.joinRef) {
         if (payload.status === 'ok') {
-          ch.joined = true; this.#setUp(true);
+          ch.joined = true; this.lastIssue = null; this.#setUp(true);
           const queued = ch.queue.splice(0);
           for (const q of queued) this.send(name, q.event, q.payload);
           this.onJoined(name);
@@ -140,7 +141,7 @@ export class Realtime {
 
   #rejoinLater(name, ch, why) {
     ch.joined = false;
-    if (why) console.warn?.(`Realtime: join refused for ${name}`, JSON.stringify(why));
+    if (why) { this.lastIssue = `join refused: ${why.response?.reason ?? JSON.stringify(why).slice(0, 100)}`; console.warn?.(`Realtime: join refused for ${name}`, JSON.stringify(why)); }
     this.setTimer(() => { if (this.channels.get(name) === ch && !ch.joined) this.#sendJoin(name, ch); }, 2000);
   }
 }

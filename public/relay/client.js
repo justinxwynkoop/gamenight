@@ -54,6 +54,13 @@ export function connectRelay({
   timer = setTimer(beat, pingMs);
 
   return {
+    /** Where the connection has got to, in plain words (for the "waiting" screen). */
+    status() {
+      if (rt.lastIssue && !ready) return `Supabase: ${rt.lastIssue}`;
+      if (!rt.up) return 'Connecting to the online relay…';
+      if (!connected) return 'Connected to the relay. The TV has not answered yet.';
+      return 'Connected to the TV.';
+    },
     send(msg) { if (!ready) return false; say(msg); return true; },
     act(action, args = {}) { if (ready) say({ t: 'act', action, args }); },
     /** Ask the room something that is not an action (host only). Resolves with { ok, data | error }. */

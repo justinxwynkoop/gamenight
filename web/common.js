@@ -107,6 +107,7 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
     send: (msg) => !!link?.send(msg),
     act: (action, args = {}) => link?.act(action, args),
     rpc: (op, args) => (link ? link.rpc(op, args) : Promise.resolve({ ok: false, error: 'Not connected' })),
+    status: () => link?.status() ?? 'Starting…',
     close: () => { closed = true; link?.close(); },
   };
   onlineConnection = connection;
