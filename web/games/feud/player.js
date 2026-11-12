@@ -61,7 +61,8 @@ export function mount(container, { send, flash }) {
     const r = v.game.round;
     if (r) {
       peek.classList.remove('hidden');
-      peek.replaceChildren(h('div', { class: 'tag' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''} · ${r.pot} on the board`), r.question);
+      // The host reads the question out loud; it is shown only once the round is over, so nobody reads ahead on a phone.
+      peek.replaceChildren(h('div', { class: 'tag' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''} · ${r.pot} on the board`), r.step === 'roundEnd' ? r.question : 'Listen for the question…');
     } else peek.classList.add('hidden');
     const board = container.querySelector('#fd-board');
     if (board) {
