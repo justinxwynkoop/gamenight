@@ -9,13 +9,35 @@ JSON document with a **title** and a **file name** (the id, lowercase letters, n
 | Way | Where |
 | --- | --- |
 | **Sets that come with the app** | `data/<game>/*.json` in this repo (11 Jeopardy and 5 Family Feud). They are packed into the Apple TV app. |
-| **The editor** | `<site>/editor` (online) or `/editor` on the Pi. On the host page, the **Questions** tab opens it. |
+| **The editor** | `<site>/editor`. On the host page, the **Questions** tab opens it. |
 | **Import** | In the editor, the **Import sets** card (see below). |
 | **Extra sets copied into the app on your Mac** | `Tools/install-sets.sh` in the `familygamenight` repo (for sets that must stay out of GitHub). |
 | **Write the JSON by hand** | Any text editor; see the formats below. |
 
 Where they live: **online**, the Apple TV keeps sets you save or import (they survive restarts, but not deleting the app),
-on top of the ones that shipped inside the app. In **server mode**, sets are files in the server's `data/<game>/` folder.
+on top of the ones that shipped inside the app. (In [server mode](SERVER-MODE.md), sets are files in the server's `data/<game>/` folder.)
+
+## The sets that come with the app
+
+Eleven Jeopardy boards (six categories of five clues plus a Final Jeopardy, from easy at $200 to harder at $1,000;
+Daily Doubles are placed at random) and five Family Feud sets (their survey numbers are made up, not real results):
+
+| Set | Covers |
+| --- | --- |
+| `family-night` | a bit of everything |
+| `animal-kingdom` | pets, wild Africa, ocean life, birds, bugs, babies |
+| `movies-and-cartoons` | Disney, Pixar, cartoons, sidekicks, superheroes, lyrics |
+| `around-the-usa` | capitals, landmarks, nicknames, rivers, parks, symbols |
+| `science-lab` | space, the body, chemistry, weather, dinosaurs, inventions |
+| `food-and-cooking` | produce, world dishes, breakfast, desserts, tools, snacks |
+| `sports-night` | Olympics, baseball, basketball, football, soccer, gear |
+| `world-geography` | capitals, continents, oceans, places, flags, languages |
+| `history-highlights` | Egypt and Rome, the Revolution, explorers, women, Greece, the 1900s |
+| `music-and-pop-culture` | instruments, rhymes, legends, musicals, music basics, games |
+| `holidays-and-seasons` | Christmas, Halloween, Thanksgiving, spring, summer, celebrations |
+
+The Family Feud sets are `family-night-basics`, `home-and-kitchen`, `kids-corner`, `out-and-about` and
+`holidays-and-seasons`. The host picks a set in the lobby.
 
 ## Importing
 
@@ -126,7 +148,7 @@ Six categories of five clues each. The exact rules are `validateSet` in `games/j
 ## Boards built from public data (kept out of GitHub)
 
 `scripts/get-feud-sets.sh` and `scripts/make-feud-sets.mjs` build Family Feud sets from the public ProtoQA survey data,
-and `scripts/get-clues.sh` fetches a Jeopardy clue file for the Pi's **Random board** button. These data files and the
+and `scripts/get-clues.sh` fetches a Jeopardy clue file for server mode's **Random board** button. These data files and the
 sets built from them (`data/feud/protoqa-*.json`, `data/feud/random-*.json`, `data/jeopardy/random-*.json`,
 `data/clues/`, `data/surveys/`) are listed in `.gitignore` and must never be committed. To use such sets on the Apple TV,
 copy them into the app on your Mac with `Tools/install-sets.sh` (see the `familygamenight` README).

@@ -1,14 +1,8 @@
 # Online mode: the Apple TV hosts the game
 
-Game Night runs in two ways. This page is about the newer one, where **no computer or Raspberry Pi has to be on
-your network**. The original way (a Node server on a Pi) is described in the [README](../README.md) and still works.
-
-| | Online mode (this page) | Server mode (the README) |
-| --- | --- | --- |
-| Where the game runs | Inside the Apple TV app (the `familygamenight` repo) | A Node server on a Pi or any computer |
-| How phones reach it | A web page on Vercel and a free Supabase Realtime relay, over the internet | The server's own web pages, on your Wi-Fi |
-| Needs | Internet on the TV and on every phone | Everyone on the same Wi-Fi |
-| Phones join with | A 4-digit room code (or the QR code) | The QR code (the server's address) |
+Game Night's online mode needs **no computer or server on your network**: the game runs inside the Apple TV app and
+phones connect over the internet. (There is also an optional [server mode](SERVER-MODE.md) that runs everything on your
+own network instead; both use the same rules and the same phone pages.)
 
 ## How it fits together
 
@@ -79,7 +73,7 @@ your network**. The original way (a Node server on a Pi) is described in the [RE
   `node scripts/build-engine.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/engine.js`, and commit that file
   in the app repo. The app only changes when you rebuild and run it.
 - Phone pages (`public/`): run `node scripts/build-web.mjs` and commit `web/`. Vercel redeploys by itself; phones
-  get the change on reload. The Pi serves `public/` directly, so server mode sees it too.
+  get the change on reload. Server mode serves `public/` directly, so it sees the change too.
 - The question sets that ship inside the app come from `data/<game>/*.json`:
   `node scripts/bundle-sets.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/sets.json`.
 
@@ -116,8 +110,9 @@ Two checks need more than Node and run in GitHub Actions (`.github/workflows/ci.
 ## Limits
 
 - Needs the internet on the TV and on every phone. A buzz crosses the internet (usually well under half a second),
-  so the host's judgement still decides ties; it is not a hardware-grade buzzer. Light-up buzzers (see the README) are
-  for server mode.
+  so the host's judgement still decides ties; it is not a hardware-grade buzzer. Light-up buzzers are only
+  for [server mode](SERVER-MODE.md).
 - Supabase's free plan has message and connection limits, and pauses a project that has been idle for a long time.
   Opening the Supabase dashboard wakes it.
-- The Pi's **Random board** buttons (built from the clue and survey data on the Pi) are not available online yet.
+- The **Random board** buttons (built from large clue and survey files) are not available online yet; they need a
+  server ([SERVER-MODE.md](SERVER-MODE.md)).
