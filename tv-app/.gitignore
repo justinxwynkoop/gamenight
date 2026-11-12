@@ -6,3 +6,8 @@ DerivedData/
 .swiftpm/
 __pycache__/
 *.pyc
+
+# Your own sound files (copyrighted audio): copied in on your Mac by Tools/install-sounds.sh, never committed.
+FamilyGameNight/GameNight/Sounds/*.mp3
+FamilyGameNight/GameNight/Sounds/*.m4a
+FamilyGameNight/GameNight/Sounds/*.wav

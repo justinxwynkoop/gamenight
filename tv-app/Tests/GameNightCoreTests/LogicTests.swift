@@ -236,3 +236,21 @@ final class FormattingTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(RGB.parse(hex: "#000000")).luminance, 0, accuracy: 0.0001)
     }
 }
+
+final class BundledSoundsTests: XCTestCase {
+    func testFileNamesBecomeGamesAndSounds() {
+        XCTAssertEqual(BundledSounds.parse(stem: "feud__ding")?.game, "feud")
+        XCTAssertEqual(BundledSounds.parse(stem: "feud__ding")?.name, "ding")
+        XCTAssertNil(BundledSounds.parse(stem: "shared__think")?.game)
+        XCTAssertEqual(BundledSounds.parse(stem: "shared__think")?.name, "think")
+        XCTAssertNil(BundledSounds.parse(stem: "think"))
+        XCTAssertNil(BundledSounds.parse(stem: "other__think"))
+        XCTAssertNil(BundledSounds.parse(stem: "a__b__c"))
+        XCTAssertEqual(BundledSounds.key(game: "jeopardy", name: "think"), "jeopardy/think")
+        XCTAssertEqual(BundledSounds.key(game: nil, name: "think"), "think")
+    }
+
+    func testAnEmptyBundleHasNoCustomSounds() {
+        XCTAssertTrue(BundledSounds.load(from: Bundle(for: BundledSoundsTests.self)).isEmpty)
+    }
+}

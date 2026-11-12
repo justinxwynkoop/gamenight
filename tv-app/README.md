@@ -319,6 +319,18 @@ there is no `lobby`) and `think` (loops during the Final Jeopardy countdown). Us
 Apple TV can't play `.ogg`, so those are skipped and the built-in sound is used. Music only plays if you
 provide a file.
 
+**Your own sounds, inside the app (no server needed).** The audio files are not in this repository (they
+are not ours to publish), so they are copied into the app on your Mac:
+
+```bash
+Tools/install-sounds.sh ~/Desktop/gamenight-pi-backup/sounds
+```
+
+The folder is the Pi's `data/sounds` (files in it are used by every game; files in its `jeopardy/` and `feud/`
+folders by that game). The script copies them into `FamilyGameNight/GameNight/Sounds/` as `<game>__<name>.mp3`
+(git ignores them), and Xcode packs them into the app the next time you run it. If a server is also in use,
+its files replace these.
+
 ## Roadmap
 
 1. ✅ Home screen with the game tiles; Singo Night running inside it.

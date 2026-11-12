@@ -205,7 +205,9 @@ final class SoundDirector {
     /// Downloads the family's own sound files from the server. Anything that can't be
     /// played (an .ogg, say) is skipped and the built-in sound is used instead.
     func loadCustomSounds(from address: ServerAddress?) async {
-        custom = [:]
+        // The family's own files inside the app first (see BundledSounds); a server's files replace them.
+        custom = BundledSounds.load().filter { (try? AVAudioPlayer(data: $0.value)) != nil }
+        defer { refreshLobbyMusic() }
         guard let address, let base = URL(string: "http://\(address.host):\(address.port)/") else { return }
         do {
             let (listData, _) = try await session.data(from: base.appendingPathComponent("api/sounds"))
@@ -221,8 +223,7 @@ final class SoundDirector {
                 if Task.isCancelled { return }
             }
         } catch {
-            // No list (an older server, or it is unreachable): the built-in sounds are used.
+            // No list (an older server, or it is unreachable): the sounds from inside the app, or the built-in ones, are used.
         }
-        refreshLobbyMusic()
     }
 }
