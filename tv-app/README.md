@@ -448,6 +448,10 @@ its files replace these.
 5. **Find the server automatically** with Bonjour instead of typing an address.
 6. ✅ Family Feud: the game in the `gamenight` server, and its TV screens here (see
    [Family Feud on the TV](#family-feud-on-the-tv)).
+7. ✅ **No server needed**: the game engine runs inside the app, phones connect through a web page and a Supabase relay
+   (see [Hosting the game on the Apple TV](#hosting-the-game-on-the-apple-tv-online-mode)), with an online question
+   editor, importing, and your own sounds and sets.
+8. **Next:** TestFlight, the Pi's "Random board" buttons online, and Bonjour for server mode.
 
 The host picks which game is active from their phone; the Apple TV shows
 whatever is active.
