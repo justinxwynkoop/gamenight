@@ -75,7 +75,7 @@ final class FeudDecodingTests: XCTestCase {
     func testFastMoneyWhileAnswering() throws {
         let fm = try XCTUnwrap(try Fixture.feud("feud-fm-p1").fm)
         XCTAssertEqual(fm.step, .p1)
-        XCTAssertEqual(fm.timer?.totalMs, 20000)
+        XCTAssertEqual(fm.timer?.totalMs, 40000)
         XCTAssertEqual(fm.players.count, 2)
         XCTAssertEqual(fm.rows.count, 5)
         XCTAssertTrue(fm.rows.allSatisfy { $0.question != nil })
