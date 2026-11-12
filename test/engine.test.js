@@ -102,3 +102,22 @@ test('question sets can be put and removed from outside, and bad input is not fa
   E.receive('x', 'not json');
   E.receive('x', JSON.stringify(42));
 });
+
+test('opening a tile for another game starts a fresh room, and the same game resumes', async () => {
+  const first = boot({ game: 'jeopardy' });
+  first.say('p', { t: 'hello', role: 'player' }); first.say('p', { t: 'join', name: 'Ann' });
+  first.say('h', { t: 'hello', role: 'host', pin: '4321' });
+  await first.settle();
+  assert.equal(first.last('h', 'state').view.room.gameId, 'jeopardy');
+  const saved = first.saves.at(-1);
+
+  const same = boot({ game: 'jeopardy', saved });
+  same.say('h', { t: 'hello', role: 'host', pin: '4321' });
+  assert.deepEqual(same.last('h', 'state').view.room.players.map((p) => p.name), ['Ann'], 'the same game resumes');
+
+  const other = boot({ game: 'feud', saved });
+  other.say('h', { t: 'hello', role: 'host', pin: '4321' });
+  const view = other.last('h', 'state').view;
+  assert.equal(view.room.gameId, 'feud');
+  assert.deepEqual(view.room.players, [], 'another game starts with an empty room');
+});
