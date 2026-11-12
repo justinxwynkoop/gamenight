@@ -29,10 +29,12 @@ struct LobbyScreen: View {
                         Text("or open \(JoinAddress.display(joinURL.absoluteString))")
                             .font(JP.text(40, .medium))
                             .foregroundStyle(JP.softWhite)
-                        Text("Can’t join? Open \(JoinAddress.display(JoinAddress.checkPage(from: joinURL.absoluteString))) on your phone")
-                            .font(JP.text(26, .medium))
-                            .foregroundStyle(JP.muted)
-                            .padding(.top, 4)
+                        if joinURL.query == nil {   // the connection checker is a page on the Pi, not on the online site
+                            Text("Can’t join? Open \(JoinAddress.display(JoinAddress.checkPage(from: joinURL.absoluteString))) on your phone")
+                                .font(JP.text(26, .medium))
+                                .foregroundStyle(JP.muted)
+                                .padding(.top, 4)
+                        }
                     }
                 }
                 Text(prompt)

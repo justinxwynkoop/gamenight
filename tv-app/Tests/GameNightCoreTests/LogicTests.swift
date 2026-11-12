@@ -202,6 +202,12 @@ final class FormattingTests: XCTestCase {
         XCTAssertEqual(JoinAddress.display(JoinAddress.hostPage(from: "http://192.168.1.50:3000/")), "192.168.1.50:3000/host")
     }
 
+    func testOnlineAddressesKeepTheRoomCode() {
+        XCTAssertEqual(JoinAddress.hostPage(from: "https://play.example.app/?r=ABCD"), "https://play.example.app/host?r=ABCD")
+        XCTAssertEqual(JoinAddress.hostPage(from: "https://play.example.app?r=ABCD"), "https://play.example.app/host?r=ABCD")
+        XCTAssertEqual(JoinAddress.display("https://play.example.app/?r=ABCD"), "play.example.app?r=ABCD")
+    }
+
     func testJoinAddressForDisplay() {
         XCTAssertEqual(JoinAddress.display("http://192.168.1.50:3000/"), "192.168.1.50:3000")
         XCTAssertEqual(JoinAddress.display("http://gamenight.local/"), "gamenight.local")

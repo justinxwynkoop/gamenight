@@ -23,11 +23,11 @@ struct JeopardyDisplayView: View {
             content
                 .animation(.easeInOut(duration: 0.25), value: client.state)
 
-            if client.state != nil, client.connection != .connected {
+            if client.state != nil, let note = client.bannerNote {
                 VStack {
                     HStack {
                         Spacer()
-                        Label("Reconnecting…", systemImage: "wifi.exclamationmark")
+                        Label(note, systemImage: "wifi.exclamationmark")
                             .font(JP.text(28))
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
@@ -44,6 +44,7 @@ struct JeopardyDisplayView: View {
                 DisplayMenu(
                     address: client.address?.text ?? "",
                     hostPin: client.hostPin,
+                    roomCode: client.roomCode,
                     joinURL: client.joinURL,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
@@ -141,6 +142,7 @@ private struct DisplayMenu: View {
     let address: String
     /// Set when the game runs on this Apple TV: the PIN the host types on their phone. It lives only in this menu.
     var hostPin: String? = nil
+    var roomCode: String? = nil
     let joinURL: URL?
     let onChangeServer: () -> Void
     let onExit: () -> Void
@@ -157,6 +159,11 @@ private struct DisplayMenu: View {
                     Text("Running on this Apple TV")
                         .font(JP.text(32, .medium))
                         .foregroundStyle(JP.softWhite)
+                    if let roomCode {
+                        Text("Room code  \(roomCode)")
+                            .font(JP.text(44, .bold))
+                            .foregroundStyle(JP.softWhite)
+                    }
                     Text("Host PIN  \(hostPin)")
                         .font(JP.text(64))
                         .foregroundStyle(JP.gold)

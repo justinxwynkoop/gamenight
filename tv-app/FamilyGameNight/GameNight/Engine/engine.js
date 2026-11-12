@@ -1963,7 +1963,7 @@
   };
 
   // engine/hub.js
-  function createHub({ room, pinOk, send, onError = (e) => console.error(e) }) {
+  function createHub({ room, pinOk, send, rpc = null, onError = (e) => console.error(e) }) {
     const clients = /* @__PURE__ */ new Map();
     const liveCount = (playerId) => [...clients.values()].filter((c) => c.playerId === playerId).length;
     function viewFor(client, cache) {
@@ -2014,6 +2014,16 @@
           room.act(msg.action, msg.args ?? {});
           return;
         }
+        case "rpc": {
+          if (client.role !== "host" || !rpc) return;
+          try {
+            send(id, { t: "rpc-reply", id: msg.id, ok: true, data: rpc(String(msg.op), msg.args ?? {}) });
+          } catch (e) {
+            if (!(e instanceof GameError)) throw e;
+            send(id, { t: "rpc-reply", id: msg.id, ok: false, error: e.message });
+          }
+          return;
+        }
         case "ping":
           send(id, { t: "pong" });
           return;
@@ -2056,9 +2066,60 @@
     };
   }
 
+  // engine/relay.js
+  var CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  var CLIENT_ID = /^[A-Za-z0-9_-]{6,40}$/;
+  function newRoomCode(random = Math.random) {
+    let code = "";
+    for (let i = 0; i < 4; i++) code += CODE_LETTERS[Math.floor(random() * CODE_LETTERS.length)];
+    return code;
+  }
+  function createRelayHost({ engine: engine2, code, broadcast, now, quietMs = 25e3 }) {
+    const seen = /* @__PURE__ */ new Map();
+    const lastSent = /* @__PURE__ */ new Map();
+    const topic = `gn:${code}`;
+    function toClient(id, message) {
+      const text = JSON.stringify(message);
+      if (message?.t === "state") {
+        if (lastSent.get(id) === text) return;
+        lastSent.set(id, text);
+      }
+      broadcast(`${topic}:${id}`, "m", message);
+    }
+    return {
+      topic,
+      /** What the engine says to a client other than the TV itself. */
+      send: toClient,
+      /** Something arrived on the room channel. */
+      onBroadcast(channel, event, payload) {
+        if (channel !== topic || event !== "m" || !payload || typeof payload !== "object") return;
+        const id = payload.c;
+        if (typeof id !== "string" || !CLIENT_ID.test(id) || id === "tv" || typeof payload.m !== "object" || payload.m === null) return;
+        if (!seen.has(id)) engine2.open(id);
+        seen.set(id, now());
+        if (payload.m.t === "hello") lastSent.delete(id);
+        engine2.receive(id, payload.m);
+      },
+      /** Drop clients that have gone quiet. Call a few times a second along with engine.tick(). */
+      sweep() {
+        const t = now();
+        for (const [id, at] of seen) {
+          if (t - at > quietMs) {
+            seen.delete(id);
+            lastSent.delete(id);
+            engine2.close(id);
+          }
+        }
+      },
+      /** Did this client arrive through the relay (so replies go back through it)? */
+      knows: (id) => seen.has(id),
+      clients: () => seen.size
+    };
+  }
+
   // engine/core.js
   function createEngine({ games, pin, now, send, save = () => {
-  }, saved = null, content = {}, onError }) {
+  }, saved = null, content = {}, onError, code = newRoomCode(), broadcast = null }) {
     const sets = {};
     for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
     let queued = false;
@@ -2089,13 +2150,46 @@
     }
     if (!room.gameId && Object.keys(games).length === 1) room.chooseGame(Object.keys(games)[0]);
     const pinOk = (given) => String(given ?? "") === String(pin);
-    const hub = createHub({ room, pinOk, send, ...onError ? { onError } : {} });
+    const clock = now ?? (() => room.now());
+    let relay = null;
+    const rpc = (op, args) => {
+      switch (op) {
+        case "listSets":
+          return games[args.game] ? room.listContent(args.game) : [];
+        case "getSet": {
+          const set = games[args.game] && sets[args.game]?.[args.id];
+          if (!set) throw new GameError("No such set");
+          return set;
+        }
+        default:
+          throw new GameError("Not available here");
+      }
+    };
+    const hub = createHub({
+      room,
+      pinOk,
+      rpc,
+      ...onError ? { onError } : {},
+      send: (id, message) => {
+        if (relay?.knows(id)) relay.send(id, message);
+        else send(id, message);
+      }
+    });
+    if (broadcast) relay = createRelayHost({ engine: { open: (id) => hub.open(id), close: (id) => hub.close(id), receive: (id, m) => hub.receive(id, m) }, code, broadcast, now: clock });
     return {
       room,
       open: (id) => hub.open(id),
       close: (id) => hub.close(id),
       receive: (id, message) => hub.receive(id, message),
-      tick: () => room.tick(),
+      tick() {
+        room.tick();
+        relay?.sweep();
+      },
+      code,
+      /** The relay's room channel (the TV listens here), or null when there is no relay. */
+      relayTopic: relay?.topic ?? null,
+      /** Something arrived on the relay. */
+      onBroadcast: (channel, event, payload) => relay?.onBroadcast(channel, event, payload),
       broadcast: () => hub.broadcast(),
       putSet(gameId, id, set) {
         (sets[gameId] ?? (sets[gameId] = {}))[id] = set;
@@ -2115,7 +2209,7 @@
   globalThis.Engine = {
     /** The games this engine can run, for the host's menus. */
     games: () => JSON.stringify(Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
-    /** options: { pin, saved?: string, content?: { <gameId>: { <setId>: set } } } */
+    /** options: { pin, code?, saved?: string, content?: { <gameId>: { <setId>: set } } }. The room code is the relay's. */
     start(optionsJson) {
       const o = parse(optionsJson);
       engine = createEngine({
@@ -2124,11 +2218,26 @@
         saved: o.saved ?? null,
         content: o.content ?? {},
         now: () => performance.now(),
+        code: o.code || void 0,
+        broadcast: (topic, event, payload) => __native.broadcast(topic, event, JSON.stringify(payload)),
         send: (id, message) => __native.send(id, JSON.stringify(message)),
         save: (json) => __native.save(json),
         onError: (e) => console.error(e)
       });
       return true;
+    },
+    roomCode: () => engine.code,
+    /** The channel the TV must listen on (see engine/relay.js). */
+    relayTopic: () => engine.relayTopic,
+    /** A broadcast arrived from the relay: (topic, event, payloadJson). */
+    onBroadcast(topic, event, json) {
+      let p;
+      try {
+        p = JSON.parse(json);
+      } catch {
+        return;
+      }
+      engine.onBroadcast(topic, event, p);
     },
     open: (id) => engine.open(id),
     close: (id) => engine.close(id),

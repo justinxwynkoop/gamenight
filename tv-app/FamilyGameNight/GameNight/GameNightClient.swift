@@ -28,6 +28,10 @@ final class GameNightClient {
     private(set) var isLocal = false
     /// The host PIN when the game runs on this Apple TV. Shown only in the Play/Pause menu, never on the board.
     private(set) var hostPin: String?
+    /// The four letters phones type (or scan) to find this room, when the game runs on this Apple TV.
+    private(set) var roomCode: String?
+    /// Whether the link to the online relay is up (phones can only reach this TV while it is).
+    private(set) var relayUp = false
     /// Set when the server sent a state this app could not read.
     private(set) var readError: String?
 
@@ -35,6 +39,7 @@ final class GameNightClient {
     @ObservationIgnored private var infoTask: Task<Void, Never>?
     @ObservationIgnored private var socket: URLSessionWebSocketTask?
     @ObservationIgnored private var engine: EngineHost?
+    @ObservationIgnored private var realtime: RealtimeClient?
     @ObservationIgnored private var tickTask: Task<Void, Never>?
     @ObservationIgnored private var lastMessageAt = Date()
     @ObservationIgnored private let session: URLSession
@@ -64,8 +69,12 @@ final class GameNightClient {
         tickTask?.cancel()
         tickTask = nil
         engine = nil
+        realtime?.shutdown()
+        realtime = nil
         isLocal = false
         hostPin = nil
+        roomCode = nil
+        relayUp = false
         connection = .idle
         state = nil
         joinURL = nil
@@ -75,6 +84,14 @@ final class GameNightClient {
     // MARK: - The game on this Apple TV
 
     private static let savedRoomKey = "gamenight.localRoom"
+    private static let roomCodeKey = "gamenight.roomCode"
+
+    /// A note for the corner of the screen when something is not right, or nil.
+    var bannerNote: String? {
+        if state != nil, connection != .connected { return "Reconnecting…" }
+        if isLocal, !relayUp { return "Connecting phones…" }
+        return nil
+    }
 
     /// Runs the game engine here (JavaScriptCore) instead of connecting to a server. This TV is the display, and
     /// the engine's other "clients" (the host and the phones) will arrive over the online relay.
@@ -86,21 +103,36 @@ final class GameNightClient {
             return
         }
         let pin = String(Int.random(in: 1000...9999))
+        let relay = RealtimeClient(url: RelayConfig.supabaseURL, key: RelayConfig.supabaseKey)
         do {
             let host = try EngineHost(
                 script: script,
                 pin: pin,
                 saved: UserDefaults.standard.string(forKey: Self.savedRoomKey),
                 content: Self.bundledSets(),
+                code: UserDefaults.standard.string(forKey: Self.roomCodeKey),
                 onSend: { [weak self] id, json in
-                    // Only the TV's own display is local; phones and the host are served by the relay.
+                    // Only the TV's own display is local; phones and the host are answered through the relay.
                     if id == "tv" { self?.handle(Data(json.utf8)) }
+                },
+                onBroadcast: { [weak relay] topic, event, json in
+                    relay?.send(topic, event: event, payloadJSON: json)
                 },
                 onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) }
             )
             engine = host
+            realtime = relay
             isLocal = true
             hostPin = pin
+            roomCode = host.roomCode
+            UserDefaults.standard.set(host.roomCode, forKey: Self.roomCodeKey)
+            joinURL = RelayConfig.joinURL(code: host.roomCode)
+            relay.onStatus = { [weak self] up in self?.relayUp = up }
+            relay.onBroadcast = { [weak self] topic, event, json in
+                self?.engine?.deliver(topic: topic, event: event, json: json)
+            }
+            relay.join(host.relayTopic)
+            relay.connect()
             connection = .connecting
             host.open("tv")
             host.receive("tv", #"{"t":"hello","role":"tv"}"#)

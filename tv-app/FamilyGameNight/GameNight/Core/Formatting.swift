@@ -15,8 +15,14 @@ enum Money {
 enum JoinAddress {
     /// The host page for a server: "http://192.168.1.50:3000/" → "http://192.168.1.50:3000/host".
     /// The address only; the host still has to enter the PIN on that page.
+    /// With a room code the page keeps it: "https://site.app/?r=ABCD" → "https://site.app/host?r=ABCD".
     static func hostPage(from joinURL: String) -> String {
-        joinURL.hasSuffix("/") ? joinURL + "host" : joinURL + "/host"
+        if let mark = joinURL.firstIndex(of: "?") {
+            var path = String(joinURL[..<mark])
+            if !path.hasSuffix("/") { path += "/" }
+            return path + "host" + joinURL[mark...]
+        }
+        return joinURL.hasSuffix("/") ? joinURL + "host" : joinURL + "/host"
     }
 
     /// The connection checker for a phone that can't join: "http://192.168.1.50:3000/" → ".../check".
@@ -31,6 +37,7 @@ enum JoinAddress {
             text.removeFirst(prefix.count)
             break
         }
+        text = text.replacingOccurrences(of: "/?", with: "?")
         while text.hasSuffix("/") { text.removeLast() }
         return text
     }

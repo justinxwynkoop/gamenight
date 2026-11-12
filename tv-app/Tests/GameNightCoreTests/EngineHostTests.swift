@@ -18,6 +18,7 @@ final class EngineHostTests: XCTestCase {
 
     final class Wire {
         var sent: [(id: String, json: String)] = []
+        var relayed: [(topic: String, event: String, json: String)] = []
         var saves: [String] = []
         func messages(to id: String) -> [[String: Any]] {
             sent.filter { $0.id == id }.compactMap { try? JSONSerialization.jsonObject(with: Data($0.json.utf8)) as? [String: Any] }
@@ -28,12 +29,14 @@ final class EngineHostTests: XCTestCase {
         }
     }
 
-    private func makeHost(_ wire: Wire, saved: String? = nil) throws -> EngineHost {
+    private func makeHost(_ wire: Wire, saved: String? = nil, code: String? = nil) throws -> EngineHost {
         XCTAssertFalse(Self.script.isEmpty, "engine.js was not found")
         return try EngineHost(
             script: Self.script, pin: "4321", saved: saved,
             content: ["feud": ["tiny": Self.tinySet]],
+            code: code,
             onSend: { wire.sent.append(($0, $1)) },
+            onBroadcast: { wire.relayed.append(($0, $1, $2)) },
             onSave: { wire.saves.append($0) }
         )
     }
@@ -109,5 +112,26 @@ final class EngineHostTests: XCTestCase {
         let state = again.last("state", to: "h")?["view"] as? [String: Any]
         let players = (state?["room"] as? [String: Any])?["players"] as? [[String: Any]]
         XCTAssertEqual(players?.compactMap { $0["name"] as? String }, ["Ann"])
+    }
+
+    func testAPhoneTalksToTheRoomThroughTheRelayChannels() throws {
+        let wire = Wire()
+        let host = try makeHost(wire, code: "WXYZ")
+        XCTAssertEqual(host.roomCode, "WXYZ")
+        XCTAssertEqual(host.relayTopic, "gn:WXYZ")
+        let generated = try makeHost(Wire())
+        XCTAssertEqual(generated.roomCode.count, 4, "the engine makes a code when it is not given one")
+
+        host.deliver(topic: "gn:WXYZ", event: "m", json: #"{"c":"phone-abc123","m":{"t":"hello","role":"player"}}"#)
+        let reply = try XCTUnwrap(wire.relayed.last)
+        XCTAssertEqual(reply.topic, "gn:WXYZ:phone-abc123")
+        XCTAssertEqual(reply.event, "m")
+        XCTAssertTrue(reply.json.contains("need-join"))
+        XCTAssertTrue(wire.sent.isEmpty, "a relay client is not answered on the TV's own path")
+
+        host.deliver(topic: "gn:WXYZ", event: "m", json: #"{"c":"phone-abc123","m":{"t":"join","name":"Ann"}}"#)
+        XCTAssertTrue(wire.relayed.contains { $0.json.contains(#""t":"joined""#) })
+        host.deliver(topic: "gn:ELSE", event: "m", json: #"{"c":"phone-zzz999","m":{"t":"hello","role":"player"}}"#)
+        XCTAssertFalse(wire.relayed.contains { $0.topic.hasSuffix("phone-zzz999") }, "other rooms are ignored")
     }
 }

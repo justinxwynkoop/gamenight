@@ -36,12 +36,16 @@ public final class EngineHost {
     ///   - pin: the host PIN (a host screen must say it to take control)
     ///   - saved: the text `onSave` last gave, or nil
     ///   - content: question sets as JSON text, `[gameId: [setId: json]]`
+    ///   - code: the room code phones type (four letters); the engine makes one if this is nil
+    ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
     public init(
         script: String,
         pin: String,
         saved: String? = nil,
         content: [String: [String: String]] = [:],
+        code: String? = nil,
         onSend: @escaping (_ clientId: String, _ json: String) -> Void,
+        onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
         onSave: @escaping (_ json: String) -> Void = { _ in }
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
@@ -52,6 +56,7 @@ public final class EngineHost {
 
         let native = JSValue(newObjectIn: context)!
         let send: @convention(block) (String, String) -> Void = { onSend($0, $1) }
+        let broadcast: @convention(block) (String, String, String) -> Void = { onBroadcast($0, $1, $2) }
         let save: @convention(block) (String) -> Void = { onSave($0) }
         let now: @convention(block) () -> Double = { ProcessInfo.processInfo.systemUptime * 1000 }
         let random: @convention(block) () -> Double = { Double.random(in: 0..<1) }   // the system's secure generator
@@ -60,6 +65,7 @@ public final class EngineHost {
         }
         func set(_ name: String, _ block: AnyObject) { native.setObject(block, forKeyedSubscript: name as NSString) }
         set("send", unsafeBitCast(send, to: AnyObject.self))
+        set("broadcast", unsafeBitCast(broadcast, to: AnyObject.self))
         set("save", unsafeBitCast(save, to: AnyObject.self))
         set("now", unsafeBitCast(now, to: AnyObject.self))
         set("random", unsafeBitCast(random, to: AnyObject.self))
@@ -77,6 +83,7 @@ public final class EngineHost {
 
         var options: [String: Any] = ["pin": pin, "content": content.mapValues { $0.compactMapValues { Self.object($0) } }]
         if let saved { options["saved"] = saved }
+        if let code { options["code"] = code }
         engine.invokeMethod("start", withArguments: [Self.json(options)])
         if let first = problems.list.first { throw EngineError.scriptFailed(first) }
     }
@@ -86,6 +93,15 @@ public final class EngineHost {
         guard let text = engine.invokeMethod("games", withArguments: [])?.toString(),
               let games = try? JSONDecoder().decode([Game].self, from: Data(text.utf8)) else { return [] }
         return games
+    }
+
+    /// The room code phones type to find this room.
+    public var roomCode: String { engine.invokeMethod("roomCode", withArguments: [])?.toString() ?? "" }
+    /// The relay channel the TV must listen on.
+    public var relayTopic: String { engine.invokeMethod("relayTopic", withArguments: [])?.toString() ?? "" }
+    /// A message arrived from the relay (a phone talking to the room).
+    public func deliver(topic: String, event: String, json: String) {
+        engine.invokeMethod("onBroadcast", withArguments: [topic, event, json])
     }
 
     /// A screen or phone connected.
