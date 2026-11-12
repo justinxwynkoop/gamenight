@@ -1,17 +1,17 @@
 // The room's side of the online relay (Supabase Realtime broadcast), with no idea of the transport itself.
 //
-// Channels (one room = a 4-letter code):
+// Channels (one room = a 4-digit code):
 //   gn:<CODE>         phones and the host send here, the TV listens.   event "m", payload { c: <clientId>, m: <message> }
 //   gn:<CODE>:<id>    the TV sends to one client here, that client listens.   event "m", payload <message>
 // The room code is the only thing that finds the room, and the host PIN still guards every host action, so this is
 // meant for a family game night, not secrets. A client that goes quiet for a while is dropped (its player shows as
 // away until it comes back with its token).
-export const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I or O: easy to read off a TV
+export const CODE_CHARS = '0123456789';   // four digits: easy to read off a TV and to type on a phone's number pad
 export const CLIENT_ID = /^[A-Za-z0-9_-]{6,40}$/;
 
 export function newRoomCode(random = Math.random) {
   let code = '';
-  for (let i = 0; i < 4; i++) code += CODE_LETTERS[Math.floor(random() * CODE_LETTERS.length)];
+  for (let i = 0; i < 4; i++) code += CODE_CHARS[Math.floor(random() * CODE_CHARS.length)];
   return code;
 }
 

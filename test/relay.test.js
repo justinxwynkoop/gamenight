@@ -7,7 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Realtime } from '../public/relay/phoenix.js';
 import { connectRelay } from '../public/relay/client.js';
 import { createEngine } from '../engine/core.js';
-import { newRoomCode, CODE_LETTERS } from '../engine/relay.js';
+import { newRoomCode, CODE_CHARS } from '../engine/relay.js';
 import { GAMES } from '../games/index.js';
 
 const feudSet = JSON.parse(readFileSync(new URL('../data/feud/family-night-basics.json', import.meta.url)));
@@ -45,11 +45,12 @@ async function world() {
   const sb = await fakeSupabase();
   const config = { url: sb.url, key: 'sb_publishable_test' };
   let clock = 1000;
-  const tvDirect = [];
+  const tvDirect = []; const saved = [];
   let rt; let engine;
   rt = new Realtime({ ...config, WebSocketImpl: WebSocket, onBroadcast: (t, e, p) => engine.onBroadcast(t, e, p) });
   engine = createEngine({
     games: GAMES, pin: '4321', code: 'ABCD', now: () => clock, content: { feud: { basics: feudSet } },
+    onSetsChanged: (c) => saved.push(JSON.parse(JSON.stringify(c))),
     send: (id, m) => tvDirect.push([id, m]),
     broadcast: (topic, event, payload) => rt.send(topic, event, payload),
   });
@@ -62,12 +63,12 @@ async function world() {
     phones.push(link);
     return { link, got };
   };
-  return { sb, engine, rt, phone, tvDirect, advance: (ms) => { clock += ms; }, close() { phones.forEach((p) => p.close()); rt.close(); sb.close(); } };
+  return { sb, engine, rt, phone, tvDirect, saved, advance: (ms) => { clock += ms; }, close() { phones.forEach((p) => p.close()); rt.close(); sb.close(); } };
 }
 
-test('room codes are four easy letters', () => {
-  for (let i = 0; i < 50; i++) assert.match(newRoomCode(), /^[A-HJ-NP-Z]{4}$/);
-  assert.equal(CODE_LETTERS.length, 24);
+test('room codes are four digits', () => {
+  for (let i = 0; i < 50; i++) assert.match(newRoomCode(), /^[0-9]{4}$/);
+  assert.equal(CODE_CHARS.length, 10);
 });
 
 test('a phone joins by room code, plays, and the host controls the room, all through the relay', async () => {
@@ -95,6 +96,15 @@ test('a phone joins by room code, plays, and the host controls the room, all thr
     assert.equal(one.data.rounds.length, feudSet.rounds.length);
     assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'nope' })).error, 'No such set');
     assert.equal((await host.link.rpc('delete-everything', {})).error, 'Not available here');
+    assert.deepEqual((await host.link.rpc('games', {})).data.map((g) => g.id), ['jeopardy', 'feud']);
+    const doc = { ...feudSet, title: 'Saved from a phone' };
+    assert.equal((await host.link.rpc('putSet', { game: 'feud', id: 'phone-made', doc })).ok, true);
+    assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'phone-made' })).data.title, 'Saved from a phone');
+    assert.match((await host.link.rpc('putSet', { game: 'feud', id: 'Bad Id', doc })).error, /lowercase/);
+    assert.ok((await host.link.rpc('putSet', { game: 'feud', id: 'bad-set', doc: { title: 'x' } })).error, 'an invalid set is refused');
+    assert.equal((await host.link.rpc('deleteSet', { game: 'feud', id: 'phone-made' })).ok, true);
+    assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'phone-made' })).error, 'No such set');
+    assert.equal(w.saved.length >= 2, true, 'the family\'s changes were handed over to be kept');
     const asked = ann.link.rpc('listSets', { game: 'feud' });   // players may not ask: no answer ever comes
     const bad = w.phone('wrongpin1', { t: 'hello', role: 'host', pin: '0000' });
     await until(() => bad.got.messages.some((m) => m.t === 'bad-pin'), 'the PIN to be refused');

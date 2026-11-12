@@ -46,7 +46,7 @@ setTimeout(() => {
   screen.replaceChildren(room
     ? h('div', { class: 'card' },
       h('h2', {}, 'Waiting for the TV'),
-      h('p', {}, `Looking for room ${room}. On the Apple TV, open the game (Jeopardy or Family Feud) and the room code is on the lobby screen and in the Play/Pause menu. Check the four letters, then try again.`),
+      h('p', {}, `Looking for room ${room}. On the Apple TV, open the game (Jeopardy or Family Feud) and the room code is on the lobby screen and in the Play/Pause menu. Check the four digits, then try again.`),
       (() => { const line = h('p', { class: 'dim' }, net.status()); const t = setInterval(() => { if (!line.isConnected) clearInterval(t); else line.textContent = net.status(); }, 700); return line; })(),
       h('button', { class: 'btn primary', style: { display: 'block', width: '100%', marginTop: '12px' }, onclick: changeRoom }, 'Enter a different room code'))
     : h('div', { class: 'card' },

@@ -15,10 +15,21 @@ import { createHub } from './hub.js';
 import { createRelayHost, newRoomCode } from './relay.js';
 import { GameError } from '../lib.js';
 
-export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, onError, code = newRoomCode(), broadcast = null }) {
-  // sets[gameId][setId] = set
+const SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
+
+export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, userSets = {}, onSetsChanged = () => {}, onError, code = newRoomCode(), broadcast = null }) {
+  // sets[gameId][setId] = set: the sets that came with the app, then what the family saved or deleted (userSets,
+  // { game: { id: set | null } }, where null means deleted). onSetsChanged(changes) gets the family's changes to keep.
   const sets = {};
   for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
+  const changes = {};
+  for (const [gameId, byId] of Object.entries(userSets)) {
+    for (const [id, set] of Object.entries(byId ?? {})) {
+      if (!games[gameId] || !SET_ID.test(id)) continue;
+      (changes[gameId] ??= {})[id] = set;
+      if (set) (sets[gameId] ??= {})[id] = set; else delete sets[gameId]?.[id];
+    }
+  }
 
   let queued = false;
   const room = new Room({
@@ -52,6 +63,27 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
         const set = games[args.game] && sets[args.game]?.[args.id];
         if (!set) throw new GameError('No such set');
         return set;
+      }
+      case 'games': return Object.values(games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+      case 'putSet': {
+        const game = games[args.game] ?? (() => { throw new GameError('No such game'); })();
+        if (!SET_ID.test(String(args.id))) throw new GameError('Set id must be lowercase letters, numbers and dashes');
+        game.validateContent(args.doc);
+        (sets[args.game] ??= {})[args.id] = args.doc;
+        (changes[args.game] ??= {})[args.id] = args.doc;
+        room.contentChanged?.(args.game, args.id);
+        onSetsChanged(changes);
+        return { ok: true };
+      }
+      case 'deleteSet': {
+        if (!games[args.game]) throw new GameError('No such game');
+        if (!SET_ID.test(String(args.id))) throw new GameError('Set id must be lowercase letters, numbers and dashes');
+        if (room.gameId === args.game && room.inProgress() && room.game?.usesContent?.(args.id)) throw new GameError('That set is in play');
+        delete sets[args.game]?.[args.id];
+        (changes[args.game] ??= {})[args.id] = null;
+        room.contentChanged?.(args.game, args.id);
+        onSetsChanged(changes);
+        return { ok: true };
       }
       default: throw new GameError('Not available here');
     }

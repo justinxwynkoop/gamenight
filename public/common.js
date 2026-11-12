@@ -70,13 +70,13 @@ const roomFromPage = () => {
 /** Asks for the room code shown on the TV. Resolves with 4 letters. */
 function askForRoom(problem) {
   return new Promise((resolve) => {
-    const input = h('input', { class: 'gn-room-input', maxLength: 4, placeholder: 'ABCD', autocapitalize: 'characters', autocomplete: 'off', spellcheck: false, inputMode: 'text',
+    const input = h('input', { class: 'gn-room-input', maxLength: 4, placeholder: '1234', autocapitalize: 'characters', autocomplete: 'off', spellcheck: false, inputMode: 'numeric',
       style: { fontSize: '40px', textAlign: 'center', letterSpacing: '0.3em', width: '6em', textTransform: 'uppercase' } });
     const go = () => { const code = cleanCode(input.value); if (code.length === 4) { overlay.remove(); resolve(code); } };
     input.addEventListener('input', () => { input.value = cleanCode(input.value); if (input.value.length === 4) go(); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
     const overlay = h('div', { style: { position: 'fixed', inset: 0, zIndex: 99, background: 'rgba(8,12,40,.96)', color: '#fff', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '24px' } },
-      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four letters shown on the TV.'), input, h('p', {}, h('button', { onclick: go }, 'Join'))));
+      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four-digit room code shown on the TV.'), input, h('p', {}, h('button', { onclick: go }, 'Join'))));
     document.body.append(overlay);
     input.focus();
   });
@@ -115,6 +115,23 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
 }
 
 let onlineConnection = null;
+let onlineHostPin = null;
+
+/** Online, makes sure there is a host connection with this PIN (the editor page has none until it is given the PIN). */
+export async function onlineHostConnect(pin) {
+  if (onlineConnection && onlineHostPin === pin) return;
+  onlineConnection?.close();
+  onlineConnection = null; onlineHostPin = pin;
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('The TV did not answer. Is it showing the game?')), 12000);
+    connectOnline({
+      hello: { t: 'hello', role: 'host', pin },
+      onState: () => { clearTimeout(timer); resolve(); },
+      onMessage: (m) => { if (m.t === 'bad-pin') { clearTimeout(timer); reject(Object.assign(new Error('Wrong or missing host PIN'), { code: 401 })); } },
+      onStatus: () => {},
+    });
+  });
+}
 
 /** The room code this page is using when it runs on the online relay, or null on the Pi. */
 export const onlineRoom = () => (globalThis.GN_RELAY ? roomFromPage() : null);
@@ -123,20 +140,31 @@ export function changeRoom() {
   store('gn-room', null);
   location.replace(location.pathname);
 }
-const reply = (ok, body) => ({ ok, json: async () => body });
+const reply = (ok, body, status = ok ? 200 : 400) => ({ ok, status, json: async () => body });
 /**
  * fetch() for the host's /api calls. On the Pi that is plain fetch. Online there is no server to ask, so the few calls
  * the host page makes (which sets exist, what is in one) go to the TV through the relay instead.
  */
 export async function apiFetch(url, init = {}) {
   if (!globalThis.GN_RELAY) return fetch(url, init);
-  const sets = String(url).match(/^\/api\/games\/([a-z0-9-]+)\/sets(?:\/([^/?]+))?$/);
-  if (sets && (init.method ?? 'GET') === 'GET' && onlineConnection) {
-    const r = await onlineConnection.rpc(sets[2] ? 'getSet' : 'listSets', { game: sets[1], id: sets[2] });
+  const method = init.method ?? 'GET';
+  if (String(url) === '/api/games' && onlineConnection) {
+    const r = await onlineConnection.rpc('games', {});
     return reply(r.ok, r.ok ? r.data : { error: r.error });
   }
+  const sets = String(url).match(/^\/api\/games\/([a-z0-9-]+)\/sets(?:\/([^/?]+))?$/);
+  if (sets && onlineConnection) {
+    let op; let args = { game: sets[1], id: sets[2] };
+    if (method === 'GET') op = sets[2] ? 'getSet' : 'listSets';
+    else if (method === 'PUT' && sets[2]) { op = 'putSet'; try { args.doc = JSON.parse(init.body); } catch { return reply(false, { error: 'That is not a question set' }); } }
+    else if (method === 'DELETE' && sets[2]) op = 'deleteSet';
+    if (op) {
+      const r = await onlineConnection.rpc(op, args);
+      return reply(r.ok, r.ok ? r.data : { error: r.error }, r.ok ? 200 : (/^No such/.test(r.error ?? '') ? 404 : 400));
+    }
+  }
   if (/^\/api\/games\/[a-z0-9-]+\/random$/.test(String(url))) {
-    return (init.method ?? 'GET') === 'GET' ? reply(true, { available: false }) : reply(false, { error: 'Random boards are not available online yet' });
+    return method === 'GET' ? reply(true, { available: false }) : reply(false, { error: 'Random boards are not available online yet' });
   }
   return reply(false, { error: 'Not available online' });
 }

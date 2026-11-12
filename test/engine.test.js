@@ -14,7 +14,7 @@ const bundle = readFileSync(out, 'utf8');
 const feudSet = JSON.parse(readFileSync(new URL('../data/feud/family-night-basics.json', import.meta.url)));
 
 function boot(options = {}) {
-  const sent = []; const relayed = []; const saves = []; const logs = []; let clock = 1000;
+  const sent = []; const relayed = []; const changes = []; const saves = []; const logs = []; let clock = 1000;
   const native = {
     send: (id, json) => sent.push([id, JSON.parse(json)]),
     broadcast: (topic, event, json) => relayed.push([topic, event, JSON.parse(json)]),
@@ -22,6 +22,7 @@ function boot(options = {}) {
     now: () => clock,
     random: () => Math.random(),
     log: (level, text) => logs.push([level, text]),
+    saveSets: (json) => changes.push(JSON.parse(json)),
   };
   const context = vm.createContext({ __native: native });   // no console, no performance, no crypto, no timers
   vm.runInContext(bundle, context);
@@ -31,7 +32,7 @@ function boot(options = {}) {
   const last = (id, t) => to(id).filter((m) => m.t === t).at(-1);
   const say = (id, m) => E.receive(id, JSON.stringify(m));
   const settle = () => new Promise((r) => setImmediate(r));
-  return { E, context, sent, relayed, saves, logs, to, last, say, settle, advance: (ms) => { clock += ms; } };
+  return { E, context, sent, relayed, changes, saves, logs, to, last, say, settle, advance: (ms) => { clock += ms; } };
 }
 
 test('the bundle needs nothing from Node and carries no file-reading code', () => {
@@ -120,4 +121,21 @@ test('opening a tile for another game starts a fresh room, and the same game res
   const view = other.last('h', 'state').view;
   assert.equal(view.room.gameId, 'feud');
   assert.deepEqual(view.room.players, [], 'another game starts with an empty room');
+});
+
+test('sets the family saved come back, and a deleted bundled set stays deleted', async () => {
+  const kept = [];
+  const first = boot();
+  // saving goes through the host's rpc, as the online editor does
+  first.say('h', { t: 'hello', role: 'host', pin: '4321' });
+  first.say('h', { t: 'rpc', id: 1, op: 'putSet', args: { game: 'feud', id: 'mine', doc: { ...feudSet, title: 'Mine' } } });
+  first.say('h', { t: 'rpc', id: 2, op: 'deleteSet', args: { game: 'feud', id: 'basics' } });
+  assert.equal(first.last('h', 'rpc-reply').ok, true);
+  assert.equal(first.changes.length >= 2, true);
+  const userSets = first.changes.at(-1);
+  assert.equal(userSets.feud.basics, null);
+  const second = boot({ userSets });
+  const ids = JSON.parse(second.E.listSets('feud')).map((s) => s.id);
+  assert.deepEqual(ids, ['mine']);
+  void kept;
 });

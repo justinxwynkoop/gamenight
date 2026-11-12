@@ -1,4 +1,4 @@
-// Builds web/, the phone and host pages for Vercel: a copy of public/ without the TV and editor pages (the TV is the
+// Builds web/, the phone and host pages for Vercel: a copy of public/ without the TV page (the TV is the
 // Apple TV app), plus config.js pointing the pages at the Supabase relay. The publishable key is meant to be public.
 //   node scripts/build-web.mjs
 import { cpSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
@@ -11,10 +11,10 @@ const relay = JSON.parse(readFileSync(path.join(root, 'relay.config.json'), 'utf
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
-const skip = new Set(['tv.html', 'tv.js', 'check.html', 'editor.html', 'editor.js', 'audio.js']);
+const skip = new Set(['tv.html', 'tv.js', 'check.html', 'audio.js']);
 cpSync(path.join(root, 'public'), out, {
   recursive: true,
-  filter: (src) => !skip.has(path.basename(src)) && !/[\\/]games[\\/][^\\/]+[\\/](tv|editor)\.js$/.test(src),
+  filter: (src) => !skip.has(path.basename(src)) && !/[\\/]games[\\/][^\\/]+[\\/]tv\.js$/.test(src),
 });
 writeFileSync(path.join(out, 'config.js'), `globalThis.GN_RELAY = ${JSON.stringify(relay)};\n`);
 writeFileSync(path.join(out, 'vercel.json'), JSON.stringify({
@@ -23,6 +23,7 @@ writeFileSync(path.join(out, 'vercel.json'), JSON.stringify({
     { source: '/', destination: '/play.html' },
     { source: '/play', destination: '/play.html' },
     { source: '/host', destination: '/host.html' },
+    { source: '/editor', destination: '/editor.html' },
   ],
   headers: [{ source: '/(.*)', headers: [{ key: 'Cache-Control', value: 'no-cache' }] }],
 }, null, 2) + '\n');

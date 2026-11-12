@@ -2,12 +2,13 @@
 // Supabase Realtime instead of a WebSocket to the Pi (see engine/relay.js for the channels).
 import { Realtime } from './phoenix.js';
 
-export const ROOM_CODE = /^[A-Z]{4}$/;
-export const cleanCode = (text) => String(text ?? '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+export const ROOM_CODE = /^[A-Z0-9]{4}$/;
+/** A room code as typed: four digits (or letters, which older rooms used). */
+export const cleanCode = (text) => String(text ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
 
 /**
  * config   { url, key }: the Supabase project and its publishable key
- * room     the 4-letter room code
+ * room     the 4-digit room code
  * clientId this browser tab's id (unique per tab)
  * hello    the hello message (or a function that makes it) to say whenever the link is (re)made
  */

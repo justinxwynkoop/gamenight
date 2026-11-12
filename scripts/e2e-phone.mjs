@@ -40,7 +40,7 @@ const ticker = setInterval(() => engine.tick(), 250);
 
 // --- the site (web/), with the stand-in's address in config.js ---
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
-const pages = { '/': 'play.html', '/play': 'play.html', '/host': 'host.html' };
+const pages = { '/': 'play.html', '/play': 'play.html', '/host': 'host.html', '/editor': 'editor.html' };
 const site = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
   if (url.pathname === '/config.js') { res.writeHead(200, { 'content-type': 'text/javascript' }); return res.end(`globalThis.GN_RELAY = ${JSON.stringify(relay)};`); }
@@ -54,7 +54,7 @@ const base = `http://127.0.0.1:${site.address().port}`;
 const problems = [];
 const browser = await chromium.launch();
 const fail = (m) => { problems.push(m); console.error('FAIL:', m); };
-const watch = (page, who) => { page.on('pageerror', (e) => fail(`${who} page error: ${e.message}`)); page.on('console', (m) => { if (m.type() === 'error') fail(`${who} console error: ${m.text()}`); }); };
+const watch = (page, who) => { page.on('response', (r) => { if (r.status() >= 400) console.error(`  (${who}: ${r.status()} ${r.url()})`); }); page.on('pageerror', (e) => fail(`${who} page error: ${e.message}`)); page.on('console', (m) => { if (m.type() === 'error') fail(`${who} console error: ${m.text()}`); }); };
 const until = async (fn, what, ms = 10000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return; await new Promise((r) => setTimeout(r, 50)); } fail(`timed out: ${what}`); throw new Error(what); };
 
 try {
@@ -92,6 +92,20 @@ try {
   await host.getByText(/family feud/i).first().click();
   await until(() => engine.room.gameId === 'feud', 'the host to choose Family Feud');
   console.log('host chose Family Feud through the relay');
+
+  // The question editor, online: PIN, then import a set by pasting it, then see it in the TV's list.
+  const editor = await browser.newPage(); watch(editor, 'editor');
+  await editor.goto(`${base}/editor?game=feud&r=ABCD`);
+  await until(async () => (await editor.locator('input[type=password]').count()) > 0, 'the editor PIN form');
+  await editor.locator('input[type=password]').fill('4321');
+  await editor.keyboard.press('Enter');
+  const paste = editor.locator('textarea[placeholder^="Paste a link"]');
+  await until(async () => (await paste.count()) > 0, 'the editor and its import box');
+  await paste.fill(JSON.stringify({ ...feud, title: 'E2E Set' }));
+  await editor.getByRole('button', { name: 'Import' }).click();
+  await until(async () => /Imported 1/.test(await editor.locator('body').innerText()), 'the import to finish');
+  await until(() => JSON.parse(engine.listSets ? JSON.stringify(engine.listSets('feud')) : '[]').some((x) => x.id === 'e2e-set'), 'the TV to have the new set');
+  console.log('editor: PIN accepted, a set was imported and the TV has it');
 } catch (e) { if (!problems.length) fail(e.message); }
 await browser.close(); tv.close(); clearInterval(ticker); sb.close(); site.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : '\nOK');

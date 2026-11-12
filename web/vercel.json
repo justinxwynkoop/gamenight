@@ -12,6 +12,10 @@
     {
       "source": "/host",
       "destination": "/host.html"
+    },
+    {
+      "source": "/editor",
+      "destination": "/editor.html"
     }
   ],
   "headers": [
