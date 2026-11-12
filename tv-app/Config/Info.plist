@@ -10,6 +10,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- The app only uses Apple's own encryption (https and secure WebSockets), so it is exempt, and TestFlight does not
+	     ask about export compliance on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Family Game Night connects to your Game Night server on this network to show your game on the TV.</string>
 </dict>

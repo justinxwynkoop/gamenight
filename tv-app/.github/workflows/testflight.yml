@@ -1,0 +1,85 @@
+# Builds the Apple TV app on a Mac in the cloud, signs it and uploads it to TestFlight. Run it by hand:
+#   GitHub → Actions → "Send to TestFlight" → Run workflow.
+# It needs three repository secrets from an App Store Connect API key (see docs/TESTFLIGHT.md):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole contents of the .p8 file).
+# Without them it does nothing but say so. Adapted from the workflow in the Buzzworthy Apple TV app.
+#
+# A build made here does not contain your own sound files or extra question sets (they are not in the repository).
+# To include them, archive from Xcode on your Mac instead (docs/TESTFLIGHT.md).
+name: Send to TestFlight
+
+on:
+  workflow_dispatch:
+
+concurrency: testflight
+
+env:
+  BUNDLE_ID: family.singonight.app
+  APP_NAME: Family Game Night
+
+jobs:
+  upload:
+    runs-on: macos-15
+    steps:
+      - name: Check the App Store Connect key is set up
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          if [ -z "$ASC_KEY_ID" ]; then
+            echo "::warning::The App Store Connect key secrets are not added yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8). Skipping the TestFlight upload."
+            echo "ready=false" >> $GITHUB_ENV
+          else
+            echo "ready=true" >> $GITHUB_ENV
+          fi
+      - uses: actions/checkout@v4
+        if: env.ready == 'true'
+      - name: Write the key file
+        if: env.ready == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          echo "ASC_KEY_PATH=$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" >> $GITHUB_ENV
+      - name: Prepare App Store Connect
+        if: env.ready == 'true'
+        id: asc
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
+          python3 Tools/asc.py prepare "$BUNDLE_ID" "$APP_NAME"
+      - name: Build, sign and upload to TestFlight
+        if: env.ready == 'true' && steps.asc.outputs.app_exists == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM_ID: ${{ steps.asc.outputs.team_id }}
+        run: |
+          set -o pipefail
+          BUILD="${{ github.run_number }}"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          mkdir -p build
+          xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \
+            -destination 'generic/platform=tvOS' -archivePath build/FamilyGameNight.xcarchive \
+            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=$BUILD \
+            $AUTH archive | tail -n 40
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/FamilyGameNight.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH | tail -n 40
+          echo "Uploaded build $BUILD. It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
+      - name: Remove the key file
+        if: always()
+        run: rm -rf ~/private_keys

@@ -12,7 +12,7 @@ A private Apple TV app for family game nights. Open it and pick a game:
 relay, so all you need is internet: no server or computer on your network. The game rules and the phone pages live in the
 [`gamenight`](https://github.com/justinxwynkoop/gamenight) repo; this repo is the Apple TV app.
 
-Family only: installed from Xcode onto your own Apple TV.
+Family only: installed from Xcode onto your own Apple TV, or through [TestFlight](docs/TESTFLIGHT.md).
 
 ## Install it
 
@@ -52,6 +52,7 @@ The phone site is `https://gamenight-one.vercel.app`. To change it, or the onlin
 | [docs/GAMES-ON-TV.md](docs/GAMES-ON-TV.md) | What the TV shows for Jeopardy and Family Feud, the remote, sounds |
 | [docs/CUSTOM-FILES.md](docs/CUSTOM-FILES.md) | Your own sound files and extra question sets (kept out of GitHub) |
 | [docs/SINGO.md](docs/SINGO.md) | Singo Night: Apple Music, how a round plays, notes |
+| [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md) | Putting the app on the family's Apple TVs through TestFlight |
 | [docs/DEVELOPING.md](docs/DEVELOPING.md) | Code layout, tests, the cloud build, adding a game, art |
 | [docs/SERVER-MODE.md](docs/SERVER-MODE.md) | Optional: use a Game Night server instead of hosting on the Apple TV |
 

@@ -2,7 +2,7 @@
 
 Sound files and some question sets are not ours to publish, so they are **never committed to this repository**. They
 are copied into the app on your Mac, where git ignores them, and Xcode packs them into the app the next time you run it.
-A build made on GitHub's machines (the cloud build) will not contain them, so archive from your Mac when you want them.
+A build made on GitHub's machines (the cloud build, including the GitHub route to TestFlight) will not contain them, so archive from your Mac when you want them ([TESTFLIGHT.md](TESTFLIGHT.md)).
 
 ## Your own sounds
 
