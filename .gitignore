@@ -11,3 +11,4 @@ data/jeopardy/random-*.json
 data/surveys/
 data/feud/protoqa-*.json
 data/feud/random-*.json
+dist/
