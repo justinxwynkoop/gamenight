@@ -148,6 +148,10 @@ private struct DisplayMenu: View {
     let onExit: () -> Void
     let onClose: () -> Void
 
+    private enum Choice { case close, change, exit }
+    /// The board behind this panel holds the remote's focus until we ask for it, so the buttons could not be reached.
+    @FocusState private var focus: Choice?
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.65)
@@ -175,13 +179,19 @@ private struct DisplayMenu: View {
                 HostCodeBlock(joinURL: joinURL)
                     .frame(maxWidth: 820)
                 HStack(spacing: 30) {
-                    Button("Close", action: onClose)
-                    Button("Change server", action: onChangeServer)
-                    Button("Back to games", action: onExit)
+                    Button("Close", action: onClose).focused($focus, equals: .close)
+                    Button("Change server", action: onChangeServer).focused($focus, equals: .change)
+                    Button("Back to games", action: onExit).focused($focus, equals: .exit)
                 }
             }
             .padding(60)
             .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(JP.panel))
+        }
+        .onAppear { focus = .close }
+        .task {
+            // Once more a moment later: the screen behind may take focus back while the panel fades in.
+            try? await Task.sleep(for: .milliseconds(200))
+            if focus == nil { focus = .close }
         }
     }
 }
