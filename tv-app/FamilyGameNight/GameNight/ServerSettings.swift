@@ -13,6 +13,14 @@ enum ServerSettings {
         UserDefaults.standard.set(address.text, forKey: key)
     }
 
+    private static let hereKey = "gamenight.runsHere"
+
+    /// True once the family chose to run the game on the Apple TV itself instead of on a server. Remembered.
+    static var runsHere: Bool {
+        get { UserDefaults.standard.bool(forKey: hereKey) }
+        set { UserDefaults.standard.set(newValue, forKey: hereKey) }
+    }
+
     static func clear() {
         UserDefaults.standard.removeObject(forKey: key)
     }

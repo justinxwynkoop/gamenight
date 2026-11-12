@@ -2226,6 +2226,13 @@
       });
       return true;
     },
+    /** Pick the game from the TV itself (the home-screen tile). Ignored once a game is under way. */
+    chooseGame(id) {
+      try {
+        engine.room.chooseGame(String(id));
+      } catch {
+      }
+    },
     roomCode: () => engine.code,
     /** The channel the TV must listen on (see engine/relay.js). */
     relayTopic: () => engine.relayTopic,

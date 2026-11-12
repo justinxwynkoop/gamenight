@@ -10,8 +10,12 @@ struct JeopardyRootView: View {
 
     @State private var client = GameNightClient()
     @State private var address: ServerAddress? = ServerSettings.load()
-    @State private var editing = (ServerSettings.load() == nil)
-    @State private var runningHere = false
+    @State private var editing = (ServerSettings.load() == nil && !ServerSettings.runsHere)
+    @State private var runningHere = ServerSettings.runsHere
+    /// The engine's id for the tile that was opened.
+    private var gameId: String? {
+        switch title { case "Jeopardy": return "jeopardy"; case "Family Feud": return "feud"; default: return nil }
+    }
 
     var body: some View {
         // A ZStack, not a Group: onAppear/onDisappear below must fire once for the
@@ -34,7 +38,8 @@ struct JeopardyRootView: View {
             }
         }
         .onAppear {
-            if let address, !editing, !runningHere { client.connect(to: address) }
+            if runningHere, !editing { client.startLocal(game: gameId) }
+            else if let address, !editing { client.connect(to: address) }
         }
         .onDisappear { client.disconnect() }
         // Remember an address only once it has really connected, so a typo is not kept.
@@ -47,7 +52,8 @@ struct JeopardyRootView: View {
 
     private func runHere() {
         runningHere = true
-        client.startLocal()
+        ServerSettings.runsHere = true
+        client.startLocal(game: gameId)
         editing = false
     }
 
@@ -58,6 +64,7 @@ struct JeopardyRootView: View {
         }
         address = parsed
         runningHere = false
+        ServerSettings.runsHere = false
         client.connect(to: parsed)
         editing = false
         return nil

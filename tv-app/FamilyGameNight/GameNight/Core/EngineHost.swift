@@ -104,6 +104,9 @@ public final class EngineHost {
         engine.invokeMethod("onBroadcast", withArguments: [topic, event, json])
     }
 
+    /// Pick the game from the TV (its home-screen tile). Ignored once a game is under way.
+    public func chooseGame(_ id: String) { engine.invokeMethod("chooseGame", withArguments: [id]) }
+
     /// A screen or phone connected.
     public func open(_ clientId: String) { engine.invokeMethod("open", withArguments: [clientId]) }
     /// It went away.

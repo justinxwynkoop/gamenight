@@ -39,6 +39,8 @@ final class GameNightClient {
     @ObservationIgnored private var infoTask: Task<Void, Never>?
     @ObservationIgnored private var socket: URLSessionWebSocketTask?
     @ObservationIgnored private var engine: EngineHost?
+    /// The engine's id of the game whose tile was opened, so a retry picks the same one.
+    private(set) var localGame: String?
     @ObservationIgnored private var realtime: RealtimeClient?
     @ObservationIgnored private var tickTask: Task<Void, Never>?
     @ObservationIgnored private var lastMessageAt = Date()
@@ -95,8 +97,9 @@ final class GameNightClient {
 
     /// Runs the game engine here (JavaScriptCore) instead of connecting to a server. This TV is the display, and
     /// the engine's other "clients" (the host and the phones) will arrive over the online relay.
-    func startLocal() {
+    func startLocal(game: String? = nil) {
         disconnect()
+        localGame = game
         guard let scriptURL = Bundle.main.url(forResource: "engine", withExtension: "js"),
               let script = try? String(contentsOf: scriptURL, encoding: .utf8) else {
             connection = .failed("The game engine is missing from this copy of the app.")
@@ -135,6 +138,7 @@ final class GameNightClient {
             relay.connect()
             connection = .connecting
             host.open("tv")
+            if let game { host.chooseGame(game) }
             host.receive("tv", #"{"t":"hello","role":"tv"}"#)
             tickTask = Task { [weak self] in
                 while !Task.isCancelled {

@@ -105,7 +105,7 @@ struct JeopardyDisplayView: View {
     }
 
     private func retry() {
-        if client.isLocal { client.startLocal() } else if let address = client.address { client.connect(to: address) }
+        if client.isLocal { client.startLocal(game: client.localGame) } else if let address = client.address { client.connect(to: address) }
     }
 
     @ViewBuilder
