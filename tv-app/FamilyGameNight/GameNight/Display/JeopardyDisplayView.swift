@@ -43,6 +43,7 @@ struct JeopardyDisplayView: View {
             if showMenu {
                 DisplayMenu(
                     address: client.address?.text ?? "",
+                    hostPin: client.hostPin,
                     joinURL: client.joinURL,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
@@ -103,7 +104,7 @@ struct JeopardyDisplayView: View {
     }
 
     private func retry() {
-        if let address = client.address { client.connect(to: address) }
+        if client.isLocal { client.startLocal() } else if let address = client.address { client.connect(to: address) }
     }
 
     @ViewBuilder
@@ -138,6 +139,8 @@ struct JeopardyDisplayView: View {
 /// Opened with Play/Pause.
 private struct DisplayMenu: View {
     let address: String
+    /// Set when the game runs on this Apple TV: the PIN the host types on their phone. It lives only in this menu.
+    var hostPin: String? = nil
     let joinURL: URL?
     let onChangeServer: () -> Void
     let onExit: () -> Void
@@ -150,9 +153,18 @@ private struct DisplayMenu: View {
             VStack(spacing: 30) {
                 Text("Jeopardy display")
                     .font(JP.text(48, .bold))
-                Text("Connected to \(address)")
-                    .font(JP.text(32, .medium))
-                    .foregroundStyle(JP.softWhite)
+                if let hostPin {
+                    Text("Running on this Apple TV")
+                        .font(JP.text(32, .medium))
+                        .foregroundStyle(JP.softWhite)
+                    Text("Host PIN  \(hostPin)")
+                        .font(JP.text(64))
+                        .foregroundStyle(JP.gold)
+                } else {
+                    Text("Connected to \(address)")
+                        .font(JP.text(32, .medium))
+                        .foregroundStyle(JP.softWhite)
+                }
                 HostCodeBlock(joinURL: joinURL)
                     .frame(maxWidth: 820)
                 HStack(spacing: 30) {

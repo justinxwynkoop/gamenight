@@ -11,15 +11,17 @@ struct JeopardyRootView: View {
     @State private var client = GameNightClient()
     @State private var address: ServerAddress? = ServerSettings.load()
     @State private var editing = (ServerSettings.load() == nil)
+    @State private var runningHere = false
 
     var body: some View {
         // A ZStack, not a Group: onAppear/onDisappear below must fire once for the
         // whole Jeopardy screen, not each time the form and display swap places.
         ZStack {
-            if editing || address == nil {
+            if editing || (address == nil && !runningHere) {
                 ServerAddressView(
                     initialText: address?.text ?? "",
                     onConnect: connect,
+                    onRunHere: runHere,
                     onBack: back
                 )
             } else {
@@ -32,7 +34,7 @@ struct JeopardyRootView: View {
             }
         }
         .onAppear {
-            if let address, !editing { client.connect(to: address) }
+            if let address, !editing, !runningHere { client.connect(to: address) }
         }
         .onDisappear { client.disconnect() }
         // Remember an address only once it has really connected, so a typo is not kept.
@@ -43,12 +45,19 @@ struct JeopardyRootView: View {
         }
     }
 
+    private func runHere() {
+        runningHere = true
+        client.startLocal()
+        editing = false
+    }
+
     /// Returns an error message to show, or nil once connected.
     private func connect(_ text: String) -> String? {
         guard let parsed = ServerAddress.parse(text) else {
             return "That doesn't look like an address. Try something like 192.168.1.50:3000 or gamenight.local."
         }
         address = parsed
+        runningHere = false
         client.connect(to: parsed)
         editing = false
         return nil

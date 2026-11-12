@@ -23,11 +23,13 @@ public final class EngineHost {
         public let description: String
     }
 
+    private final class Problems { var list: [String] = [] }
+
     private let context: JSContext
     private let engine: JSValue
-    private var problems: [String] = []
+    private let problems: Problems
     /// Anything the engine logged as an error (or JavaScript threw), newest last. Tests and diagnostics read it.
-    public var errors: [String] { problems }
+    public var errors: [String] { problems.list }
 
     /// - Parameters:
     ///   - script: the contents of engine.js
@@ -43,9 +45,9 @@ public final class EngineHost {
         onSave: @escaping (_ json: String) -> Void = { _ in }
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
-        self.context = context
-        context.exceptionHandler = { [weak self] _, exception in
-            self?.problems.append(exception?.toString() ?? "unknown JavaScript error")
+        let problems = Problems()
+        context.exceptionHandler = { _, exception in
+            problems.list.append(exception?.toString() ?? "unknown JavaScript error")
         }
 
         let native = JSValue(newObjectIn: context)!
@@ -53,8 +55,8 @@ public final class EngineHost {
         let save: @convention(block) (String) -> Void = { onSave($0) }
         let now: @convention(block) () -> Double = { ProcessInfo.processInfo.systemUptime * 1000 }
         let random: @convention(block) () -> Double = { Double.random(in: 0..<1) }   // the system's secure generator
-        let log: @convention(block) (String, String) -> Void = { [weak self] level, text in
-            if level == "error" { self?.problems.append(text) }
+        let log: @convention(block) (String, String) -> Void = { level, text in
+            if level == "error" { problems.list.append(text) }
         }
         func set(_ name: String, _ block: AnyObject) { native.setObject(block, forKeyedSubscript: name as NSString) }
         set("send", unsafeBitCast(send, to: AnyObject.self))
@@ -65,16 +67,18 @@ public final class EngineHost {
         context.setObject(native, forKeyedSubscript: "__native" as NSString)
 
         context.evaluateScript(script)
-        if let first = problems.first { throw EngineError.scriptFailed(first) }
+        if let first = problems.list.first { throw EngineError.scriptFailed(first) }
         guard let engine = context.objectForKeyedSubscript("Engine"), !engine.isUndefined else {
             throw EngineError.scriptFailed("the script did not define Engine")
         }
+        self.context = context
         self.engine = engine
+        self.problems = problems
 
         var options: [String: Any] = ["pin": pin, "content": content.mapValues { $0.compactMapValues { Self.object($0) } }]
         if let saved { options["saved"] = saved }
         engine.invokeMethod("start", withArguments: [Self.json(options)])
-        if let first = problems.first { throw EngineError.scriptFailed(first) }
+        if let first = problems.list.first { throw EngineError.scriptFailed(first) }
     }
 
     /// The games the engine can run.

@@ -24,12 +24,18 @@ final class GameNightClient {
     /// What phones open to join (the QR code). It changes if the server moves networks.
     private(set) var joinURL: URL?
     private(set) var address: ServerAddress?
+    /// True while the game runs on this Apple TV (see `startLocal`) instead of on a Game Night server.
+    private(set) var isLocal = false
+    /// The host PIN when the game runs on this Apple TV. Shown only in the Play/Pause menu, never on the board.
+    private(set) var hostPin: String?
     /// Set when the server sent a state this app could not read.
     private(set) var readError: String?
 
     @ObservationIgnored private var runTask: Task<Void, Never>?
     @ObservationIgnored private var infoTask: Task<Void, Never>?
     @ObservationIgnored private var socket: URLSessionWebSocketTask?
+    @ObservationIgnored private var engine: EngineHost?
+    @ObservationIgnored private var tickTask: Task<Void, Never>?
     @ObservationIgnored private var lastMessageAt = Date()
     @ObservationIgnored private let session: URLSession
     @ObservationIgnored private let decoder = JSONDecoder()
@@ -55,10 +61,70 @@ final class GameNightClient {
         infoTask = nil
         socket?.cancel(with: .goingAway, reason: nil)
         socket = nil
+        tickTask?.cancel()
+        tickTask = nil
+        engine = nil
+        isLocal = false
+        hostPin = nil
         connection = .idle
         state = nil
         joinURL = nil
         readError = nil
+    }
+
+    // MARK: - The game on this Apple TV
+
+    private static let savedRoomKey = "gamenight.localRoom"
+
+    /// Runs the game engine here (JavaScriptCore) instead of connecting to a server. This TV is the display, and
+    /// the engine's other "clients" (the host and the phones) will arrive over the online relay.
+    func startLocal() {
+        disconnect()
+        guard let scriptURL = Bundle.main.url(forResource: "engine", withExtension: "js"),
+              let script = try? String(contentsOf: scriptURL, encoding: .utf8) else {
+            connection = .failed("The game engine is missing from this copy of the app.")
+            return
+        }
+        let pin = String(Int.random(in: 1000...9999))
+        do {
+            let host = try EngineHost(
+                script: script,
+                pin: pin,
+                saved: UserDefaults.standard.string(forKey: Self.savedRoomKey),
+                content: Self.bundledSets(),
+                onSend: { [weak self] id, json in
+                    // Only the TV's own display is local; phones and the host are served by the relay.
+                    if id == "tv" { self?.handle(Data(json.utf8)) }
+                },
+                onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) }
+            )
+            engine = host
+            isLocal = true
+            hostPin = pin
+            connection = .connecting
+            host.open("tv")
+            host.receive("tv", #"{"t":"hello","role":"tv"}"#)
+            tickTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(250))
+                    self?.engine?.tick()
+                }
+            }
+        } catch {
+            connection = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Our own question sets, shipped inside the app: `[gameId: [setId: json]]`.
+    private static func bundledSets() -> [String: [String: String]] {
+        guard let url = Bundle.main.url(forResource: "sets", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let games = try? JSONSerialization.jsonObject(with: data) as? [String: [String: Any]] else { return [:] }
+        return games.mapValues { sets in
+            sets.compactMapValues { set in
+                (try? JSONSerialization.data(withJSONObject: set)).flatMap { String(data: $0, encoding: .utf8) }
+            }
+        }
     }
 
     // MARK: - Connection loop
@@ -109,12 +175,14 @@ final class GameNightClient {
     }
 
     private func handle(_ message: URLSessionWebSocketTask.Message) {
-        let data: Data
         switch message {
-        case .string(let text): data = Data(text.utf8)
-        case .data(let bytes): data = bytes
+        case .string(let text): handle(Data(text.utf8))
+        case .data(let bytes): handle(bytes)
         @unknown default: return
         }
+    }
+
+    private func handle(_ data: Data) {
         guard let kind = try? decoder.decode(ServerMessageKind.self, from: data), kind.t == "state" else { return }
         connection = .connected
         do {

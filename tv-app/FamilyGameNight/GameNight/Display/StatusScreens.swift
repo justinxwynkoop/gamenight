@@ -87,11 +87,14 @@ struct ServerAddressView: View {
     @State private var message: String?
     /// Called with what was typed. Returns an error message, or nil if it worked.
     let onConnect: (String) -> String?
+    /// Runs the game on this Apple TV instead (a trial; phones join through the online relay, which comes next).
+    var onRunHere: (() -> Void)?
     let onBack: () -> Void
 
-    init(initialText: String, onConnect: @escaping (String) -> String?, onBack: @escaping () -> Void) {
+    init(initialText: String, onConnect: @escaping (String) -> String?, onRunHere: (() -> Void)? = nil, onBack: @escaping () -> Void) {
         _text = State(initialValue: initialText)
         self.onConnect = onConnect
+        self.onRunHere = onRunHere
         self.onBack = onBack
     }
 
@@ -127,6 +130,7 @@ struct ServerAddressView: View {
                 HStack(spacing: 36) {
                     Button("Connect", action: connect)
                     Button("Use gamenight.local") { text = "gamenight.local" }
+                    if let onRunHere { Button("Run on this Apple TV (trial)", action: onRunHere) }
                     Button("Back", action: onBack)
                 }
                 .padding(.top, 8)
