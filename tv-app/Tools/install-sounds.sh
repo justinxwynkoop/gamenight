@@ -1,10 +1,10 @@
 #!/bin/sh
 # Copies your own sound files into the app, on your Mac. They are not committed to git (the audio is not ours to publish).
-#   Tools/install-sounds.sh ~/Desktop/gamenight-pi-backup/sounds
-# The folder is the Pi's data/sounds: files in it are used by every game; files in its jeopardy/ and feud/ folders by that game.
+#   Tools/install-sounds.sh <folder with your sounds>
+# Files directly in the folder are used by every game; files in its jeopardy/ and feud/ folders by that game only.
 # Files end up in FamilyGameNight/GameNight/Sounds/ as <game>__<name>.<ext>, which Xcode then packs into the app.
 set -eu
-src="${1:?Give the folder with your sounds, for example ~/Desktop/gamenight-pi-backup/sounds}"
+src="${1:?Give the folder with your sound files, for example ~/Desktop/my-sounds}"
 here="$(cd "$(dirname "$0")/.." && pwd)"
 dest="$here/FamilyGameNight/GameNight/Sounds"
 [ -d "$src" ] || { echo "No such folder: $src"; exit 1; }
