@@ -100,7 +100,7 @@ try {
   if (process.env.SHOT2) await host.screenshot({ path: process.env.SHOT2 });
 
   // The question editor, online: PIN, then import a set by pasting it, then see it in the TV's list.
-  const editor = await browser.newPage(); watch(editor, 'editor');
+  const editor = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(editor, 'editor');
   await editor.goto(`${base}/editor?game=feud&r=ABCD`);
   await until(async () => (await editor.locator('input[type=password]').count()) > 0, 'the editor PIN form');
   await editor.locator('input[type=password]').fill('4321');
@@ -108,6 +108,7 @@ try {
   const paste = editor.locator('textarea[placeholder^="Paste a link"]');
   await until(async () => (await paste.count()) > 0, 'the editor and its import box');
   await editor.getByText('Import sets', { exact: false }).first().click();   // the import box is folded away until opened
+  if (process.env.SHOT3) await editor.screenshot({ path: process.env.SHOT3 });
   await paste.fill(JSON.stringify({ ...feud, title: 'E2E Set' }));
   await editor.getByRole('button', { name: 'Import' }).click();
   await until(async () => /Imported 1/.test(await editor.locator('body').innerText()), 'the import to finish');
@@ -144,6 +145,23 @@ Fall - 25`),
   });
   await until(() => engine.listSets('feud').some((x) => x.id === 'dropped-set'), 'the dropped file to be imported');
   console.log('editor: a file dropped on the folded import card was imported');
+
+  if (process.env.SHOT_DIR) {   // pictures of the editors at phone size, for a look
+    const shot = (name) => editor.screenshot({ path: `${process.env.SHOT_DIR}/${name}.png` });
+    await editor.reload();
+    await editor.locator('select[aria-label="Question set"]').waitFor();
+    await editor.locator('select[aria-label="Question set"]').selectOption({ label: feud.title });
+    await editor.locator('.acc-head').first().waitFor();
+    await editor.locator('.acc-head').first().click();
+    await shot('feud-open');
+    await editor.locator('.acc-head').nth(1).click();
+    await shot('feud-second');
+    await editor.goto(`${base}/editor?game=jeopardy&r=ABCD`);
+    await editor.locator('select[aria-label="Question set"]').waitFor();
+    await editor.locator('select[aria-label="Question set"]').selectOption({ label: jeo.title });
+    await editor.locator('.acc-head').first().click();
+    await shot('jeopardy-open');
+  }
 } catch (e) { if (!problems.length) fail(e.message); }
 await browser.close(); tv.close(); clearInterval(ticker); sb.close(); site.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : '\nOK');

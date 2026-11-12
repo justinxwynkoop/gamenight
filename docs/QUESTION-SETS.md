@@ -39,6 +39,19 @@ Daily Doubles are placed at random) and five Family Feud sets (their survey numb
 The Family Feud sets are `family-night-basics`, `home-and-kitchen`, `kids-corner`, `out-and-about` and
 `holidays-and-seasons`. The host picks a set in the lobby.
 
+## Using the editor
+
+The editor is built for phones. A bar at the top goes back to the host page and switches game; a **Save** bar stays pinned at
+the bottom and says when you have unsaved changes (it also warns before you leave with any).
+
+- **Family Feud:** each round and Fast Money question is a collapsible row showing a ✓ when it is complete and a flag when
+  something is missing (the open row says what). An answer is one compact line: the answer, its points, **alt** (other
+  words to accept) and ✕. **Sort by points** puts the answers in order, and **Paste a list** adds many answers at once from
+  lines like `Spoon - 30 | spoons`.
+- **Jeopardy:** each category is a collapsible row showing how many of its five clues are filled in. Each clue has its
+  value, a ★ Daily Double switch, the clue and the answer. Final Jeopardy is the last row.
+- **Import sets** at the top takes files, links or pasted text (below).
+
 ## Importing
 
 Open the editor, then the **Import sets** card at the top. You can:

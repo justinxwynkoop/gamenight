@@ -40,6 +40,14 @@ final | Category | The final clue | The answer
 
 const clean = (t) => String(t ?? '').replace(/\s+/g, ' ').trim();
 
+/** One Family Feud answer line: "Spoon - 30" or "Fork - 25 | forks, silverware". Null if it is not one. */
+export function parseAnswerLine(text) {
+  const m = String(text).trim().match(/^(.*?)\s*[-–—:]\s*(\d+)\s*(?:\|\s*(.*))?$/);
+  if (!m || !clean(m[1])) return null;
+  const aliases = (m[3] ?? '').split(',').map(clean).filter(Boolean);
+  return { text: clean(m[1]), points: Number(m[2]), ...(aliases.length ? { aliases } : {}) };
+}
+
 function parseFeud(lines) {
   const doc = { title: '', rounds: [] };
   let list = doc.rounds; let q = null;
@@ -48,11 +56,8 @@ function parseFeud(lines) {
     if ((m = text.match(/^title\s*:\s*(.+)$/i))) { doc.title = clean(m[1]); return; }
     if (/^fast\s*money\s*:?$/i.test(text)) { doc.fastMoney = []; list = doc.fastMoney; q = null; return; }
     if ((m = text.match(/^\?\s*(.+)$/))) { q = { question: clean(m[1]), answers: [] }; list.push(q); return; }
-    if ((m = text.match(/^(.*?)\s*[-–—:]\s*(\d+)\s*(?:\|\s*(.*))?$/)) && q && clean(m[1])) {
-      const aliases = (m[3] ?? '').split(',').map(clean).filter(Boolean);
-      q.answers.push({ text: clean(m[1]), points: Number(m[2]), ...(aliases.length ? { aliases } : {}) });
-      return;
-    }
+    const answer = q && parseAnswerLine(text);
+    if (answer) { q.answers.push(answer); return; }
     throw new Error(q ? `Line ${n}: I did not understand “${text}”. An answer looks like: Spoon - 30` : `Line ${n}: I did not understand “${text}”. Start a question with a line beginning with ?`);
   });
   return doc;
