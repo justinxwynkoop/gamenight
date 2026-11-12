@@ -63,6 +63,3 @@ node scripts/build-engine.mjs <out.js>    # the engine for the Apple TV app
 
 CI (`.github/workflows/ci.yml`) runs the tests, checks `web/` is up to date, drives the real pages in a browser, and
 plays a join through the real Supabase project. Details are in [docs/ONLINE.md](docs/ONLINE.md).
-
-**Keep copyrighted data out of this repo** (it is public): sound files, clue files, survey data and sets built from them
-are git-ignored. See [docs/QUESTION-SETS.md](docs/QUESTION-SETS.md).
