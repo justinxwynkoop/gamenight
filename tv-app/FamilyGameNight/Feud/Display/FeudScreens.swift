@@ -114,13 +114,17 @@ struct FeudRoundScreen: View {
             }
             .frame(height: 190)
 
-            Text(round.question)
-                .font(JP.text(62, .heavy))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.6)
-                .shadow(color: .black.opacity(0.4), radius: 0, y: 4)
-                .frame(maxWidth: .infinity)
+            // The host reads the question out loud. It is not shown while the families are still guessing, so
+            // nobody gets a head start thinking of answers; it appears once the round is over.
+            if round.step == .roundEnd {
+                Text(round.question)
+                    .font(JP.text(62, .heavy))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.6)
+                    .shadow(color: .black.opacity(0.4), radius: 0, y: 4)
+                    .frame(maxWidth: .infinity)
+            }
 
             board
                 .frame(maxHeight: .infinity)
@@ -453,7 +457,8 @@ struct FeudFastMoneyScreen: View {
                             .foregroundStyle(JP.ink)
                             .frame(width: 70, height: 70)
                             .background(Circle().fill(JP.gold))
-                        Text(row.question ?? "")
+                        // The host reads the questions out; they are not on the screen for the players to read ahead.
+                        Text("Question \(row.q + 1)")
                             .font(JP.text(48, .bold))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
