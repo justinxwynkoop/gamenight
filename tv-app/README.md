@@ -5,8 +5,8 @@ A private Apple TV app for family game nights. Open it and pick a game:
 | Game | What it is | Status |
 | ---- | ---------- | ------ |
 | **Singo Night** | Bingo with songs. Plays a short clip of each song from an Apple Music playlist, fades in hints, then reveals the answer. | Working (moved in from the `singo` repo) |
-| **Jeopardy** | Trivia board on the TV, phones as buzzers. The Apple TV is the TV display for the [`gamenight`](https://github.com/justinxwynkoop/gamenight) server. | Built (display only); see [Jeopardy on the TV](#jeopardy-on-the-tv) |
-| **Family Feud** | Two teams guess the top survey answers: face-off, strikes, steal and Fast Money. It uses the same TV display as Jeopardy. | Built (display only); see [Family Feud on the TV](#family-feud-on-the-tv) |
+| **Jeopardy** | Trivia board on the TV, phones as buzzers. The Apple TV **runs the game itself** (online mode) or can be the display for a [`gamenight`](https://github.com/justinxwynkoop/gamenight) server. | Working; see [Hosting the game on the Apple TV](#hosting-the-game-on-the-apple-tv-online-mode) |
+| **Family Feud** | Two teams guess the top survey answers: face-off, strikes, steal and Fast Money. Same hosting and display as Jeopardy. | Working; see [Family Feud on the TV](#family-feud-on-the-tv) |
 
 On the home screen, moving the remote highlights a tile: it grows, and the
 background glows in that game's colour. Click to open a game. Menu goes back to
@@ -14,9 +14,10 @@ the game picker.
 
 Family only: installed from Xcode, never the App Store or TestFlight.
 
-> **Not yet built or tested.** This was written without Xcode. Expect a round of
-> build fixes on first open, then check on a real Apple TV (see
-> [First things to check](#first-things-to-check)).
+> **How it is checked.** Every push is built and tested on GitHub's macOS machines
+> (see [Cloud build and tests](#cloud-build-and-tests)), and the game has been played on a real Apple TV with
+> phones. The Apple TV mode is new, so [First things to check](#first-things-to-check) is still worth a look
+> after big changes.
 
 ## First-time setup
 
@@ -153,12 +154,19 @@ FamilyGameNight/
     Core/                    Game rules, no Apple frameworks (unit tested)
     Music/                   MusicKit, playback, round controller
     Views/                   SwiftUI screens
-  GameNight/                 The TV display (shared by the server's games) and Jeopardy
-    JeopardyRootView.swift   Asks for the server address once, then shows the display
-    GameNightClient.swift    WebSocket connection to the server (joins as the TV)
-    ServerSettings.swift     Remembers the server address
+  GameNight/                 The TV display (shared by both games) and Jeopardy
+    JeopardyRootView.swift   Asks for a server once (or "Run on this Apple TV"), then shows the display
+    GameNightClient.swift    The TV's source of state: a server over WebSocket, or the engine running here
+    ServerSettings.swift     Remembers the server address, or that the Apple TV hosts
+    RelayConfig.swift        Supabase URL and publishable key, and the Vercel site address
+    Engine/                  engine.js and sets.json, GENERATED from the gamenight repo (see above)
+    Sounds/, Sets/           Your own sound files and extra sets, copied in on your Mac (git ignores them)
     SoundDirector.swift      Plays the sounds and music, downloads your own files
-    Core/                    No Apple frameworks (unit tested)
+    Core/                    Platform-light (unit tested)
+      EngineHost.swift       Runs engine.js in JavaScriptCore
+      RealtimeClient.swift   Supabase Realtime client
+      BundledSounds.swift    Finds your sound files inside the app
+      LocalSets.swift        Finds extra question sets inside the app
       ServerState.swift      The data the server sends, as Swift types
       DisplayScreen.swift    Which screen to show; ranking and placing
       Countdown.swift        Local countdown between server updates
@@ -182,7 +190,7 @@ Config/Info.plist            Local-network permission and plain-http allowance
 Tests/SingoCoreTests/        Tests for Singo's Core
 Tests/GameNightCoreTests/    Tests for the display's logic; Fixtures/ are real server messages
   Feud/                      Family Feud's tests
-Tools/                       Art generators (Pillow) and the fixture recorder
+Tools/                       Art generators (Pillow), the fixture recorder, install-sounds.sh and install-sets.sh
 ```
 
 The Xcode project uses a synced folder, so new files under `FamilyGameNight/`
@@ -229,7 +237,7 @@ record new ones with `Tools/record-fixtures.mjs` (individual play), `Tools/recor
 
 ## Family Feud on the TV
 
-The Family Feud tile opens the same TV display as Jeopardy (they share the saved server address). The
+The Family Feud tile opens the same TV display as Jeopardy (they share the saved choice of server or Apple TV hosting). The
 display draws whichever game the host has started on the server, so either tile works; the host picks
 **Family Feud** in the game picker on their phone. Setup is the same as for Jeopardy (see above), and
 the server needs the Family Feud version of `gamenight` (it adds `games/feud` and its question sets).
@@ -249,9 +257,109 @@ the screen, which then slides down into the next empty strike box.
 The expected sounds in `FeudTests.swift` come from running the web TV's own `onChange()` on the same
 recorded states.
 
-## Jeopardy on the TV
+## Hosting the game on the Apple TV (online mode)
 
-The Jeopardy tile makes the Apple TV the **TV display** for a Game Night server
+In this mode **no Pi or computer is needed**. The game rules (the same JavaScript the Game Night server runs) are
+inside the app, running in JavaScriptCore. Phones open a web page on Vercel and talk to the TV through a free Supabase
+Realtime relay, so everyone just needs internet. How it works, and how to set up Supabase and Vercel from scratch, is
+in the `gamenight` repo's **[docs/ONLINE.md](https://github.com/justinxwynkoop/gamenight/blob/main/docs/ONLINE.md)**.
+This repo holds the Apple TV side.
+
+**Using it**
+1. Open **Jeopardy** or **Family Feud**. The first time, the address screen asks for a server: choose
+   **Run on this Apple TV** instead (the app remembers). Each tile starts its own game; opening a tile for a
+   different game than the last one starts a fresh room.
+2. The lobby shows a QR code, the join address and a **4-digit room code**. Players scan the code, or open the
+   site and type the digits.
+3. The host opens `<site>/host` on a phone (the QR in the Play/Pause menu or the lobby), types the room code and the
+   **host PIN**. The PIN is never on the board: press **Play/Pause** on the TV and read it in the menu.
+4. The host page's **Questions** tab opens the question editor (see [Question sets](#question-sets)).
+
+**The Play/Pause menu** shows the host PIN, the room code and whether phones are connected ("Phones: connected", or
+"not connected" with the reason), and has **New room code** (a fresh empty room with a new random code),
+**Change server** (go back to server mode) and **Back to games**. **Menu** goes back to the game picker.
+
+**Where the settings live** (`FamilyGameNight/GameNight/`):
+
+| File | What it holds |
+| --- | --- |
+| `RelayConfig.swift` | The Supabase project URL, its *publishable* key (public by design; never put a secret key here) and the Vercel site address. |
+| `Engine/engine.js` | The game engine, **generated** from the `gamenight` repo (see below). |
+| `Engine/sets.json` | The 16 question sets that ship with the app, generated the same way. |
+| `Core/EngineHost.swift` | Loads `engine.js` into JavaScriptCore and passes JSON messages in and out. |
+| `Core/RealtimeClient.swift` | A small Supabase Realtime (Phoenix channels) client, adapted from the one in the Buzzworthy Apple TV app. |
+| `GameNightClient.swift` | Starts the engine (`startLocal`), links it to the relay and the display, keeps the room between launches. |
+
+**Updating the game engine inside the app.** The rules live in the `gamenight` repo. After changing them there:
+
+```bash
+cd ../gamenight && node scripts/build-engine.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/engine.js
+node scripts/bundle-sets.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/sets.json   # only if the shipped sets changed
+```
+
+Commit the changed files here. Nothing updates on its own: the app only changes when you rebuild and run it.
+
+**The Apple TV remembers** the room between launches (players, scores, the game in progress) and the room code,
+and any question sets you saved from the editor. Delete the app to forget them.
+
+**Needs the internet** on the TV and phones. If the TV loses it, the menu and a banner say "Phones not connected",
+and it reconnects by itself.
+
+## Question sets
+
+Sets are small JSON files. The Apple TV has the 16 that ship in the app, plus anything saved or imported from the
+editor. You can **drag a `.json` or `.txt` file onto the editor's Import card**, paste a GitHub link, or write a set
+in a plain-text format; all of that is explained, with examples, in the `gamenight` repo's
+**[docs/QUESTION-SETS.md](https://github.com/justinxwynkoop/gamenight/blob/main/docs/QUESTION-SETS.md)**.
+
+**Extra sets copied into the app on your Mac** (sets that must stay out of GitHub, such as boards built from public
+survey data): put them in a folder laid out like the Pi's `data/` (a `jeopardy/` and a `feud/` folder of `.json` files)
+and run:
+
+```bash
+Tools/install-sets.sh ~/Desktop/gamenight-pi-backup
+```
+
+It copies the ones that do not already ship with the app into `FamilyGameNight/GameNight/Sets/` as
+`<game>__<id>.json` (git ignores them) and Xcode packs them in on the next run.
+
+## Your own sounds (kept out of GitHub)
+
+Sound files are not ours to publish, so they are copied into the app on your Mac and never committed:
+
+```bash
+Tools/install-sounds.sh ~/Desktop/gamenight-pi-backup/sounds
+```
+
+The folder is laid out like the Pi's `data/sounds`: files in it are used by every game, and files in its `jeopardy/` and
+`feud/` folders by that game. The script copies `.mp3`, `.m4a` and `.wav` files into
+`FamilyGameNight/GameNight/Sounds/` as `<game>__<name>.<ext>` (for example `feud__strike.mp3`, `shared__think.mp3`);
+git ignores them. Xcode flattens resource folders into one, which is why the file names carry the game. The names that
+are used are listed in [Sound](#sound). A TestFlight or other build made on GitHub's machines will not have your files
+(they are not in the repo), so archive from your Mac when you want them.
+
+## Cloud build and tests
+
+Every push runs `.github/workflows/ci.yml` on GitHub's macOS machines: the unit tests (`swift test`: the display's logic,
+the Family Feud models, and `EngineHostTests`, which load the real `engine.js` into JavaScriptCore and play a game
+through the app's own decoder) and a build of the tvOS app without signing. A green run means the app builds and the
+tests pass; it does not replace trying it on the Apple TV.
+
+## Troubleshooting
+
+| What you see | What to do |
+| --- | --- |
+| "A build only device cannot be used to run this target" in Xcode | The destination is "Any tvOS Device". Choose your Apple TV (paired under Window → Devices and Simulators). |
+| Phones say "Waiting for the TV" | Check the room code against the lobby or the Play/Pause menu. The phone's status line says how far it got. |
+| Menu says "Phones: not connected (…)" | The TV cannot reach Supabase; check its internet. The reason is in the brackets. |
+| Menu jumps out to the Apple TV home screen | The display must hold the remote's focus; `JeopardyDisplayView` sets it when it opens and when the Play/Pause panel closes. |
+| The other game's lobby shows | A game was in progress. Opening the tile for a different game starts a fresh room. |
+| My sounds do not play | Run `Tools/install-sounds.sh` again, then run the app from Xcode (not a cloud build). `.ogg` files cannot be played. |
+
+## Jeopardy on the TV (server mode)
+
+(This section is about **server mode**, where a Game Night server does the work and the Apple TV is its display. The
+newer way, with no server, is above.) The Jeopardy tile makes the Apple TV the **TV display** for a Game Night server
 (the [`gamenight`](https://github.com/justinxwynkoop/gamenight) repo: Node.js,
 runs on a Raspberry Pi or any computer on the network). Phones buzz and answer,
 the host judges from a phone, and the server decides who was first. The Apple TV
