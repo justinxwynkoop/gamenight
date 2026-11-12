@@ -12,8 +12,9 @@
 // saved                     the text save() last gave (or null)
 import { Room } from '../room.js';
 import { createHub } from './hub.js';
+import { createRelayHost, newRoomCode } from './relay.js';
 
-export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, onError }) {
+export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, onError, code = newRoomCode(), broadcast = null }) {
   // sets[gameId][setId] = set
   const sets = {};
   for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
@@ -39,14 +40,26 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
   if (!room.gameId && Object.keys(games).length === 1) room.chooseGame(Object.keys(games)[0]);
 
   const pinOk = (given) => String(given ?? '') === String(pin);
-  const hub = createHub({ room, pinOk, send, ...(onError ? { onError } : {}) });
+  // The TV's own display is client "tv" and is served directly; clients that arrived over the relay are answered through it.
+  const clock = now ?? (() => room.now());
+  let relay = null;
+  const hub = createHub({
+    room, pinOk, ...(onError ? { onError } : {}),
+    send: (id, message) => { if (relay?.knows(id)) relay.send(id, message); else send(id, message); },
+  });
+  if (broadcast) relay = createRelayHost({ engine: { open: (id) => hub.open(id), close: (id) => hub.close(id), receive: (id, m) => hub.receive(id, m) }, code, broadcast, now: clock });
 
   return {
     room,
     open: (id) => hub.open(id),
     close: (id) => hub.close(id),
     receive: (id, message) => hub.receive(id, message),
-    tick: () => room.tick(),
+    tick() { room.tick(); relay?.sweep(); },
+    code,
+    /** The relay's room channel (the TV listens here), or null when there is no relay. */
+    relayTopic: relay?.topic ?? null,
+    /** Something arrived on the relay. */
+    onBroadcast: (channel, event, payload) => relay?.onBroadcast(channel, event, payload),
     broadcast: () => hub.broadcast(),
     putSet(gameId, id, set) { (sets[gameId] ??= {})[id] = set; room.contentChanged?.(gameId, id); },
     removeSet(gameId, id) { delete sets[gameId]?.[id]; room.contentChanged?.(gameId, id); },

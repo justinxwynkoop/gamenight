@@ -1,4 +1,5 @@
 // Shared by every page: DOM helper, auto-reconnecting game socket, formatting.
+import { connectRelay, cleanCode } from './relay/client.js';
 
 /** h('div', {class:'x', onclick: fn}, 'text', childEl) — builds DOM without innerHTML, so names can't inject markup. */
 export function h(tag, props = {}, ...kids) {
@@ -39,6 +40,7 @@ export const COLORS = [
  * state push and onMessage(msg) for everything else.
  */
 export function connect({ hello, onState, onMessage = () => {}, onStatus = () => {} }) {
+  if (globalThis.GN_RELAY) return connectOnline({ hello, onState, onMessage, onStatus });
   let ws; let retry = 500; let closed = false;
   const open = () => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -56,6 +58,55 @@ export function connect({ hello, onState, onMessage = () => {}, onStatus = () =>
     send: (msg) => { if (ws.readyState === 1) { ws.send(JSON.stringify(msg)); return true; } return false; },
     act: (action, args = {}) => { if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'act', action, args })); },
     close: () => { closed = true; ws.close(); },
+  };
+}
+
+// ---------- the online relay (the Vercel site): the same connection, carried by Supabase Realtime ----------
+const roomFromPage = () => {
+  const typed = new URLSearchParams(location.search).get('r');
+  return cleanCode(typed) || cleanCode(store('gn-room'));
+};
+
+/** Asks for the room code shown on the TV. Resolves with 4 letters. */
+function askForRoom(problem) {
+  return new Promise((resolve) => {
+    const input = h('input', { class: 'gn-room-input', maxLength: 4, placeholder: 'ABCD', autocapitalize: 'characters', autocomplete: 'off', spellcheck: false, inputMode: 'text',
+      style: { fontSize: '40px', textAlign: 'center', letterSpacing: '0.3em', width: '6em', textTransform: 'uppercase' } });
+    const go = () => { const code = cleanCode(input.value); if (code.length === 4) { overlay.remove(); resolve(code); } };
+    input.addEventListener('input', () => { input.value = cleanCode(input.value); if (input.value.length === 4) go(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    const overlay = h('div', { style: { position: 'fixed', inset: 0, zIndex: 99, background: 'rgba(8,12,40,.96)', color: '#fff', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '24px' } },
+      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four letters shown on the TV.'), input, h('p', {}, h('button', { onclick: go }, 'Join'))));
+    document.body.append(overlay);
+    input.focus();
+  });
+}
+
+function connectOnline({ hello, onState, onMessage, onStatus }) {
+  let link = null; let closed = false;
+  // One id per browser tab, so a host page and a player page on one phone do not look like the same screen.
+  let clientId = null;
+  try { clientId = sessionStorage.getItem('gn-client'); } catch { /* private mode: a new id each time */ }
+  if (!clientId) {
+    const bytes = crypto.getRandomValues(new Uint8Array(9));
+    clientId = 'c' + [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+    try { sessionStorage.setItem('gn-client', clientId); } catch { /* fine */ }
+  }
+  const start = async () => {
+    let room = roomFromPage();
+    if (!room) room = await askForRoom();
+    if (closed) return;
+    store('gn-room', room);
+    link = connectRelay({
+      config: globalThis.GN_RELAY, room, clientId, hello, onState, onMessage, onStatus,
+      WebSocketImpl: globalThis.WebSocket,
+    });
+  };
+  start();
+  return {
+    send: (msg) => !!link?.send(msg),
+    act: (action, args = {}) => link?.act(action, args),
+    close: () => { closed = true; link?.close(); },
   };
 }
 

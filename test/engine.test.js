@@ -14,9 +14,10 @@ const bundle = readFileSync(out, 'utf8');
 const feudSet = JSON.parse(readFileSync(new URL('../data/feud/family-night-basics.json', import.meta.url)));
 
 function boot(options = {}) {
-  const sent = []; const saves = []; const logs = []; let clock = 1000;
+  const sent = []; const relayed = []; const saves = []; const logs = []; let clock = 1000;
   const native = {
     send: (id, json) => sent.push([id, JSON.parse(json)]),
+    broadcast: (topic, event, json) => relayed.push([topic, event, JSON.parse(json)]),
     save: (json) => saves.push(json),
     now: () => clock,
     random: () => Math.random(),
@@ -30,7 +31,7 @@ function boot(options = {}) {
   const last = (id, t) => to(id).filter((m) => m.t === t).at(-1);
   const say = (id, m) => E.receive(id, JSON.stringify(m));
   const settle = () => new Promise((r) => setImmediate(r));
-  return { E, context, sent, saves, logs, to, last, say, settle, advance: (ms) => { clock += ms; } };
+  return { E, context, sent, relayed, saves, logs, to, last, say, settle, advance: (ms) => { clock += ms; } };
 }
 
 test('the bundle needs nothing from Node and carries no file-reading code', () => {
