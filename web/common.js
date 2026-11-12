@@ -114,6 +114,14 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
 }
 
 let onlineConnection = null;
+
+/** The room code this page is using when it runs on the online relay, or null on the Pi. */
+export const onlineRoom = () => (globalThis.GN_RELAY ? roomFromPage() : null);
+/** Forget the room code and ask for another one. */
+export function changeRoom() {
+  store('gn-room', null);
+  location.replace(location.pathname);
+}
 const reply = (ok, body) => ({ ok, json: async () => body });
 /**
  * fetch() for the host's /api calls. On the Pi that is plain fetch. Online there is no server to ask, so the few calls

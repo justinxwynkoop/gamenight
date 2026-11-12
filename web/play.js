@@ -1,6 +1,6 @@
 // The phone page. It owns joining and the header (name, score), and hands the
 // rest of the screen to the active game's module (/games/<id>/player.js).
-import { h, scoreText, ink, COLORS, connect, store, unitById } from './common.js';
+import { h, scoreText, ink, COLORS, connect, store, unitById, onlineRoom, changeRoom } from './common.js';
 
 const screen = document.getElementById('screen');
 const you = document.getElementById('you');
@@ -26,7 +26,9 @@ const net = connect({
     if (up) { clearTimeout(offlineHint); offlineHint = null; offline.textContent = 'Reconnecting…'; return; }
     // Still down after a few seconds: say what to try, and link the connection check.
     // (Every retry reports "down" again, so the timer is only started once per outage.)
-    if (!offlineHint) offlineHint = setTimeout(() => offline.replaceChildren('Can’t reach the game. Same Wi-Fi as the TV? Try turning off mobile data or a VPN. ', h('a', { href: '/check', style: { color: '#fff', fontWeight: '800' } }, 'Test my connection')), 5000);
+    if (!offlineHint) offlineHint = setTimeout(() => offline.replaceChildren(...(onlineRoom()
+      ? [`Can’t reach the TV in room ${onlineRoom()}. Is the TV showing the game? `, h('a', { href: '#', onclick: (e) => { e.preventDefault(); changeRoom(); }, style: { color: '#fff', fontWeight: '800' } }, 'Change room code')]
+      : ['Can’t reach the game. Same Wi-Fi as the TV? Try turning off mobile data or a VPN. ', h('a', { href: '/check', style: { color: '#fff', fontWeight: '800' } }, 'Test my connection')])), 5000);
   },
   onState: (v) => { view = v; if (v.room.me) needJoin = false; update(); },
   onMessage: (m) => {
@@ -40,10 +42,16 @@ const net = connect({
 // Before the first update arrives the page is blank. If it never arrives, say why and what to do.
 setTimeout(() => {
   if (view) return;
-  screen.replaceChildren(h('div', { class: 'card' },
-    h('h2', {}, 'Can’t reach the game yet'),
-    h('p', {}, 'Make sure this phone is on the same Wi-Fi as the TV (not a guest network). Turn off mobile data and any VPN or ad-blocker app, then reload.'),
-    h('a', { class: 'btn primary', href: '/check', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, 'Test my connection')));
+  const room = onlineRoom();
+  screen.replaceChildren(room
+    ? h('div', { class: 'card' },
+      h('h2', {}, 'Waiting for the TV'),
+      h('p', {}, `Looking for room ${room}. On the Apple TV, open the game (Jeopardy or Family Feud) and the room code is on the lobby screen and in the Play/Pause menu. Check the four letters, then try again.`),
+      h('button', { class: 'btn primary', style: { display: 'block', width: '100%', marginTop: '12px' }, onclick: changeRoom }, 'Enter a different room code'))
+    : h('div', { class: 'card' },
+      h('h2', {}, 'Can’t reach the game yet'),
+      h('p', {}, 'Make sure this phone is on the same Wi-Fi as the TV (not a guest network). Turn off mobile data and any VPN or ad-blocker app, then reload.'),
+      h('a', { class: 'btn primary', href: '/check', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, 'Test my connection')));
 }, 6000);
 
 function flash(text) {
