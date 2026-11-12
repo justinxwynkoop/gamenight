@@ -128,9 +128,9 @@ struct ServerAddressView: View {
                 }
 
                 HStack(spacing: 36) {
+                    if let onRunHere { Button("Run on this Apple TV", action: onRunHere) }
                     Button("Connect", action: connect)
                     Button("Use gamenight.local") { text = "gamenight.local" }
-                    if let onRunHere { Button("Run on this Apple TV (trial)", action: onRunHere) }
                     Button("Back", action: onBack)
                 }
                 .padding(.top, 8)

@@ -31,8 +31,8 @@ account last a year; reinstall from Xcode after that.
 
 ## Play
 
-1. On the home screen choose **Jeopardy** or **Family Feud**. The first time, choose **Run on this Apple TV** on the
-   screen that appears (the app remembers).
+1. On the home screen choose **Jeopardy** or **Family Feud**. The game starts on the Apple TV by itself; there is
+   nothing to type or set up.
 2. The lobby shows a QR code and a 4-digit room code. Players scan the code, or open the site and type the digits.
 3. The host opens the site's `/host` page on a phone and types the room code and the **host PIN**. The PIN is never on
    the board: press **Play/Pause** on the Apple TV remote and read it in the menu.

@@ -32,6 +32,18 @@ GitHub** (a button in the Actions tab; no Mac needed, but no sounds or extra set
 4. After Apple finishes processing (usually 5 to 15 minutes; you get an email) the build shows under the app's
    **TestFlight** tab in App Store Connect.
 
+### Sending an update (one command)
+
+After the first upload, shipping a new version is one command from Terminal (it builds, signs and uploads, as above):
+
+```bash
+cd ~/Documents/familygamenight && Tools/upload-testflight.sh
+```
+
+It needs Xcode signed in with an Apple ID on the team. Run `Tools/install-sounds.sh` and `Tools/install-sets.sh` first if you
+want your sounds and extra sets in the build. Everyone in the TestFlight group gets the update automatically once
+Apple has processed it (about 5 to 15 minutes).
+
 ## Way 2: from GitHub (no Mac)
 
 1. **Make an API key** (Admin): App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API**
@@ -63,8 +75,9 @@ Family Game Night. New builds arrive on their own (and can be turned off in Test
 ## Good to know
 
 - **A build lasts 90 days.** After that it stops opening; upload a new one (Way 1 or Way 2) before then.
-- **Build numbers must go up.** Way 1 does it for you; Way 2 uses the GitHub run number. If you switch between the two and
-  an upload is refused for a repeated number, raise `CURRENT_PROJECT_VERSION` in Xcode (General → Build).
+- **Build numbers must go up.** The upload script and the GitHub workflow both use the date and time as the build number,
+  so each is higher than the last. (The very first upload from Xcode was build 1.) In Xcode's own Distribute wizard, leave
+  "Manage Version and Build Number" ticked.
 - **Export compliance** is already answered in the app (it uses only Apple's own encryption), so TestFlight does not ask
   each time.
 - Internal testers need no Apple review. A *public link* for people outside the team (an "external" group) does need a

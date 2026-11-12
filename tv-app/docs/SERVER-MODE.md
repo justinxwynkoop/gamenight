@@ -6,7 +6,7 @@ Phones then use the server's own pages on your Wi-Fi, and the server decides who
 
 1. On a computer on your network: clone `gamenight`, then `npm install && HOST_PIN=1234 npm start`. It prints an
    address such as `192.168.1.50:3000`.
-2. On the Apple TV open Jeopardy or Family Feud. On the address screen type that address (typing is easiest with an
+2. On the Apple TV open Jeopardy or Family Feud, press **Play/Pause**, and choose **Change server**. On the address screen type that address (typing is easiest with an
    iPhone nearby: the Apple TV offers its keyboard) and say Allow if it asks to find devices on your network. The address
    is remembered. (To switch back to hosting the game on the Apple TV, choose **Run on this Apple TV** on that screen.)
 3. Scan the QR code on the TV to join. The host scans the small **Host** code on the lobby screen (also in the

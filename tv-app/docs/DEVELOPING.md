@@ -15,7 +15,7 @@ FamilyGameNight/
     Music/                   MusicKit, playback, round controller
     Views/                   SwiftUI screens
   GameNight/                 The TV display (shared by both games) and Jeopardy
-    JeopardyRootView.swift   Asks for a server once (or "Run on this Apple TV"), then shows the display
+    JeopardyRootView.swift   Starts the game on the Apple TV, or asks for a server address if you chose **Change server**; then shows the display
     GameNightClient.swift    The TV's source of state: a server over WebSocket, or the engine running here
     ServerSettings.swift     Remembers the server address, or that the Apple TV hosts
     RelayConfig.swift        Supabase URL and publishable key, and the Vercel site address
@@ -113,8 +113,8 @@ own art instead, replace the images in `Assets.xcassets` in Xcode.
   whether to end it.
 - After backing out of a game, focus lands on that game's tile.
 - The tile art and focus effect look right on the Apple TV.
-- Jeopardy: the first time, the address screen offers a server or **Run on this Apple TV**; after that the tile starts by
-  itself. Menu and Play/Pause behave as described above. Text is readable from
+- Jeopardy: a fresh install starts the game on the Apple TV with no prompt; **Change server** in the Play/Pause menu
+  offers a server address instead, and **Run on this Apple TV** there switches back. Menu and Play/Pause behave as described above. Text is readable from
   across the room (sizes are in tvOS points at 1920×1080; adjust in `Display/`).
 - Server mode only: the Local Network permission prompt appears the first time the display connects to a server.
 - Sound: buzzers opening, buzz-in, correct/wrong and the countdown ticks play

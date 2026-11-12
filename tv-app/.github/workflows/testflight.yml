@@ -59,7 +59,7 @@ jobs:
           TEAM_ID: ${{ steps.asc.outputs.team_id }}
         run: |
           set -o pipefail
-          BUILD="${{ github.run_number }}"
+          BUILD="$(date +%y%m%d%H%M)"
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
           xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \

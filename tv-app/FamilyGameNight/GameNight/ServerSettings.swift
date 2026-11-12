@@ -15,9 +15,10 @@ enum ServerSettings {
 
     private static let hereKey = "gamenight.runsHere"
 
-    /// True once the family chose to run the game on the Apple TV itself instead of on a server. Remembered.
+    /// Whether the game runs on the Apple TV itself (the normal way) instead of on a Game Night server. It does unless the
+    /// family chose a server, so a fresh install goes straight to the game with nothing to type.
     static var runsHere: Bool {
-        get { UserDefaults.standard.bool(forKey: hereKey) }
+        get { UserDefaults.standard.object(forKey: hereKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: hereKey) }
     }
 

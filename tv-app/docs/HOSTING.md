@@ -7,8 +7,7 @@ in the `gamenight` repo's **[docs/ONLINE.md](https://github.com/justinxwynkoop/g
 This repo holds the Apple TV side.
 
 **Using it**
-1. Open **Jeopardy** or **Family Feud**. The first time, the address screen asks for a server: choose
-   **Run on this Apple TV** instead (the app remembers). Each tile starts its own game; opening a tile for a
+1. Open **Jeopardy** or **Family Feud**. The game starts on the Apple TV by itself. Each tile starts its own game; opening a tile for a
    different game than the last one starts a fresh room.
 2. The lobby shows a QR code, the join address and a **4-digit room code**. Players scan the code, or open the
    site and type the digits.
