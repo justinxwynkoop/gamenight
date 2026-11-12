@@ -139,4 +139,4 @@ saved and survives a restart (inside the app on the Apple TV, or in `data/state.
 The TV plays short sound effects: buzzers open, a buzz-in, correct, wrong, a Daily Double, Final
 Jeopardy, time's up, and a tick for the last five seconds. They are built in, so nothing needs installing.
 The host can turn sound off, change the volume, or press **Test on TV** at the bottom of the host page.
-To use your own sound files, see the Apple TV app's README (online mode) or [SERVER-MODE.md](SERVER-MODE.md).
+To use your own sound files, see the Apple TV app's [CUSTOM-FILES.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/CUSTOM-FILES.md) (online mode) or [SERVER-MODE.md](SERVER-MODE.md).

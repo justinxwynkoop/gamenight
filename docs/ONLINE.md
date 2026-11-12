@@ -104,7 +104,7 @@ Two checks need more than Node and run in GitHub Actions (`.github/workflows/ci.
 | TV menu says "Phones: not connected (…)" | The TV cannot reach Supabase; the reason is in the brackets. Check the TV's internet. |
 | Vercel site shows "This page is unavailable" | Root Directory is not `web`. |
 | Vercel site asks to log in | Turn off Deployment Protection for production in the Vercel project's settings. |
-| Menu goes to the Apple TV's home screen | The display lost the remote's focus; see the app repo's notes. |
+| Menu goes to the Apple TV's home screen | The display lost the remote's focus; see the app's [HOSTING.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/HOSTING.md). |
 | The TV opens another game's lobby | A game was in progress. Opening a tile for a different game starts a fresh room. |
 
 ## Limits

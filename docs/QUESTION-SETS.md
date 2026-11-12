@@ -151,4 +151,4 @@ Six categories of five clues each. The exact rules are `validateSet` in `games/j
 and `scripts/get-clues.sh` fetches a Jeopardy clue file for server mode's **Random board** button. These data files and the
 sets built from them (`data/feud/protoqa-*.json`, `data/feud/random-*.json`, `data/jeopardy/random-*.json`,
 `data/clues/`, `data/surveys/`) are listed in `.gitignore` and must never be committed. To use such sets on the Apple TV,
-copy them into the app on your Mac with `Tools/install-sets.sh` (see the `familygamenight` README).
+copy them into the app on your Mac with `Tools/install-sets.sh` (see the app's [CUSTOM-FILES.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/CUSTOM-FILES.md)).
