@@ -2209,9 +2209,17 @@
   globalThis.Engine = {
     /** The games this engine can run, for the host's menus. */
     games: () => JSON.stringify(Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
-    /** options: { pin, code?, saved?: string, content?: { <gameId>: { <setId>: set } } }. The room code is the relay's. */
+    /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } } }. The room code is the relay's. */
     start(optionsJson) {
       const o = parse(optionsJson);
+      if (o.saved && o.game) {
+        try {
+          const was = JSON.parse(o.saved).gameId;
+          if (was && was !== o.game) o.saved = null;
+        } catch {
+          o.saved = null;
+        }
+      }
       engine = createEngine({
         games: GAMES,
         pin: o.pin,
@@ -2224,6 +2232,12 @@
         save: (json) => __native.save(json),
         onError: (e) => console.error(e)
       });
+      if (o.game) {
+        try {
+          engine.room.chooseGame(String(o.game));
+        } catch {
+        }
+      }
       return true;
     },
     /** Pick the game from the TV itself (the home-screen tile). Ignored once a game is under way. */

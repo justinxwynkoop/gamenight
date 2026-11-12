@@ -134,4 +134,23 @@ final class EngineHostTests: XCTestCase {
         host.deliver(topic: "gn:ELSE", event: "m", json: #"{"c":"phone-zzz999","m":{"t":"hello","role":"player"}}"#)
         XCTAssertFalse(wire.relayed.contains { $0.topic.hasSuffix("phone-zzz999") }, "other rooms are ignored")
     }
+
+    func testATileForAnotherGameStartsAFreshRoom() throws {
+        let first = Wire()
+        let host = try EngineHost(script: Self.script, pin: "4321", game: "jeopardy", onSend: { first.sent.append(($0, $1)) }, onSave: { first.saves.append($0) })
+        say(host, "Ann", #"{"t":"hello","role":"player"}"#)
+        say(host, "Ann", #"{"t":"join","name":"Ann"}"#)
+        let saved = try XCTUnwrap(first.saves.last)
+
+        func players(game: String) throws -> [String] {
+            let wire = Wire()
+            let again = try EngineHost(script: Self.script, pin: "4321", saved: saved, game: game, onSend: { wire.sent.append(($0, $1)) })
+            say(again, "h", #"{"t":"hello","role":"host","pin":"4321"}"#)
+            let room = (wire.last("state", to: "h")?["view"] as? [String: Any])?["room"] as? [String: Any]
+            XCTAssertEqual(room?["gameId"] as? String, game)
+            return (room?["players"] as? [[String: Any]])?.compactMap { $0["name"] as? String } ?? []
+        }
+        XCTAssertEqual(try players(game: "jeopardy"), ["Ann"], "the same game resumes")
+        XCTAssertEqual(try players(game: "feud"), [], "another game starts empty")
+    }
 }

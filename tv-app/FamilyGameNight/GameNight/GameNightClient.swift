@@ -117,6 +117,7 @@ final class GameNightClient {
                 saved: UserDefaults.standard.string(forKey: Self.savedRoomKey),
                 content: Self.bundledSets(),
                 code: UserDefaults.standard.string(forKey: Self.roomCodeKey),
+                game: game,
                 onSend: { [weak self] id, json in
                     // Only the TV's own display is local; phones and the host are answered through the relay.
                     if id == "tv" { self?.handle(Data(json.utf8)) }

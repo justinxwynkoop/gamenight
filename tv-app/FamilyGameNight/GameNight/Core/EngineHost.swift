@@ -36,6 +36,7 @@ public final class EngineHost {
     ///   - pin: the host PIN (a host screen must say it to take control)
     ///   - saved: the text `onSave` last gave, or nil
     ///   - content: question sets as JSON text, `[gameId: [setId: json]]`
+    ///   - game: the game the TV's tile is for ("jeopardy" or "feud"). A saved room that was playing another game is not resumed.
     ///   - code: the room code phones type (four letters); the engine makes one if this is nil
     ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
     public init(
@@ -44,6 +45,7 @@ public final class EngineHost {
         saved: String? = nil,
         content: [String: [String: String]] = [:],
         code: String? = nil,
+        game: String? = nil,
         onSend: @escaping (_ clientId: String, _ json: String) -> Void,
         onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
         onSave: @escaping (_ json: String) -> Void = { _ in }
@@ -84,6 +86,7 @@ public final class EngineHost {
         var options: [String: Any] = ["pin": pin, "content": content.mapValues { $0.compactMapValues { Self.object($0) } }]
         if let saved { options["saved"] = saved }
         if let code { options["code"] = code }
+        if let game { options["game"] = game }
         engine.invokeMethod("start", withArguments: [Self.json(options)])
         if let first = problems.list.first { throw EngineError.scriptFailed(first) }
     }
