@@ -1,0 +1,22 @@
+name: Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: The web folder is up to date
+        run: |
+          node scripts/build-web.mjs
+          git diff --exit-code -- web || (echo "web/ is out of date: run node scripts/build-web.mjs and commit" && exit 1)
+      - name: The online relay works against the real Supabase project
+        run: node scripts/relay-live.mjs
