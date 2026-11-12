@@ -15,6 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH ?? 'playwright');
 const feud = JSON.parse(readFileSync(path.join(root, 'data/feud/family-night-basics.json'), 'utf8'));
+const jeo = JSON.parse(readFileSync(path.join(root, 'data/jeopardy/family-night.json'), 'utf8'));
 
 // --- a stand-in for Supabase Realtime ---
 const sb = new WebSocketServer({ port: 0 });
@@ -33,7 +34,7 @@ const relay = { url: `http://127.0.0.1:${sb.address().port}`, key: 'sb_publishab
 // --- the TV: the engine, on the relay ---
 let engine;
 const tv = new Realtime({ ...relay, WebSocketImpl: WebSocket, onBroadcast: (t, e, p) => engine.onBroadcast(t, e, p) });
-engine = createEngine({ games: GAMES, pin: '4321', code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p) });
+engine = createEngine({ games: GAMES, pin: '4321', code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud }, jeopardy: { 'family-night': jeo } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p) });
 tv.join(engine.relayTopic); tv.connect();
 const ticker = setInterval(() => engine.tick(), 250);
 
@@ -57,7 +58,7 @@ const watch = (page, who) => { page.on('pageerror', (e) => fail(`${who} page err
 const until = async (fn, what, ms = 10000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return; await new Promise((r) => setTimeout(r, 50)); } fail(`timed out: ${what}`); throw new Error(what); };
 
 try {
-  const player = await browser.newPage(); watch(player, 'player');
+  const player = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(player, 'player');
   await player.goto(`${base}/?r=ABCD`);
   await until(async () => (await player.locator('input').count()) > 0, 'the join form (the phone page reached the TV)');
   console.log('player page got the TV\'s answer and shows the join form');
@@ -65,6 +66,21 @@ try {
   await player.getByRole('button', { name: /join|play|enter|ready/i }).first().click();
   await until(() => engine.room.players.some((p) => p.name === 'Ann'), 'Ann to join the room');
   console.log('Ann joined');
+
+  // Jeopardy: between clues the phone shows the board; while a clue is live it shows the buzz button.
+  engine.room.act('chooseGame', { id: 'jeopardy' });
+  engine.room.act('chooseSet', { id: 'family-night' });
+  engine.room.act('startGame', {});
+  await until(async () => (await player.locator('.phone-board:not(.hidden) .pb-cell').count()) > 20, 'the board on the phone');
+  const cats = await player.locator('.phone-board .pb-cat').allInnerTexts();
+  console.log(`phone shows the Jeopardy board: ${cats.length} categories, ${await player.locator('.phone-board .pb-cell').count()} squares`);
+  if (process.env.SHOT) await player.screenshot({ path: process.env.SHOT });
+  if (await player.locator('button.buzz').isVisible()) fail('the buzz button is showing next to the board');
+  engine.room.act('select', { c: 0, r: 0 });
+  await until(async () => await player.locator('button.buzz').isVisible(), 'the buzz button once a clue is picked');
+  if (await player.locator('.phone-board:not(.hidden)').count()) fail('the board is still showing during a clue');
+  console.log('during a clue the phone shows the buzz button instead');
+  engine.room.act('endGame', {});
 
   const host = await browser.newPage(); watch(host, 'host');
   await host.goto(`${base}/host?r=ABCD`);

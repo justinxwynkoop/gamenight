@@ -98,6 +98,11 @@ body.play { min-height: 100dvh; display: flex; flex-direction: column; touch-act
 .buzz.live:active, .buzz.won { transform: scale(.98); }
 .buzz.out { background: #444 !important; color: #aaa; font-size: 8vw; }
 .buzz.bad { background: #b91c1c !important; }
+.phone-board { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 4px; padding: 6px; border-radius: 16px; background: #0b1a6e; border: 3px solid transparent; }
+.phone-board.mine { border-color: #facc15; }
+.pb-cat { display: grid; place-items: center; text-align: center; min-height: 3.4em; padding: 2px; border-radius: 6px; background: #1d3bd1; color: #fff; font-size: .62rem; font-weight: 800; line-height: 1.1; text-transform: uppercase; overflow-wrap: anywhere; }
+.pb-cell { display: grid; place-items: center; min-height: 2.6em; border-radius: 6px; background: #1d3bd1; color: #facc15; font-size: .82rem; font-weight: 900; }
+.pb-cell.used { background: #0a1450; }
 .status-line { text-align: center; color: var(--dim); min-height: 1.5em; }
 .clue-peek { font-size: 1.05rem; line-height: 1.4; }
 

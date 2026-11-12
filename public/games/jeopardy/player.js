@@ -8,14 +8,16 @@ export function mount(container, { send, flash }) {
   let receivedAt = 0;   // when the last state arrived, so a countdown can be drawn from it
   let screenKey = '';
   let penaltyUntil = 0;
-  let buzzBtn; let statusLine; let peek;
+  let buzzBtn; let statusLine; let peek; let boardEl; let boardKey = '';
 
   function buildGame() {
     buzzBtn = h('button', { class: 'buzz', type: 'button' }, 'WAIT');
     buzzBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (view?.room?.me) send({ t: 'buzz' }); });
     statusLine = h('div', { class: 'status-line' });
     peek = h('div', { class: 'card clue-peek hidden' });
-    return h('div', { style: { display: 'contents' } }, buzzBtn, statusLine, peek);
+    boardEl = h('div', { class: 'phone-board hidden' });
+    boardKey = '';
+    return h('div', { style: { display: 'contents' } }, boardEl, buzzBtn, statusLine, peek);
   }
 
   function onBuzzResult(r) {
@@ -61,7 +63,30 @@ export function mount(container, { send, flash }) {
     return { label: 'READY', cls: 'out', line: 'Wait for the host to open buzzers', color: null };
   }
 
+  /** Between clues the phone shows the board (what is left to pick) instead of a button that only says WAIT. */
+  function updateBoard(v) {
+    const between = v.board?.length && v.categories?.length && v.status !== 'lobby' && v.status !== 'done' && (v.status === 'board' || !v.clue);
+    buzzBtn.style.display = between ? 'none' : '';
+    boardEl.classList.toggle('hidden', !between);
+    if (!between) return;
+    const key = JSON.stringify([v.categories, v.board.map((col) => col.map((c) => (c.used ? 0 : c.value))), v.control === v.me.unitId]);
+    if (key === boardKey) return;
+    boardKey = key;
+    const rows = v.board[0].length;
+    const cells = v.categories.map((name) => h('div', { class: 'pb-cat' }, name));
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < v.categories.length; c++) {
+        const cell = v.board[c][r];
+        cells.push(h('div', { class: `pb-cell ${cell.used ? 'used' : ''}` }, cell.used ? '' : money(cell.value)));
+      }
+    }
+    boardEl.style.setProperty('--cols', String(v.categories.length));
+    boardEl.classList.toggle('mine', v.control === v.me.unitId);
+    boardEl.replaceChildren(...cells);
+  }
+
   function updateBuzz(v) {
+    updateBoard(v);
     const s = myState(v);
     buzzBtn.textContent = s.label;
     buzzBtn.className = `buzz ${s.cls}`;
