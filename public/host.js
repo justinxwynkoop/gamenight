@@ -1,7 +1,7 @@
 // The host page: sign-in, the app frame (top bar, tabs, pinned action bar, slide-up sheets) and the screens
 // every game shares: Players, Scores and Settings. What the Game tab shows, and the game's own settings,
 // come from the active game's module (/games/<id>/host.js).
-import { h, money, scoreText, connect, store, unitById } from './common.js';
+import { h, money, scoreText, connect, store, unitById, apiFetch } from './common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow } from './ui.js';
 
 const app = document.getElementById('app');
@@ -54,7 +54,7 @@ function ensureGame() {
 }
 async function loadSets(id) {
   try {
-    const r = await fetch(`/api/games/${id}/sets`, { headers: { 'x-host-pin': pin } });
+    const r = await apiFetch(`/api/games/${id}/sets`, { headers: { 'x-host-pin': pin } });
     if (r.ok && setsFor === id) { sets = await r.json(); render(); }
   } catch { /* offline */ }
 }
@@ -65,7 +65,7 @@ function setInfo(id) {
   if (hit === 'loading') return null;
   if (hit) return hit;
   setInfos[id] = 'loading';
-  fetch(`/api/games/${view.room.gameId}/sets/${id}`, { headers: { 'x-host-pin': pin } })
+  apiFetch(`/api/games/${view.room.gameId}/sets/${id}`, { headers: { 'x-host-pin': pin } })
     .then((r) => (r.ok ? r.json() : null))
     .then((s) => { setInfos[id] = s ? { title: s.title, categories: (s.categories ?? []).map((c) => c.name), final: s.final?.category ?? null, rounds: s.rounds?.length ?? null, questions: (s.rounds ?? []).map((r) => r.question), fastMoney: !!s.fastMoney?.length } : { title: id, categories: [], final: null, rounds: null, questions: [], fastMoney: false }; render(); })
     .catch(() => { delete setInfos[id]; });

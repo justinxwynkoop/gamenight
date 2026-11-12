@@ -13,6 +13,7 @@
 import { Room } from '../room.js';
 import { createHub } from './hub.js';
 import { createRelayHost, newRoomCode } from './relay.js';
+import { GameError } from '../lib.js';
 
 export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, onError, code = newRoomCode(), broadcast = null }) {
   // sets[gameId][setId] = set
@@ -43,8 +44,20 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
   // The TV's own display is client "tv" and is served directly; clients that arrived over the relay are answered through it.
   const clock = now ?? (() => room.now());
   let relay = null;
+  // What the host page asks for besides room actions (the Pi answers these over HTTP; here they go through the hub).
+  const rpc = (op, args) => {
+    switch (op) {
+      case 'listSets': return games[args.game] ? room.listContent(args.game) : [];
+      case 'getSet': {
+        const set = games[args.game] && sets[args.game]?.[args.id];
+        if (!set) throw new GameError('No such set');
+        return set;
+      }
+      default: throw new GameError('Not available here');
+    }
+  };
   const hub = createHub({
-    room, pinOk, ...(onError ? { onError } : {}),
+    room, pinOk, rpc, ...(onError ? { onError } : {}),
     send: (id, message) => { if (relay?.knows(id)) relay.send(id, message); else send(id, message); },
   });
   if (broadcast) relay = createRelayHost({ engine: { open: (id) => hub.open(id), close: (id) => hub.close(id), receive: (id, m) => hub.receive(id, m) }, code, broadcast, now: clock });

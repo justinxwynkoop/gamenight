@@ -89,8 +89,16 @@ test('a phone joins by room code, plays, and the host controls the room, all thr
     assert.equal(ann.got.states.at(-1).room.me.name, 'Ann');
     assert.equal(first.room.players.length === 1, true);
 
+    const lists = await host.link.rpc('listSets', { game: 'feud' });
+    assert.deepEqual(lists, { ok: true, data: [{ id: 'basics', title: feudSet.title }], t: 'rpc-reply', id: lists.id });
+    const one = await host.link.rpc('getSet', { game: 'feud', id: 'basics' });
+    assert.equal(one.data.rounds.length, feudSet.rounds.length);
+    assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'nope' })).error, 'No such set');
+    assert.equal((await host.link.rpc('delete-everything', {})).error, 'Not available here');
+    const asked = ann.link.rpc('listSets', { game: 'feud' });   // players may not ask: no answer ever comes
     const bad = w.phone('wrongpin1', { t: 'hello', role: 'host', pin: '0000' });
     await until(() => bad.got.messages.some((m) => m.t === 'bad-pin'), 'the PIN to be refused');
+    assert.equal(await Promise.race([asked, new Promise((r) => setTimeout(() => r('silent'), 150))]), 'silent');
     assert.equal(w.tvDirect.length, 0, 'relay clients are never answered through the TV-local path');
   } finally { w.close(); }
 });

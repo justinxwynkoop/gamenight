@@ -1,7 +1,7 @@
 // Jeopardy on the host's phone, tablet or laptop. The page (host.js) provides the app frame and the Players,
 // Scores and Settings tabs; this module supplies what the Game tab shows (setup, board, a clue, Final Jeopardy,
 // the result), the pinned action bar for each, and the game's own timer settings.
-import { h, money, unitById } from '../../common.js';
+import { h, money, unitById, apiFetch } from '../../common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow, timerPill } from '../../ui.js';
 import { flat } from './flat.js';
 
@@ -39,7 +39,7 @@ function subtitle() {
 const rand = { source: 'everyday', since: 2001, mode: 'mix', family: true, busy: false, error: '', info: undefined };
 const SOURCE_CHOICES = [{ value: 'everyday', label: 'Regular', sub: 'normal episodes' }, { value: 'kids', label: 'Kids & Teen', sub: 'made for younger players' }, { value: 'special', label: 'Tournaments', sub: 'special events' }];
 const ERA_CHOICES = [{ value: 1984, label: 'Any year' }, { value: 2001, label: '2001+' }, { value: 2010, label: '2010+' }, { value: 2018, label: '2018+' }];
-const api = (method, body) => fetch('/api/games/jeopardy/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+const api = (method, body) => apiFetch('/api/games/jeopardy/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
 
 /** Whether the clue file is installed on the Pi (asked once, and again on "Check again"). */
 function loadRandomInfo(force = false) {

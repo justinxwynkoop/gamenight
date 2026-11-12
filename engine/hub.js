@@ -4,19 +4,20 @@
 // message relay (Supabase Realtime), and tests wire it to plain functions.
 //
 // Messages from a client:  { t: 'hello', role: 'tv' | 'host' | 'player', pin?, token? }, { t: 'join', name, color, teamId, kind },
-//                          { t: 'act', action, args } (host), { t: 'ping' }, and anything else from a joined player
+//                          { t: 'act', action, args } (host), { t: 'rpc', id, op, args } (host), { t: 'ping' }, and anything else from a joined player
 //                          (a buzz, a wager...) goes to the active game.
 // Messages to a client:    { t: 'state', view }, { t: 'bad-pin' }, { t: 'need-join' }, { t: 'joined', token },
-//                          { t: 'pong' }, { t: 'error', message }, and whatever reply the game gives a player.
+//                          { t: 'pong' }, { t: 'rpc-reply', id, ok, data | error }, { t: 'error', message }, and whatever reply the game gives a player.
 import { GameError } from '../lib.js';
 
 /**
  * room     the Room (room.js)
  * pinOk    (pin) => boolean: is this the host PIN?
  * send     (clientId, message) => void
+ * rpc      (op, args) => data, for the host's questions that are not about the room (which sets exist, what is in one)
  * onError  (error) => void, for a bug (not a GameError, which is shown to the person who caused it)
  */
-export function createHub({ room, pinOk, send, onError = (e) => console.error(e) }) {
+export function createHub({ room, pinOk, send, rpc = null, onError = (e) => console.error(e) }) {
   const clients = new Map(); // id -> { role, playerId }
 
   const liveCount = (playerId) => [...clients.values()].filter((c) => c.playerId === playerId).length;
@@ -67,6 +68,15 @@ export function createHub({ room, pinOk, send, onError = (e) => console.error(e)
       case 'act': {
         if (client.role !== 'host') return;
         room.act(msg.action, msg.args ?? {});
+        return;
+      }
+      case 'rpc': {
+        if (client.role !== 'host' || !rpc) return;
+        try { send(id, { t: 'rpc-reply', id: msg.id, ok: true, data: rpc(String(msg.op), msg.args ?? {}) }); }
+        catch (e) {
+          if (!(e instanceof GameError)) throw e;
+          send(id, { t: 'rpc-reply', id: msg.id, ok: false, error: e.message });
+        }
         return;
       }
       case 'ping': send(id, { t: 'pong' }); return;

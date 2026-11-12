@@ -1,0 +1,1 @@
+globalThis.GN_RELAY = {"url":"https://ipmdmdaroyyafzgxnzrt.supabase.co","key":"sb_publishable__m7Q6bD9OG-ElaUFnLGDnA_PeEndrOr"};

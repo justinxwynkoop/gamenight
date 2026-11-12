@@ -17,6 +17,7 @@ export function connectRelay({
 }) {
   const toTv = `gn:${room}`;
   const mine = `gn:${room}:${clientId}`;
+  const asking = new Map(); let nextAsk = 1;
   let lastHeard = 0; let connected = false; let ready = false; let closed = false; let timer = null;
 
   const setConnected = (value) => { if (connected !== value) { connected = value; onStatus(value); } };
@@ -31,7 +32,8 @@ export function connectRelay({
       if (topic !== mine || event !== 'm' || !payload) return;
       lastHeard = now();
       setConnected(true);
-      if (payload.t === 'state') onState(payload.view);
+      if (payload.t === 'rpc-reply') { const q = asking.get(payload.id); if (q) { asking.delete(payload.id); q(payload); } }
+      else if (payload.t === 'state') onState(payload.view);
       else if (payload.t !== 'pong') onMessage(payload);
     },
   });
@@ -54,6 +56,16 @@ export function connectRelay({
   return {
     send(msg) { if (!ready) return false; say(msg); return true; },
     act(action, args = {}) { if (ready) say({ t: 'act', action, args }); },
+    /** Ask the room something that is not an action (host only). Resolves with { ok, data | error }. */
+    rpc(op, args = {}) {
+      return new Promise((resolve) => {
+        const id = nextAsk++;
+        asking.set(id, resolve);
+        setTimer(() => { if (asking.delete(id)) resolve({ ok: false, error: 'The TV did not answer' }); }, 8000);
+        if (!ready) { asking.delete(id); resolve({ ok: false, error: 'Not connected' }); return; }
+        say({ t: 'rpc', id, op, args });
+      });
+    },
     close() { closed = true; clearTimer(timer); rt.close(); },
   };
 }

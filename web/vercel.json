@@ -1,0 +1,28 @@
+{
+  "cleanUrls": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/play.html"
+    },
+    {
+      "source": "/play",
+      "destination": "/play.html"
+    },
+    {
+      "source": "/host",
+      "destination": "/host.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 // Family Feud on the host's phone, tablet or laptop. The page (host.js) provides the app frame and the
 // Players, Scores and Settings tabs; this module supplies the Game tab (setup, the face-off, the board,
 // the steal, round end, Fast Money, the result), the pinned action bar for each, and the game's rules.
-import { h } from '../../common.js';
+import { h, apiFetch } from '../../common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow, timerPill } from '../../ui.js';
 
 let g = null;     // the game's view
@@ -38,7 +38,7 @@ function subtitle() {
 
 // ---------- a random board (built on the Pi from the survey data; see games/feud/survey.js) ----------
 const rand = { family: true, busy: false, error: '', info: undefined };
-const api = (method, body) => fetch('/api/games/feud/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+const api = (method, body) => apiFetch('/api/games/feud/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
 
 /** Whether the survey data is installed on the Pi (asked once, and again on "Check again"). */
 function loadRandomInfo(force = false) {

@@ -103,11 +103,33 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
     });
   };
   start();
-  return {
+  const connection = {
     send: (msg) => !!link?.send(msg),
     act: (action, args = {}) => link?.act(action, args),
+    rpc: (op, args) => (link ? link.rpc(op, args) : Promise.resolve({ ok: false, error: 'Not connected' })),
     close: () => { closed = true; link?.close(); },
   };
+  onlineConnection = connection;
+  return connection;
+}
+
+let onlineConnection = null;
+const reply = (ok, body) => ({ ok, json: async () => body });
+/**
+ * fetch() for the host's /api calls. On the Pi that is plain fetch. Online there is no server to ask, so the few calls
+ * the host page makes (which sets exist, what is in one) go to the TV through the relay instead.
+ */
+export async function apiFetch(url, init = {}) {
+  if (!globalThis.GN_RELAY) return fetch(url, init);
+  const sets = String(url).match(/^\/api\/games\/([a-z0-9-]+)\/sets(?:\/([^/?]+))?$/);
+  if (sets && (init.method ?? 'GET') === 'GET' && onlineConnection) {
+    const r = await onlineConnection.rpc(sets[2] ? 'getSet' : 'listSets', { game: sets[1], id: sets[2] });
+    return reply(r.ok, r.ok ? r.data : { error: r.error });
+  }
+  if (/^\/api\/games\/[a-z0-9-]+\/random$/.test(String(url))) {
+    return (init.method ?? 'GET') === 'GET' ? reply(true, { available: false }) : reply(false, { error: 'Random boards are not available online yet' });
+  }
+  return reply(false, { error: 'Not available online' });
 }
 
 export function store(key, value) {
