@@ -16,7 +16,9 @@ jobs:
       - name: Swift version
         run: swift --version
       - name: Run the tests
-        run: swift test 2>&1 | tail -n 150
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tail -n 150
 
   tvos:
     name: Build the Apple TV app

@@ -279,6 +279,21 @@ final class RoundEngineTests: XCTestCase {
         XCTAssertEqual(settings.startTime(forSongDuration: 20), 0)
         XCTAssertEqual(settings.startTime(forSongDuration: nil), 45)
     }
+
+    func testEngineFillsTitleOverTheClip() {
+        var settings = RoundSettings()
+        settings.setEnabled(.title, true)
+        settings.titleHintStyle = .fillIn
+        XCTAssertEqual(settings.time(of: .title), 0)  // fill-in starts with the song
+        var round = engine(settings: settings)
+        XCTAssertTrue(round.isShowing(.title))
+        _ = run(&round, for: 15)
+        XCTAssertEqual(settings.titleFill(at: round.hintClock), 0.5, accuracy: 0.001)
+        round.addTime()   // more time must not take letters back
+        XCTAssertEqual(settings.titleFill(at: round.hintClock), 0.5, accuracy: 0.001)
+        settings.titleHintStyle = .blanks
+        XCTAssertEqual(settings.time(of: .title), 6)
+    }
 }
 
 final class TitleHintTests: XCTestCase {
@@ -340,20 +355,6 @@ final class TitleHintTests: XCTestCase {
         }
     }
 
-    func testEngineFillsTitleOverTheClip() {
-        var settings = RoundSettings()
-        settings.setEnabled(.title, true)
-        settings.titleHintStyle = .fillIn
-        XCTAssertEqual(settings.time(of: .title), 0)  // fill-in starts with the song
-        var round = engine(settings: settings)
-        XCTAssertTrue(round.isShowing(.title))
-        _ = run(&round, for: 15)
-        XCTAssertEqual(settings.titleFill(at: round.hintClock), 0.5, accuracy: 0.001)
-        round.addTime()   // more time must not take letters back
-        XCTAssertEqual(settings.titleFill(at: round.hintClock), 0.5, accuracy: 0.001)
-        settings.titleHintStyle = .blanks
-        XCTAssertEqual(settings.time(of: .title), 6)
-    }
 
     func testDetailsRespectToggles() {
         let song = SongInfo(id: "1", title: "x", artistName: "y", genreNames: ["Pop"], releaseYear: 1984)
