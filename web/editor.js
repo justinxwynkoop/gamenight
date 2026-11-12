@@ -1,7 +1,7 @@
 // The editor page. It owns the PIN and choosing a game; the editor for each
 // game's content comes from /games/<id>/editor.js.
 import { h, store, apiFetch, onlineHostConnect } from './common.js';
-import { importSets } from './importer.js';
+import { importSets, TEXT_HELP } from './importer.js';
 
 const app = document.getElementById('app');
 let pin = store('gn-pin') ?? '';
@@ -30,21 +30,44 @@ const apiFor = (id) => ({
   del: (setId) => call(`/api/games/${id}/sets/${setId}`, { method: 'DELETE' }),
 });
 
-/** "Import": a link to a set (or a GitHub folder of them) or pasted text, saved for this game. */
+/** "Import": drop a file here, or pick one, or paste a link or the text of a set. Saved for this game. */
 function importCard(api) {
   const input = h('textarea', { rows: 3, placeholder: 'Paste a link (a .json file, or a GitHub folder or repository) or the text of a set', style: { width: '100%' } });
   const out = h('div', { class: 'dim' });
-  const go = async () => {
+  const report = ({ saved, failed }, where) => out.replaceChildren(
+    saved.length ? `Imported ${saved.length}${where ? ` from ${where}` : ''}: ${saved.join(', ')}. Reload the page to see them in the list.` : 'Nothing was imported.',
+    ...failed.map((f) => h('div', { class: 'err' }, f)));
+  const run = async (texts, where) => {
     out.textContent = 'Importing…';
-    try {
-      const { saved, failed } = await importSets(input.value, api, gameId);
-      out.replaceChildren(saved.length ? `Imported ${saved.length}: ${saved.join(', ')}. Reload the page to see them in the list.` : 'Nothing was imported.',
-        ...failed.map((f) => h('div', { class: 'err' }, f)));
-    } catch (e) { out.replaceChildren(h('div', { class: 'err' }, e.message)); }
+    const total = { saved: [], failed: [] };
+    for (const { name, text } of texts) {
+      try { const r = await importSets(text, api, gameId); total.saved.push(...r.saved); total.failed.push(...r.failed.map((f) => (texts.length > 1 ? `${name}: ${f}` : f))); }
+      catch (e) { total.failed.push(texts.length > 1 ? `${name}: ${e.message}` : e.message); }
+    }
+    report(total, where);
   };
-  // Folded away so it does not push the editor down, but right at the top where it is easy to find.
-  return h('details', { class: 'card' }, h('summary', { style: { cursor: 'pointer', fontWeight: '700' } }, 'Import sets (from a link, a GitHub folder or pasted text)'),
-    h('div', { style: { marginTop: '10px' } }, input, h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: go }, 'Import'), out));
+  const readFiles = async (files) => {
+    const list = [...files].filter((f) => f.size < 2_000_000);
+    if (!list.length) { out.replaceChildren(h('div', { class: 'err' }, 'Those files are too big to be question sets.')); return; }
+    await run(await Promise.all(list.map(async (f) => ({ name: f.name, text: await f.text() }))), list.length === 1 ? list[0].name : `${list.length} files`);
+  };
+  const picker = h('input', { type: 'file', multiple: true, accept: '.json,.txt,.text,text/plain,application/json', style: { display: 'none' } });
+  picker.addEventListener('change', () => { readFiles(picker.files); picker.value = ''; });
+  const zone = h('div', { style: { border: '2px dashed #4b5fd0', borderRadius: '12px', padding: '18px', textAlign: 'center', margin: '10px 0' } },
+    h('div', {}, 'Drop a file here (.json or .txt)'),
+    h('button', { class: 'btn small', style: { marginTop: '8px' }, onclick: () => picker.click() }, 'Choose a file…'), picker);
+  const card = h('details', { class: 'card' }, h('summary', { style: { cursor: 'pointer', fontWeight: '700' } }, 'Import sets (drop a file, paste a link or paste text)'),
+    h('div', { style: { marginTop: '10px' } }, zone,
+      h('div', { class: 'tag' }, 'or paste a link or the text of a set'), input,
+      h('button', { class: 'btn', style: { marginTop: '8px' }, onclick: () => run([{ name: 'pasted text', text: input.value }]) }, 'Import'), out,
+      h('details', { style: { marginTop: '12px' } }, h('summary', { style: { cursor: 'pointer' } }, 'How to write a set in a plain text file'),
+        h('pre', { style: { whiteSpace: 'pre-wrap', fontSize: '.8rem', marginTop: '8px' } }, TEXT_HELP[gameId] ?? 'Use a .json file for this game.'))));
+  // Dropping anywhere on the card works, even while it is folded: it opens and imports.
+  const over = (on) => { zone.style.background = on ? '#1d2a7a' : ''; };
+  for (const ev of ['dragenter', 'dragover']) card.addEventListener(ev, (e) => { e.preventDefault(); card.open = true; over(true); });
+  card.addEventListener('dragleave', () => over(false));
+  card.addEventListener('drop', (e) => { e.preventDefault(); over(false); card.open = true; readFiles(e.dataTransfer?.files ?? []); });
+  return card;
 }
 
 function login() {

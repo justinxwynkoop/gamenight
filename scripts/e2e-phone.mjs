@@ -113,6 +113,37 @@ try {
   await until(async () => /Imported 1/.test(await editor.locator('body').innerText()), 'the import to finish');
   await until(() => JSON.parse(engine.listSets ? JSON.stringify(engine.listSets('feud')) : '[]').some((x) => x.id === 'e2e-set'), 'the TV to have the new set');
   console.log('editor: PIN accepted, a set was imported and the TV has it');
+
+  // A plain-text file chosen (the same path as dropping it), written in the simple text format.
+  await editor.locator('input[type=file]').setInputFiles({
+    name: 'my-questions.txt', mimeType: 'text/plain',
+    buffer: Buffer.from(`title: From A Text File
+? Name a pet
+Dog - 50
+Cat - 30
+Fish - 20
+? Name a color
+Red - 40
+Blue - 35
+Green - 25
+? Name a season
+Summer - 40
+Winter - 35
+Fall - 25`),
+  });
+  await until(async () => /Imported 1 from my-questions.txt/.test(await editor.locator('body').innerText()), 'the text file to be imported');
+  await until(() => engine.listSets('feud').some((x) => x.id === 'from-a-text-file'), 'the TV to have the text-file set');
+  console.log('editor: a plain .txt file was imported and the TV has it');
+
+  // A real drop (what dragging a file from the Mac onto the page does), with the card folded.
+  await editor.evaluate(() => {
+    document.querySelector('details.card').open = false;
+    const dt = new DataTransfer();
+    dt.items.add(new File([JSON.stringify({ title: 'Dropped Set', rounds: [1, 2, 3].map((n) => ({ question: `Q${n}`, answers: [{ text: 'A', points: 50 }, { text: 'B', points: 30 }, { text: 'C', points: 20 }] })) })], 'dropped.json', { type: 'application/json' }));
+    document.querySelector('details.card').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+  });
+  await until(() => engine.listSets('feud').some((x) => x.id === 'dropped-set'), 'the dropped file to be imported');
+  console.log('editor: a file dropped on the folded import card was imported');
 } catch (e) { if (!problems.length) fail(e.message); }
 await browser.close(); tv.close(); clearInterval(ticker); sb.close(); site.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : '\nOK');
