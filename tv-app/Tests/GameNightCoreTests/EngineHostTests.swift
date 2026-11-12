@@ -123,10 +123,10 @@ final class EngineHostTests: XCTestCase {
         XCTAssertEqual(generated.roomCode.count, 4, "the engine makes a code when it is not given one")
 
         host.deliver(topic: "gn:WXYZ", event: "m", json: #"{"c":"phone-abc123","m":{"t":"hello","role":"player"}}"#)
-        let reply = try XCTUnwrap(wire.relayed.last)
-        XCTAssertEqual(reply.topic, "gn:WXYZ:phone-abc123")
-        XCTAssertEqual(reply.event, "m")
-        XCTAssertTrue(reply.json.contains("need-join"))
+        // A player who has not joined is told so, and then gets the room's state, both on that phone's own channel.
+        XCTAssertTrue(wire.relayed.allSatisfy { $0.topic == "gn:WXYZ:phone-abc123" && $0.event == "m" })
+        XCTAssertTrue(wire.relayed.contains { $0.json.contains("need-join") })
+        XCTAssertTrue(wire.relayed.contains { $0.json.hasPrefix(#"{"t":"state""#) })
         XCTAssertTrue(wire.sent.isEmpty, "a relay client is not answered on the TV's own path")
 
         host.deliver(topic: "gn:WXYZ", event: "m", json: #"{"c":"phone-abc123","m":{"t":"join","name":"Ann"}}"#)
