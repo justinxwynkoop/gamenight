@@ -1,16 +1,23 @@
 # Game Night
 
-A party-game system for a Raspberry Pi. The Pi plugs into a TV and shows the
-game; players join and play from their phones; the host runs it from a phone or
-tablet. One Node.js server is the single source of truth, so buzzer order is
-decided by one clock (the server's), not by anyone's device.
+A party-game system: the TV shows the game, players join and play from their
+phones, and the host runs it from a phone or tablet. One copy of the game rules
+decides everything (buzzer order included), so nobody's device can cheat.
 
-**Games:** Jeopardy-style trivia today. The server is built so more games (a
-Family Feud-style survey game is planned) plug in without touching the rest; see
-[Adding a game](#adding-a-game).
+**It runs in two ways, with the same rules and the same phone pages:**
 
-This is **Phase 1** of the project plan (phones only). The server already speaks
-the protocol the light-up ESP32 buzzers will use; see [Buzzers](#buzzers-phase-3).
+- **Online mode (new).** The game runs *inside the Apple TV app* (the
+  [`familygamenight`](https://github.com/justinxwynkoop/familygamenight) repo). Phones use a web page on Vercel and
+  talk to the TV through a free Supabase Realtime relay. No Pi or computer is needed, only internet. See
+  **[docs/ONLINE.md](docs/ONLINE.md)**.
+- **Server mode (this README).** A Node.js server on a Raspberry Pi (or any computer) serves the TV page, the phone
+  pages and the game, all on your own Wi-Fi.
+
+**Games:** Jeopardy and Family Feud. More plug in without touching the rest; see [Adding a game](#adding-a-game).
+
+**More docs:** [Online mode](docs/ONLINE.md) · [Question sets, the editor, importing and the text format](docs/QUESTION-SETS.md)
+
+The server already speaks the protocol the light-up ESP32 buzzers will use; see [Buzzers](#buzzers-phase-3).
 
 | Page | Who | Address |
 | --- | --- | --- |
@@ -241,7 +248,8 @@ saved to `data/state.json` and survives a server restart.
 
 ## Questions
 
-Use `/editor`: six categories of five clues, a Final Jeopardy clue, and optional
+(How to write, import and drag in sets, including the plain-text format and the online editor, is in
+[docs/QUESTION-SETS.md](docs/QUESTION-SETS.md).) Use `/editor`: six categories of five clues, a Final Jeopardy clue, and optional
 Daily Double flags. If no Daily Double is flagged, one is placed at random each
 game. Sets are plain JSON files in `data/<game>/` (for Jeopardy, `data/jeopardy/`),
 so you can also edit or share them as files. Eleven family-friendly samplers
@@ -464,12 +472,25 @@ lib.js                  small shared helpers and GameError
 room.js                 the room: players, teams, scores, host roster controls, saving
 games/index.js          the list of installed games
 games/jeopardy/         Jeopardy rules (pure, no I/O) and its game module
-server.js               HTTP, WebSocket, saving, QR codes, question-set API
-public/                 the four pages (tv, host, play, editor): thin shells
+games/feud/             Family Feud rules and its game module
+engine/hub.js           what happens when a TV, host or phone sends a message (no idea how it travelled)
+engine/core.js          room + hub + games wired to plain functions: runs in Node or inside the Apple TV app
+engine/relay.js         the room's side of the online relay (room codes, channels, dropping quiet phones)
+engine/jsc/             the entry point and shims for JavaScriptCore (the Apple TV)
+server.js               server mode: HTTP, WebSocket, saving, QR codes, question-set API
+public/                 the pages (tv, host, play, editor): thin shells, shared by both modes
+public/relay/           the browser's online relay client (Supabase Realtime)
+public/importer.js      importing sets: files, links, GitHub folders, the plain-text format
 public/games/jeopardy/  Jeopardy's own TV, host, phone and editor screens
+web/                    GENERATED copy of public/ for Vercel (node scripts/build-web.mjs); committed
+dist/                   GENERATED engine.js for the Apple TV (node scripts/build-engine.mjs); not committed
+relay.config.json       the Supabase project URL and publishable key (public by design)
+docs/                   online mode, question sets
+scripts/                build scripts, browser and live-relay checks, data helpers
 data/<game>/            question sets for each game
 data/sounds/            your own sound files, in a folder per game (not in git)
-test/                   node --test suites (room, Jeopardy rules, full server)
+test/                   node --test suites (rules, full server, engine bundle, relay, importer)
+.github/workflows/     CI: tests, web/ up to date, a real-browser check, a live Supabase check
 deploy/                 desktop launcher + setup script, systemd unit
 ```
 
