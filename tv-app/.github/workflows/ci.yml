@@ -1,0 +1,33 @@
+# Builds the Apple TV app and runs the tests on a Mac in the cloud, so a change is checked even when nobody
+# has opened Xcode. (Free for a public repository.)
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Unit tests (swift test)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Run the tests
+        run: swift test 2>&1 | tail -n 150
+
+  tvos:
+    name: Build the Apple TV app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode
+        run: xcodebuild -version && xcodebuild -showsdks | grep -i tv
+      - name: Build for Apple TV (no signing)
+        run: |
+          set -o pipefail
+          xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight \
+            -configuration Debug -destination 'generic/platform=tvOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tail -n 200
