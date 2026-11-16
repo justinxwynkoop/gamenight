@@ -19,7 +19,7 @@ struct JeopardyContent: View {
                 switch game.phase {
                 case .lobby: JeoLobby(game: game, joinURL: joinURL, roomCode: roomCode)
                 case .board, .unknown: JeoBoard(game: game)
-                case .reading, .open, .answering, .reveal, .ddAnswer: JeoClue(game: game)
+                case .reading, .open, .answering, .reveal, .ddAnswer: JeoClueScreen(game: game)
                 case .ddWager: JeoDailyDouble(game: game)
                 case .roundEnd: JeoRoundEnd(game: game)
                 case .finalWager: JeoFinalWager(game: game)

@@ -125,7 +125,7 @@ struct JeoPlayerCallout: View {
     }
 }
 
-struct JeoClue: View {
+struct JeoClueScreen: View {
     let game: JeopardyState
 
     var body: some View {
