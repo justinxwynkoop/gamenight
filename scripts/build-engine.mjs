@@ -14,8 +14,8 @@ mkdirSync(path.dirname(out), { recursive: true });
 const noFiles = {
   name: 'no-files',
   setup(b) {
-    b.onLoad({ filter: /games[\\/](jeopardy[\\/]clues|feud[\\/]survey)\.js$/ }, () => ({
-      contents: 'export const createRandomBoards = () => null; export const createRandomSurvey = () => null;',
+    b.onLoad({ filter: /games[\\/](feud[\\/]survey)\.js$/ }, () => ({
+      contents: 'export const createRandomSurvey = () => null;',
       loader: 'js',
     }));
   },

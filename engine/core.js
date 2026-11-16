@@ -89,7 +89,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
     }
   };
   const hub = createHub({
-    room, pinOk, rpc, ...(onError ? { onError } : {}),
+    room, pinOk, rpc, trustedTv: (id) => id === 'tv', ...(onError ? { onError } : {}),
     send: (id, message) => { if (relay?.knows(id)) relay.send(id, message); else send(id, message); },
   });
   if (broadcast) relay = createRelayHost({ engine: { open: (id) => hub.open(id), close: (id) => hub.close(id), receive: (id, m) => hub.receive(id, m) }, code, broadcast, now: clock });
@@ -100,6 +100,10 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
     close: (id) => hub.close(id),
     receive: (id, message) => hub.receive(id, message),
     tick() { room.tick(); relay?.sweep(); },
+    /** The game wants a season of real-show clues downloaded: { id, era } or null. The host app fetches it and calls archiveLoaded. */
+    takeArchiveRequest: () => (room.game?.takeArchiveRequest?.() ?? null),
+    archiveLoaded: (tsv, season, id) => room.game?.archiveLoaded?.(tsv, season, id),
+    archiveFailed: (id) => room.game?.archiveFailed?.(id),
     code,
     /** The relay's room channel (the TV listens here), or null when there is no relay. */
     relayTopic: relay?.topic ?? null,

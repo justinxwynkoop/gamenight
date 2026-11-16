@@ -44,7 +44,15 @@ globalThis.Engine = {
   open: (id) => engine.open(id),
   close: (id) => engine.close(id),
   receive(id, json) { let m; try { m = JSON.parse(json); } catch { return; } engine.receive(id, m); },
-  tick: () => engine.tick(),
+  tick() {
+    engine.tick();
+    // A game that wants clues from the internet (a season of the real show) asks here; the app downloads and answers.
+    const want = engine.takeArchiveRequest();
+    if (want && __native.loadArchive) __native.loadArchive(JSON.stringify(want));
+  },
+  /** The app got a season: (id, season, tsvText). */
+  archiveLoaded: (id, season, tsv) => engine.archiveLoaded(String(tsv), Number(season), Number(id)),
+  archiveFailed: (id) => engine.archiveFailed(Number(id)),
   putSet: (gameId, id, json) => engine.putSet(gameId, id, parse(json)),
   removeSet: (gameId, id) => engine.removeSet(gameId, id),
   listSets: (gameId) => JSON.stringify(engine.listSets(gameId)),

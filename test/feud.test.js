@@ -71,10 +71,10 @@ test('the room always plays Feud in two teams, and goes back when another game i
   for (const n of ['Bo', 'Cy', 'Di', 'Ed', 'Fay', 'Gus']) room.join({ name: n });   // seven players would be four teams in Jeopardy... not here
   assert.equal(room.teams.length, 2);
   room.chooseGame('jeopardy');
-  assert.equal(room.mode, 'teams');          // auto: more than five players
-  room.removePlayer(room.players[0].id); room.removePlayer(room.players[0].id);
-  room.removePlayer(room.players[0].id);
-  assert.equal(room.mode, 'players');
+  assert.equal(room.mode, 'players');        // Jeopardy is always played by individuals, however many there are (up to eight)
+  assert.throws(() => room.setMode('teams'), /fixed/);
+  room.chooseGame('feud');
+  assert.equal(room.mode, 'teams');
 });
 
 test('start needs two teams with a player each', () => {

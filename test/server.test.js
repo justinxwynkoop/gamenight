@@ -32,8 +32,8 @@ class Client {
   open() { return new Promise((r) => (this.ws.readyState === 1 ? r() : this.ws.once('open', r))); }
   send(m) { this.ws.send(JSON.stringify(m)); }
   act(action, args = {}) { this.send({ t: 'act', action, args }); }
-  async until(fn, label = 'condition') {
-    for (let i = 0; i < 100; i++) { const r = fn(this); if (r) return r; await new Promise((s) => setTimeout(s, 20)); }
+  async until(fn, label = 'condition', ms = 2000) {
+    for (let i = 0; i < ms / 20; i++) { const r = fn(this); if (r) return r; await new Promise((s) => setTimeout(s, 20)); }
     throw new Error(`timed out waiting for ${label}`);
   }
   close() { this.ws.close(); }
@@ -139,82 +139,71 @@ test('server end to end', async (t) => {
   const annToken = (await ann.until((c) => c.msgs.find((m) => m.t === 'joined'))).token;
   await bo.until((c) => c.msgs.find((m) => m.t === 'joined'));
   host.act('chooseGame', { id: 'jeopardy' });     // with two games installed the host picks one
-  host.act('chooseSet', { id: 'family-night' });   // the first set found is no longer this one
-  host.act('startGame');
-  await tv.until((c) => c.view?.game?.status === 'board', 'board');
+  host.act('start');
+  await tv.until((c) => c.view?.game?.phase === 'board', 'board');
+  // A clue that is not a Daily Double (the host sees where those are).
+  const spot = (() => { const dd = host.view.game.secret.dd; for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) if (!dd[c][r]) return [c, r]; })();
+  const valueOf = ([c, r]) => tv.view.game.board[c].clues[r].value;
 
   await t.test('answers never reach the TV or phones before the reveal', async () => {
-    host.act('select', { c: 0, r: 0 });
-    await tv.until((c) => c.view?.game?.clue?.step === 'reading');
+    await host.until((c) => c.view?.game?.phase === 'board');
+    host.act('pick', { ci: spot[0], ri: spot[1] });
+    await tv.until((c) => c.view?.game?.phase === 'reading');
+    await host.until((c) => c.view?.game?.secret?.answer, 'host sees the answer');
+    const answer = host.view.game.secret.answer;
     assert.equal(tv.view.game.clue.answer, null);
-    await host.until((c) => c.view?.game?.clue?.answer);
-    assert.equal(host.view.game.clue.answer, 'The Pacific Ocean');
-    for (const c of [tv, ann, bo]) assert.ok(!c.raw.some((r) => r.includes('Pacific Ocean')), 'answer leaked');
+    for (const c of [tv, ann, bo]) assert.ok(!c.raw.some((r) => r.includes(JSON.stringify(answer))), 'answer leaked');
   });
 
-  await t.test('simultaneous buzzes produce exactly one winner', async () => {
-    host.act('openBuzzers');
-    await tv.until((c) => c.view?.game?.clue?.step === 'open');
+  await t.test('simultaneous buzzes produce exactly one winner, and the other is timed too', async () => {
+    host.act('openNow');
+    await tv.until((c) => c.view?.game?.phase === 'open');
     ann.send({ t: 'buzz' }); bo.send({ t: 'buzz' });
     const ra = await ann.until((c) => c.msgs.find((m) => m.t === 'buzz-result'));
     const rb = await bo.until((c) => c.msgs.find((m) => m.t === 'buzz-result'));
-    assert.equal([ra, rb].filter((r) => r.ok).length, 1);
-    await tv.until((c) => c.view?.game?.clue?.step === 'answering');
+    assert.deepEqual([ra.result, rb.result].sort(), ['late', 'won']);
+    await tv.until((c) => c.view?.game?.phase === 'answering');
+    assert.equal(tv.view.game.timer.kind, 'answer');
   });
 
-  await t.test('only the host can drive the game', async () => {
-    ann.act('correct');
-    bo.act('correct');
+  await t.test('only the host can drive the game, and only the winner can answer', async () => {
+    ann.act('skip'); bo.act('skip');
     await new Promise((r) => setTimeout(r, 100));
-    assert.equal(tv.view.game.clue.step, 'answering');
-    host.act('correct');
-    await tv.until((c) => c.view?.game?.clue?.step === 'revealed');
-    assert.equal(tv.view.game.clue.answer, 'The Pacific Ocean');
-    host.act('closeClue');
+    assert.equal(tv.view.game.phase, 'answering');
+    const [winner, loser] = tv.view.game.clue.buzzedId === tv.view.game.players.find((p) => p.name === 'Ann').id ? [ann, bo] : [bo, ann];
+    loser.send({ t: 'answer', text: host.view.game.secret.answer });
+    await new Promise((r) => setTimeout(r, 100));
+    assert.equal(tv.view.game.phase, 'answering');
+    winner.send({ t: 'answer', text: host.view.game.secret.answer });       // typed, judged by the server
+    await tv.until((c) => c.view?.game?.phase === 'reveal');
+    assert.equal(tv.view.game.lastResult.correct, true);
+    assert.equal(tv.view.game.clue.answer, host.view.game.secret.answer);
+    assert.equal(tv.view.room.units.reduce((s, u) => s + u.score, 0), valueOf(spot));
+    host.act('advance');
+    await tv.until((c) => c.view?.game?.phase === 'board');
   });
 
   await t.test('a refreshed phone rejoins as the same player with its score', async () => {
-    const scoreBefore = tv.view.room.units.find((u) => u.name === 'Ann').score + tv.view.room.units.find((u) => u.name === 'Bo').score;
-    assert.equal(scoreBefore, 200);
     ann.close();
     const again = await connectAs(port, { t: 'hello', role: 'player', token: annToken });
     await again.until((c) => c.view?.room?.me?.name === 'Ann');
     assert.ok(!again.msgs.some((m) => m.t === 'need-join'));
+    assert.equal(again.view.game.me.id, again.view.room.me.id);
   });
 
-  await t.test('the server expires an answer timer on its own', async () => {
-    host.act('setSettings', { answerSeconds: 1 });
-    host.act('select', { c: 1, r: 0 });
-    await tv.until((c) => c.view?.game?.clue?.step === 'reading');
-    host.act('openBuzzers');
-    await tv.until((c) => c.view?.game?.clue?.step === 'open');
-    bo.send({ t: 'buzz' });
-    await tv.until((c) => c.view?.game?.clue?.timer?.kind === 'answer', 'answer timer started');
-    assert.equal(tv.view.game.clue.timer.timedOut, false);
-    assert.ok(tv.view.game.clue.timer.leftMs <= 1000);
-    await tv.until((c) => c.view?.game?.clue?.timer?.timedOut, 'timer expiry');   // pushed by the server, no host action
-    assert.equal(tv.view.game.clue.step, 'answering');                           // the host still decides
-    host.act('reveal'); host.act('closeClue');
-    await tv.until((c) => c.view?.game?.status === 'board');
-    host.act('setSettings', { answerSeconds: 10 });
-  });
-
-  await t.test('with no buzz, the server calls time\'s up by itself and locks buzzing; the host reveals', async () => {
-    host.act('setSettings', { buzzSeconds: 1 });
-    host.act('select', { c: 2, r: 0 });
-    await tv.until((c) => c.view?.game?.clue?.step === 'reading');
-    host.act('openBuzzers');
-    await tv.until((c) => c.view?.game?.clue?.timer?.kind === 'buzz', 'buzz window started');
-    assert.equal(tv.view.game.clue.timer.timedOut, false);
-    await tv.until((c) => c.view?.game?.clue?.timer?.timedOut, 'buzz window closed');
-    assert.equal(tv.view.game.clue.step, 'open');                      // nothing is revealed for the host
-    const before = bo.msgs.filter((m) => m.t === 'buzz-result').length;
-    bo.send({ t: 'buzz' });
-    const refused = await bo.until((c) => c.msgs.filter((m) => m.t === 'buzz-result')[before], 'buzz reply');
-    assert.deepEqual({ ok: refused.ok, reason: refused.reason }, { ok: false, reason: 'timeup' });
-    host.act('reveal'); host.act('closeClue');
-    await tv.until((c) => c.view?.game?.status === 'board');
-    host.act('setSettings', { buzzSeconds: 10 });
+  await t.test('the server opens the buzzers by itself once the clue has been read', async () => {
+    const dd = host.view.game.secret.dd;
+    const next = [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1]].find(([c, r]) => !dd[c][r]);
+    host.act('pick', { ci: next[0], ri: next[1] });
+    await tv.until((c) => c.view?.game?.phase === 'reading');
+    const t0 = Date.now();
+    await tv.until((c) => c.view?.game?.phase === 'open', 'buzzers open', 6000);
+    assert.ok(Date.now() - t0 >= 1500);
+    assert.equal(tv.view.game.timer.kind, 'buzz');
+    host.act('skip');
+    await tv.until((c) => c.view?.game?.phase === 'reveal');
+    host.act('advance');
+    await tv.until((c) => c.view?.game?.phase === 'board');
   });
 
   await t.test('game survives a server restart', async () => {
@@ -225,8 +214,8 @@ test('server end to end', async (t) => {
     await again.until((c) => c.view?.room?.me);
     const v = again.view;
     assert.equal(v.room.me.name, 'Ann');
-    assert.equal(v.game.status, 'board');
-    assert.equal(v.game.board[0][0].used, true);
-    assert.equal(v.room.units.reduce((s, u) => s + u.score, 0), 200);
+    assert.equal(v.game.phase, 'board');
+    assert.equal(v.game.board[spot[0]].clues[spot[1]].used, true);
+    assert.equal(v.room.units.reduce((s, u) => s + u.score, 0), valueOf(spot));
   });
 });

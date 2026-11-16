@@ -15,9 +15,10 @@ import { GameError } from '../lib.js';
  * pinOk    (pin) => boolean: is this the host PIN?
  * send     (clientId, message) => void
  * rpc      (op, args) => data, for the host's questions that are not about the room (which sets exist, what is in one)
+ * trustedTv (clientId) => boolean: is this the TV itself (not a browser that said it was the TV)? The TV itself may act on the game.
  * onError  (error) => void, for a bug (not a GameError, which is shown to the person who caused it)
  */
-export function createHub({ room, pinOk, send, rpc = null, onError = (e) => console.error(e) }) {
+export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => false, onError = (e) => console.error(e) }) {
   const clients = new Map(); // id -> { role, playerId }
 
   const liveCount = (playerId) => [...clients.values()].filter((c) => c.playerId === playerId).length;
@@ -66,7 +67,8 @@ export function createHub({ room, pinOk, send, rpc = null, onError = (e) => cons
         return;
       }
       case 'act': {
-        if (client.role !== 'host') return;
+        // The host, or the TV itself (never a client that merely claimed to be the TV).
+        if (client.role !== 'host' && !(client.role === 'tv' && trustedTv(id))) return;
         room.act(msg.action, msg.args ?? {});
         return;
       }

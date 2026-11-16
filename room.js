@@ -15,7 +15,9 @@
 //   contentChanged(setId)     optional, a question set was saved or deleted
 //   tick()                    optional, called ~4x a second; the place to expire timers
 // and the module may declare `needs: { teams: 2 }` when the game can only be played by that many teams
-// (the room then always plays in teams, and the host cannot switch to individuals).
+// (the room then always plays in teams, and the host cannot switch to individuals), or `needs: { individuals: true }`
+// when the game is always played by individuals, and `maxPlayers` for a smaller limit than the room's.
+// An instance may also provide playerView(player) when a phone sees more than the shared view.
 //
 // The game scores by changing `unit.score` on room.units(): players in
 // individual mode, teams in team mode.
@@ -99,7 +101,7 @@ export class Room {
   join({ name, color, teamId, kind = 'phone' }) {
     name = cleanName(name);
     if (!name) fail('Enter a name');
-    if (this.players.length >= MAX_PLAYERS) fail('The game is full');
+    if (this.players.length >= this.#maxPlayers()) fail('The game is full');
     if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail('That name is taken');
     color = COLORS.includes(color) ? color : this.#freeColor();
     const player = {
@@ -162,12 +164,17 @@ export class Room {
   // ---------- keeping teams in step with the roster ----------
   /** Teams the active game insists on (0 when it does not mind). */
   #neededTeams() { return this.games[this.gameId]?.needs?.teams ?? 0; }
+  /** True when the active game is always played by individuals. */
+  #individualsOnly() { return !!this.games[this.gameId]?.needs?.individuals; }
+  #maxPlayers() { return Math.min(MAX_PLAYERS, this.games[this.gameId]?.maxPlayers ?? MAX_PLAYERS); }
   #fixedTeams(what) {
     const n = this.#neededTeams();
     if (n) fail(`${what} is fixed: ${this.games[this.gameId].name} is always played by ${n} teams`);
+    if (this.#individualsOnly()) fail(`${what} is fixed: ${this.games[this.gameId].name} is always played by individuals`);
   }
   #effectiveMode() {
     if (this.#neededTeams()) return 'teams';
+    if (this.#individualsOnly()) return 'players';
     if (this.modeSetting === 'auto') return this.players.length > INDIVIDUAL_MAX ? 'teams' : 'players';
     return this.modeSetting;
   }
@@ -322,6 +329,8 @@ export class Room {
       modeSetting: this.modeSetting,
       teamCount: this.teams.length,
       fixedTeams: this.#neededTeams(),   // a game that insists on this many teams (0: the host chooses)
+      individualsOnly: this.#individualsOnly(),
+      maxPlayers: this.#maxPlayers(),
       individualMax: INDIVIDUAL_MAX,
       teamSize: TEAM_SIZE,
       teams: this.teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
@@ -347,6 +356,7 @@ export class Room {
   playerView(playerId, base = this.publicView()) {
     const p = this.players.find((x) => x.id === playerId);
     const me = p ? { id: p.id, name: p.name, color: p.color, unitId: this.unitOf(p)?.id ?? null } : null;
-    return { ...base, room: { ...base.room, me } };
+    const game = p && this.game?.playerView ? this.game.playerView(p) : base.game;
+    return { ...base, game, room: { ...base.room, me } };
   }
 }
