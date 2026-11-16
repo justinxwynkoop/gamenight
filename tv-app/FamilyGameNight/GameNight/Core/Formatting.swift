@@ -12,6 +12,15 @@ enum Money {
     }
 }
 
+enum Seasons {
+    /// "Season 12 (1995-96)". Season N of the show first aired in the fall of 1983 + N. Empty for no season.
+    static func label(_ season: Int?) -> String {
+        guard let season, season > 0 else { return "" }
+        let start = 1983 + season
+        return "Season \(season) (\(start)-\(String(format: "%02d", (start + 1) % 100)))"
+    }
+}
+
 enum JoinAddress {
     /// The host page for a server: "http://192.168.1.50:3000/" → "http://192.168.1.50:3000/host".
     /// The address only; the host still has to enter the PIN on that page.

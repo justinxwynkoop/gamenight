@@ -23,6 +23,14 @@ public final class EngineHost {
         public let description: String
     }
 
+    /// The engine asks for a season of real-show clues (the lobby's "era" buttons): download season `season` of the
+    /// public clue archive and give it back with `archiveLoaded`, or call `archiveFailed`. `id` pairs the answer with the request.
+    public struct ArchiveRequest: Decodable, Equatable {
+        public let id: Int
+        public let era: String
+        public let season: Int
+    }
+
     private final class Problems { var list: [String] = [] }
 
     private let context: JSContext
@@ -52,7 +60,8 @@ public final class EngineHost {
         onSend: @escaping (_ clientId: String, _ json: String) -> Void,
         onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
         onSave: @escaping (_ json: String) -> Void = { _ in },
-        onSets: @escaping (_ json: String) -> Void = { _ in }
+        onSets: @escaping (_ json: String) -> Void = { _ in },
+        onArchive: @escaping (_ request: ArchiveRequest) -> Void = { _ in }
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
         let problems = Problems()
@@ -74,6 +83,10 @@ public final class EngineHost {
         set("broadcast", unsafeBitCast(broadcast, to: AnyObject.self))
         let saveSets: @convention(block) (String) -> Void = { onSets($0) }
         set("saveSets", unsafeBitCast(saveSets, to: AnyObject.self))
+        let loadArchive: @convention(block) (String) -> Void = { json in
+            if let request = try? JSONDecoder().decode(ArchiveRequest.self, from: Data(json.utf8)) { onArchive(request) }
+        }
+        set("loadArchive", unsafeBitCast(loadArchive, to: AnyObject.self))
         set("save", unsafeBitCast(save, to: AnyObject.self))
         set("now", unsafeBitCast(now, to: AnyObject.self))
         set("random", unsafeBitCast(random, to: AnyObject.self))
@@ -123,6 +136,10 @@ public final class EngineHost {
     public func close(_ clientId: String) { engine.invokeMethod("close", withArguments: [clientId]) }
     /// A message from a client, as JSON text (for instance `{"t":"hello","role":"tv"}`).
     public func receive(_ clientId: String, _ json: String) { engine.invokeMethod("receive", withArguments: [clientId, json]) }
+    /// A season of clues arrived (raw text) for the request with this id.
+    public func archiveLoaded(id: Int, season: Int, tsv: String) { engine.invokeMethod("archiveLoaded", withArguments: [id, season, tsv]) }
+    /// The season could not be downloaded.
+    public func archiveFailed(id: Int) { engine.invokeMethod("archiveFailed", withArguments: [id]) }
     /// Call about four times a second: it ends answer timers.
     public func tick() { engine.invokeMethod("tick", withArguments: []) }
 

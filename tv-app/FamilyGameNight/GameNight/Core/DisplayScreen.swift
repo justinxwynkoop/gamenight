@@ -1,13 +1,13 @@
 import Foundation
 
-/// Which screen the TV shows for a server state. Mirrors `render()` in the web
-/// TV page (public/tv.js and public/games/jeopardy/tv.js) so both displays agree.
+/// Which screen the TV shows for a server state.
 enum DisplayScreen: Equatable {
     case lobby
     case board
     case clue
+    case dailyDouble
+    case roundEnd
     case finalRound
-    case leaderboard
     case winner
     case feudRound
     case feudFastMoney
@@ -23,12 +23,15 @@ enum DisplayScreen: Equatable {
         case .feud(let game):
             return feudScreen(for: game, inProgress: state.room.inProgress)   // Feud/Core/FeudDisplay.swift
         case .jeopardy(let game):
-            if !state.room.inProgress { return .lobby }
-            if game.status == .done { return .winner }
-            if game.status == .finalRound && game.finalRound != nil { return .finalRound }
-            if game.view == "leaderboard" { return .leaderboard }
-            if game.status == .clue && game.clue != nil { return .clue }
-            return .board
+            switch game.phase {
+            case .lobby: return .lobby
+            case .gameover: return .winner
+            case .roundEnd: return .roundEnd
+            case .finalWager, .finalAnswer, .finalReveal: return game.finalRound != nil ? .finalRound : .board
+            case .ddWager: return game.clue != nil ? .dailyDouble : .board
+            case .reading, .open, .answering, .reveal, .ddAnswer: return game.clue != nil ? .clue : .board
+            case .board, .unknown: return .board
+            }
         }
     }
 }

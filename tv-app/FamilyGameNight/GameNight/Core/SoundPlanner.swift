@@ -9,9 +9,7 @@ struct SoundPlan: Equatable {
     var stopFinalMusic = false
 }
 
-/// Decides which sound goes with which change in the game. This is a direct port of
-/// the web TV's `effects()` (public/tv.js) and the Jeopardy `onChange()`
-/// (public/games/jeopardy/tv.js), so the two displays react the same way.
+/// Decides which sound goes with which change in the game.
 enum SoundPlanner {
     static func plan(from previous: ServerState?, to next: ServerState) -> SoundPlan {
         var plan = SoundPlan()
@@ -27,67 +25,60 @@ enum SoundPlanner {
             return plan
         }
         guard let before = previous.jeopardy, let after = next.jeopardy else { return plan }
-
-        if let clue = after.clue {
-            let was = before.clue
-            let changed = was == nil || was?.c != clue.c || was?.r != clue.r
-            if clue.dd && clue.step == .wager && changed {
-                plan.cues.append(.dd)
-            } else if clue.step == .open && was?.step != .open {
-                plan.cues.append(.open)
-            } else if clue.step == .answering && was?.step != .answering {
-                plan.cues.append(.buzz)
-            } else if clue.lockedOut.count > (changed ? 0 : (was?.lockedOut.count ?? 0)) {
-                plan.cues.append(.wrong)
-            } else if clue.step == .revealed, let was, was.step != .revealed {
-                if clue.correct != nil {
-                    plan.cues.append(.correct)
-                } else if was.step == .answering {
-                    plan.cues.append(.wrong)   // a wrong Daily Double answer
-                } else {
-                    plan.cues.append(.reveal)
-                }
-            }
-            if (clue.timer?.timedOut ?? false) && !(was?.timer?.timedOut ?? false) {
-                plan.cues.append(.timeup)
-            }
-        }
-
-        // Final Jeopardy's "think" music runs with the countdown and stops with it.
-        let running = runningCountdown(in: after.finalRound)
-        let wasRunning = runningCountdown(in: before.finalRound)
-        if let running {
-            if wasRunning == nil || running.leftMs > (wasRunning?.leftMs ?? 0) + 1500 {
-                plan.startFinalMusic = true   // it just started, or the host restarted it
-            }
-        } else {
-            plan.stopFinalMusic = true
-        }
-
-        if let round = after.finalRound {
-            if let earlier = before.finalRound {
-                if (round.timer?.timedOut ?? false) && !(earlier.timer?.timedOut ?? false) {
-                    plan.cues.append(.timeup)
-                }
-                for (index, finalist) in round.finalists.enumerated() {
-                    guard let result = finalist.result,
-                          index < earlier.finalists.count,
-                          earlier.finalists[index].result == nil else { continue }
-                    plan.cues.append(result ? .correct : .wrong)
-                }
-            } else {
-                plan.cues.append(.finalSting)
-            }
-        }
-
-        if after.status == .done && before.status != .done {
-            plan.cues.append(.fanfare)
-        }
+        jeopardyPlan(from: before, to: after, into: &plan)
         return plan
     }
 
-    private static func runningCountdown(in round: FinalState?) -> TimerState? {
-        guard let round, round.step == .clue, let timer = round.timer, !timer.timedOut else { return nil }
+    /// Jeopardy: what the change between two views means in sound. The names are the same ones the family's own
+    /// files use ("open", "buzz", "correct", "wrong", "timeup", "dd", "final", "fanfare", "think", "lobby").
+    private static func jeopardyPlan(from before: JeopardyState, to after: JeopardyState, into plan: inout SoundPlan) {
+        // A ruling just came in: right or wrong.
+        if let result = after.lastResult, result != before.lastResult {
+            plan.cues.append(result.correct ? .correct : .wrong)
+        }
+
+        if after.phase != before.phase {
+            switch after.phase {
+            case .ddWager:
+                plan.cues.append(.dd)
+            case .open:
+                // The buzzers open once the clue is read. After a wrong answer they reopen, and the wrong-answer sound covers that.
+                if before.phase == .reading { plan.cues.append(.open) }
+            case .answering:
+                plan.cues.append(.buzz)
+            case .reveal:
+                // Nothing right or wrong was just ruled on: the clue ran out of time, or was skipped.
+                if after.lastResult == before.lastResult || after.lastResult == nil {
+                    plan.cues.append(before.phase == .open ? .timeup : .reveal)
+                }
+            case .finalWager:
+                plan.cues.append(.finalSting)
+            case .finalReveal:
+                if before.phase == .finalAnswer { plan.cues.append(.timeup) }
+            case .gameover:
+                plan.cues.append(.fanfare)
+            default:
+                break
+            }
+        }
+
+        // Final Jeopardy's answers are shown one by one, each with a right or wrong sound.
+        if let round = after.finalRound, let earlier = before.finalRound, round.reveals.count > earlier.reveals.count {
+            for reveal in round.reveals[earlier.reveals.count...] {
+                plan.cues.append(reveal.correct ? .correct : .wrong)
+            }
+        }
+
+        // The "think" music runs with Final Jeopardy's countdown and stops with it.
+        if runningCountdown(in: after) != nil {
+            if runningCountdown(in: before) == nil { plan.startFinalMusic = true }
+        } else {
+            plan.stopFinalMusic = true
+        }
+    }
+
+    private static func runningCountdown(in game: JeopardyState) -> TimerState? {
+        guard game.phase == .finalAnswer, let timer = game.timer, timer.leftMs > 0 else { return nil }
         return timer
     }
 
@@ -102,16 +93,10 @@ enum SoundPlanner {
     /// the Final Jeopardy timer. Its last five seconds tick.
     static func activeTimer(in state: ServerState) -> TimerState? {
         if let feud = state.feud { return feudActiveTimer(in: state, game: feud) }
-        guard let game = state.jeopardy else { return nil }
-        switch DisplayScreen.screen(for: state) {
-        case .clue:
-            guard let clue = game.clue, clue.step == .open || clue.step == .answering,
-                  let timer = clue.timer, !timer.timedOut else { return nil }
-            return timer
-        case .finalRound:
-            return runningCountdown(in: game.finalRound)
-        default:
-            return nil
+        guard let game = state.jeopardy, let timer = game.timer, !timer.timedOut else { return nil }
+        switch game.phase {
+        case .open, .answering, .ddAnswer, .finalAnswer: return timer
+        default: return nil
         }
     }
 }

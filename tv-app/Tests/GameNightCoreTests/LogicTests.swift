@@ -8,46 +8,39 @@ final class DisplayScreenTests: XCTestCase {
 
     func testLobbyUntilTheGameStarts() throws {
         XCTAssertEqual(try screen("no-game-chosen"), .lobby)
-        XCTAssertEqual(try screen("lobby-empty"), .lobby)
-        XCTAssertEqual(try screen("lobby-players"), .lobby)
-        XCTAssertEqual(try screen("lobby-teams"), .lobby)
-    }
-
-    func testTeamStatesUseTheSameScreens() throws {
-        XCTAssertEqual(try screen("teams-lobby"), .lobby)
-        XCTAssertEqual(try screen("teams-lobby-four"), .lobby)
-        XCTAssertEqual(try screen("teams-board"), .board)
-        XCTAssertEqual(try screen("teams-clue-answering"), .clue)
-        XCTAssertEqual(try screen("teams-clue-revealed"), .clue)
-        XCTAssertEqual(try screen("teams-final-wager"), .finalRound)
+        for name in ["jp-lobby", "jp-lobby-loading", "jp-lobby-archive", "jp-lobby-draft", "jp-lobby-easy"] {
+            XCTAssertEqual(try screen(name), .lobby, name)
+        }
     }
 
     func testBoard() throws {
-        XCTAssertEqual(try screen("board"), .board)
-        XCTAssertEqual(try screen("board-after-clue"), .board)
+        XCTAssertEqual(try screen("jp-board"), .board)
+        XCTAssertEqual(try screen("jp-board-round-2"), .board)
     }
 
     func testEveryClueStepShowsTheClueScreen() throws {
-        for name in ["clue-reading", "clue-open", "clue-answering", "clue-open-after-wrong",
-                     "clue-revealed-correct", "clue-revealed-nobody", "dd-pick-player", "dd-wager",
-                     "dd-answering", "dd-revealed"] {
+        for name in ["jp-reading", "jp-open", "jp-answering", "jp-open-after-wrong", "jp-reveal-correct", "jp-reveal-nobody",
+                     "jp-dd-answer", "jp-dd-reveal", "jp-reaction", "jp-host-reading", "jp-host-answering"] {
             XCTAssertEqual(try screen(name), .clue, name)
         }
     }
 
-    func testLeaderboard() throws {
-        XCTAssertEqual(try screen("leaderboard"), .leaderboard)
+    func testDailyDoubleWager() throws {
+        XCTAssertEqual(try screen("jp-dd-wager"), .dailyDouble)
+    }
+
+    func testRoundEnd() throws {
+        XCTAssertEqual(try screen("jp-round-end"), .roundEnd)
     }
 
     func testFinalJeopardy() throws {
-        for name in ["final-wager", "final-wager-locked", "final-clue", "final-clue-answered",
-                     "final-judge", "final-judged", "final-results"] {
+        for name in ["jp-final-wager", "jp-final-answer", "jp-final-reveal-first", "jp-final-reveal-more"] {
             XCTAssertEqual(try screen(name), .finalRound, name)
         }
     }
 
     func testWinnerWhenDone() throws {
-        XCTAssertEqual(try screen("done"), .winner)
+        XCTAssertEqual(try screen("jp-gameover"), .winner)
     }
 
     func testUnsupportedGame() throws {

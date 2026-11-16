@@ -99,6 +99,71 @@ final class EngineHostTests: XCTestCase {
         host.tick()
     }
 
+    func testJeopardyRunsOnTheTVAsksTheAppForCluesAndObeysItsOwnRemote() throws {
+        let wire = Wire()
+        var requests: [EngineHost.ArchiveRequest] = []
+        let host = try EngineHost(script: Self.script, pin: "4321", game: "jeopardy",
+                                  onSend: { wire.sent.append(($0, $1)) }, onArchive: { requests.append($0) })
+        host.open("tv")
+        say(host, "tv", #"{"t":"hello","role":"tv"}"#)
+        host.tick()
+        let request = try XCTUnwrap(requests.first, "the lobby asks the app for a season of real-show clues")
+        XCTAssertEqual(request.era, "any")
+        XCTAssertTrue((3...42).contains(request.season))
+        host.tick()
+        XCTAssertEqual(requests.count, 1, "one request, not one every tick")
+
+        // The app downloaded the season and hands it back: the lobby gets topics from it.
+        var lines = ["round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes"]
+        for category in 0..<14 {
+            for row in 0..<5 {
+                lines.append(["1", String((row + 1) * 200), "0", "Mixed bag \(category)", "", "Clue \(category)-\(row)", "Answer \(category)-\(row)", "2005-01-01", ""].joined(separator: "\t"))
+            }
+        }
+        host.archiveLoaded(id: request.id, season: request.season, tsv: lines.joined(separator: "\n"))
+        func state() throws -> JeopardyState {
+            let data = try XCTUnwrap(wire.lastStateData(to: "tv"))
+            return try XCTUnwrap(try JSONDecoder().decode(StateMessage.self, from: data).view.jeopardy)
+        }
+        var lobby = try state()
+        XCTAssertEqual(lobby.archiveSeason, request.season)
+        XCTAssertTrue(try XCTUnwrap(lobby.packs).contains { $0.archive == true })
+
+        for name in ["Ann", "Bo"] {
+            say(host, name, #"{"t":"hello","role":"player"}"#)
+            say(host, name, #"{"t":"join","name":"\#(name)"}"#)
+        }
+        // A phone cannot start the game by sending the TV's actions, and a browser claiming to be the TV cannot either.
+        say(host, "Ann", #"{"t":"act","action":"start","args":{}}"#)
+        say(host, "impostor", #"{"t":"hello","role":"tv"}"#)
+        say(host, "impostor", #"{"t":"act","action":"start","args":{}}"#)
+        lobby = try state()
+        XCTAssertEqual(lobby.phase, .lobby)
+        XCTAssertEqual(lobby.players.map(\.name), ["Ann", "Bo"])
+
+        // The TV's own remote can.
+        say(host, "tv", #"{"t":"act","action":"start","args":{}}"#)
+        let playing = try state()
+        XCTAssertEqual(playing.phase, .board)
+        XCTAssertEqual(playing.board?.count, 6)
+        XCTAssertEqual(host.errors, [])
+    }
+
+    func testAFailedDownloadIsReportedInTheLobby() throws {
+        let wire = Wire()
+        var requests: [EngineHost.ArchiveRequest] = []
+        let host = try EngineHost(script: Self.script, pin: "4321", game: "jeopardy",
+                                  onSend: { wire.sent.append(($0, $1)) }, onArchive: { requests.append($0) })
+        host.open("tv")
+        say(host, "tv", #"{"t":"hello","role":"tv"}"#)
+        host.tick()
+        host.archiveFailed(id: try XCTUnwrap(requests.first).id)
+        let data = try XCTUnwrap(wire.lastStateData(to: "tv"))
+        let game = try XCTUnwrap(try JSONDecoder().decode(StateMessage.self, from: data).view.jeopardy)
+        XCTAssertEqual(game.archiveError, true)
+        XCTAssertEqual(game.archiveLoading, false)
+    }
+
     func testTheRoomIsSavedAndComesBack() throws {
         let wire = Wire()
         let host = try makeHost(wire)

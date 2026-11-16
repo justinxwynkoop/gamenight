@@ -1,12 +1,12 @@
 import SwiftUI
 import UIKit
 
-/// The TV display: draws whatever the server says is happening, for Jeopardy or Family Feud (the host
-/// chooses the game on their phone; both home-screen tiles open this same display).
+/// The TV display: draws whatever the engine says is happening, for Jeopardy or Family Feud (both home-screen
+/// tiles open this same display).
 ///
-/// Nothing here is interactive. Menu returns to the game picker. Play/Pause opens a
-/// small panel to change the server or leave, since the remote has no other way to
-/// reach those while a game is on screen.
+/// Jeopardy's screens have buttons the Siri Remote can use (pick a clue, start, continue). Family Feud's have none.
+/// Menu returns to the game picker. Play/Pause opens a small panel to change the server or leave, since the
+/// remote has no other way to reach those while a game is on screen.
 struct JeopardyDisplayView: View {
     let client: GameNightClient
     /// The tile that was opened, for the connecting screen's heading.
@@ -22,7 +22,7 @@ struct JeopardyDisplayView: View {
 
     var body: some View {
         ZStack {
-            JeopardyBackground()
+            if client.state?.jeopardy != nil { BWStage() } else { JeopardyBackground() }
             content
                 .animation(.easeInOut(duration: 0.25), value: client.state)
 
@@ -95,15 +95,29 @@ struct JeopardyDisplayView: View {
     @ViewBuilder
     private var content: some View {
         if let state = client.state {
-            // The game screens have no buttons, so the screen itself takes focus. That is
-            // what lets Menu and Play/Pause reach this view. The highlight is switched off
-            // for this part only: the connecting screen's buttons below need theirs.
-            ZStack {
-                screen(for: state)
+            if let game = state.jeopardy {
+                // Jeopardy's screens have buttons of their own (tiles, Start, Continue), and those hold the remote's
+                // focus. They are switched off while the Play/Pause panel is open so its buttons get the focus.
+                JeopardyContent(
+                    game: game,
+                    joinURL: client.joinURL,
+                    roomCode: client.roomCode,
+                    receivedAt: client.stateReceivedAt,
+                    act: { action, args in client.act(action, args) },
+                    onNewRoom: client.isLocal ? { client.newRoom() } : nil
+                )
+                .disabled(showMenu)
+            } else {
+                // The other games' screens have no buttons, so the screen itself takes focus. That is
+                // what lets Menu and Play/Pause reach this view. The highlight is switched off
+                // for this part only: the connecting screen's buttons below need theirs.
+                ZStack {
+                    screen(for: state)
+                }
+                .focusable(!showMenu)
+                .focusEffectDisabled()
+                .focused($boardFocused)
             }
-            .focusable(!showMenu)
-            .focusEffectDisabled()
-            .focused($boardFocused)
         } else {
             ConnectingScreen(
                 client: client,
@@ -124,26 +138,12 @@ struct JeopardyDisplayView: View {
         switch DisplayScreen.screen(for: state) {
         case .lobby:
             LobbyScreen(state: state, joinURL: client.joinURL)
-        case .board:
-            if let game = state.jeopardy {
-                BoardScreen(state: state, game: game, joinURL: client.joinURL)
-            }
-        case .clue:
-            if let clue = state.jeopardy?.clue {
-                ClueScreen(state: state, clue: clue, receivedAt: client.stateReceivedAt)
-            }
-        case .finalRound:
-            if let round = state.jeopardy?.finalRound {
-                FinalScreen(state: state, round: round, receivedAt: client.stateReceivedAt)
-            }
-        case .leaderboard:
-            LeaderboardScreen(state: state)
-        case .winner:
-            WinnerScreen(state: state)
         case .feudRound, .feudFastMoney, .feudWinner:
             FeudContent(state: state, joinURL: client.joinURL, receivedAt: client.stateReceivedAt)   // Feud/Display/FeudScreens.swift
         case .unsupported(let id):
             UnsupportedGameScreen(id: id)
+        case .board, .clue, .dailyDouble, .roundEnd, .finalRound, .winner:
+            EmptyView()   // Jeopardy's screens are drawn by JeopardyContent
         }
     }
 }

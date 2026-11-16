@@ -106,6 +106,40 @@ final class GameNightClient {
         startLocal(game: localGame)
     }
 
+    /// Does something in the game from the Siri Remote (pick a clue, start, continue). Only the game running on this
+    /// Apple TV takes these: the engine trusts its own screen, and nothing that arrives over the relay.
+    func act(_ action: String, _ args: [String: Any] = [:]) {
+        guard isLocal, let engine else { return }
+        engine.receive("tv", EngineHost.json(["t": "act", "action": action, "args": args]))
+    }
+
+    /// The engine wants a season of real-show clues for the lobby. Download it (trying a neighbouring season if that
+    /// one is missing) and hand it back, or say it failed.
+    private func loadArchive(_ request: EngineHost.ArchiveRequest) {
+        Task { [weak self] in
+            var season = request.season
+            for attempt in 0..<3 {
+                guard let self else { return }
+                if let text = await Self.downloadSeason(season, using: self.session) {
+                    self.engine?.archiveLoaded(id: request.id, season: season, tsv: text)
+                    return
+                }
+                season = max(3, season - 1 - attempt)
+            }
+            self?.engine?.archiveFailed(id: request.id)
+        }
+    }
+
+    /// One season of the public clue archive (github.com/jwolle1/jeopardy_clue_dataset), as raw text. Nothing is kept:
+    /// it is fetched fresh each time and the engine builds the topics from it in memory.
+    private static func downloadSeason(_ season: Int, using session: URLSession) async -> String? {
+        guard let url = URL(string: "https://raw.githubusercontent.com/jwolle1/jeopardy_clue_dataset/main/seasons/season\(season).tsv") else { return nil }
+        guard let (data, response) = try? await session.data(from: url),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let text = String(data: data, encoding: .utf8), text.hasPrefix("round") else { return nil }
+        return text
+    }
+
     /// A note for the corner of the screen when something is not right, or nil.
     var bannerNote: String? {
         if state != nil, connection != .connected { return "Reconnecting…" }
@@ -142,7 +176,8 @@ final class GameNightClient {
                     relay?.send(topic, event: event, payloadJSON: json)
                 },
                 onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) },
-                onSets: { json in UserDefaults.standard.set(json, forKey: Self.userSetsKey) }
+                onSets: { json in UserDefaults.standard.set(json, forKey: Self.userSetsKey) },
+                onArchive: { [weak self] request in self?.loadArchive(request) }
             )
             engine = host
             realtime = relay

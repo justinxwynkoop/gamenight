@@ -24,9 +24,12 @@
 })(globalThis);
 
 (() => {
+  var __defProp = Object.defineProperty;
   var __typeError = (msg) => {
     throw TypeError(msg);
   };
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
   var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
   var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
@@ -68,15 +71,267 @@
     return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
+  // games/jeopardy/judge.js
+  var NUM_WORDS = {
+    zero: 0,
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+    seventeen: 17,
+    eighteen: 18,
+    nineteen: 19,
+    twenty: 20,
+    thirty: 30,
+    forty: 40,
+    fifty: 50,
+    hundred: 100
+  };
+  function norm(s) {
+    s = String(s || "").toLowerCase().normalize("NFD").replace(/\p{Mn}/gu, "").replace(/&/g, " and ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+    s = s.replace(/^(what|who|where|when|which|whats|whos|wheres)( (is|are|was|were|s))?\s+/, "");
+    s = s.replace(/^(a|an|the)\s+/, "");
+    s = s.split(" ").map((w) => w in NUM_WORDS ? String(NUM_WORDS[w]) : w).join(" ");
+    return s.trim();
+  }
+  function lev(a, b) {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    if (!m) return n;
+    if (!n) return m;
+    let prev = new Array(n + 1);
+    for (let j = 0; j <= n; j++) prev[j] = j;
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function tolerance(len) {
+    if (len <= 4) return 0;
+    if (len <= 7) return 1;
+    if (len <= 11) return 2;
+    return Math.floor(len / 5);
+  }
+  function matchOne(g, ans) {
+    const n = norm(ans);
+    if (!g || !n) return false;
+    if (g === n) return true;
+    const gs = g.replace(/ /g, ""), ns = n.replace(/ /g, "");
+    if (gs === ns) return true;
+    if (/^\d+$/.test(ns) || /^\d+$/.test(gs)) return gs === ns;
+    if (lev(gs, ns) <= tolerance(ns.length)) return true;
+    if ((" " + g + " ").includes(" " + n + " ") && g.length <= n.length + 14) return true;
+    return false;
+  }
+  function judge(given, answers) {
+    const g = norm(given);
+    if (!g) return false;
+    return answers.filter(Boolean).some((a) => matchOne(g, a));
+  }
+
+  // games/jeopardy/archive.js
+  var SEASONS = 42;
+  var PER_TOPIC = 40;
+  var MAX_FINALS = 30;
+  var TOPICS = {
+    "History": /\b(histor\w*|wars?|kings?|queens?|presidents?|presidential|empires?|revolution\w*|ancient|centur\w+|civil war|dynast\w*|battles?|colonial|pharaohs?|treaty|emperors?|medieval|founding|generals?|congress|senat\w+|vice president|first lad\w+|napoleon|lincoln|washington)\b/gi,
+    "Geography": /\b(geograph\w*|countr\w+|capitals?|cit(y|ies)|rivers?|lakes?|islands?|mountains?|oceans?|continents?|nations?|africa\w*|asia\w*|europe\w*|canad\w+|mexic\w+|border\w*|desert|population|u\.s\. states?|state capital)\b/gi,
+    "Science & Nature": /\b(scien\w+|chemi\w+|physic\w*|biolog\w*|elements?|anatom\w*|astronom\w*|planets?|space|animals?|nature|medic\w+|math\w*|plants?|weather|body|bones?|dinosaurs?|birds?|fish|insects?|mammals?|disease|atoms?|molecul\w+|cells?|tech\w*|computers?|invent\w+|trees?|flowers?|dogs?|cats?)\b/gi,
+    "Words & Books": /\b(literat\w+|books?|authors?|novels?|novelists?|poe(t|m|try)\w*|words?|vocabulary|shakespeare\w*|language|spell\w*|letters?|fiction|quotations?|rhym\w*|playwrights?|bible\w*|biblical|myth\w*|wrote|written|synonyms?|abbrev\w*|latin|french word|greek)\b/gi,
+    "Movies & TV": /\b(movies?|films?|tv|television|oscars?|hollywood|actors?|actress\w*|sitcoms?|cinema|cartoons?|director|starred|stars|show|series|character|disney|emmy)\b/gi,
+    "Music": /\b(music\w*|songs?|singers?|bands?|rock|opera\w*|composers?|jazz|albums?|hits?|tunes?|broadway|musicals?|pop|lyrics?|grammy|symphon\w+|guitar|piano|rapper)\b/gi,
+    "Sports & Games": /\b(sports?|olympi\w+|baseball|football|basketball|hockey|golf\w*|tennis|nfl|nba|mlb|athlet\w+|games?|teams?|champion\w*|super bowl|world series|boxing|soccer|racing|coach)\b/gi,
+    "Food & Drink": /\b(food\w*|cook\w*|cuisine|drinks?|wines?|beers?|fruits?|vegetables?|desserts?|chees\w+|eat\w*|kitchen|recipes?|candy|snacks?|sauces?|bread|cocktails?|meat|restaurant\w*|dish(es)?|chef)\b/gi,
+    "Art & Culture": /\b(art|artists?|painters?|paintings?|sculpt\w+|museums?|architect\w*|fashion|religio\w+|philosoph\w+|holidays?|danc\w+|ballet|gods?|goddess\w*|saints?)\b/gi
+  };
+  var ANY = "Anything Goes";
+  function topicOf(name, text) {
+    let best = ANY, bs = 0;
+    for (const [t, re] of Object.entries(TOPICS)) {
+      const sc = (name.match(re) || []).length * 3 + (text.match(re) || []).length;
+      if (sc > bs) {
+        bs = sc;
+        best = t;
+      }
+    }
+    return bs >= 3 ? best : ANY;
+  }
+  var clean = (s) => String(s || "").replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\s+/g, " ").trim();
+  function shuffle(a, rng = Math.random) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function response(raw) {
+    const r = clean(raw).replace(/^"(.*)"$/, "$1");
+    const without = r.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+    const leadingOptional = /^\(/.test(r) || /\)\s*\S/.test(r);
+    const a = leadingOptional ? r.replace(/[()]/g, "").replace(/\s+/g, " ").trim() : r;
+    const alt = /* @__PURE__ */ new Set();
+    if (without && without !== a) alt.add(without);
+    if (a !== r) alt.add(r.replace(/[()]/g, ""));
+    for (const part of without.split(/\s+(?:or|\/)\s+|\s*\/\s*/)) if (part && part !== without) alt.add(part.trim());
+    alt.delete(a);
+    return { a, alt: [...alt].filter(Boolean).slice(0, 6) };
+  }
+  function parseArchive(tsv, season, rng = Math.random) {
+    const lines = tsv.split("\n");
+    const head = lines.shift().split("	");
+    const col = (n) => head.indexOf(n);
+    const iR = col("round"), iV = col("clue_value"), iC = col("category"), iM = col("comments");
+    const iQ = col("answer"), iA = col("question"), iD = col("air_date");
+    const groups = /* @__PURE__ */ new Map();
+    const finals = [];
+    for (const line of lines) {
+      if (!line) continue;
+      const f = line.split("	");
+      const round = f[iR], clue = clean(f[iQ]), resp = f[iA], cat = clean(f[iC]);
+      if (!clue || !resp || !cat) continue;
+      if (round === "3") {
+        finals.push({ category: cat, q: clue, ...response(resp), date: f[iD] });
+        continue;
+      }
+      if (round !== "1" && round !== "2") continue;
+      if (clean(f[iM])) continue;
+      const key = `${f[iD]}|${round}|${cat}`;
+      if (!groups.has(key)) groups.set(key, { name: cat, round, clues: [] });
+      groups.get(key).clues.push({ v: Number(f[iV]) || 0, q: clue, ...response(resp) });
+    }
+    const categories = [];
+    for (const g of groups.values()) {
+      if (g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
+      g.clues.sort((x, y) => x.v - y.v);
+      categories.push({ name: g.name, clues: g.clues.map(({ q, a, alt }) => ({ q, a, alt })) });
+    }
+    const seen = /* @__PURE__ */ new Set();
+    const byTopic = new Map([...Object.keys(TOPICS), ANY].map((t) => [t, []]));
+    for (const c of shuffle(categories, rng)) {
+      const k = c.name.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      byTopic.get(topicOf(c.name, c.clues.map((x) => `${x.q} ${x.a}`).join(" "))).push(c);
+    }
+    const finalsBy = /* @__PURE__ */ new Map();
+    for (const f of shuffle(finals, rng)) {
+      const t = topicOf(f.category, `${f.q} ${f.a}`);
+      if (!finalsBy.has(t)) finalsBy.set(t, []);
+      finalsBy.get(t).push({ category: f.category, q: f.q, a: f.a, alt: f.alt });
+    }
+    const year = lines.length ? `${lines[0].split("	")[iD] || ""}`.slice(0, 4) : "";
+    const packs = [];
+    for (const [t, cats] of byTopic) {
+      if (cats.length < 12) continue;
+      packs.push({
+        id: `archive-${t.toLowerCase().replace(/[^a-z]+/g, "-")}`,
+        title: t,
+        description: `Real ${t} boards from season ${season}${year ? ` (${year})` : ""}. A new random season every room.`,
+        selected: true,
+        categories: cats.slice(0, PER_TOPIC),
+        finals: (finalsBy.get(t) || []).slice(0, MAX_FINALS)
+      });
+    }
+    return packs;
+  }
+  var ERAS = {
+    any: [3, SEASONS],
+    classic: [3, 16],
+    // 1986-87 to 1999-2000
+    "2000s": [17, 26],
+    // 2000-01 to 2009-10
+    recent: [27, SEASONS]
+    // 2010-11 on
+  };
+  function pickSeason(era, rng = Math.random) {
+    const [lo, hi] = ERAS[era] || ERAS.any;
+    return lo + Math.floor(rng() * (hi - lo + 1));
+  }
+
+  // games/jeopardy/packs/easy.json
+  var easy_default = { title: "Easy Breezy", description: "Casual, family-friendly questions anyone can play", selected: false, easy: true, categories: [{ name: "Colors", clues: [{ q: "The color of a ripe banana.", a: "Yellow" }, { q: "Mix blue and yellow paint and you get this color.", a: "Green" }, { q: "The color of a fire truck in most of the U.S.", a: "Red" }, { q: "Mix red and white paint and you get this color.", a: "Pink" }, { q: "The color you get by mixing red and blue.", a: "Purple", alt: ["violet"] }] }, { name: "Animal Sounds", clues: [{ q: "A cow says this.", a: "Moo" }, { q: "A duck says this.", a: "Quack" }, { q: "A lion makes this loud sound.", a: "Roar" }, { q: "A snake makes this sound.", a: "Hiss" }, { q: "An owl says this.", a: "Hoo", alt: ["hoot", "who"] }] }, { name: "Baby Animals", clues: [{ q: "A baby dog.", a: "Puppy", alt: ["pup"] }, { q: "A baby cat.", a: "Kitten", alt: ["kitty"] }, { q: "A baby cow.", a: "Calf" }, { q: "A baby frog, before it grows legs.", a: "Tadpole", alt: ["polliwog"] }, { q: "A baby kangaroo.", a: "Joey" }] }, { name: "Fruits & Veggies", clues: [{ q: "Bugs Bunny's favorite orange vegetable.", a: "Carrot" }, { q: "This fruit keeps the doctor away if you eat one a day.", a: "Apple" }, { q: "This big green fruit is red inside with black seeds.", a: "Watermelon" }, { q: "Guacamole is made mostly from this green fruit.", a: "Avocado" }, { q: "Popeye eats this leafy green to get strong.", a: "Spinach" }] }, { name: "Count It Up", clues: [{ q: "The number of legs on a dog.", a: "4", alt: ["four"] }, { q: "The number of days in a week.", a: "7", alt: ["seven"] }, { q: "The number of legs on a spider.", a: "8", alt: ["eight"] }, { q: "The number of months in a year.", a: "12", alt: ["twelve"] }, { q: "The number of players on a soccer team on the field, including the goalie.", a: "11", alt: ["eleven"] }] }, { name: "Kitchen Stuff", clues: [{ q: "You use this to flip pancakes.", a: "Spatula", alt: ["turner", "flipper"] }, { q: "This appliance makes bread crispy and brown.", a: "Toaster" }, { q: "This appliance keeps food cold.", a: "Refrigerator", alt: ["fridge"] }, { q: "You use this to boil water for tea.", a: "Kettle", alt: ["teakettle", "tea kettle"] }, { q: "This tool with small holes is used to shred cheese.", a: "Grater", alt: ["cheese grater"] }] }, { name: "Fairy Tales", clues: [{ q: "She lost a glass slipper at the ball.", a: "Cinderella" }, { q: "She ate the porridge of the three bears.", a: "Goldilocks" }, { q: "The wolf blew down the houses of this many little pigs.", a: "3", alt: ["three"] }, { q: "Her very long hair hung from a tower.", a: "Rapunzel" }, { q: "He climbed a beanstalk to a giant's castle.", a: "Jack" }] }, { name: "Cartoon Pals", clues: [{ q: "SpongeBob's best friend, a pink starfish.", a: "Patrick", alt: ["Patrick Star"] }, { q: "Mickey Mouse's girlfriend.", a: "Minnie Mouse", alt: ["Minnie"] }, { q: "Scooby-Doo is this kind of animal.", a: "Dog", alt: ["great dane"] }, { q: "Charlie Brown's beagle.", a: "Snoopy" }, { q: "The pink pig who lives with her brother George.", a: "Peppa Pig", alt: ["Peppa"] }] }, { name: "Holidays", clues: [{ q: "Kids dress up in costumes and trick-or-treat on this night.", a: "Halloween" }, { q: "People give hearts and cards on this February holiday.", a: "Valentine's Day", alt: ["Valentines Day", "Valentines"] }, { q: "This bunny hides eggs in the spring.", a: "Easter Bunny", alt: ["Easter"] }, { q: "Americans eat turkey on this November holiday.", a: "Thanksgiving" }, { q: "You make a resolution on this holiday in January.", a: "New Year's Day", alt: ["New Years", "New Year's", "New Year"] }] }, { name: "Sports Basics", clues: [{ q: "You hit a home run in this sport.", a: "Baseball" }, { q: "You dribble and shoot hoops in this sport.", a: "Basketball" }, { q: "You score a touchdown in this sport.", a: "Football", alt: ["American football"] }, { q: "This sport is played on ice with a puck.", a: "Hockey", alt: ["ice hockey"] }, { q: "You use a racket and yell love for zero in this sport.", a: "Tennis" }] }, { name: "Weather", clues: [{ q: "This falls from clouds as cold white flakes.", a: "Snow" }, { q: "This colorful arch can appear after it rains.", a: "Rainbow" }, { q: "The loud boom you hear after lightning.", a: "Thunder" }, { q: "A spinning funnel cloud that touches the ground.", a: "Tornado", alt: ["twister"] }, { q: "Balls of ice that fall from the sky in a storm.", a: "Hail", alt: ["hailstones"] }] }, { name: "Body Parts", clues: [{ q: "You smell with this.", a: "Nose" }, { q: "You hear with these.", a: "Ears", alt: ["ear"] }, { q: "This organ pumps blood through your body.", a: "Heart" }, { q: "You have ten of these on your hands.", a: "Fingers", alt: ["finger"] }, { q: "You breathe with these two organs.", a: "Lungs", alt: ["lung"] }] }, { name: "Around the House", clues: [{ q: "You sleep in this.", a: "Bed" }, { q: "You wash dishes in this.", a: "Sink" }, { q: "You park the car in this part of the house.", a: "Garage" }, { q: "Smoke goes up this on a fireplace.", a: "Chimney" }, { q: "The room at the very top of a house, under the roof.", a: "Attic", alt: ["loft"] }] }, { name: "Jobs", clues: [{ q: "This person puts out fires.", a: "Firefighter", alt: ["fireman", "firewoman"] }, { q: "This person teaches kids at school.", a: "Teacher" }, { q: "This person delivers letters to your house.", a: "Mail carrier", alt: ["mailman", "postman", "mail man", "letter carrier"] }, { q: "This animal doctor takes care of pets.", a: "Veterinarian", alt: ["vet"] }, { q: "This person flies an airplane.", a: "Pilot" }] }, { name: "Shapes", clues: [{ q: "A shape with three sides.", a: "Triangle" }, { q: "A shape that is perfectly round.", a: "Circle" }, { q: "A stop sign has this shape.", a: "Octagon" }, { q: "A square has this many corners.", a: "4", alt: ["four"] }, { q: "A shape with six sides, like a cell in a honeycomb.", a: "Hexagon" }] }, { name: "Sweet Treats", clues: [{ q: "You lick this cold treat from a cone.", a: "Ice cream" }, { q: "You blow out candles on this at a birthday party.", a: "Cake", alt: ["birthday cake"] }, { q: "Fluffy spun sugar sold at fairs.", a: "Cotton candy" }, { q: "You roast these white puffs over a campfire.", a: "Marshmallows", alt: ["marshmallow"] }, { q: "A s'more is made with chocolate, marshmallow, and this cracker.", a: "Graham cracker", alt: ["graham"] }] }, { name: "Ocean Life", clues: [{ q: "This big fish has a fin on top and lots of sharp teeth.", a: "Shark" }, { q: "This sea animal has eight arms.", a: "Octopus" }, { q: "Nemo is this kind of fish.", a: "Clownfish", alt: ["clown fish"] }, { q: "This sea animal has a shell and walks sideways.", a: "Crab" }, { q: "This smart sea mammal clicks and whistles and loves to jump.", a: "Dolphin" }] }, { name: "Music Time", clues: [{ q: "You blow out birthday candles after people sing this song.", a: "Happy Birthday" }, { q: "This instrument has 88 black and white keys.", a: "Piano" }, { q: "Twinkle, twinkle, little this.", a: "Star" }, { q: "You hit this instrument with sticks.", a: "Drums", alt: ["drum"] }, { q: "This instrument has six strings and is often strummed.", a: "Guitar" }] }, { name: "Space", clues: [{ q: "The star at the center of our solar system.", a: "Sun", alt: ["the sun"] }, { q: "The planet we live on.", a: "Earth" }, { q: "It lights up the night sky and goes through phases.", a: "Moon", alt: ["the moon"] }, { q: "Known as the Red Planet.", a: "Mars" }, { q: "The biggest planet in our solar system.", a: "Jupiter" }] }, { name: "Toys & Games", clues: [{ q: "You roll these cubes in many board games.", a: "Dice", alt: ["die"] }, { q: "This toy goes up and down on a string.", a: "Yo-yo", alt: ["yoyo"] }, { q: "Colorful plastic bricks you snap together.", a: "LEGO", alt: ["legos", "lego bricks"] }, { q: "In this circle game, someone taps heads and the last one tapped gives chase.", a: "Duck, Duck, Goose", alt: ["duck duck goose"] }, { q: "In this board game you buy Boardwalk and Park Place.", a: "Monopoly" }] }], finals: [{ category: "Animals", q: "This tall African animal has the longest neck of any animal.", a: "Giraffe" }, { category: "Geography", q: "This is the largest ocean on Earth.", a: "Pacific Ocean", alt: ["Pacific"] }, { category: "U.S. Presidents", q: "He was the first President of the United States.", a: "George Washington", alt: ["Washington"] }, { category: "Nature", q: "Bees make this sweet, sticky food.", a: "Honey" }, { category: "Space", q: "Neil Armstrong was the first person to walk on this.", a: "The Moon", alt: ["moon"] }, { category: "Landmarks", q: "This big green statue stands in New York Harbor holding a torch.", a: "Statue of Liberty", alt: ["Lady Liberty", "Liberty"] }, { category: "Dinosaurs", q: "Its name means tyrant lizard king, and it had tiny arms.", a: "Tyrannosaurus rex", alt: ["T. rex", "T rex", "Tyrannosaurus"] }, { category: "Fairy Tales", q: "In the fable, this slow animal beats the hare in a race.", a: "Tortoise", alt: ["turtle"] }] };
+
+  // games/jeopardy/packs/default.json
+  var default_default = { title: "Classic Mix", description: "The original 18 categories", categories: [{ name: "Space Odyssey", clues: [{ q: "Known as the Red Planet, it's the fourth planet from the Sun.", a: "Mars" }, { q: "The largest planet in our solar system.", a: "Jupiter" }, { q: "The name of the galaxy that contains our solar system.", a: "Milky Way" }, { q: "In 1969 this astronaut became the second person to walk on the Moon.", a: "Buzz Aldrin", alt: ["Aldrin"] }, { q: "Reclassified as a dwarf planet in 2006, it has a large moon named Charon.", a: "Pluto" }] }, { name: "Animal Kingdom", clues: [{ q: "This black and white bear eats mostly bamboo.", a: "Giant panda", alt: ["panda"] }, { q: "The fastest land animal on Earth.", a: "Cheetah" }, { q: "This marine mammal is the largest animal known to have ever lived.", a: "Blue whale" }, { q: "Axolotls are a type of this amphibian.", a: "Salamander" }, { q: "A group of crows is called a this.", a: "Murder", alt: ["a murder of crows"] }] }, { name: "World Capitals", clues: [{ q: "The capital of Japan.", a: "Tokyo" }, { q: "The capital of Canada.", a: "Ottawa" }, { q: "The capital of Australia.", a: "Canberra" }, { q: "The capital of Brazil, built in the 1950s and 60s.", a: "Brasilia" }, { q: "Kazakhstan's capital, called Nur-Sultan from 2019 to 2022.", a: "Astana" }] }, { name: "Food & Drink", clues: [{ q: "The main ingredient in guacamole.", a: "Avocado", alt: ["avocados"] }, { q: "This Italian cheese is the classic topping on a Margherita pizza.", a: "Mozzarella" }, { q: "Hummus is made mainly from these legumes.", a: "Chickpeas", alt: ["chickpea", "garbanzo beans", "garbanzo"] }, { q: "Harvested from crocus flowers, it's the most expensive spice by weight.", a: "Saffron" }, { q: "Sushi rice is traditionally seasoned with this kind of vinegar.", a: "Rice vinegar", alt: ["rice"] }] }, { name: "Movie Magic", clues: [{ q: "Dorothy's little dog in The Wizard of Oz.", a: "Toto" }, { q: "This 1997 film about a doomed ocean liner won 11 Oscars.", a: "Titanic" }, { q: "In The Matrix, Neo swallows a pill of this color.", a: "Red" }, { q: "The fictional African nation that is home to Black Panther.", a: "Wakanda" }, { q: "He directed Jaws, E.T., and Jurassic Park.", a: "Steven Spielberg", alt: ["Spielberg"] }] }, { name: "Human Body", clues: [{ q: "The number of chambers in the human heart.", a: "4" }, { q: "The largest organ of the human body.", a: "Skin" }, { q: "The femur is the long bone in this part of your leg.", a: "Thigh", alt: ["upper leg", "leg"] }, { q: "The body's smallest bone, the stapes, is found here.", a: "Ear", alt: ["middle ear", "inner ear"] }, { q: "The number of bones in a typical adult human skeleton.", a: "206" }] }, { name: "Music Notes", clues: [{ q: "Known as the King of Rock and Roll.", a: "Elvis Presley", alt: ["Elvis", "Presley"] }, { q: "This Austrian composer wrote The Magic Flute.", a: "Mozart", alt: ["Wolfgang Amadeus Mozart"] }, { q: "The number of keys on a standard piano.", a: "88" }, { q: "This orchestral instrument usually has 47 strings and 7 pedals.", a: "Harp" }, { q: "This musical term means gradually getting louder.", a: "Crescendo" }] }, { name: "Sports", clues: [{ q: "The number of players each team has on the field in soccer.", a: "11" }, { q: "The Stanley Cup is awarded in this sport.", a: "Hockey", alt: ["ice hockey"] }, { q: "A perfect game score in ten-pin bowling.", a: "300" }, { q: "This country has won the most men's FIFA World Cups.", a: "Brazil" }, { q: "A marathon is this many miles long, rounded down to a whole number.", a: "26" }] }, { name: "Geography", clues: [{ q: "The largest ocean on Earth.", a: "Pacific", alt: ["Pacific Ocean"] }, { q: "The longest river in Africa.", a: "Nile", alt: ["Nile River"] }, { q: "This country has more lakes than any other.", a: "Canada" }, { q: "The tallest mountain in Africa.", a: "Kilimanjaro", alt: ["Mount Kilimanjaro"] }, { q: "The smallest country in the world by area.", a: "Vatican City", alt: ["Vatican"] }] }, { name: "Science Lab", clues: [{ q: "H2O is the chemical formula for this.", a: "Water" }, { q: "The element with the chemical symbol Au.", a: "Gold" }, { q: "The pH of pure water at room temperature.", a: "7" }, { q: "The most abundant gas in Earth's atmosphere.", a: "Nitrogen" }, { q: "This is the only metal that is liquid at room temperature.", a: "Mercury" }] }, { name: "History", clues: [{ q: "The first President of the United States.", a: "George Washington", alt: ["Washington"] }, { q: "The only one of the Seven Wonders of the Ancient World still standing.", a: "Great Pyramid of Giza", alt: ["Great Pyramid", "pyramid", "pyramids", "pyramids of giza"] }, { q: "The year the Berlin Wall fell.", a: "1989" }, { q: "She reigned over the United Kingdom for more than 70 years, until 2022.", a: "Elizabeth II", alt: ["Queen Elizabeth", "Elizabeth", "Queen Elizabeth II", "Elizabeth the second"] }, { q: "The Magna Carta was sealed in this year.", a: "1215" }] }, { name: "Bookworms", clues: [{ q: "He wrote Romeo and Juliet.", a: "Shakespeare", alt: ["William Shakespeare"] }, { q: "The boy wizard with a lightning-bolt scar.", a: "Harry Potter", alt: ["Harry"] }, { q: "George Orwell's novel where Big Brother is watching.", a: "1984", alt: ["Nineteen Eighty-Four"] }, { q: "The captain who hunts the white whale in Moby-Dick.", a: "Ahab", alt: ["Captain Ahab"] }, { q: "She wrote Pride and Prejudice.", a: "Jane Austen", alt: ["Austen"] }] }, { name: "Tech Talk", clues: [{ q: "The company that makes the iPhone.", a: "Apple" }, { q: "This programming language shares its name with a large snake.", a: "Python" }, { q: "The number of bits in a byte.", a: "8" }, { q: "The letters WWW stand for this.", a: "World Wide Web" }, { q: "He created the Linux kernel in 1991.", a: "Linus Torvalds", alt: ["Torvalds"] }] }, { name: "Art Smart", clues: [{ q: "Mixing blue and yellow paint makes this color.", a: "Green" }, { q: "Leonardo da Vinci's famous portrait with a mysterious smile.", a: "Mona Lisa" }, { q: "Michelangelo painted the ceiling of this Vatican chapel.", a: "Sistine Chapel", alt: ["Sistine"] }, { q: "Van Gogh's 1889 swirling night sky painting.", a: "The Starry Night", alt: ["Starry Night"] }, { q: "Salvador Dali is the most famous artist of this movement.", a: "Surrealism", alt: ["surrealist", "surreal"] }] }, { name: "Word Play", clues: [{ q: "It rhymes with cat and you wear it on your head.", a: "Hat" }, { q: "A word that reads the same forwards and backwards, like racecar.", a: "Palindrome" }, { q: "A word made by rearranging another word's letters, like listen and silent.", a: "Anagram" }, { q: "The name of the & symbol.", a: "Ampersand" }, { q: "Words like buzz, sizzle, and boom that imitate sounds.", a: "Onomatopoeia" }] }, { name: "Holidays", clues: [{ q: "The spooky holiday on October 31.", a: "Halloween" }, { q: "Groundhog Day falls in this month.", a: "February" }, { q: "Cinco de Mayo is celebrated on this date.", a: "May 5", alt: ["May 5th", "5th of May", "fifth of May", "May fifth"] }, { q: "The Hindu Festival of Lights.", a: "Diwali", alt: ["Deepavali"] }, { q: "The Jewish New Year.", a: "Rosh Hashanah", alt: ["Rosh Hashana"] }] }, { name: "Under the Sea", clues: [{ q: "This sea creature has eight arms.", a: "Octopus" }, { q: "The largest fish in the ocean.", a: "Whale shark" }, { q: "The world's largest coral reef system, off the coast of Australia.", a: "Great Barrier Reef" }, { q: "A group of fish swimming together is called this.", a: "School", alt: ["shoal"] }, { q: "In this fish species, the males carry and give birth to the young.", a: "Seahorse", alt: ["sea horse", "seahorses"] }] }, { name: "Mythology", clues: [{ q: "The king of the Greek gods.", a: "Zeus" }, { q: "The Norse god of thunder.", a: "Thor" }, { q: "The winged horse of Greek myth.", a: "Pegasus" }, { q: "This Greek hero's only weak spot was his heel.", a: "Achilles" }, { q: "The Roman name for Aphrodite, goddess of love.", a: "Venus" }] }], finals: [{ category: "Inventions", q: "Patented in 1876, its first words were reportedly: Mr. Watson, come here, I want to see you.", a: "Telephone", alt: ["phone"] }, { category: "World Geography", q: "Home to Cape Agulhas, it's where the Atlantic and Indian Oceans officially meet.", a: "South Africa" }, { category: "The Elements", q: "Named for the Greek word for sun, this element was spotted in sunlight before it was found on Earth.", a: "Helium" }, { category: "Famous Ships", q: "In 1620 this ship carried the Pilgrims to Plymouth.", a: "Mayflower", alt: ["The Mayflower"] }, { category: "Planets", q: "Tilted about 98 degrees, this planet basically rolls around the Sun on its side.", a: "Uranus" }, { category: "Languages", q: "It has more native speakers than any other language on Earth.", a: "Mandarin", alt: ["Mandarin Chinese", "Chinese"] }] };
+
+  // games/jeopardy/packs/general.json
+  var general_default = { title: "General Knowledge", description: "A big mix of everyday trivia", categories: [{ name: "U.S. States", clues: [{ q: "Known as the Sunshine State.", a: "Florida" }, { q: "The largest U.S. state by area.", a: "Alaska" }, { q: "The only U.S. state made up entirely of islands.", a: "Hawaii" }, { q: "Its capital is Sacramento.", a: "California" }, { q: "The only U.S. state whose name has just one syllable.", a: "Maine" }] }, { name: "Inventions", clues: [{ q: "Thomas Edison is famous for improving this glowing household item.", a: "Light bulb", alt: ["lightbulb", "bulb"] }, { q: "In 1903 the Wright brothers made the first powered flight in one of these.", a: "Airplane", alt: ["plane", "aeroplane", "flyer", "wright flyer"] }, { q: "Johannes Gutenberg built this machine around 1440.", a: "Printing press", alt: ["press"] }, { q: "Alexander Fleming discovered this antibiotic in 1928.", a: "Penicillin" }, { q: "Tim Berners-Lee invented this in 1989.", a: "World Wide Web", alt: ["the web", "www", "web"] }] }, { name: "Fruits & Veggies", clues: [{ q: "Popeye gets his strength from this leafy green.", a: "Spinach" }, { q: "This tropical fruit wears a crown of spiky leaves.", a: "Pineapple" }, { q: "Raisins are dried versions of this fruit.", a: "Grapes", alt: ["grape"] }, { q: "Botanically a fruit, it's the main ingredient in ketchup.", a: "Tomato", alt: ["tomatoes"] }, { q: "This smelly fruit is banned on Singapore's subway.", a: "Durian" }] }, { name: "Flags of the World", clues: [{ q: "This country's flag has a red maple leaf.", a: "Canada" }, { q: "The red circle on Japan's flag represents this.", a: "The sun", alt: ["sun", "rising sun"] }, { q: "Its flag shows a starry globe with the motto Ordem e Progresso.", a: "Brazil" }, { q: "The only country whose national flag isn't a rectangle or square.", a: "Nepal" }, { q: "This Scandinavian country has the oldest national flag still in use.", a: "Denmark" }] }, { name: "Weather Report", clues: [{ q: "Balls of ice that fall from storm clouds.", a: "Hail", alt: ["hailstones"] }, { q: "A tool for measuring temperature.", a: "Thermometer" }, { q: "The EF scale rates the strength of these storms.", a: "Tornadoes", alt: ["tornado", "twisters"] }, { q: "These puffy, cotton-ball clouds are called this.", a: "Cumulus" }, { q: "The calm center of a hurricane.", a: "Eye", alt: ["the eye", "eye of the storm"] }] }, { name: "Dinosaurs", clues: [{ q: "Its name means tyrant lizard king.", a: "Tyrannosaurus rex", alt: ["T rex", "tyrannosaurus", "trex"] }, { q: "This dinosaur had three horns and a bony frill.", a: "Triceratops" }, { q: "This dinosaur had plates on its back and a spiked tail.", a: "Stegosaurus" }, { q: "The geologic period between the Triassic and the Cretaceous.", a: "Jurassic" }, { q: "Non-bird dinosaurs went extinct about this many million years ago.", a: "66", alt: ["65"] }] }, { name: "Around the House", clues: [{ q: "This appliance keeps food cold.", a: "Refrigerator", alt: ["fridge", "freezer"] }, { q: "A bowl with holes for draining pasta.", a: "Colander", alt: ["strainer"] }, { q: "Light bulbs are often labeled by power in this unit.", a: "Watts", alt: ["watt"] }, { q: "This oven was invented after radar work melted a candy bar in Percy Spencer's pocket.", a: "Microwave", alt: ["microwave oven"] }, { q: "This switch in your electrical panel trips to cut power when a circuit is overloaded.", a: "Circuit breaker", alt: ["breaker"] }] }, { name: "Board Games", clues: [{ q: "The game where you buy properties like Boardwalk.", a: "Monopoly" }, { q: "In chess, this piece moves only diagonally.", a: "Bishop" }, { q: "Colonel Mustard and Professor Plum are suspects in this game.", a: "Clue", alt: ["Cluedo"] }, { q: "In Scrabble, the Q and the Z are each worth this many points.", a: "10" }, { q: "This ancient strategy game uses black and white stones on a 19-by-19 grid.", a: "Go", alt: ["weiqi", "baduk"] }] }, { name: "For the Birds", clues: [{ q: "This bird is a national symbol of the United States.", a: "Bald eagle", alt: ["eagle"] }, { q: "The largest living bird.", a: "Ostrich" }, { q: "The only bird that can fly backwards.", a: "Hummingbird" }, { q: "Almost all wild penguins live in this hemisphere.", a: "Southern", alt: ["southern hemisphere"] }, { q: "A flamingo gets its pink color from algae and these tiny crustaceans it eats.", a: "Shrimp", alt: ["brine shrimp", "krill"] }] }, { name: "By the Numbers", clues: [{ q: "The number of inches in a foot.", a: "12" }, { q: "A baker's dozen.", a: "13" }, { q: "The number of minutes in a day.", a: "1440" }, { q: "The number of feet in a mile.", a: "5280" }, { q: "The number of squares on a chessboard.", a: "64" }] }, { name: "Presidents", clues: [{ q: "His face is on the $1 bill.", a: "George Washington", alt: ["Washington"] }, { q: "Abraham Lincoln gave this famous 1863 speech in Pennsylvania.", a: "Gettysburg Address", alt: ["Gettysburg"] }, { q: "The Louisiana Purchase happened under this president.", a: "Thomas Jefferson", alt: ["Jefferson"] }, { q: "The only president elected four times.", a: "Franklin D. Roosevelt", alt: ["FDR", "Franklin Roosevelt", "Roosevelt"] }, { q: "The first president to serve two non-consecutive terms.", a: "Grover Cleveland", alt: ["Cleveland"] }] }, { name: "Toy Box", clues: [{ q: "Interlocking plastic bricks from Denmark.", a: "Lego", alt: ["legos"] }, { q: "This doll debuted in 1959 and later got a boyfriend named Ken.", a: "Barbie" }, { q: "A springy toy that walks down stairs.", a: "Slinky" }, { q: "Erno Rubik invented this puzzle in 1974.", a: "Rubik's Cube", alt: ["rubiks cube", "cube"] }, { q: "Hasbro's robots in disguise.", a: "Transformers" }] }, { name: "Coffee Shop", clues: [{ q: "Espresso with steamed milk and foam, named for a monk's hood.", a: "Cappuccino" }, { q: "Espresso diluted with hot water.", a: "Americano", alt: ["caffe americano"] }, { q: "The world's largest coffee-producing country.", a: "Brazil" }, { q: "Matcha is a powdered form of this type of tea.", a: "Green tea", alt: ["green"] }, { q: "Legend says a goatherd named Kaldi discovered coffee in this African country.", a: "Ethiopia" }] }, { name: "Famous Landmarks", clues: [{ q: "This iron tower was built for the 1889 World's Fair in Paris.", a: "Eiffel Tower" }, { q: "This statue in New York Harbor was a gift from France.", a: "Statue of Liberty", alt: ["Lady Liberty"] }, { q: "The nickname of the great bell in London's Elizabeth Tower.", a: "Big Ben" }, { q: "This Inca citadel sits high in the mountains of Peru.", a: "Machu Picchu" }, { q: "This Cambodian temple complex is the largest religious monument in the world.", a: "Angkor Wat" }] }, { name: "Cartoons", clues: [{ q: "Bart and Lisa's dad.", a: "Homer Simpson", alt: ["Homer"] }, { q: "SpongeBob lives in this undersea town.", a: "Bikini Bottom" }, { q: "This Looney Tunes star asks, What's up, Doc?", a: "Bugs Bunny", alt: ["bugs"] }, { q: "Scooby-Doo's always-hungry best friend.", a: "Shaggy" }, { q: "The Flintstones lived in this town.", a: "Bedrock" }] }, { name: "Foreign Words", clues: [{ q: "Bonjour means hello in this language.", a: "French" }, { q: "Gracias means this in English.", a: "Thank you", alt: ["thanks"] }, { q: "This Japanese word means empty orchestra.", a: "Karaoke" }, { q: "In German, kindergarten literally means a garden for these.", a: "Children", alt: ["kids", "child"] }, { q: "Schadenfreude is pleasure in someone else's this.", a: "Misfortune", alt: ["bad luck", "pain", "suffering", "failure"] }] }, { name: "Creepy Crawlies", clues: [{ q: "The number of legs on an insect.", a: "6" }, { q: "A caterpillar becomes a moth or this.", a: "Butterfly" }, { q: "This insect makes honey.", a: "Bee", alt: ["honeybee", "honey bee", "bees"] }, { q: "Spiders aren't insects. They belong to this class.", a: "Arachnids", alt: ["arachnid"] }, { q: "Fireflies glow thanks to this chemical process.", a: "Bioluminescence" }] }, { name: "Money Talks", clues: [{ q: "The currency used by most European Union countries.", a: "Euro" }, { q: "The currency of Japan.", a: "Yen" }, { q: "The currency of the United Kingdom.", a: "Pound", alt: ["pound sterling", "pounds", "sterling"] }, { q: "His face is on the U.S. $100 bill.", a: "Benjamin Franklin", alt: ["Franklin", "Ben Franklin"] }, { q: "The currency of India.", a: "Rupee", alt: ["rupees", "indian rupee"] }] }, { name: "Pets", clues: [{ q: "A baby cat.", a: "Kitten" }, { q: "Goldfish were first bred in this country.", a: "China" }, { q: "The French Bulldog overtook this breed in 2022 as America's most popular dog.", a: "Labrador Retriever", alt: ["labrador", "lab"] }, { q: "This hairless cat breed was developed in Canada.", a: "Sphynx", alt: ["sphinx"] }, { q: "Besides a litter, a group of kittens can be called this.", a: "Kindle", alt: ["litter"] }] }, { name: "Ancient Egypt", clues: [{ q: "The title of ancient Egypt's kings.", a: "Pharaoh", alt: ["pharaohs"] }, { q: "The boy king whose tomb was found in 1922.", a: "Tutankhamun", alt: ["King Tut", "Tut", "Tutankhamen"] }, { q: "Egypt's famous queen who died in 30 BC.", a: "Cleopatra" }, { q: "This stone helped scholars decode hieroglyphs.", a: "Rosetta Stone", alt: ["Rosetta"] }, { q: "The falcon-headed god, son of Osiris and Isis.", a: "Horus" }] }, { name: "Shakespeare", clues: [{ q: "To be, or not to be is from this play.", a: "Hamlet" }, { q: "Actors call this play The Scottish Play.", a: "Macbeth" }, { q: "Romeo's family, the Montagues, feuds with this family.", a: "Capulets", alt: ["Capulet"] }, { q: "The London theater most linked with Shakespeare.", a: "Globe", alt: ["Globe Theatre", "the globe"] }, { q: "The fairy king in A Midsummer Night's Dream.", a: "Oberon" }] }, { name: "Video Games", clues: [{ q: "Nintendo's famous mustached plumber.", a: "Mario", alt: ["super mario"] }, { q: "Sega's speedy blue hedgehog.", a: "Sonic", alt: ["Sonic the Hedgehog"] }, { q: "This falling-block puzzle game was created in 1984.", a: "Tetris" }, { q: "In Minecraft, these green mobs sneak up and explode.", a: "Creepers", alt: ["creeper"] }, { q: "In The Legend of Zelda, the hero's name is this.", a: "Link" }] }, { name: "Candy Shop", clues: [{ q: "Their slogan: melts in your mouth, not in your hands.", a: "M&M's", alt: ["m and ms", "mms", "m&m"] }, { q: "Hershey's makes these peanut butter cups.", a: "Reese's", alt: ["Reeses"] }, { q: "This chocolate company's hometown is in Pennsylvania and shares its name.", a: "Hershey's", alt: ["Hershey"] }, { q: "Chocolate is made from the beans of this tree.", a: "Cacao", alt: ["cocoa"] }, { q: "Marzipan is made mostly from sugar and these nuts.", a: "Almonds", alt: ["almond"] }] }, { name: "The Elements", clues: [{ q: "The element with the symbol O.", a: "Oxygen" }, { q: "The lightest element.", a: "Hydrogen" }, { q: "The element with the symbol Fe.", a: "Iron" }, { q: "This noble gas glows red-orange in signs.", a: "Neon" }, { q: "The element with the symbol Na.", a: "Sodium" }] }, { name: "Fashion", clues: [{ q: "The tall hat Abraham Lincoln is famous for.", a: "Top hat", alt: ["stovepipe", "stovepipe hat"] }, { q: "The French fashion house founded by Coco.", a: "Chanel" }, { q: "The Scottish patterned cloth tied to clans.", a: "Tartan", alt: ["plaid"] }, { q: "A high heel named after a thin dagger.", a: "Stiletto", alt: ["stilettos"] }, { q: "Blue jeans were patented in 1873 by Jacob Davis and this businessman.", a: "Levi Strauss", alt: ["Levi", "Strauss"] }] }, { name: "Fairy Tales", clues: [{ q: "She left a glass slipper at the ball.", a: "Cinderella" }, { q: "He climbed a beanstalk.", a: "Jack" }, { q: "Goldilocks ate porridge belonging to these.", a: "Three bears", alt: ["bears", "the three bears"] }, { q: "She let down her long hair from a tower.", a: "Rapunzel" }, { q: "Rumpelstiltskin spun straw into this.", a: "Gold" }] }, { name: "Mountains & Volcanoes", clues: [{ q: "The highest mountain above sea level.", a: "Mount Everest", alt: ["Everest"] }, { q: "This volcano buried Pompeii in 79 AD.", a: "Vesuvius", alt: ["Mount Vesuvius"] }, { q: "The longest mountain range on land runs down South America.", a: "Andes" }, { q: "This Washington volcano erupted in 1980.", a: "Mount St. Helens", alt: ["St Helens", "Saint Helens", "Mount Saint Helens"] }, { q: "Measured from its base on the sea floor, this Hawaiian volcano is taller than Everest.", a: "Mauna Kea" }] }, { name: "TV Classics", clues: [{ q: "The coffee shop where the Friends hang out.", a: "Central Perk" }, { q: "The paper company in The Office.", a: "Dunder Mifflin" }, { q: "Walter White's alias in Breaking Bad.", a: "Heisenberg" }, { q: "Kramer's first name on Seinfeld.", a: "Cosmo" }, { q: "The aristocratic family at the center of Downton Abbey.", a: "Crawley", alt: ["Crawleys", "the Crawleys"] }] }, { name: "Math Class", clues: [{ q: "A polygon with eight sides.", a: "Octagon" }, { q: "The square root of 144.", a: "12" }, { q: "Pi rounded to two decimal places.", a: "3.14" }, { q: "The interior angles of a triangle add up to this many degrees.", a: "180" }, { q: "The next number in the sequence 1, 1, 2, 3, 5, 8, 13.", a: "21" }] }, { name: "Superheroes", clues: [{ q: "Bruce Wayne's secret identity.", a: "Batman" }, { q: "Superman's home planet.", a: "Krypton" }, { q: "Peter Parker got his powers from the bite of one of these.", a: "Spider", alt: ["radioactive spider"] }, { q: "The metal bonded to Wolverine's skeleton.", a: "Adamantium" }, { q: "Wonder Woman's home island.", a: "Themyscira", alt: ["Paradise Island"] }] }, { name: "Famous Scientists", clues: [{ q: "He came up with the theory of relativity.", a: "Albert Einstein", alt: ["Einstein"] }, { q: "A falling apple supposedly inspired his ideas about gravity.", a: "Isaac Newton", alt: ["Newton"] }, { q: "He wrote On the Origin of Species.", a: "Charles Darwin", alt: ["Darwin"] }, { q: "The first woman to win a Nobel Prize.", a: "Marie Curie", alt: ["Curie"] }, { q: "He was tried in 1633 for saying the Earth goes around the Sun.", a: "Galileo", alt: ["Galileo Galilei"] }] }, { name: "Getting Around", clues: [{ q: "The number of wheels on a tricycle.", a: "3" }, { q: "London's famous double-decker buses are this color.", a: "Red" }, { q: "The Model T was built by this car company.", a: "Ford" }, { q: "Japan's high-speed bullet trains are called this.", a: "Shinkansen" }, { q: "The Concorde cruised at about twice the speed of this.", a: "Sound", alt: ["speed of sound", "mach 1"] }] }, { name: "Rhyme Time", clues: [{ q: "A crimson place to sleep.", a: "Red bed" }, { q: "A chubby kitty.", a: "Fat cat" }, { q: "A happy father.", a: "Glad dad" }, { q: "An insect's carpet.", a: "Bug rug" }, { q: "An idle flower.", a: "Lazy daisy" }] }, { name: "Famous Pairs", clues: [{ q: "Peanut butter and this.", a: "Jelly", alt: ["jam"] }, { q: "Batman's sidekick.", a: "Robin" }, { q: "In Tom and Jerry, Jerry is this animal.", a: "Mouse" }, { q: "Sherlock Holmes' trusty partner.", a: "Dr. Watson", alt: ["Watson", "John Watson"] }, { q: "Lewis and Clark were guided by this Shoshone woman.", a: "Sacagawea", alt: ["Sakakawea"] }] }], finals: [{ category: "World Wonders", q: "Counting all its branches, this structure stretches over 13,000 miles and was built over centuries to keep out invaders from the north.", a: "Great Wall of China", alt: ["Great Wall"] }, { category: "The Human Body", q: "This organ weighs about 3 pounds but uses roughly 20% of the body's energy.", a: "Brain" }, { category: "Literature", q: "This 1818 novel's subtitle is The Modern Prometheus.", a: "Frankenstein" }, { category: "Geography", q: "It's the only continent with no permanent human residents.", a: "Antarctica" }, { category: "Art", q: "This Dutch painter created Girl with a Pearl Earring.", a: "Vermeer", alt: ["Johannes Vermeer"] }, { category: "History", q: "Napoleon's final defeat in 1815 happened near Waterloo, in what is now this country.", a: "Belgium" }] };
+
+  // games/jeopardy/packs/movies.json
+  var movies_default = { title: "Movie Night", description: "Films, actors, quotes, and franchises", selected: false, categories: [{ name: "Animated Films", clues: [{ q: "The cowboy toy in Toy Story.", a: "Woody" }, { q: "The snowman who loves warm hugs in Frozen.", a: "Olaf" }, { q: "The forgetful blue fish in Finding Nemo.", a: "Dory" }, { q: "In this 2009 Pixar film, a house floats away on balloons.", a: "Up" }, { q: "The rat who dreams of being a chef in Ratatouille.", a: "Remy" }] }, { name: "Movie Quotes", clues: [{ q: "May the Force be with you comes from this franchise.", a: "Star Wars" }, { q: "Life is like a box of chocolates is said by this title character.", a: "Forrest Gump", alt: ["Forrest", "Gump"] }, { q: "This actor said I'll be back as the Terminator.", a: "Arnold Schwarzenegger", alt: ["Schwarzenegger", "Arnold"] }, { q: "You're gonna need a bigger boat comes from this 1975 film.", a: "Jaws" }, { q: "Here's looking at you, kid comes from this 1942 classic.", a: "Casablanca" }] }, { name: "Superhero Movies", clues: [{ q: "Tony Stark's superhero name.", a: "Iron Man" }, { q: "The purple Titan who snaps his fingers in Avengers: Infinity War.", a: "Thanos" }, { q: "The name of Thor's hammer.", a: "Mjolnir" }, { q: "He won a posthumous Oscar for playing the Joker in The Dark Knight.", a: "Heath Ledger", alt: ["Ledger"] }, { q: "Captain America's shield is made of this fictional metal.", a: "Vibranium" }] }, { name: "Horror Flicks", clues: [{ q: "The killer doll in Child's Play.", a: "Chucky" }, { q: "The clown in Stephen King's It.", a: "Pennywise" }, { q: "Freddy Krueger haunts the dreams of kids on this street.", a: "Elm Street", alt: ["Elm"] }, { q: "Hitchcock's 1960 film with the famous shower scene.", a: "Psycho" }, { q: "The name of the hotel in The Shining.", a: "Overlook", alt: ["Overlook Hotel", "the overlook"] }] }, { name: "Oscar Night", clues: [{ q: "This actor finally won Best Actor for The Revenant.", a: "Leonardo DiCaprio", alt: ["DiCaprio", "Leo"] }, { q: "The final film of this trilogy won all 11 Oscars it was nominated for.", a: "The Lord of the Rings", alt: ["Lord of the Rings", "Return of the King", "LOTR"] }, { q: "This 2019 South Korean film was the first non-English Best Picture winner.", a: "Parasite" }, { q: "This 1939 Civil War epic won Best Picture.", a: "Gone with the Wind" }, { q: "Meryl Streep won her third Oscar playing Margaret Thatcher in this film.", a: "The Iron Lady", alt: ["Iron Lady"] }] }, { name: "Directors", clues: [{ q: "He directed Avatar and Titanic.", a: "James Cameron", alt: ["Cameron"] }, { q: "He directed Pulp Fiction and Kill Bill.", a: "Quentin Tarantino", alt: ["Tarantino"] }, { q: "He directed Inception and Oppenheimer.", a: "Christopher Nolan", alt: ["Nolan"] }, { q: "Known as the Master of Suspense, he directed Vertigo.", a: "Alfred Hitchcock", alt: ["Hitchcock"] }, { q: "He directed The Lord of the Rings trilogy in New Zealand.", a: "Peter Jackson", alt: ["Jackson"] }] }, { name: "Disney Magic", clues: [{ q: "The little mermaid who wants to be human.", a: "Ariel" }, { q: "Simba's father in The Lion King.", a: "Mufasa" }, { q: "Timon's warthog best friend.", a: "Pumbaa", alt: ["Pumba"] }, { q: "Aladdin's pet monkey.", a: "Abu" }, { q: "The candlestick in Beauty and the Beast.", a: "Lumiere" }] }, { name: "Movie Villains", clues: [{ q: "Harry Potter's enemy, He Who Must Not Be Named.", a: "Voldemort", alt: ["Lord Voldemort", "Tom Riddle"] }, { q: "The Wicked Witch of the West melts when doused with this.", a: "Water" }, { q: "Darth Vader's name before he turned to the dark side.", a: "Anakin Skywalker", alt: ["Anakin"] }, { q: "Hannibal Lecter's grisly nickname.", a: "Hannibal the Cannibal", alt: ["cannibal"] }, { q: "Alan Rickman played this villain in Die Hard.", a: "Hans Gruber", alt: ["Gruber", "Hans"] }] }, { name: "Sci-Fi", clues: [{ q: "E.T. famously wants to do this.", a: "Phone home", alt: ["go home", "call home"] }, { q: "The starship in the original Star Trek.", a: "Enterprise", alt: ["USS Enterprise"] }, { q: "In Back to the Future, the DeLorean needs this many gigawatts.", a: "1.21" }, { q: "HAL 9000 is the computer in this 1968 film.", a: "2001: A Space Odyssey", alt: ["2001", "A Space Odyssey"] }, { q: "Blade Runner hunts artificial humans called these.", a: "Replicants", alt: ["replicant"] }] }, { name: "Movie Music", clues: [{ q: "Let It Go is from this film.", a: "Frozen" }, { q: "She sang My Heart Will Go On from Titanic.", a: "Celine Dion", alt: ["Celine", "Dion"] }, { q: "John Williams wrote the theme for this whip-cracking archaeologist.", a: "Indiana Jones", alt: ["Indy", "Raiders of the Lost Ark"] }, { q: "Kevin Bacon dances in a warehouse in this 1984 film.", a: "Footloose" }, { q: "Eye of the Tiger was written for this Rocky sequel.", a: "Rocky III", alt: ["Rocky 3", "Rocky three"] }] }, { name: "Leading Men", clues: [{ q: "He played Forrest Gump.", a: "Tom Hanks", alt: ["Hanks"] }, { q: "He played Captain Jack Sparrow.", a: "Johnny Depp", alt: ["Depp"] }, { q: "He plays Ethan Hunt in Mission: Impossible.", a: "Tom Cruise", alt: ["Cruise"] }, { q: "He voiced the ogre Shrek.", a: "Mike Myers", alt: ["Myers"] }, { q: "He was the first actor to play James Bond on film.", a: "Sean Connery", alt: ["Connery"] }] }, { name: "Movie Animals", clues: [{ q: "King Kong climbs this New York building in 1933.", a: "Empire State Building", alt: ["Empire State"] }, { q: "The pig who wants to herd sheep.", a: "Babe" }, { q: "The St. Bernard in a 1992 family comedy is named after this composer.", a: "Beethoven" }, { q: "The great lion of Narnia.", a: "Aslan" }, { q: "The crew of Jaws nicknamed the mechanical shark this.", a: "Bruce" }] }, { name: "Harry Potter", clues: [{ q: "The wizarding school Harry attends.", a: "Hogwarts" }, { q: "The Hogwarts house Harry is sorted into.", a: "Gryffindor" }, { q: "The sport played on broomsticks.", a: "Quidditch" }, { q: "Harry's snowy owl.", a: "Hedwig" }, { q: "The spell that disarms an opponent.", a: "Expelliarmus" }] }, { name: "Star Wars", clues: [{ q: "The small green Jedi master.", a: "Yoda" }, { q: "Luke's twin sister.", a: "Leia", alt: ["Princess Leia"] }, { q: "Han Solo's ship.", a: "Millennium Falcon", alt: ["Falcon"] }, { q: "Chewbacca belongs to this species.", a: "Wookiee", alt: ["wookie"] }, { q: "Luke grew up on this desert planet.", a: "Tatooine" }] }], finals: [{ category: "Film History", q: "In 1929 this World War I film won the very first Academy Award for Best Picture.", a: "Wings" }, { category: "Animation", q: "Released in 1995, it was the first fully computer-animated feature film.", a: "Toy Story" }, { category: "Box Office", q: "This 2009 James Cameron film passed his own Titanic to become the highest-grossing movie ever.", a: "Avatar" }, { category: "Time Travel", q: "Marty McFly visits 1955, 2015, and 1885 in this film trilogy.", a: "Back to the Future" }, { category: "Famous Last Words", q: "The dying word Rosebud kicks off the mystery in this 1941 film.", a: "Citizen Kane" }] };
+
+  // games/jeopardy/packs/nineties.json
+  var nineties_default = { title: "Totally 90s", description: "TV, music, toys, and fads from the 1990s", selected: false, categories: [{ name: "90s TV", clues: [{ q: "Six pals hang out in New York on this sitcom.", a: "Friends" }, { q: "Will Smith moved in with his rich relatives on this show.", a: "The Fresh Prince of Bel-Air", alt: ["Fresh Prince", "Fresh Prince of Bel Air"] }, { q: "Tim Allen played Tim the Tool Man Taylor on this sitcom.", a: "Home Improvement" }, { q: "David Hasselhoff ran in slow motion as a lifeguard on this show.", a: "Baywatch" }, { q: "The name of Sabrina the Teenage Witch's talking cat.", a: "Salem" }] }, { name: "90s Music", clues: [{ q: "She sang ...Baby One More Time.", a: "Britney Spears", alt: ["Britney"] }, { q: "Wannabe was the breakout hit for this girl group.", a: "Spice Girls" }, { q: "Kurt Cobain fronted this Seattle band.", a: "Nirvana" }, { q: "Justin Timberlake got his start in this boy band.", a: "NSYNC", alt: ["N Sync", "In Sync"] }, { q: "This Spanish duo had a 1990s dance craze hit with Macarena.", a: "Los del Rio" }] }, { name: "90s Toys", clues: [{ q: "This digital pet lived on a keychain.", a: "Tamagotchi" }, { q: "This furry, chattering toy was the must-have gift of 1998.", a: "Furby" }, { q: "Tickle Me this Sesame Street character caused shopping riots in 1996.", a: "Elmo" }, { q: "Kids collected and flipped these cardboard discs.", a: "Pogs", alt: ["pog"] }, { q: "Beanie Babies were made by this company.", a: "Ty", alt: ["Ty Inc"] }] }, { name: "90s Movies", clues: [{ q: "Kevin McCallister booby-traps his house in this 1990 film.", a: "Home Alone" }, { q: "Simba becomes king in this 1994 Disney film.", a: "The Lion King", alt: ["Lion King"] }, { q: "Dinosaurs are brought back to life in this 1993 film.", a: "Jurassic Park" }, { q: "Neo learns there is no spoon in this 1999 film.", a: "The Matrix", alt: ["Matrix"] }, { q: "A boy says I see dead people in this 1999 thriller.", a: "The Sixth Sense", alt: ["Sixth Sense"] }] }, { name: "90s Tech", clues: [{ q: "AOL famously told you: You've got this.", a: "Mail" }, { q: "This search engine launched in 1998.", a: "Google" }, { q: "Sony's first video game console, released in 1994.", a: "PlayStation", alt: ["PS1", "PSX", "PlayStation 1"] }, { q: "Nintendo's 1996 console was named for its 64-bit processor.", a: "Nintendo 64", alt: ["N64", "64"] }, { q: "This feared computer glitch was expected when the clocks hit the year 2000.", a: "Y2K", alt: ["millennium bug", "year 2000 bug", "Y2K bug"] }] }, { name: "90s Cartoons", clues: [{ q: "Ash's electric first Pokemon partner.", a: "Pikachu" }, { q: "Tommy Pickles leads this group of babies.", a: "Rugrats" }, { q: "This Nickelodeon show's hero has a football-shaped head.", a: "Hey Arnold", alt: ["Arnold"] }, { q: "Two lab mice try to take over the world on this show.", a: "Pinky and the Brain" }, { q: "Two snickering MTV teens watched music videos on this show.", a: "Beavis and Butt-Head", alt: ["Beavis and Butthead"] }] }, { name: "90s Sports", clues: [{ q: "Michael Jordan won six titles with this team.", a: "Chicago Bulls", alt: ["Bulls"] }, { q: "The nickname of the 1992 U.S. Olympic basketball team.", a: "Dream Team" }, { q: "He bit Evander Holyfield's ear in a 1997 fight.", a: "Mike Tyson", alt: ["Tyson"] }, { q: "He hit 70 home runs in 1998.", a: "Mark McGwire", alt: ["McGwire"] }, { q: "Tiger Woods won his first Masters in this year.", a: "1997" }] }, { name: "90s Headlines", clues: [{ q: "This South African leader was freed from prison in 1990.", a: "Nelson Mandela", alt: ["Mandela"] }, { q: "The name of the cloned sheep announced in 1997.", a: "Dolly" }, { q: "The Soviet Union dissolved in this year.", a: "1991" }, { q: "In 1993 this country split into the Czech Republic and Slovakia.", a: "Czechoslovakia" }, { q: "The Channel Tunnel between England and France opened in this year.", a: "1994" }] }, { name: "90s Fads", clues: [{ q: "Talk to the this!", a: "Hand" }, { q: "These bracelets snapped around your wrist with one slap.", a: "Slap bracelets", alt: ["slap bracelet"] }, { q: "The flannel-wearing style tied to Seattle bands.", a: "Grunge" }, { q: "The Rachel haircut was made famous by this actress.", a: "Jennifer Aniston", alt: ["Aniston", "Jennifer"] }, { q: "This brand name of inline skates became the word for the whole sport.", a: "Rollerblade", alt: ["rollerblades", "rollerblading"] }] }, { name: "90s Video Games", clues: [{ q: "Pokemon came to North America in 1998 as Red and this color.", a: "Blue" }, { q: "Finish him! is the famous line in this fighting game.", a: "Mortal Kombat" }, { q: "Lara Croft stars in this series.", a: "Tomb Raider" }, { q: "This 1997 James Bond game was a Nintendo 64 classic.", a: "GoldenEye", alt: ["GoldenEye 007", "golden eye"] }, { q: "This 1993 shooter had a space marine fighting demons on Mars' moons.", a: "Doom" }] }, { name: "90s Catchphrases", clues: [{ q: "Show me the this! (Jerry Maguire)", a: "Money" }, { q: "As if! comes from this 1995 teen movie.", a: "Clueless" }, { q: "Did I do that? was the catchphrase of this Family Matters nerd.", a: "Steve Urkel", alt: ["Urkel"] }, { q: "Hasta la vista, baby is from this 1991 sequel.", a: "Terminator 2", alt: ["T2", "Terminator 2 Judgment Day", "Terminator"] }, { q: "Yada yada yada became famous thanks to this sitcom.", a: "Seinfeld" }] }, { name: "90s Snacks", clues: [{ q: "Fruit snacks rolled up in a three-foot strip.", a: "Fruit by the Foot" }, { q: "Dunkaroos came with cookies to dip in this.", a: "Frosting", alt: ["icing"] }, { q: "This clear soda from Pepsi launched in 1992.", a: "Crystal Pepsi" }, { q: "The green Hi-C drink Ecto Cooler was tied to this franchise.", a: "Ghostbusters" }, { q: "This company introduced Lunchables in 1988.", a: "Oscar Mayer", alt: ["Oscar Meyer"] }] }, { name: "90s Pop Stars", clues: [{ q: "He sang Gettin' Jiggy wit It.", a: "Will Smith" }, { q: "He sang Livin' la Vida Loca.", a: "Ricky Martin" }, { q: "She sang Genie in a Bottle.", a: "Christina Aguilera", alt: ["Aguilera", "Christina"] }, { q: "Her 1995 album Jagged Little Pill was a massive hit.", a: "Alanis Morissette", alt: ["Alanis", "Morissette"] }, { q: "She sang with the Fugees and then released The Miseducation in 1998.", a: "Lauryn Hill", alt: ["Hill"] }] }, { name: "90s Books", clues: [{ q: "R.L. Stine's spooky kids' series.", a: "Goosebumps" }, { q: "Ann M. Martin's series about kids running a babysitting business.", a: "The Baby-Sitters Club", alt: ["Babysitters Club", "Baby Sitters Club"] }, { q: "Harry Potter was first published in the UK in this year.", a: "1997" }, { q: "Lois Lowry's 1993 novel about a boy named Jonas.", a: "The Giver", alt: ["Giver"] }, { q: "Jon Krakauer's 1996 book about Christopher McCandless in Alaska.", a: "Into the Wild" }] }], finals: [{ category: "90s Internet", q: "Pierre Omidyar founded it in 1995 as AuctionWeb, and it took its short new name in 1997.", a: "eBay" }, { category: "90s TV", q: "This cartoon about four foul-mouthed boys in a Colorado town debuted in 1997.", a: "South Park" }, { category: "90s Music", q: "Nirvana's 1991 album cover shows a baby swimming toward a dollar bill.", a: "Nevermind" }, { category: "90s Movies", q: "Vincent Vega and Jules Winnfield are hitmen in this 1994 film.", a: "Pulp Fiction" }, { category: "90s World", q: "This currency was launched for electronic payments on January 1, 1999.", a: "Euro" }] };
+
+  // games/jeopardy/packs/sports.json
+  var sports_default = { title: "Sports Fan", description: "Teams, legends, and every sport in between", selected: false, categories: [{ name: "Hoops", clues: [{ q: "A basket made from behind the arc is worth this many points.", a: "3" }, { q: "A regulation basketball hoop is this many feet high.", a: "10" }, { q: "The Hall of Famer nicknamed His Airness.", a: "Michael Jordan", alt: ["Jordan", "MJ"] }, { q: "In 2023 he passed Kareem Abdul-Jabbar as the NBA's all-time leading scorer.", a: "LeBron James", alt: ["LeBron", "James"] }, { q: "Wilt Chamberlain scored this many points in one game in 1962.", a: "100" }] }, { name: "Gridiron", clues: [{ q: "A touchdown is worth this many points.", a: "6" }, { q: "The NFL's championship game.", a: "Super Bowl" }, { q: "A football field is this many yards between the goal lines.", a: "100" }, { q: "This quarterback won seven Super Bowls.", a: "Tom Brady", alt: ["Brady"] }, { q: "This team had the NFL's only perfect season, in 1972.", a: "Miami Dolphins", alt: ["Dolphins", "Miami"] }] }, { name: "Soccer", clues: [{ q: "Only this player may handle the ball inside the penalty area.", a: "Goalkeeper", alt: ["goalie", "keeper"] }, { q: "Lionel Messi plays for this national team.", a: "Argentina" }, { q: "The 2026 World Cup is hosted by the U.S., Mexico, and this country.", a: "Canada" }, { q: "The English club nicknamed the Red Devils.", a: "Manchester United", alt: ["Man United", "Man Utd", "Man U"] }, { q: "This country won the very first World Cup in 1930.", a: "Uruguay" }] }, { name: "Baseball", clues: [{ q: "This many strikes and you're out.", a: "3" }, { q: "Each team has this many players in the field.", a: "9" }, { q: "He broke baseball's color barrier in 1947.", a: "Jackie Robinson", alt: ["Robinson"] }, { q: "In 2004 this team broke an 86-year championship drought.", a: "Boston Red Sox", alt: ["Red Sox", "Boston"] }, { q: "Babe Ruth was nicknamed the Sultan of this.", a: "Swat" }] }, { name: "The Olympics", clues: [{ q: "The number of rings on the Olympic flag.", a: "5" }, { q: "This city hosted the 2024 Summer Olympics.", a: "Paris" }, { q: "This swimmer has 23 Olympic gold medals.", a: "Michael Phelps", alt: ["Phelps"] }, { q: "He set the 100-meter world record of 9.58 seconds.", a: "Usain Bolt", alt: ["Bolt"] }, { q: "The ancient Games were held at this site in Greece.", a: "Olympia" }] }, { name: "Tennis", clues: [{ q: "A score of zero in tennis.", a: "Love" }, { q: "The Grand Slam played on grass in London.", a: "Wimbledon" }, { q: "She won 23 Grand Slam singles titles.", a: "Serena Williams", alt: ["Serena"] }, { q: "The French Open is played on this surface.", a: "Clay", alt: ["red clay"] }, { q: "He holds the men's record with 24 Grand Slam singles titles.", a: "Novak Djokovic", alt: ["Djokovic", "Novak"] }] }, { name: "Hockey", clues: [{ q: "The hard rubber disc used in hockey.", a: "Puck" }, { q: "Players serve their penalties here.", a: "Penalty box", alt: ["sin bin", "box", "the box"] }, { q: "Each team has this many players on the ice, including the goalie.", a: "6" }, { q: "Wayne Gretzky's nickname.", a: "The Great One", alt: ["Great One"] }, { q: "The NHL team with the most Stanley Cups.", a: "Montreal Canadiens", alt: ["Canadiens", "Habs", "Montreal"] }] }, { name: "Golf", clues: [{ q: "One stroke under par on a hole.", a: "Birdie" }, { q: "Two strokes under par on a hole.", a: "Eagle" }, { q: "Winners of this tournament get a green jacket.", a: "The Masters", alt: ["Masters"] }, { q: "This Scottish town is known as the Home of Golf.", a: "St Andrews", alt: ["Saint Andrews"] }, { q: "In 1971 astronaut Alan Shepard hit golf balls here.", a: "The Moon", alt: ["moon"] }] }, { name: "Famous Venues", clues: [{ q: "This Boston ballpark has a wall called the Green Monster.", a: "Fenway Park", alt: ["Fenway"] }, { q: "New York's arena billed as the world's most famous.", a: "Madison Square Garden", alt: ["MSG", "the garden"] }, { q: "The Chicago Cubs play in this ivy-covered ballpark.", a: "Wrigley Field", alt: ["Wrigley"] }, { q: "The Green Bay Packers' home field.", a: "Lambeau Field", alt: ["Lambeau"] }, { q: "England's national soccer team plays home games at this London stadium.", a: "Wembley", alt: ["Wembley Stadium"] }] }, { name: "Racing", clues: [{ q: "This flag waves when the winner crosses the line.", a: "Checkered flag", alt: ["checkered", "chequered flag"] }, { q: "The famous 500-mile race in Indiana.", a: "Indianapolis 500", alt: ["Indy 500", "Indy"] }, { q: "The leader of the Tour de France wears a jersey of this color.", a: "Yellow" }, { q: "NASCAR's biggest race is held in this Florida city.", a: "Daytona", alt: ["Daytona 500", "Daytona Beach"] }, { q: "This British driver won seven Formula 1 world titles, tying Michael Schumacher.", a: "Lewis Hamilton", alt: ["Hamilton"] }] }, { name: "Fight Night", clues: [{ q: "A knockout is abbreviated as this.", a: "KO" }, { q: "Muhammad Ali said float like a butterfly, sting like this.", a: "Bee", alt: ["a bee"] }, { q: "Japan's traditional wrestling sport.", a: "Sumo" }, { q: "This Korean martial art became an Olympic sport in 2000.", a: "Taekwondo", alt: ["tae kwon do"] }, { q: "Ali beat him in the 1974 Rumble in the Jungle.", a: "George Foreman", alt: ["Foreman"] }] }, { name: "Sports Lingo", clues: [{ q: "In bowling, knocking down all the pins with your first ball.", a: "Strike" }, { q: "Three goals by one player in a game.", a: "Hat trick" }, { q: "In volleyball, a hard downward hit over the net.", a: "Spike", alt: ["kill"] }, { q: "In tennis, a serve the opponent can't touch.", a: "Ace" }, { q: "In cricket, a batter out for zero runs scores this.", a: "Duck" }] }, { name: "Team Names", clues: [{ q: "The New York baseball team famous for pinstripes.", a: "Yankees" }, { q: "Los Angeles' purple and gold NBA team.", a: "Lakers" }, { q: "Green Bay's NFL team.", a: "Packers" }, { q: "Toronto's NBA team.", a: "Raptors" }, { q: "Seattle's NHL team, which started playing in 2021.", a: "Kraken" }] }, { name: "Legends", clues: [{ q: "Jesse Owens won this many gold medals at the 1936 Olympics.", a: "4" }, { q: "Babe Ruth hit this many home runs in 1927.", a: "60" }, { q: "She beat Bobby Riggs in 1973's Battle of the Sexes.", a: "Billie Jean King", alt: ["King"] }, { q: "At the 1976 Olympics she scored gymnastics' first perfect 10.", a: "Nadia Comaneci", alt: ["Comaneci", "Nadia"] }, { q: "In 2025 he passed Wayne Gretzky as the NHL's all-time goal scorer.", a: "Alex Ovechkin", alt: ["Ovechkin"] }] }], finals: [{ category: "Olympic History", q: "This city hosted the first modern Olympic Games in 1896.", a: "Athens" }, { category: "Baseball Legends", q: "Known as the Iron Horse, he called himself the luckiest man on the face of the earth in 1939.", a: "Lou Gehrig", alt: ["Gehrig"] }, { category: "Basketball", q: "He invented basketball in 1891, using peach baskets as hoops.", a: "James Naismith", alt: ["Naismith"] }, { category: "World Cup", q: "Diego Maradona's 1986 Hand of God goal came against this country.", a: "England" }, { category: "Super Bowl", q: "This team won the very first Super Bowl in January 1967.", a: "Green Bay Packers", alt: ["Packers", "Green Bay"] }] };
+
+  // games/jeopardy/packs/index.js
+  var HOUSE_PACKS = [
+    ["easy", easy_default],
+    ["classic", default_default],
+    ["general", general_default],
+    ["movies", movies_default],
+    ["nineties", nineties_default],
+    ["sports", sports_default]
+  ].map(([id, data]) => ({ id: `house-${id}`, data }));
+
   // games/jeopardy/game.js
   var COLS = 6;
   var ROWS = 5;
-  var key = (c, r) => `${c},${r}`;
   var GAME = "jeopardy";
+  var T = {
+    buzzWindow: 7e3,
+    // time to buzz after the clue unlocks
+    rebuzzWindow: 6e3,
+    // time to buzz after someone misses
+    answer: 15e3,
+    // time to type an answer after buzzing
+    ddAnswer: 2e4,
+    // Daily Double answer time (after reading)
+    reveal: 4500,
+    // how long the correct answer stays up
+    earlyPenalty: 400,
+    // lockout for buzzing before the clue unlocks
+    finalAnswer: 35e3,
+    finalStep: 6500,
+    hostRead: 3e4,
+    // host mode: fallback if the host forgets to open buzzers
+    hostAnswer: 3e4,
+    // host mode: Daily Double fallback for the host to judge a spoken answer
+    hostGrace: 3e3,
+    // host mode: after the answer clock hits zero, the host still has this long to rule
+    captainGone: 15e3
+    // how long the captain may be away before someone else takes over
+  };
+  var ANSWER_TIMES = [5, 10, 15, 20, 30, 0];
+  var REACTIONS = ["\u{1F44F}", "\u{1F602}", "\u{1F631}", "\u{1F525}", "\u{1F92F}", "\u{1F389}"];
+  var REACT_GAP = 1200;
+  var REACT_LIFE = 4e3;
+  var STREAK_HOT = 3;
+  var MAX_PLAYERS2 = 8;
+  var readingTime = (text) => Math.max(2500, Math.min(7e3, 1200 + String(text).length * 45));
   function validateSet(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
     if (!cleanName(set.title, 80)) fail("Question set needs a title");
     if (!Array.isArray(set.categories) || set.categories.length !== COLS) fail(`Need exactly ${COLS} categories`);
+    const altOk = (alt, where) => {
+      if (alt !== void 0 && (!Array.isArray(alt) || alt.some((x) => typeof x !== "string"))) fail(`${where}: the other accepted answers must be a list of words`);
+    };
     set.categories.forEach((cat, c) => {
       if (!cleanName(cat?.name, 40)) fail(`Category ${c + 1} needs a name`);
       if (!Array.isArray(cat.clues) || cat.clues.length !== ROWS) fail(`Category ${c + 1} needs exactly ${ROWS} clues`);
@@ -84,686 +339,1104 @@
         if (!String(cl?.clue ?? "").trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its clue text`);
         if (!String(cl?.answer ?? "").trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its answer`);
         if (!(int(cl.value) > 0)) fail(`Category ${c + 1}, clue ${r + 1} needs a positive value`);
+        altOk(cl.alt, `Category ${c + 1}, clue ${r + 1}`);
       });
     });
     const f = set.final;
     if (!f || !cleanName(f.category, 40) || !String(f.clue ?? "").trim() || !String(f.answer ?? "").trim()) {
       fail("Final Jeopardy needs a category, clue and answer");
     }
+    altOk(f.alt, "Final Jeopardy");
     return true;
   }
-  function wagerAmount(amount) {
-    if (amount === "" || amount === null || amount === void 0 || typeof amount === "string" && !amount.trim()) fail("Enter the wager first (0 is allowed)");
-    return int(amount);
+  function normalizePack(id, data) {
+    return {
+      id,
+      title: String(data.title || id),
+      description: String(data.description || ""),
+      selected: data.selected !== false,
+      easy: data.easy === true,
+      own: data.own === true,
+      categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5),
+      finals: (data.finals || []).filter((fin) => fin.q && fin.a)
+    };
   }
-  var _JeopardyGame_instances, blankRun_fn, changed_fn, placeDailyDoubles_fn, lowestUnit_fn, board_fn, multiplier_fn, value_fn, finalSet_fn, cell_fn, inClue_fn, validControl_fn, answerSeconds_fn, startTimer_fn, timerView_fn, markUsed_fn, boardTop_fn, inFinal_fn;
-  var JeopardyGame = class {
+  var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, openBuzzers_fn, startAnswerClock_fn, tally_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn;
+  var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
       this.room = room;
-      this.settings = { rounds: 1, earlyPenalty: true, penaltyMs: 500, buzzSeconds: 10, answerSeconds: 10, finalSeconds: 30, autoWrong: false };
-      this.setId = null;
-      this.set = null;
-      this.setId2 = null;
-      this.set2 = null;
-      this.run = __privateMethod(this, _JeopardyGame_instances, blankRun_fn).call(this, "lobby");
+      this.houses = HOUSE_PACKS.map(({ id, data }) => normalizePack(id, data)).filter((p) => p.categories.length);
+      this.archivePacks = [];
+      this.ownPacks = [];
+      this.packs = [];
+      this.selected = /* @__PURE__ */ new Set();
+      this.settings = { answerTime: 10, hostJudges: false, asWritten: null };
+      this.era = "any";
+      this.archiveSeason = null;
+      this.archiveRequest = null;
+      this.archiveReqId = 0;
+      this.archiveLoading = false;
+      this.archiveError = false;
+      this.easyPrev = null;
+      this.draft = null;
+      this.played = /* @__PURE__ */ new Set();
+      this.stats = /* @__PURE__ */ new Map();
+      this.reactions = [];
+      this.reactSeq = 0;
+      this.captainId = null;
+      this.captainGoneAt = null;
+      this.timer = null;
+      this.openedAt = 0;
+      __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
     }
-    /** Called when the host picks Jeopardy: start with the first question set, if any. */
-    init() {
-      const first = this.room.listContent(GAME)[0];
-      if (first) {
-        try {
-          this.chooseSet(first.id);
-        } catch {
-        }
-      }
-    }
+    // ---------- the room's side of the contract ----------
+    /** The roster is locked once play begins. */
     inProgress() {
-      return this.run.status !== "lobby";
+      return this.phase !== "lobby";
     }
-    /** Is this saved set the one chosen? (The editor won't delete a set in play.) */
-    usesContent(id) {
-      return this.setId === id || this.setId2 === id;
+    /** Called when Jeopardy is picked: look for boards, and ask the app for a season of real-show clues. */
+    init() {
+      __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      if (!this.archivePacks.length && !this.archiveLoading) __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, "any");
     }
-    // ---------- persistence ----------
-    toJSON() {
-      return { settings: this.settings, setId: this.setId, setId2: this.setId2, run: this.run };
-    }
-    restore(data) {
-      this.settings = { ...this.settings, ...data.settings };
-      this.setId = data.setId ?? null;
-      this.set = this.setId ? this.room.loadContent(GAME, this.setId) : null;
-      this.setId2 = data.setId2 ?? null;
-      this.set2 = this.setId2 ? this.room.loadContent(GAME, this.setId2) : null;
-      this.run = { ...__privateMethod(this, _JeopardyGame_instances, blankRun_fn).call(this, "lobby"), ...data.run };
-      const missing = !this.set || this.settings.rounds === 2 && !this.set2;
-      if (this.run.status !== "lobby" && missing) this.run = __privateMethod(this, _JeopardyGame_instances, blankRun_fn).call(this, "lobby");
-      const cl = this.run.clue;
-      if (cl) {
-        cl.penaltyUntil = {};
-        cl.openedAt = null;
-        if (cl.timer && !cl.timer.timedOut) cl.timer.deadline = this.room.now() + cl.timer.totalMs;
+    contentChanged() {
+      if (this.phase === "lobby") {
+        __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       }
-      const f = this.run.final;
-      if (f?.timer && !f.timer.timedOut) f.timer.deadline = this.room.now() + f.timer.totalMs;
     }
-    // ---------- host actions & player messages ----------
+    /** The app (Apple TV) polls this after each change; a request means "download a season of this era". */
+    takeArchiveRequest() {
+      const r = this.archiveRequest;
+      this.archiveRequest = null;
+      return r;
+    }
+    tick() {
+      const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      const t = this.timer;
+      if (t && now >= t.at) {
+        this.timer = null;
+        t.fire();
+      }
+      const cap = this.captainId && __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.captainId);
+      if (cap && !__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, cap.id)) {
+        this.captainGoneAt ?? (this.captainGoneAt = now);
+        if (now - this.captainGoneAt > T.captainGone) {
+          const next = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).find((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
+          if (next) {
+            this.captainId = next;
+            this.captainGoneAt = null;
+            __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+          }
+        }
+      } else this.captainGoneAt = null;
+      if (this.reactions.length && now - this.reactions[0].at > REACT_LIFE) {
+        this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      }
+    }
+    togglePack(id) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      if (!this.packs.some((p) => p.id === id)) return;
+      if (this.selected.has(id)) this.selected.delete(id);
+      else this.selected.add(id);
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    easyPacks() {
+      return this.packs.filter((p) => p.easy).map((p) => p.id);
+    }
+    easyOn() {
+      return this.selected.size > 0 && [...this.selected].every((id) => this.packs.some((p) => p.id === id && p.easy));
+    }
+    /** Easy mode: only the packs marked easy (casual questions). */
+    toggleEasy() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      const easy = this.easyPacks();
+      if (!easy.length) return;
+      if (this.easyOn()) {
+        const prev = this.easyPrev && [...this.easyPrev].filter((id) => !easy.includes(id));
+        this.selected = new Set(prev && prev.length ? prev : this.packs.filter((p) => p.selected && !p.easy).map((p) => p.id));
+        if (!this.selected.size) {
+          const first = this.packs.find((p) => !p.easy);
+          this.selected.add(first ? first.id : easy[0]);
+        }
+        this.easyPrev = null;
+      } else {
+        this.easyPrev = new Set(this.selected);
+        this.selected = new Set(easy);
+      }
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    setHostJudges(on) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.settings.hostJudges = !!on;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    setAsWritten(on) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.settings.asWritten = on === null ? null : !!on;
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    setAnswerTime(sec) {
+      sec = Number(sec);
+      if (!ANSWER_TIMES.includes(sec)) fail("Choose one of the offered times");
+      this.settings.answerTime = sec;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    // The real-show archive: the app downloads a season and hands it back.
+    hasArchive() {
+      return this.archivePacks.length > 0 || this.archiveLoading || !!this.archiveRequest || this.archiveError;
+    }
+    setEra(era) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      if (!ERAS[era]) fail("No such era");
+      __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, era);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** A season arrived (raw TSV text). Keeps the same topics switched on. */
+    archiveLoaded(tsv, season, id) {
+      if (id !== this.archiveReqId || this.phase !== "lobby") return;
+      this.archiveLoading = false;
+      let parsed = [];
+      try {
+        parsed = parseArchive(String(tsv), Number(season) || 0, () => __privateMethod(this, _JeopardyGame_instances, rng_fn).call(this));
+      } catch {
+        parsed = [];
+      }
+      const packs = parsed.map((p) => normalizePack(p.id, p)).filter((p) => p.categories.length);
+      if (!packs.length) {
+        this.archiveError = true;
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        return;
+      }
+      const wasOn = new Set([...this.selected].filter((pid) => pid.startsWith("archive-")));
+      const hadOn = wasOn.size > 0;
+      this.archivePacks = packs;
+      this.archiveSeason = Number(season) || null;
+      for (const pid of [...this.selected]) if (pid.startsWith("archive-")) this.selected.delete(pid);
+      const first = !this.packs.some((p) => p.own && this.selected.has(p.id)) && !hadOn;
+      this.packs = [...this.ownPacks, ...this.archivePacks, ...this.houses];
+      for (const p of packs) if (hadOn ? wasOn.has(p.id) : first) this.selected.add(p.id);
+      if (first) for (const p of this.houses) this.selected.delete(p.id);
+      if (!this.selected.size) this.selected.add(packs[0].id);
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    archiveFailed(id) {
+      if (id !== this.archiveReqId) return;
+      this.archiveLoading = false;
+      this.archiveError = true;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    // The board builder: look the 12 categories over and swap any before starting.
+    previewBoard() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      if (__privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)) fail("Your boards are played as written; there is nothing to shuffle.");
+      const all = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.filter((c) => c.clues.length >= 5);
+      if (all.length < 12) fail("Pick packs with at least 12 categories in total.");
+      const cats = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, __privateMethod(this, _JeopardyGame_instances, fresh_fn).call(this, all, 12));
+      this.draft = [cats.slice(0, 6), cats.slice(6, 12)];
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** Swap one previewed category (round r = 1 or 2, column ci) for another one from the chosen packs. */
+    swapCategory(r, ci) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      if (!this.draft) return;
+      const row = this.draft[Number(r) - 1];
+      if (!row || !row[Number(ci)]) return;
+      const inUse = new Set(this.draft.flat().map((c) => c.name.toLowerCase()));
+      const spareAll = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.filter((c) => c.clues.length >= 5 && !inUse.has(c.name.toLowerCase()));
+      if (!spareAll.length) fail("No other categories left. Switch on more topics.");
+      const spare = __privateMethod(this, _JeopardyGame_instances, fresh_fn).call(this, spareAll, 1);
+      row[Number(ci)] = spare[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * spare.length)];
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    clearPreview() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    start() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      if (!this.room.players.length) fail("Wait for players to join");
+      if (!__privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this) && !this.draft && __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.length < 12) fail("Pick packs with at least 12 categories in total.");
+      __privateMethod(this, _JeopardyGame_instances, buildRounds_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
+      this.round = 1;
+      const order = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this);
+      this.controllerId = order[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * order.length)];
+      this.captainId ?? (this.captainId = order[0]);
+      this.phase = "board";
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    // ---------- the roster ----------
+    kick(id) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.room.removePlayer(id);
+      if (this.captainId === id) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
+    }
+    /** Who gets the captain controls: whoever joined first, and someone else if they stay away. */
+    captain() {
+      if (!this.captainId || !__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.captainId)) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
+      return this.captainId;
+    }
+    hostJudges() {
+      return !!this.settings.hostJudges;
+    }
+    // ---------- the clue ----------
+    board() {
+      return this.round >= 1 && this.round <= this.rounds.length ? this.rounds[this.round - 1] : null;
+    }
+    pick(ci, ri) {
+      if (this.phase !== "board") return;
+      const b = this.board();
+      const cl = b?.[ci]?.clues[ri];
+      if (!cl || cl.used) return;
+      cl.used = true;
+      this.lastResult = null;
+      this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null };
+      if (cl.dd) {
+        this.phase = "dd-wager";
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+      } else {
+        this.phase = "reading";
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, this.hostJudges() ? T.hostRead : readingTime(cl.q), () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow), "reading");
+      }
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    openNow() {
+      if (this.phase === "reading") __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
+    }
+    /** A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }. */
+    buzz(pid) {
+      const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid);
+      if (!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid) || !this.clue) return { result: "ignored" };
+      const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      if (this.phase === "reading") {
+        st.lockUntil = now + T.earlyPenalty;
+        return { result: "early" };
+      }
+      if (this.phase === "answering" && this.openedAt) {
+        if (this.clue.tried.includes(pid) || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid)) return { result: "ignored" };
+        const late = Math.max(0, now - this.openedAt);
+        this.clue.buzzes.push({ pid, ms: late });
+        if (st.fastest == null || late < st.fastest) st.fastest = late;
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        return { result: "late", ms: late };
+      }
+      if (this.phase !== "open") return { result: "ignored" };
+      if (this.clue.tried.includes(pid)) return { result: "tried" };
+      if (now < st.lockUntil) return { result: "early" };
+      this.clue.buzzedId = pid;
+      const ms = Math.max(0, now - this.openedAt);
+      this.clue.buzzMs = ms;
+      if (st.fastest == null || ms < st.fastest) st.fastest = ms;
+      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
+      this.clue.buzzes.push({ pid, ms, won: true });
+      this.phase = "answering";
+      if (this.hostJudges()) __privateMethod(this, _JeopardyGame_instances, startAnswerClock_fn).call(this, pid);
+      else __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.answer, () => this.submitAnswer(pid, "", true), "answer");
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      return { result: "won", ms };
+    }
+    /** The host's ruling on a spoken answer. */
+    judgeNow(correct) {
+      if (this.phase === "answering") this.submitAnswer(this.clue.buzzedId, null, false, !!correct);
+      else if (this.phase === "dd-answer") this.submitAnswer(this.controllerId, null, false, !!correct);
+    }
+    /** A typed answer (text), a time-out (timedOut), or the host's ruling on a spoken one (text null, verdict true/false). */
+    submitAnswer(pid, text, timedOut, verdict) {
+      const spoken = text === null;
+      text = spoken ? null : String(text || "").slice(0, 80);
+      const decide = () => verdict !== void 0 ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt]);
+      const shown = () => spoken ? null : text || "(no answer)";
+      if (this.phase === "answering" && this.clue.buzzedId === pid) {
+        const correct = decide();
+        const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid);
+        const v = this.clue.value;
+        if (p) p.score += correct ? v : -v;
+        __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, pid, correct, 0);
+        this.clue.tried.push(pid);
+        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak };
+        if (correct) {
+          this.controllerId = pid;
+          __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+        } else {
+          const remaining = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id));
+          if (remaining.length === 0) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+          else __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.rebuzzWindow);
+        }
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        return;
+      }
+      if (this.phase === "dd-answer" && this.controllerId === pid) {
+        const correct = decide();
+        const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid);
+        const v = this.clue.wager;
+        if (p) p.score += correct ? v : -v;
+        __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, pid, correct, v);
+        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, dd: true, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak };
+        __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      }
+    }
+    /** What a player typed for their answer (phones). */
+    answer(pid, text) {
+      if (this.hostJudges()) fail("The host judges answers out loud.");
+      this.submitAnswer(pid, text, false);
+    }
+    ddWager(pid, amount) {
+      if (this.phase !== "dd-wager" || pid !== this.controllerId) return;
+      const max = this.maxDDWager(pid);
+      let w = Math.round(Number(amount));
+      if (!Number.isFinite(w)) fail("Enter a number");
+      w = clamp(w, 5, max);
+      this.clue.wager = w;
+      this.phase = "dd-answer";
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.submitAnswer(pid, "", true), "answer");
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    maxDDWager(pid) {
+      return Math.max(__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid)?.score ?? 0, 1e3 * this.round);
+    }
+    /** Captain, host or TV moves things along. */
+    advance() {
+      if (this.phase === "round-end") {
+        if (this.round < this.rounds.length) {
+          this.round += 1;
+          const sorted = this.room.players.slice().sort((a, b) => a.score - b.score);
+          this.controllerId = sorted[0].id;
+          this.phase = "board";
+          __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        } else __privateMethod(this, _JeopardyGame_instances, startFinal_fn).call(this);
+      } else if (this.phase === "reveal") {
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this);
+      } else if (this.phase === "final-wager") __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this);
+      else if (this.phase === "final-answer") {
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this);
+      } else if (this.phase === "final-reveal") __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this);
+    }
+    skipClue() {
+      if (["reading", "open", "answering"].includes(this.phase)) {
+        if (this.phase === "answering") {
+          this.submitAnswer(this.clue.buzzedId, "", true);
+          if (this.phase !== "reveal") __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+        } else __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      } else if (this.phase === "dd-wager" || this.phase === "dd-answer") {
+        if (this.phase === "dd-wager") this.clue.wager = 0;
+        __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      }
+    }
+    /** Skip to the end of the current round (handy for short games). */
+    endRound() {
+      const b = this.board();
+      if (!b || this.phase !== "board") return;
+      b.forEach((c) => c.clues.forEach((cl) => {
+        cl.used = true;
+      }));
+      this.phase = "round-end";
+      __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** Flip the last automatic ruling (a typo or a generous call). */
+    override() {
+      const r = this.lastResult;
+      if (!r || this.phase.startsWith("final")) return;
+      const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, r.pid);
+      if (!p) return;
+      p.score += (r.correct ? -1 : 1) * 2 * r.delta;
+      r.correct = !r.correct;
+      r.overridden = !r.overridden;
+      __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, r.pid, r.correct, r.dd ? r.delta : 0, true);
+      r.streak = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, r.pid).streak;
+      if (r.correct) {
+        this.controllerId = r.pid;
+        if (["open", "reading", "answering"].includes(this.phase)) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      }
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    finalWager(pid, amount) {
+      if (this.phase !== "final-wager" || !this.final.eligible.includes(pid)) return;
+      const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid);
+      let w = Math.round(Number(amount));
+      if (!Number.isFinite(w)) fail("Enter a number");
+      w = clamp(w, 0, p.score);
+      this.final.wagers[pid] = w;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      if (!this.final.eligible.some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !(id in this.final.wagers))) __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this);
+    }
+    finalAnswer(pid, text) {
+      if (this.phase !== "final-answer" || !this.final.eligible.includes(pid)) return;
+      if (pid in this.final.answers) return;
+      this.final.answers[pid] = String(text || "").slice(0, 80);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      if (!this.final.eligible.some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !(id in this.final.answers))) {
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, 1500, () => __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this), "final-wait");
+      }
+    }
+    /** Flip a final-round ruling for one player. */
+    finalOverride(pid) {
+      if (!this.final || !["final-reveal", "gameover"].includes(this.phase)) return;
+      const r = this.final.results[pid];
+      const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid);
+      if (!r || !r.applied || !p) return;
+      const w = this.final.wagers[pid];
+      p.score += r.correct ? -2 * w : 2 * w;
+      r.correct = !r.correct;
+      r.overridden = !r.overridden;
+      __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, pid, r.correct, w, true);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    playAgain() {
+      if (this.phase !== "gameover") return;
+      this.room.resetScores();
+      __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** End a game that is under way, back to the lobby (the host's "end game"). */
+    endGame() {
+      this.room.resetScores();
+      __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    // ---------- reactions and awards ----------
+    react(pid, idx) {
+      const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid);
+      const e = REACTIONS[Number(idx)];
+      const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      if (!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid) || !e || now - st.lastReact < REACT_GAP) return;
+      st.lastReact = now;
+      this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
+      this.reactions.push({ id: ++this.reactSeq, pid, e, at: now });
+      if (this.reactions.length > 12) this.reactions.shift();
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    awards() {
+      const ps = this.room.players;
+      const out = [];
+      const best = (score, ok) => {
+        let top = null;
+        for (const p of ps) if (ok(p) && (!top || score(p) > score(top))) top = p;
+        return top;
+      };
+      const s = (p) => __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.id);
+      const fast = best((p) => -s(p).fastest, (p) => s(p).fastest != null);
+      if (fast) out.push({ id: "fast", title: "Fastest Finger", pid: fast.id, detail: `${(s(fast).fastest / 1e3).toFixed(2)}s buzz` });
+      const brain = best((p) => s(p).right, (p) => s(p).right > 0);
+      if (brain) out.push({ id: "brain", title: "Big Brain", pid: brain.id, detail: `${s(brain).right} right` });
+      const hot = best((p) => s(p).best, (p) => s(p).best >= STREAK_HOT);
+      if (hot) out.push({ id: "hot", title: "On Fire", pid: hot.id, detail: `${s(hot).best} in a row` });
+      const roller = best((p) => s(p).bigWin, (p) => s(p).bigWin > 0);
+      if (roller) out.push({ id: "roller", title: "High Roller", pid: roller.id, detail: `won a $${s(roller).bigWin.toLocaleString("en-US")} bet` });
+      const brave = best((p) => s(p).wrong, (p) => s(p).wrong >= 3);
+      if (brave) out.push({ id: "brave", title: "Fearless", pid: brave.id, detail: `${s(brave).wrong} brave guesses` });
+      return out;
+    }
+    // ---------- who may do what ----------
+    /** Host and TV actions. */
     act(action, a = {}) {
       switch (action) {
-        case "startGame":
-          return this.startGame();
+        case "togglePack":
+          return this.togglePack(String(a.pack ?? a.id));
+        case "start":
+          return this.start();
+        case "pick":
+          return this.pick(Number(a.ci), Number(a.ri));
+        case "judge":
+          return this.judgeNow(a.correct === true);
+        case "openNow":
+          return this.openNow();
+        case "advance":
+          return this.advance();
+        case "skip":
+          return this.skipClue();
+        case "override":
+          return this.override();
+        case "finalOverride":
+          return this.finalOverride(String(a.pid ?? a.targetPid ?? ""));
+        case "endRound":
+          return this.endRound();
+        case "playAgain":
+          return this.playAgain();
         case "endGame":
           return this.endGame();
-        case "setView":
-          return this.setView(a.view);
-        case "setSettings":
-          return this.setSettings(a);
-        case "chooseSet":
-          return this.chooseSet(a.id, Number(a.round ?? 1));
-        case "startRound2":
-          return this.startRound2();
-        case "select":
-          return this.select(Number(a.c), Number(a.r));
-        case "setDailyDoubleUnit":
-          return this.setDailyDoubleUnit(a.id);
-        case "setDailyDoubleWager":
-          return this.setDailyDoubleWager(a.amount);
-        case "openBuzzers":
-          return this.openBuzzers();
-        case "awardBuzz":
-          return this.awardBuzz(a.id);
-        case "reopen":
-          return this.reopen();
-        case "correct":
-          return this.correct();
-        case "wrong":
-          return this.wrong();
-        case "reveal":
-          return this.reveal();
-        case "closeClue":
-          return this.closeClue();
-        case "restartTimer":
-          return this.restartTimer();
-        case "startFinal":
-          return this.startFinal();
-        case "setFinalWager":
-          return this.setFinalWager(a.id, a.amount);
-        case "finalNext":
-          return this.finalNext();
-        case "finalJudge":
-          return this.finalJudge(a.id, !!a.ok);
-        case "finishFinal":
-          return this.finishFinal();
-        case "finishGame":
-          return this.finishGame();
+        case "kick":
+          return this.kick(String(a.pid ?? a.targetPid ?? a.id ?? ""));
+        case "adjustScore":
+          return this.room.adjustScore(String(a.id ?? a.targetPid ?? ""), { delta: a.delta, set: a.set });
+        case "toggleEasy":
+          return this.toggleEasy();
+        case "setAnswerTime":
+          return this.setAnswerTime(a.seconds);
+        case "setEra":
+          return this.setEra(String(a.era ?? ""));
+        case "setHostJudges":
+          return this.setHostJudges(a.on);
+        case "setAsWritten":
+          return this.setAsWritten(a.on === null ? null : a.on);
+        case "previewBoard":
+          return this.previewBoard();
+        case "swapCategory":
+          return this.swapCategory(Number(a.r), Number(a.ci));
+        case "clearPreview":
+          return this.clearPreview();
         default:
           throw new GameError(`Unknown action ${action}`);
       }
     }
+    /** A message from a phone. */
     onPlayer(player, msg) {
+      const pid = player.id;
       switch (msg.t) {
         case "buzz":
-          return { t: "buzz-result", ...this.buzz(player.id) };
-        // stamped with the server clock inside
+          return { t: "buzz-result", ...this.buzz(pid) };
+        case "answer":
+          this.answer(pid, msg.text);
+          return { t: "ack", what: "answer" };
+        case "pick": {
+          if (this.hostJudges()) fail("Tell the host your pick.");
+          const allowed = pid === this.controllerId || pid === this.captain() && !__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId);
+          if (!allowed) fail("It is not your pick");
+          this.pick(Number(msg.ci), Number(msg.ri));
+          return void 0;
+        }
+        case "dd-wager":
+          this.ddWager(pid, msg.amount);
+          return { t: "ack", what: "wager" };
         case "final-wager":
-          this.finalWagerFrom(player.id, msg.amount);
+          this.finalWager(pid, msg.amount);
           return { t: "ack", what: "wager" };
         case "final-answer":
-          this.finalAnswerFrom(player.id, msg.text);
+          this.finalAnswer(pid, msg.text);
           return { t: "ack", what: "answer" };
+        case "react":
+          this.react(pid, msg.e);
+          return void 0;
+        case "cap": {
+          if (this.captain() !== pid) fail("Only the captain can do that");
+          if (!_JeopardyGame.CAPTAIN_ACTIONS.has(msg.action)) fail("Not allowed");
+          return this.act(msg.action, msg.args ?? {}) ?? void 0;
+        }
         default:
           return void 0;
       }
     }
-    // ---------- setup ----------
-    setSettings({ rounds, earlyPenalty, penaltyMs, buzzSeconds, answerSeconds, finalSeconds, autoWrong }) {
-      const inRange = (v, max, what) => {
-        const n = int(v);
-        if (!(n >= 0 && n <= max)) fail(`${what} must be 0 to ${max}`);
-        return n;
-      };
-      if (rounds !== void 0) {
-        if (this.run.status !== "lobby") fail("Choose the number of rounds before the game starts");
-        if (![1, 2].includes(int(rounds))) fail("Play 1 or 2 rounds before Final Jeopardy");
-        this.settings.rounds = int(rounds);
-      }
-      if (typeof earlyPenalty === "boolean") this.settings.earlyPenalty = earlyPenalty;
-      if (typeof autoWrong === "boolean") this.settings.autoWrong = autoWrong;
-      if (penaltyMs !== void 0) this.settings.penaltyMs = inRange(penaltyMs, 5e3, "Penalty (ms)");
-      if (buzzSeconds !== void 0) this.settings.buzzSeconds = inRange(buzzSeconds, 120, "Buzz-in time (seconds)");
-      if (answerSeconds !== void 0) this.settings.answerSeconds = inRange(answerSeconds, 120, "Answer time (seconds)");
-      if (finalSeconds !== void 0) this.settings.finalSeconds = inRange(finalSeconds, 300, "Final Jeopardy time (seconds)");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Pick the question set for a round (1, or 2 when two rounds are played). The two rounds need different sets. */
-    chooseSet(id, round = 1) {
-      if (this.run.status !== "lobby") fail("Pick the question set before the game starts");
-      if (![1, 2].includes(round)) fail("Choose a set for round 1 or 2");
-      const set = this.room.loadContent(GAME, id) ?? fail("No such question set");
-      validateSet(set);
-      const other = round === 1 ? this.setId2 : this.setId;
-      if (other === id) fail(`That set is already used for round ${round === 1 ? 2 : 1}. Pick a different one.`);
-      if (round === 1) {
-        this.setId = id;
-        this.set = set;
-      } else {
-        this.setId2 = id;
-        this.set2 = set;
-      }
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** The editor saved or deleted a set that may be one of those chosen. */
-    contentChanged(id) {
-      if (this.run.status === "lobby") {
-        if (this.setId === id) {
-          this.set = this.room.loadContent(GAME, id);
-          if (!this.set) this.setId = null;
-        }
-        if (this.setId2 === id) {
-          this.set2 = this.room.loadContent(GAME, id);
-          if (!this.set2) this.setId2 = null;
-        }
-      }
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    startGame() {
-      if (this.run.status !== "lobby") fail("Game already started");
-      if (!this.set) fail("Choose a question set first");
-      if (this.settings.rounds === 2) {
-        if (!this.set2) fail("Choose a question set for Double Jeopardy, or play one round");
-        if (this.setId === this.setId2) fail("Round 1 and round 2 need different question sets");
-      }
-      if (this.room.eligibleUnits().length < 1) fail("Nobody has joined yet");
-      this.room.resetScores();
-      this.run = { ...__privateMethod(this, _JeopardyGame_instances, blankRun_fn).call(this, "board"), dd: __privateMethod(this, _JeopardyGame_instances, placeDailyDoubles_fn).call(this, this.set, 1) };
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Host: end round 1 and begin round 2. Scores carry over; whoever is behind picks first. */
-    startRound2() {
-      if (this.run.status !== "board") fail("Return to the board first");
-      if (this.settings.rounds !== 2 || this.run.round !== 1) fail("There is no second round to start");
-      if (!this.set2) fail("Choose a question set for Double Jeopardy");
-      this.run.round = 2;
-      this.run.used = [];
-      this.run.dd = __privateMethod(this, _JeopardyGame_instances, placeDailyDoubles_fn).call(this, this.set2, 2);
-      this.run.control = __privateMethod(this, _JeopardyGame_instances, lowestUnit_fn).call(this);
-      this.run.view = "board";
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Back to the lobby. Keeps players and teams, clears scores. */
-    endGame() {
-      this.room.resetScores();
-      this.run = __privateMethod(this, _JeopardyGame_instances, blankRun_fn).call(this, "lobby");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    setView(view) {
-      if (!["board", "leaderboard"].includes(view)) fail("Unknown view");
-      this.run.view = view;
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    select(c, r) {
-      if (this.run.status !== "board") fail("Return to the board first");
-      const cell = __privateMethod(this, _JeopardyGame_instances, cell_fn).call(this, c, r);
-      if (this.run.used.includes(key(c, r))) fail("That square is already used");
-      const dd = this.run.dd.includes(key(c, r));
-      this.run.status = "clue";
-      this.run.view = "board";
-      this.run.clue = {
-        c,
-        r,
-        value: __privateMethod(this, _JeopardyGame_instances, value_fn).call(this, cell),
-        dd,
-        step: dd ? "wager" : "reading",
-        wager: null,
-        ddUnit: dd ? __privateMethod(this, _JeopardyGame_instances, validControl_fn).call(this) : null,
-        buzzedBy: null,
-        buzzedPlayer: null,
-        buzzedAt: null,
-        lockedOut: [],
-        early: [],
-        penaltyUntil: {},
-        openedAt: null,
-        correct: null,
-        timer: null
-      };
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Host picks who gets the Daily Double (defaults to whoever is in control). */
-    setDailyDoubleUnit(id) {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "wager");
-      if (!this.room.eligibleUnits().some((u) => u.id === id)) fail("No such player");
-      cl.ddUnit = id;
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    setDailyDoubleWager(amount) {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "wager");
-      const u = this.room.unit(cl.ddUnit) ?? fail("Pick who is playing the Daily Double");
-      const max = Math.max(u.score, __privateMethod(this, _JeopardyGame_instances, boardTop_fn).call(this));
-      const n = wagerAmount(amount);
-      if (!(n >= 0 && n <= max)) fail(`Wager must be between 0 and ${max}`);
-      cl.wager = n;
-      cl.value = n;
-      cl.step = "answering";
-      cl.buzzedBy = u.id;
-      __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, __privateMethod(this, _JeopardyGame_instances, answerSeconds_fn).call(this, cl));
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    openBuzzers() {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "reading");
-      if (cl.dd) fail("Daily Doubles do not use buzzers");
-      const t = this.room.now();
-      for (const id of cl.early) cl.penaltyUntil[id] = t + this.settings.penaltyMs;
-      cl.early = [];
-      cl.step = "open";
-      cl.openedAt = t;
-      __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, this.settings.buzzSeconds, "buzz");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** A press from a phone or a physical buzzer. Returns what happened to it. */
-    buzz(playerId) {
-      const p = this.room.players.find((x) => x.id === playerId);
-      const cl = this.run.clue;
-      if (!p || this.run.status !== "clue" || !cl || cl.dd) return { ok: false, reason: "closed" };
-      const u = this.room.unitOf(p);
-      if (!u) return { ok: false, reason: "no-team" };
-      const t = this.room.now();
-      if (cl.step === "reading") {
-        if (this.settings.earlyPenalty && !cl.early.includes(u.id)) {
-          cl.early.push(u.id);
-          __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-        }
-        return { ok: false, reason: this.settings.earlyPenalty ? "early" : "closed" };
-      }
-      if (cl.step !== "open") return { ok: false, reason: "closed" };
-      if (cl.lockedOut.includes(u.id)) return { ok: false, reason: "locked-out" };
-      if (cl.timer?.kind === "buzz" && (cl.timer.timedOut || t >= cl.timer.deadline)) return { ok: false, reason: "timeup" };
-      const until = cl.penaltyUntil[u.id] ?? 0;
-      if (t < until) return { ok: false, reason: "penalty", retryMs: Math.ceil(until - t) };
-      cl.step = "answering";
-      cl.buzzedBy = u.id;
-      cl.buzzedPlayer = p.id;
-      cl.buzzedAt = t;
-      __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, __privateMethod(this, _JeopardyGame_instances, answerSeconds_fn).call(this, cl));
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      return { ok: true, unitId: u.id, playerId: p.id };
-    }
-    correct() {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "answering");
-      const u = this.room.unit(cl.buzzedBy) ?? fail("Nobody is answering");
-      u.score += cl.value;
-      this.run.control = u.id;
-      cl.correct = u.id;
-      cl.step = "revealed";
-      cl.timer = null;
-      __privateMethod(this, _JeopardyGame_instances, markUsed_fn).call(this, cl);
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    wrong() {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "answering");
-      const u = this.room.unit(cl.buzzedBy) ?? fail("Nobody is answering");
-      u.score -= cl.value;
-      cl.timer = null;
-      if (cl.dd) {
-        cl.step = "revealed";
-        __privateMethod(this, _JeopardyGame_instances, markUsed_fn).call(this, cl);
-      } else {
-        cl.lockedOut.push(u.id);
-        cl.buzzedBy = null;
-        cl.buzzedPlayer = null;
-        cl.buzzedAt = null;
-        const anyoneLeft = this.room.eligibleUnits().some((x) => !cl.lockedOut.includes(x.id));
-        if (anyoneLeft) {
-          cl.step = "open";
-          cl.openedAt = this.room.now();
-          __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, this.settings.buzzSeconds, "buzz");
-        } else {
-          cl.step = "revealed";
-          __privateMethod(this, _JeopardyGame_instances, markUsed_fn).call(this, cl);
-        }
-      }
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Nobody got it: show the answer. */
-    reveal() {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "reading", "open", "answering");
-      cl.step = "revealed";
-      cl.buzzedBy = null;
-      cl.timer = null;
-      __privateMethod(this, _JeopardyGame_instances, markUsed_fn).call(this, cl);
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Host gives the buzz to someone directly (dead phone, missed press). */
-    awardBuzz(unitId) {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "reading", "open");
-      if (cl.dd) fail("Daily Doubles do not use buzzers");
-      const u = this.room.eligibleUnits().find((x) => x.id === unitId) ?? fail("No such player");
-      cl.step = "answering";
-      cl.buzzedBy = u.id;
-      cl.buzzedPlayer = null;
-      cl.buzzedAt = this.room.now();
-      __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, __privateMethod(this, _JeopardyGame_instances, answerSeconds_fn).call(this, cl));
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Re-open buzzers for everyone (host undo / mistaken press). Locked-out units stay out. */
-    reopen() {
-      const cl = __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "answering");
-      if (cl.dd) fail("Daily Doubles do not use buzzers");
-      cl.buzzedBy = null;
-      cl.buzzedPlayer = null;
-      cl.buzzedAt = null;
-      cl.step = "open";
-      cl.openedAt = this.room.now();
-      __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, this.settings.buzzSeconds, "buzz");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Host: give the current buzz-in window, answer, or the final round its full time again. */
-    restartTimer() {
-      const cl = this.run.clue;
-      const f = this.run.final;
-      if (this.run.status === "clue" && cl?.step === "open") __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, this.settings.buzzSeconds, "buzz");
-      else if (this.run.status === "clue" && cl?.step === "answering") __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, cl, __privateMethod(this, _JeopardyGame_instances, answerSeconds_fn).call(this, cl));
-      else if (this.run.status === "final" && f?.step === "clue") __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, f, this.settings.finalSeconds, "final");
-      else fail("There is nothing to time right now");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Called by the room a few times a second. Expires a timer once, when its time is up. */
-    tick() {
-      const t = this.room.now();
-      const cl = this.run.clue;
-      const f = this.run.final;
-      if (this.run.status === "clue" && cl?.timer && !cl.timer.timedOut && t >= cl.timer.deadline) {
-        cl.timer.timedOut = true;
-        if (this.settings.autoWrong && cl.step === "answering" && cl.timer.kind === "answer") this.wrong();
-        else __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      } else if (this.run.status === "final" && f?.step === "clue" && f.timer && !f.timer.timedOut && t >= f.timer.deadline) {
-        f.timer.timedOut = true;
-        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      }
-    }
-    closeClue() {
-      __privateMethod(this, _JeopardyGame_instances, inClue_fn).call(this, "revealed");
-      this.run.clue = null;
-      this.run.status = "board";
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    boardCleared() {
-      return this.run.used.length >= COLS * ROWS;
-    }
-    // ---------- Final Jeopardy ----------
-    /** Before the round: everyone with a positive score. Once it starts the list is frozen,
-     *  so a player who bets it all and loses still appears in the results. */
-    finalists() {
-      const ids = this.run.final?.ids;
-      if (ids) return ids.map((id) => this.room.unit(id)).filter(Boolean);
-      return this.room.eligibleUnits().filter((u) => u.score > 0);
-    }
-    startFinal() {
-      if (this.run.status !== "board") fail("Return to the board first");
-      if (!this.finalists().length) fail("Nobody has a positive score to play Final Jeopardy");
-      this.run.status = "final";
-      this.run.final = { step: "wager", ids: this.finalists().map((u) => u.id), wagers: {}, answers: {}, results: {} };
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    setFinalWager(unitId, amount) {
-      const f = __privateMethod(this, _JeopardyGame_instances, inFinal_fn).call(this, "wager");
-      const u = this.finalists().find((x) => x.id === unitId) ?? fail("That player is not in Final Jeopardy");
-      const n = wagerAmount(amount);
-      if (!(n >= 0 && n <= u.score)) fail(`Wager must be between 0 and ${u.score}`);
-      f.wagers[u.id] = n;
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    setFinalAnswer(unitId, text) {
-      const f = __privateMethod(this, _JeopardyGame_instances, inFinal_fn).call(this, "clue");
-      const u = this.finalists().find((x) => x.id === unitId) ?? fail("That player is not in Final Jeopardy");
-      f.answers[u.id] = String(text ?? "").trim().slice(0, 200);
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    /** Player-side helpers: act on behalf of the player's unit. */
-    finalWagerFrom(playerId, amount) {
-      const u = this.room.unitOf(this.room.player(playerId)) ?? fail("Join a team first");
-      this.setFinalWager(u.id, amount);
-    }
-    finalAnswerFrom(playerId, text) {
-      const u = this.room.unitOf(this.room.player(playerId)) ?? fail("Join a team first");
-      this.setFinalAnswer(u.id, text);
-    }
-    finalNext() {
-      var _a, _b;
-      const f = __privateMethod(this, _JeopardyGame_instances, inFinal_fn).call(this);
-      if (f.step === "wager") {
-        for (const u of this.finalists()) (_a = f.wagers)[_b = u.id] ?? (_a[_b] = 0);
-        f.step = "clue";
-        __privateMethod(this, _JeopardyGame_instances, startTimer_fn).call(this, f, this.settings.finalSeconds, "final");
-      } else if (f.step === "clue") {
-        f.step = "judge";
-        f.timer = null;
-      } else fail("Nothing further");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    finalJudge(unitId, ok) {
-      const f = __privateMethod(this, _JeopardyGame_instances, inFinal_fn).call(this, "judge");
-      const u = this.finalists().find((x) => x.id === unitId) ?? fail("That player is not in Final Jeopardy");
-      if (f.results[u.id] !== void 0) fail("Already judged");
-      const w = f.wagers[u.id] ?? 0;
-      u.score += ok ? w : -w;
-      f.results[u.id] = !!ok;
-      if (this.finalists().every((x) => f.results[x.id] !== void 0)) f.step = "results";
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    finishFinal() {
-      __privateMethod(this, _JeopardyGame_instances, inFinal_fn).call(this);
-      this.run.final.step = "results";
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    finishGame() {
-      this.run.status = "done";
-      this.run.clue = null;
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-    }
-    // ---------- views ----------
-    /** What the TV and phones may see. Answers appear only once revealed. */
+    /** What the TV and every phone may see. */
     publicView() {
-      const run = this.run;
-      const set = __privateMethod(this, _JeopardyGame_instances, board_fn).call(this);
-      const finalSet = __privateMethod(this, _JeopardyGame_instances, finalSet_fn).call(this);
-      const cl = run.clue;
-      const view = {
+      const showAnswer = this.phase === "reveal";
+      const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      const b = this.board();
+      const v = {
         game: GAME,
-        lobbyTitle: this.set?.title ?? "Jeopardy",
-        settings: this.settings,
-        status: run.status,
-        view: run.view,
-        round: run.round,
-        rounds: this.settings.rounds,
-        roundTitle: this.settings.rounds === 2 && run.round === 2 ? "Double Jeopardy!" : "Jeopardy!",
-        title: set?.title ?? null,
-        control: run.control,
-        categories: set ? set.categories.map((c) => c.name) : [],
-        board: set ? set.categories.map((cat, c) => cat.clues.map((cl2, r) => ({ value: __privateMethod(this, _JeopardyGame_instances, value_fn).call(this, cl2), used: run.used.includes(key(c, r)) }))) : [],
-        clue: null,
-        final: null
+        lobbyTitle: "Jeopardy",
+        phase: this.phase,
+        status: this.phase,
+        round: this.round,
+        rounds: this.rounds.length || (__privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)?.length ?? 2),
+        captainId: this.captain(),
+        hostJudges: this.hostJudges(),
+        controllerId: this.controllerId,
+        players: __privateMethod(this, _JeopardyGame_instances, players_fn).call(this),
+        timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this),
+        board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+        clue: this.clue && {
+          ci: this.clue.ci,
+          ri: this.clue.ri,
+          cat: this.clue.cat,
+          value: this.clue.value,
+          dd: this.clue.dd,
+          wager: this.clue.wager,
+          q: this.phase === "dd-wager" ? null : this.clue.q,
+          answer: showAnswer ? this.clue.a : null,
+          buzzedId: this.clue.buzzedId,
+          buzzMs: this.clue.buzzMs,
+          // Everyone who buzzed on this clue, fastest first, with their time in ms.
+          buzzes: this.clue.buzzes.slice().sort((x, y) => x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won })),
+          tried: this.clue.tried
+        },
+        lastResult: this.lastResult,
+        answerTime: this.settings.answerTime,
+        answerTimes: ANSWER_TIMES,
+        hotStreak: STREAK_HOT,
+        reactions: this.reactions.filter((r) => now - r.at < REACT_LIFE).map((r) => ({ id: r.id, pid: r.pid, e: r.e })),
+        reactionChoices: REACTIONS
       };
-      if (cl) {
-        const cell = __privateMethod(this, _JeopardyGame_instances, cell_fn).call(this, cl.c, cl.r);
-        const showText = cl.step !== "wager";
-        view.clue = {
-          c: cl.c,
-          r: cl.r,
-          category: set.categories[cl.c].name,
-          value: cl.value,
-          dd: cl.dd,
-          step: cl.step,
-          text: showText ? cell.clue : null,
-          answer: cl.step === "revealed" ? cell.answer : null,
-          buzzedBy: cl.buzzedBy,
-          buzzedPlayer: cl.buzzedPlayer,
-          ddUnit: cl.ddUnit,
-          wager: cl.wager,
-          lockedOut: cl.lockedOut,
-          correct: cl.correct,
-          timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this, cl)
+      if (this.phase === "gameover") v.awards = this.awards();
+      if (this.phase === "lobby") {
+        const written = __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this);
+        v.packs = this.packs.map((p) => ({ id: p.id, title: p.title, description: p.description, count: p.categories.length, selected: this.selected.has(p.id), easy: p.easy, own: p.own, archive: p.id.startsWith("archive-") }));
+        v.categoryCount = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.length;
+        v.easyAvailable = this.easyPacks().length > 0;
+        v.easyMode = this.easyOn();
+        v.hasArchive = this.hasArchive();
+        v.era = this.era;
+        v.eras = Object.keys(ERAS);
+        v.archiveSeason = this.archiveSeason;
+        v.archiveLoading = this.archiveLoading;
+        v.archiveError = this.archiveError;
+        v.draft = this.draft && this.draft.map((row) => row.map((c) => c.name));
+        v.asWritten = !!written;
+        v.asWrittenChoice = this.settings.asWritten;
+        v.maxPlayers = MAX_PLAYERS2;
+      }
+      if (this.final) {
+        const f = this.final;
+        const showQ = ["final-answer", "final-reveal", "gameover"].includes(this.phase);
+        const done = ["final-reveal", "gameover"].includes(this.phase);
+        v.final = {
+          category: f.category,
+          q: showQ ? f.q : null,
+          answer: done && (this.phase === "gameover" || f.revealIndex >= 0) ? f.a : null,
+          eligible: f.eligible,
+          wagered: Object.keys(f.wagers),
+          answered: Object.keys(f.answers),
+          revealIndex: f.revealIndex,
+          reveals: done ? f.revealOrder.slice(0, f.revealIndex + 1).map((id) => ({ id, ...f.results[id], wager: f.wagers[id] })) : []
         };
       }
-      if (run.final && finalSet) {
-        const f = run.final;
-        const showClue = f.step !== "wager";
-        const judged = f.step === "judge" || f.step === "results";
-        view.final = {
-          step: f.step,
-          category: finalSet.final.category,
-          timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this, f),
-          text: showClue ? finalSet.final.clue : null,
-          answer: f.step === "results" ? finalSet.final.answer : null,
-          finalists: this.finalists().map((u) => ({
-            id: u.id,
-            wagered: f.wagers[u.id] !== void 0,
-            answered: !!f.answers[u.id],
-            // Wager and answer are shown on the TV only once the host judges that player.
-            wager: f.results[u.id] !== void 0 ? f.wagers[u.id] : null,
-            answer: f.results[u.id] !== void 0 ? f.answers[u.id] ?? "" : null,
-            result: f.results[u.id] ?? null,
-            judged: judged && f.results[u.id] !== void 0
-          }))
-        };
-      }
-      return view;
+      return v;
     }
-    /** The host also sees every answer and each Final Jeopardy wager and answer. */
+    /** What one player's phone sees: the shared view and their own state. */
+    playerView(player) {
+      const v = this.publicView();
+      const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, player.id);
+      v.me = p ? {
+        id: p.id,
+        score: p.score,
+        isCaptain: this.captain() === p.id,
+        maxDD: this.phase === "dd-wager" ? this.maxDDWager(p.id) : null,
+        finalWager: this.final ? this.final.wagers[p.id] : void 0,
+        finalAnswer: this.final ? this.final.answers[p.id] : void 0
+      } : null;
+      return v;
+    }
+    /** The host also sees the answers, ahead of time. */
     hostView() {
-      const view = this.publicView();
-      const cl = this.run.clue;
-      if (cl) {
-        view.clue.answer = __privateMethod(this, _JeopardyGame_instances, cell_fn).call(this, cl.c, cl.r).answer;
-        view.clue.text = __privateMethod(this, _JeopardyGame_instances, cell_fn).call(this, cl.c, cl.r).clue;
-      }
-      if (view.final) {
-        const f = this.run.final;
-        view.final.answer = __privateMethod(this, _JeopardyGame_instances, finalSet_fn).call(this).final.answer;
-        view.final.text = __privateMethod(this, _JeopardyGame_instances, finalSet_fn).call(this).final.clue;
-        view.final.finalists.forEach((fu) => {
-          fu.wager = f.wagers[fu.id] ?? null;
-          fu.answer = f.answers[fu.id] ?? null;
-        });
-      }
-      view.dailyDoubles = this.run.dd;
-      view.setId = this.setId;
-      view.setId2 = this.setId2;
-      view.boardCleared = this.boardCleared();
-      return view;
+      const v = this.publicView();
+      const b = this.board();
+      v.secret = {
+        q: this.clue ? this.clue.q : null,
+        answer: this.clue ? this.clue.a : null,
+        alt: this.clue ? this.clue.alt : [],
+        finalAnswer: this.final ? this.final.a : null,
+        finalAnswers: this.final && this.phase === "final-answer" ? this.final.answers : null,
+        // Where the Daily Doubles hide on the current board.
+        dd: b ? b.map((c) => c.clues.map((cl) => cl.dd)) : null
+      };
+      return v;
+    }
+    // ---------- saving ----------
+    /** The game is saved with the room. A clue under way is settled when it comes back (the timers do not survive a restart). */
+    toJSON() {
+      return {
+        settings: this.settings,
+        era: this.era,
+        selected: [...this.selected],
+        played: [...this.played],
+        phase: this.phase,
+        round: this.round,
+        rounds: this.rounds,
+        controllerId: this.controllerId,
+        captainId: this.captainId,
+        finalClue: this.finalClue,
+        final: this.final,
+        lastResult: this.lastResult,
+        clue: this.clue,
+        stats: [...this.stats.entries()]
+      };
+    }
+    restore(data) {
+      this.settings = { ...this.settings, ...data.settings ?? {} };
+      this.era = data.era ?? "any";
+      this.played = new Set(data.played ?? []);
+      this.selected = new Set(data.selected ?? []);
+      this.phase = data.phase ?? "lobby";
+      this.round = data.round ?? 0;
+      this.rounds = data.rounds ?? [];
+      this.controllerId = data.controllerId ?? null;
+      this.captainId = data.captainId ?? null;
+      this.finalClue = data.finalClue ?? null;
+      this.final = data.final ?? null;
+      this.lastResult = data.lastResult ?? null;
+      this.clue = data.clue ?? null;
+      this.stats = new Map(data.stats ?? []);
+      this.timer = null;
+      __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      for (const id of this.selected) if (!this.packs.some((p) => p.id === id)) this.selected.delete(id);
+      if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
+      if (this.clue && ["reading", "open", "answering", "dd-wager", "dd-answer"].includes(this.phase)) {
+        this.phase = "reveal";
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
+      } else if (this.phase === "reveal") __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
+      else if (this.phase === "final-answer") __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this);
+      else if (this.phase === "final-reveal") __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalStep, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
+      if (this.phase === "lobby" && !this.archivePacks.length) __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, this.era);
     }
   };
   _JeopardyGame_instances = new WeakSet();
-  blankRun_fn = function(status) {
-    return { status, round: 1, used: [], dd: [], control: null, clue: null, final: null, view: "board" };
+  resetRun_fn = function() {
+    this.phase = "lobby";
+    this.round = 0;
+    this.rounds = [];
+    this.controllerId = null;
+    this.clue = null;
+    this.lastResult = null;
+    this.final = null;
+    this.finalClue = null;
+    this.timer = null;
   };
   changed_fn = function() {
     this.room.changed();
   };
-  /**
-   * Where the Daily Doubles are: any the question set flags, otherwise random. The first round has one and
-   * the second has two (in different columns), none on the top row, as on the show.
-   */
-  placeDailyDoubles_fn = function(set, round) {
-    const flagged = [];
-    set.categories.forEach((cat, c) => cat.clues.forEach((cl, r) => {
-      if (cl.dailyDouble) flagged.push(key(c, r));
-    }));
-    if (flagged.length) return flagged;
-    const columns = [...Array(COLS).keys()];
-    for (let i = columns.length - 1; i > 0; i--) {
-      const j = Math.floor(this.room.rng() * (i + 1));
-      [columns[i], columns[j]] = [columns[j], columns[i]];
+  now_fn = function() {
+    return this.room.now();
+  };
+  rng_fn = function() {
+    return this.room.rng();
+  };
+  shuffle_fn = function(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return columns.slice(0, round === 2 ? 2 : 1).map((c) => key(c, 1 + Math.floor(this.room.rng() * (ROWS - 1))));
+    return a;
   };
-  /** The unit with the lowest score (a random one of them if tied), or null if nobody can play. */
-  lowestUnit_fn = function() {
-    const units = this.room.eligibleUnits();
-    if (!units.length) return null;
-    const low = Math.min(...units.map((u) => u.score));
-    const tied = units.filter((u) => u.score === low);
-    return tied[Math.floor(this.room.rng() * tied.length)].id;
+  player_fn = function(id) {
+    return this.room.players.find((p) => p.id === id) ?? null;
   };
-  // ---------- the board ----------
-  /** The question set whose board is in play: round 1's, or round 2's. */
-  board_fn = function() {
-    return this.run.round === 2 && this.set2 ? this.set2 : this.set;
+  order_fn = function() {
+    return this.room.players.map((p) => p.id);
   };
-  /** Round 2 (Double Jeopardy) is worth double. */
-  multiplier_fn = function() {
-    return this.run.round === 2 ? 2 : 1;
+  connected_fn = function(id) {
+    return this.room.connected.has(id);
   };
-  value_fn = function(cell) {
-    return int(cell.value) * __privateMethod(this, _JeopardyGame_instances, multiplier_fn).call(this);
+  stat_fn = function(id) {
+    let s = this.stats.get(id);
+    if (!s) {
+      s = { streak: 0, best: 0, right: 0, wrong: 0, fastest: null, bigWin: 0, lockUntil: 0, lastReact: -Infinity };
+      this.stats.set(id, s);
+    }
+    return s;
   };
-  /** Final Jeopardy comes from the last round's set. */
-  finalSet_fn = function() {
-    return this.settings.rounds === 2 && this.set2 ? this.set2 : this.set;
+  resetStats_fn = function() {
+    this.stats = /* @__PURE__ */ new Map();
   };
-  cell_fn = function(c, r) {
-    return __privateMethod(this, _JeopardyGame_instances, board_fn).call(this)?.categories[c]?.clues[r] ?? fail("No such square");
+  setTimer_fn = function(ms, fire, kind = "") {
+    const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+    this.timer = { at: now + ms, fire, kind, totalMs: ms, shownEnd: now + ms };
   };
-  inClue_fn = function(...steps) {
-    const cl = this.run.clue;
-    if (this.run.status !== "clue" || !cl) fail("No clue is open");
-    if (steps.length && !steps.includes(cl.step)) fail(`Not allowed during step "${cl.step}"`);
-    return cl;
+  clearTimer_fn = function() {
+    this.timer = null;
   };
-  validControl_fn = function() {
-    const id = this.run.control;
-    return this.room.eligibleUnits().some((u) => u.id === id) ? id : null;
+  // ---------- packs: your boards, real-show topics, and the house packs ----------
+  refreshPacks_fn = function() {
+    const own = [];
+    for (const { id } of this.room.listContent(GAME)) {
+      const set = this.room.loadContent(GAME, id);
+      if (!set) continue;
+      try {
+        validateSet(set);
+      } catch {
+        continue;
+      }
+      own.push(normalizePack(`own-${id}`, {
+        title: set.title,
+        description: "One of your boards",
+        selected: false,
+        own: true,
+        categories: set.categories.map((c) => ({
+          name: c.name,
+          clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble }))
+        })),
+        finals: [{ category: set.final.category, q: set.final.clue, a: set.final.answer, alt: set.final.alt ?? [] }]
+      }));
+    }
+    this.ownPacks = own;
+    __privateMethod(this, _JeopardyGame_instances, composePacks_fn).call(this);
   };
-  // ---------- timers ----------
-  /**
-   * Seconds to answer the clue in play. A Daily Double gets double the normal answer time
-   * (5 seconds set in the lobby means 10 for a Daily Double). 0 still means no timer.
-   */
-  answerSeconds_fn = function(cl) {
-    return cl.dd ? this.settings.answerSeconds * 2 : this.settings.answerSeconds;
+  composePacks_fn = function() {
+    const before = new Set(this.packs.map((p) => p.id));
+    this.packs = [...this.ownPacks, ...this.archivePacks, ...this.houses];
+    const ids = new Set(this.packs.map((p) => p.id));
+    for (const id of [...this.selected]) if (!ids.has(id)) this.selected.delete(id);
+    for (const p of this.packs) if (!before.has(p.id) && p.selected && (this.archivePacks.includes(p) || !this.archivePacks.length && !p.own)) this.selected.add(p.id);
+    if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
+    this.draft = null;
   };
-  /**
-   * Starts (or, with 0 seconds, clears) a countdown on a clue or on the final round.
-   * kind is 'buzz' (the window for someone to buzz in), 'answer' (time to answer) or 'final'.
-   */
-  startTimer_fn = function(holder, seconds, kind = "answer") {
-    if (!(seconds > 0)) {
-      holder.timer = null;
+  bank_fn = function() {
+    const chosen = this.packs.filter((p) => this.selected.has(p.id));
+    const seen = /* @__PURE__ */ new Set();
+    const categories = [];
+    for (const p of chosen) for (const c of p.categories) {
+      const k = c.name.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        categories.push(c);
+      }
+    }
+    let finals = chosen.flatMap((p) => p.finals);
+    if (!finals.length) finals = this.packs.flatMap((p) => p.finals);
+    return { categories, finals };
+  };
+  /** Categories that have not been played in this room yet (all of them if that leaves too few). */
+  fresh_fn = function(categories, need) {
+    const unplayed = categories.filter((c) => !this.played.has(c.name.toLowerCase()));
+    return unplayed.length >= need ? unplayed : categories;
+  };
+  /** Own boards picked to be played just as written: one board per round (the boards you wrote, not a shuffle). */
+  asWrittenPacks_fn = function() {
+    const chosen = this.packs.filter((p) => this.selected.has(p.id));
+    const onlyOwn = chosen.length >= 1 && chosen.length <= 2 && chosen.every((p) => p.own && p.categories.length >= COLS);
+    return onlyOwn && this.settings.asWritten !== false ? chosen : null;
+  };
+  // ---------- setup (host, captain or TV) ----------
+  lobbyOnly_fn = function() {
+    if (this.phase !== "lobby") fail("Change this before the game starts");
+  };
+  requestArchive_fn = function(era) {
+    this.era = era;
+    this.archiveReqId += 1;
+    this.archiveRequest = { id: this.archiveReqId, era, season: pickSeason(era, () => __privateMethod(this, _JeopardyGame_instances, rng_fn).call(this)) };
+    this.archiveLoading = true;
+    this.archiveError = false;
+  };
+  // ---------- building and starting ----------
+  /** Where the Daily Doubles go: a column and row each, favouring the harder rows, never two in one column. */
+  placeDailyDoubles_fn = function(board, count) {
+    const slots = [];
+    board.forEach((c, ci) => c.clues.forEach((cl, ri) => {
+      for (let k = 0; k < [0, 1, 3, 4, 3][ri]; k++) slots.push([ci, ri]);
+    }));
+    const usedCols = /* @__PURE__ */ new Set();
+    for (; count > 0; count--) {
+      const open = slots.filter(([ci2]) => !usedCols.has(ci2));
+      if (!open.length) break;
+      const [ci, ri] = open[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * open.length)];
+      usedCols.add(ci);
+      board[ci].clues[ri].dd = true;
+    }
+  };
+  makeRound_fn = function(r, cats, ddCount) {
+    const board = cats.map((c) => ({
+      name: c.name,
+      clues: c.clues.slice(0, 5).map((cl, i) => ({
+        // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
+        value: Number(cl.v) > 0 ? Number(cl.v) : (i + 1) * 200 * r,
+        q: cl.q,
+        a: cl.a,
+        alt: cl.alt || [],
+        used: false,
+        dd: !!cl.dd
+      }))
+    }));
+    const flagged = board.reduce((n, c) => n + c.clues.filter((cl) => cl.dd).length, 0);
+    if (!flagged) __privateMethod(this, _JeopardyGame_instances, placeDailyDoubles_fn).call(this, board, ddCount);
+    else if (flagged > ddCount) {
+      let extra = flagged - ddCount;
+      for (const c of board) for (const cl of c.clues) if (cl.dd && extra > 0) {
+        cl.dd = false;
+        extra--;
+      }
+    }
+    return board;
+  };
+  buildRounds_fn = function() {
+    const written = __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this);
+    const bank = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this);
+    if (written) {
+      this.rounds = written.map((p, i) => __privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, i + 1, p.categories.slice(0, COLS), i === 0 ? 1 : 2));
+      const f2 = written[written.length - 1].finals[0];
+      this.finalClue = f2 ? { category: f2.category, q: f2.q, a: f2.a, alt: f2.alt || [] } : null;
+      this.draft = null;
+      for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
       return;
     }
-    const totalMs = seconds * 1e3;
-    holder.timer = { kind, totalMs, deadline: this.room.now() + totalMs, timedOut: false };
+    const cats = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, bank.categories.filter((c) => !this.played.has(c.name.toLowerCase()))).concat(__privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, bank.categories.filter((c) => this.played.has(c.name.toLowerCase()))));
+    const used = /* @__PURE__ */ new Set();
+    const pick = () => {
+      const out = [];
+      for (const c of cats) {
+        if (out.length === 6) break;
+        if (used.has(c.name) || c.clues.length < 5) continue;
+        used.add(c.name);
+        out.push(c);
+      }
+      return out;
+    };
+    const chosen = this.draft && this.draft.every((row) => row.length === 6) ? this.draft : null;
+    this.rounds = chosen ? [__privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 1, chosen[0], 1), __privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 2, chosen[1], 2)] : [__privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 1, pick(), 1), __privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 2, pick(), 2)];
+    this.draft = null;
+    for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
+    const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`));
+    const f = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, freshFinals.length ? freshFinals : bank.finals)[0];
+    if (f) this.played.add(`final:${f.q}`);
+    this.finalClue = f ? { category: f.category, q: f.q, a: f.a, alt: f.alt || [] } : null;
   };
-  timerView_fn = function(holder) {
-    const tm = holder?.timer;
-    return tm ? { kind: tm.kind, totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
+  openBuzzers_fn = function(window) {
+    this.phase = "open";
+    this.clue.buzzedId = null;
+    this.openedAt = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, window, () => __privateMethod(this, _JeopardyGame_instances, endClue_fn).call(this), "buzz");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
-  markUsed_fn = function(cl) {
-    const k = key(cl.c, cl.r);
-    if (!this.run.used.includes(k)) this.run.used.push(k);
+  /** Host mode: the visible answer clock. At zero the TV says "Time's up" and the host has a short grace to rule. */
+  startAnswerClock_fn = function(pid) {
+    const sec = this.settings.answerTime;
+    if (!sec) {
+      __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+      return;
+    }
+    const ms = sec * 1e3;
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms + T.hostGrace, () => this.submitAnswer(pid, "", true), "answer");
+    this.timer.totalMs = ms;
+    this.timer.shownEnd = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
   };
-  /** The biggest clue value on the board in play ($1,000 in round 1, $2,000 in round 2). */
-  boardTop_fn = function() {
-    return Math.max(1e3 * __privateMethod(this, _JeopardyGame_instances, multiplier_fn).call(this), ...(__privateMethod(this, _JeopardyGame_instances, board_fn).call(this)?.categories ?? []).flatMap((c) => c.clues.map((cl) => __privateMethod(this, _JeopardyGame_instances, value_fn).call(this, cl))));
+  /** Count a ruling for the streaks and awards. `undo` flips an earlier one. */
+  tally_fn = function(id, correct, wager, undo) {
+    const p = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, id);
+    if (undo) {
+      if (correct) {
+        p.wrong = Math.max(0, p.wrong - 1);
+        p.right++;
+        p.streak++;
+        p.best = Math.max(p.best, p.streak);
+        if (wager) p.bigWin = Math.max(p.bigWin, wager);
+      } else {
+        p.right = Math.max(0, p.right - 1);
+        p.wrong++;
+        p.streak = 0;
+      }
+      return;
+    }
+    if (correct) {
+      p.right++;
+      p.streak++;
+      p.best = Math.max(p.best, p.streak);
+      if (wager) p.bigWin = Math.max(p.bigWin, wager);
+    } else {
+      p.wrong++;
+      p.streak = 0;
+    }
   };
-  inFinal_fn = function(...steps) {
-    const f = this.run.final;
-    if (this.run.status !== "final" || !f) fail("Final Jeopardy is not running");
-    if (steps.length && !steps.includes(f.step)) fail(`Not allowed during step "${f.step}"`);
-    return f;
+  endClue_fn = function() {
+    if (!this.clue) return;
+    if (this.phase === "answering") {
+      this.submitAnswer(this.clue.buzzedId, "", true);
+      return;
+    }
+    __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
   };
-
-  // games/jeopardy/clues.js
-  var createRandomBoards = () => null;
+  revealClue_fn = function() {
+    this.phase = "reveal";
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  afterReveal_fn = function() {
+    this.clue = null;
+    const left = this.board().some((c) => c.clues.some((cl) => !cl.used));
+    __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+    if (!left) this.phase = "round-end";
+    else {
+      this.phase = "board";
+      if (!__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) {
+        const here = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
+        if (here.length) this.controllerId = here[0];
+      }
+    }
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  // ---------- the final round ----------
+  startFinal_fn = function() {
+    this.round = this.rounds.length + 1;
+    const eligible = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => (__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.score ?? 0) > 0);
+    if (!this.finalClue || eligible.length === 0) {
+      this.phase = "gameover";
+      __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      return;
+    }
+    this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, results: {}, revealOrder: [], revealIndex: -1 };
+    this.phase = "final-wager";
+    __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  beginFinalClue_fn = function() {
+    if (this.phase !== "final-wager") return;
+    for (const id of this.final.eligible) if (!(id in this.final.wagers)) this.final.wagers[id] = 0;
+    this.phase = "final-answer";
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalAnswer, () => __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this), "final");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  beginFinalReveal_fn = function() {
+    if (this.phase !== "final-answer") return;
+    const f = this.final;
+    for (const id of f.eligible) {
+      const ans = f.answers[id] || "";
+      f.results[id] = { answer: ans || "(no answer)", correct: judge(ans, [f.a, ...f.alt]), shown: false, applied: false };
+    }
+    f.revealOrder = f.eligible.slice().sort((a, b) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, a).score - __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, b).score);
+    f.revealIndex = -1;
+    this.phase = "final-reveal";
+    __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this);
+  };
+  finalStep_fn = function() {
+    const f = this.final;
+    f.revealIndex++;
+    if (f.revealIndex >= f.revealOrder.length) {
+      this.phase = "gameover";
+      __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      return;
+    }
+    const id = f.revealOrder[f.revealIndex];
+    const r = f.results[id];
+    const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id);
+    r.shown = true;
+    if (p && !r.applied) {
+      p.score += r.correct ? f.wagers[id] : -f.wagers[id];
+      __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, id, r.correct, f.wagers[id]);
+      r.applied = true;
+    }
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalStep, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  // ---------- views ----------
+  timerView_fn = function() {
+    const t = this.timer;
+    if (!t || !["buzz", "answer", "final"].includes(t.kind)) return null;
+    const left = Math.max(0, Math.round(t.shownEnd - __privateMethod(this, _JeopardyGame_instances, now_fn).call(this)));
+    return { kind: t.kind, totalMs: t.totalMs, leftMs: left };
+  };
+  players_fn = function() {
+    return this.room.players.map((p) => ({ id: p.id, name: p.name, score: p.score, color: p.color, connected: __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, p.id), streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.id).streak }));
+  };
+  /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten"]));
+  var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js
   var jeopardy_default = {
     id: "jeopardy",
     name: "Jeopardy",
-    description: "A 6\xD75 board of clues, Daily Doubles and Final Jeopardy. Buzz in to answer.",
+    description: "A 6\xD75 board of clues, Daily Doubles and Final Jeopardy. Buzz in, type your answer, beat the clock.",
+    // Played by individuals only (up to 8), never in teams.
+    needs: { individuals: true },
+    maxPlayers: MAX_PLAYERS2,
     validateContent: validateSet,
-    create: (room) => new JeopardyGame(room),
-    // A source of random boards built from the clue file kept in <data>/clues (see clues.js).
-    randomBoards: (dataDir) => createRandomBoards({ dataDir })
+    create: (room) => new JeopardyGame(room)
   };
 
   // games/feud/game.js
@@ -814,7 +1487,7 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn2, blankFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn, startTimer_fn2, timerView_fn2, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var FeudGame = class {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
@@ -822,7 +1495,7 @@
       this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45 };
       this.setId = null;
       this.set = null;
-      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn2).call(this, "lobby");
+      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
       this.history = [];
     }
     init() {
@@ -848,8 +1521,8 @@
       this.settings = { ...this.settings, ...data.settings };
       this.setId = data.setId ?? null;
       this.set = this.setId ? this.room.loadContent(GAME2, this.setId) : null;
-      this.run = { ...__privateMethod(this, _FeudGame_instances, blankRun_fn2).call(this, "lobby"), ...data.run };
-      if (this.run.status !== "lobby" && !this.set) this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn2).call(this, "lobby");
+      this.run = { ...__privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby"), ...data.run };
+      if (this.run.status !== "lobby" && !this.set) this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
       const fm0 = this.run.fm;
       if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => v === null ? 0 : 2), p2: fm0.points.p2.map((v) => v === null ? 0 : 2) };
       const tm = this.run.fm?.timer;
@@ -963,14 +1636,14 @@
       if (__privateMethod(this, _FeudGame_instances, teams_fn).call(this).some((t) => __privateMethod(this, _FeudGame_instances, members_fn).call(this, t.id).length < 1)) fail("Each team needs at least one player");
       this.room.resetScores();
       this.history = [];
-      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn2).call(this, "round");
+      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "round");
       __privateMethod(this, _FeudGame_instances, beginRound_fn).call(this, 0);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     endGame() {
       this.room.resetScores();
       this.history = [];
-      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn2).call(this, "lobby");
+      this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     undo() {
@@ -1144,13 +1817,13 @@
       if (fm.step !== "pick") fail("Fast Money has already started");
       if (!fm.players[0] || !fm.players[1]) fail("Choose the two players first");
       fm.step = "p1";
-      __privateMethod(this, _FeudGame_instances, startTimer_fn2).call(this, fm, this.settings.fastMoneySeconds1);
+      __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds1);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     fmRestartTimer() {
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
-      if (fm.step === "p1") __privateMethod(this, _FeudGame_instances, startTimer_fn2).call(this, fm, this.settings.fastMoneySeconds1);
-      else if (fm.step === "p2") __privateMethod(this, _FeudGame_instances, startTimer_fn2).call(this, fm, this.settings.fastMoneySeconds2);
+      if (fm.step === "p1") __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds1);
+      else if (fm.step === "p2") __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds2);
       else fail("There is nothing to time right now");
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
@@ -1158,7 +1831,7 @@
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
       if (fm.step === "p1") {
         fm.step = "p2";
-        __privateMethod(this, _FeudGame_instances, startTimer_fn2).call(this, fm, this.settings.fastMoneySeconds2);
+        __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds2);
       } else if (fm.step === "p2") {
         fm.step = "reveal";
         fm.timer = null;
@@ -1206,7 +1879,7 @@
         fm.labels[slot][q] = "No answer";
         fm.shown[slot][q] = 2;
       } else fm.shown[slot][q] = 1;
-      __privateMethod(this, _FeudGame_instances, afterReveal_fn).call(this, fm);
+      __privateMethod(this, _FeudGame_instances, afterReveal_fn2).call(this, fm);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     /** Second tap ("survey says"): the TV shows the points. The host can give the points and the matching answer, or leave them to the suggestion. Can be used again to correct a score. */
@@ -1229,7 +1902,7 @@
       fm.points[slot][q] = pts;
       fm.labels[slot][q] = cleanName(name, 40) || null;
       fm.shown[slot][q] = 2;
-      __privateMethod(this, _FeudGame_instances, afterReveal_fn).call(this, fm);
+      __privateMethod(this, _FeudGame_instances, afterReveal_fn2).call(this, fm);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     fmTotals() {
@@ -1260,7 +1933,7 @@
     }
   };
   _FeudGame_instances = new WeakSet();
-  blankRun_fn2 = function(status) {
+  blankRun_fn = function(status) {
     return {
       status,
       round: 0,
@@ -1427,10 +2100,10 @@
     if (!["reveal", "results"].includes(fm.step)) fail("Reveal the answers once both players are done");
     return fm;
   };
-  afterReveal_fn = function(fm) {
+  afterReveal_fn2 = function(fm) {
     if (fm.step === "reveal" && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = "results";
   };
-  startTimer_fn2 = function(holder, seconds) {
+  startTimer_fn = function(holder, seconds) {
     if (!(seconds > 0)) {
       holder.timer = null;
       return;
@@ -1562,7 +2235,7 @@
 
   // room.js
   var VERSION = 2;
-  var _Room_instances, id_fn, freeColor_fn, lobbyOnly_fn, neededTeams_fn, fixedTeams_fn, effectiveMode_fn, wantedTeamCount_fn, reconcile_fn, ensureTeams_fn, shuffled_fn, deal_fn, placeUnassigned_fn, unitViews_fn, roomView_fn;
+  var _Room_instances, id_fn, freeColor_fn, lobbyOnly_fn2, neededTeams_fn, individualsOnly_fn, maxPlayers_fn, fixedTeams_fn, effectiveMode_fn, wantedTeamCount_fn, reconcile_fn, ensureTeams_fn, shuffled_fn, deal_fn, placeUnassigned_fn, unitViews_fn, roomView_fn;
   var Room = class {
     constructor({ games = {}, now = () => performance.now(), onChange = () => {
     }, loadContent = () => null, listContent = () => [], random = Math.random } = {}) {
@@ -1651,7 +2324,7 @@
     join({ name, color, teamId, kind = "phone" }) {
       name = cleanName(name);
       if (!name) fail("Enter a name");
-      if (this.players.length >= MAX_PLAYERS) fail("The game is full");
+      if (this.players.length >= __privateMethod(this, _Room_instances, maxPlayers_fn).call(this)) fail("The game is full");
       if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail("That name is taken");
       color = COLORS.includes(color) ? color : __privateMethod(this, _Room_instances, freeColor_fn).call(this);
       const player = {
@@ -1678,7 +2351,7 @@
       return !!this.game?.inProgress();
     }
     chooseGame(id) {
-      __privateMethod(this, _Room_instances, lobbyOnly_fn).call(this, "Pick the game");
+      __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Pick the game");
       const mod = this.games[id] ?? fail("No such game");
       if (this.gameId === id && this.game) return;
       this.gameId = id;
@@ -1691,7 +2364,7 @@
     setMode(mode) {
       if (!["auto", "players", "teams"].includes(mode)) fail("Unknown mode");
       __privateMethod(this, _Room_instances, fixedTeams_fn).call(this, "How to play");
-      __privateMethod(this, _Room_instances, lobbyOnly_fn).call(this, "Change the mode");
+      __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Change the mode");
       this.modeSetting = mode;
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
       this.changed();
@@ -1701,7 +2374,7 @@
       const n = int(count);
       if (![2, 4].includes(n)) fail("Choose 2 or 4 teams");
       __privateMethod(this, _Room_instances, fixedTeams_fn).call(this, "The number of teams");
-      __privateMethod(this, _Room_instances, lobbyOnly_fn).call(this, "Change the number of teams");
+      __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Change the number of teams");
       if (n === 2 && this.players.length > 2 * TEAM_SIZE) fail(`With more than ${2 * TEAM_SIZE} players you need four teams`);
       this.teamCount = n;
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
@@ -1709,7 +2382,7 @@
     }
     /** Deal everyone onto the teams again, at random. */
     shuffleTeams() {
-      __privateMethod(this, _Room_instances, lobbyOnly_fn).call(this, "Shuffle the teams");
+      __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Shuffle the teams");
       if (this.mode !== "teams") fail("Not playing in teams");
       __privateMethod(this, _Room_instances, deal_fn).call(this);
       this.changed();
@@ -1736,7 +2409,7 @@
     }
     /** Lobby only: forget every player and team (a new party). */
     clearRoster() {
-      __privateMethod(this, _Room_instances, lobbyOnly_fn).call(this, "Clear the players");
+      __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Clear the players");
       this.players = [];
       this.connected.clear();
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
@@ -1837,7 +2510,8 @@
     playerView(playerId, base = this.publicView()) {
       const p = this.players.find((x) => x.id === playerId);
       const me = p ? { id: p.id, name: p.name, color: p.color, unitId: this.unitOf(p)?.id ?? null } : null;
-      return { ...base, room: { ...base.room, me } };
+      const game = p && this.game?.playerView ? this.game.playerView(p) : base.game;
+      return { ...base, game, room: { ...base.room, me } };
     }
   };
   _Room_instances = new WeakSet();
@@ -1848,7 +2522,7 @@
     const used = new Set(this.units().map((u) => u.color));
     return COLORS.find((c) => !used.has(c)) ?? COLORS[this.players.length % COLORS.length];
   };
-  lobbyOnly_fn = function(what) {
+  lobbyOnly_fn2 = function(what) {
     if (this.inProgress()) fail(`${what} before the game starts, or end the game first`);
   };
   // ---------- keeping teams in step with the roster ----------
@@ -1856,12 +2530,21 @@
   neededTeams_fn = function() {
     return this.games[this.gameId]?.needs?.teams ?? 0;
   };
+  /** True when the active game is always played by individuals. */
+  individualsOnly_fn = function() {
+    return !!this.games[this.gameId]?.needs?.individuals;
+  };
+  maxPlayers_fn = function() {
+    return Math.min(MAX_PLAYERS, this.games[this.gameId]?.maxPlayers ?? MAX_PLAYERS);
+  };
   fixedTeams_fn = function(what) {
     const n = __privateMethod(this, _Room_instances, neededTeams_fn).call(this);
     if (n) fail(`${what} is fixed: ${this.games[this.gameId].name} is always played by ${n} teams`);
+    if (__privateMethod(this, _Room_instances, individualsOnly_fn).call(this)) fail(`${what} is fixed: ${this.games[this.gameId].name} is always played by individuals`);
   };
   effectiveMode_fn = function() {
     if (__privateMethod(this, _Room_instances, neededTeams_fn).call(this)) return "teams";
+    if (__privateMethod(this, _Room_instances, individualsOnly_fn).call(this)) return "players";
     if (this.modeSetting === "auto") return this.players.length > INDIVIDUAL_MAX ? "teams" : "players";
     return this.modeSetting;
   };
@@ -1952,6 +2635,8 @@
       teamCount: this.teams.length,
       fixedTeams: __privateMethod(this, _Room_instances, neededTeams_fn).call(this),
       // a game that insists on this many teams (0: the host chooses)
+      individualsOnly: __privateMethod(this, _Room_instances, individualsOnly_fn).call(this),
+      maxPlayers: __privateMethod(this, _Room_instances, maxPlayers_fn).call(this),
       individualMax: INDIVIDUAL_MAX,
       teamSize: TEAM_SIZE,
       teams: this.teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
@@ -1963,7 +2648,7 @@
   };
 
   // engine/hub.js
-  function createHub({ room, pinOk, send, rpc = null, onError = (e) => console.error(e) }) {
+  function createHub({ room, pinOk, send, rpc = null, trustedTv = () => false, onError = (e) => console.error(e) }) {
     const clients = /* @__PURE__ */ new Map();
     const liveCount = (playerId) => [...clients.values()].filter((c) => c.playerId === playerId).length;
     function viewFor(client, cache) {
@@ -2010,7 +2695,7 @@
           return;
         }
         case "act": {
-          if (client.role !== "host") return;
+          if (client.role !== "host" && !(client.role === "tv" && trustedTv(id))) return;
           room.act(msg.action, msg.args ?? {});
           return;
         }
@@ -2205,6 +2890,7 @@
       room,
       pinOk,
       rpc,
+      trustedTv: (id) => id === "tv",
       ...onError ? { onError } : {},
       send: (id, message) => {
         if (relay?.knows(id)) relay.send(id, message);
@@ -2221,6 +2907,10 @@
         room.tick();
         relay?.sweep();
       },
+      /** The game wants a season of real-show clues downloaded: { id, era } or null. The host app fetches it and calls archiveLoaded. */
+      takeArchiveRequest: () => room.game?.takeArchiveRequest?.() ?? null,
+      archiveLoaded: (tsv, season, id) => room.game?.archiveLoaded?.(tsv, season, id),
+      archiveFailed: (id) => room.game?.archiveFailed?.(id),
       code,
       /** The relay's room channel (the TV listens here), or null when there is no relay. */
       relayTopic: relay?.topic ?? null,
@@ -2311,7 +3001,14 @@
       }
       engine.receive(id, m);
     },
-    tick: () => engine.tick(),
+    tick() {
+      engine.tick();
+      const want = engine.takeArchiveRequest();
+      if (want && __native.loadArchive) __native.loadArchive(JSON.stringify(want));
+    },
+    /** The app got a season: (id, season, tsvText). */
+    archiveLoaded: (id, season, tsv) => engine.archiveLoaded(String(tsv), Number(season), Number(id)),
+    archiveFailed: (id) => engine.archiveFailed(Number(id)),
     putSet: (gameId, id, json) => engine.putSet(gameId, id, parse(json)),
     removeSet: (gameId, id) => engine.removeSet(gameId, id),
     listSets: (gameId) => JSON.stringify(engine.listSets(gameId))

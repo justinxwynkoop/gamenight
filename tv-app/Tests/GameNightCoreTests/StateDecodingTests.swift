@@ -1,9 +1,9 @@
 import XCTest
 @testable import GameNightCore
 
-/// The JSON in Fixtures/ was recorded from the real Game Night server (a scripted
-/// game played over WebSockets), except lobby-teams, no-game-chosen and other-game,
-/// which are hand-made. If the server's views change, record new ones.
+/// The JSON in Fixtures/ was recorded from the real game engine: jp-*.json by scripts/record-tv-fixtures.mjs in the
+/// gamenight repo (a scripted Jeopardy game), feud-*.json from a scripted Family Feud game, and no-game-chosen and
+/// other-game by hand. If the engine's views change, record new ones.
 enum Fixture {
     static var directory: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
@@ -33,18 +33,18 @@ enum Fixture {
 final class StateDecodingTests: XCTestCase {
     func testEveryRecordedStateDecodes() throws {
         let names = try Fixture.names()
-        XCTAssertGreaterThan(names.count, 20)
+        XCTAssertGreaterThan(names.count, 40)
         for name in names {
             XCTAssertNoThrow(try Fixture.state(name), "\(name) should decode")
         }
     }
 
     func testServerMessageEnvelope() throws {
-        let view = try String(decoding: Fixture.data("board"), as: UTF8.self)
+        let view = try String(decoding: Fixture.data("jp-board"), as: UTF8.self)
         let json = Data(#"{"t":"state","view":\#(view)}"#.utf8)
         XCTAssertEqual(try JSONDecoder().decode(ServerMessageKind.self, from: json).t, "state")
         let message = try JSONDecoder().decode(StateMessage.self, from: json)
-        XCTAssertEqual(message.view.jeopardy?.status, .board)
+        XCTAssertEqual(message.view.jeopardy?.phase, .board)
     }
 
     func testOtherMessagesAreNotStates() throws {
@@ -58,72 +58,6 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(ServerInfo.self, from: json).joinUrl, "http://192.168.1.50:3000/")
     }
 
-    // MARK: Lobby and room
-
-    func testLobbyWithPlayers() throws {
-        let state = try Fixture.state("lobby-players")
-        XCTAssertFalse(state.room.inProgress)
-        XCTAssertEqual(state.room.units.map(\.name), ["Leo", "Maya", "Dad", "Grandma"])
-        XCTAssertEqual(state.room.units.first?.color, "#14b8a6")
-        XCTAssertEqual(state.jeopardy?.lobbyTitle, "Family Night Sampler")
-        XCTAssertEqual(state.jeopardy?.status, .lobby)
-    }
-
-    func testTeamLobby() throws {
-        let room = try Fixture.state("lobby-teams").room
-        XCTAssertTrue(room.isTeamMode)
-        XCTAssertEqual(room.units.map(\.members), [3, 2])
-        XCTAssertEqual(room.units.map(\.connected), [true, false])
-        XCTAssertEqual(room.unit("t2")?.name, "Blue")
-        XCTAssertNil(room.unit("nobody"))
-        XCTAssertNil(room.unit(nil))
-    }
-
-    // MARK: Team play (recorded from the server with six players)
-
-    func testAutoTeamsLobby() throws {
-        let room = try Fixture.state("teams-lobby").room
-        XCTAssertTrue(room.isTeamMode)
-        XCTAssertEqual(room.units.map(\.name), ["Red", "Blue"])
-        XCTAssertEqual(room.units.map(\.color), ["#ef4444", "#3b82f6"])
-        XCTAssertEqual(room.units.map(\.members), [3, 3])
-        XCTAssertEqual(room.units.flatMap { $0.memberNames ?? [] }.sorted(), ["Ann", "Ben", "Cat", "Dev", "Eli", "Fay"])
-        XCTAssertEqual(room.settings.sound, true)
-    }
-
-    func testFourTeams() throws {
-        let room = try Fixture.state("teams-lobby-four").room
-        XCTAssertEqual(room.units.map(\.name), ["Red", "Blue", "Green", "Yellow"])
-        XCTAssertEqual(room.units.map(\.color), ["#ef4444", "#3b82f6", "#22c55e", "#eab308"])
-        XCTAssertEqual(room.units.map(\.members).sorted(), [1, 1, 2, 2])
-        for unit in room.units { XCTAssertEqual(unit.memberNames?.count, unit.members) }
-    }
-
-    func testIndividualPlayHasNoMemberList() throws {
-        XCTAssertNil(try Fixture.state("lobby-players").room.units.first?.memberNames)
-    }
-
-    func testTeamsPlayAGame() throws {
-        let answering = try XCTUnwrap(try Fixture.jeopardy("teams-clue-answering").clue)
-        let room = try Fixture.state("teams-clue-answering").room
-        XCTAssertNotNil(room.unit(answering.buzzedBy), "buzzedBy is a team")
-        XCTAssertNotEqual(answering.buzzedBy, answering.buzzedPlayer, "the player who pressed is not the team")
-        let revealed = try Fixture.state("teams-board-after-clue")
-        XCTAssertEqual(revealed.room.units.map(\.score).sorted(), [0, 400])
-        XCTAssertNotNil(revealed.jeopardy?.control)
-    }
-
-    func testFinalWagerListsEveryoneButOnlyQualifiedTeamsPlay() throws {
-        let state = try Fixture.state("teams-final-wager")
-        let round = try XCTUnwrap(state.jeopardy?.finalRound)
-        XCTAssertEqual(round.step, .wager)
-        XCTAssertEqual(state.room.units.count, 2, "everyone's score is in the state the TV and phones receive")
-        XCTAssertEqual(round.finalists.count, 1, "only the team with points plays the final round")
-        let finalist = try XCTUnwrap(state.room.unit(round.finalists[0].id))
-        XCTAssertEqual(finalist.score, 400)
-        XCTAssertEqual(state.room.units.filter { $0.id != finalist.id }.map(\.score), [0])
-    }
-
     func testNoGameChosen() throws {
         let state = try Fixture.state("no-game-chosen")
         XCTAssertEqual(state.game, .noGame)
@@ -134,152 +68,220 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(try Fixture.state("other-game").game, .unsupported(id: "bingo"))
     }
 
+    func testTimersWithoutTimedOutAreTimedOutOnlyAtZero() throws {
+        let running = try JSONDecoder().decode(TimerState.self, from: Data(#"{"kind":"buzz","totalMs":7000,"leftMs":3000}"#.utf8))
+        XCTAssertEqual(running, TimerState(kind: "buzz", totalMs: 7000, leftMs: 3000, timedOut: false))
+        let done = try JSONDecoder().decode(TimerState.self, from: Data(#"{"kind":"buzz","totalMs":7000,"leftMs":0}"#.utf8))
+        XCTAssertTrue(done.timedOut)
+        let sent = try JSONDecoder().decode(TimerState.self, from: Data(#"{"kind":"fm","totalMs":30000,"leftMs":5000,"timedOut":true}"#.utf8))
+        XCTAssertTrue(sent.timedOut, "Family Feud says so itself")
+    }
+
+    // MARK: Lobby
+
+    func testLobby() throws {
+        let state = try Fixture.state("jp-lobby")
+        XCTAssertFalse(state.room.inProgress)
+        XCTAssertEqual(state.room.mode, "players", "Jeopardy is always played by individuals")
+        XCTAssertEqual(state.room.units.map(\.name), ["Leo", "Maya", "Dad"])
+        let game = try XCTUnwrap(state.jeopardy)
+        XCTAssertEqual(game.phase, .lobby)
+        XCTAssertEqual(game.lobbyTitle, "Jeopardy")
+        XCTAssertEqual(game.maxPlayers, 8)
+        XCTAssertEqual(game.captainId, "p1", "the first to join is the captain")
+        XCTAssertEqual(game.players.map(\.name), ["Leo", "Maya", "Dad"])
+        XCTAssertFalse(game.hostJudges)
+        XCTAssertNil(game.roundLabel)
+    }
+
+    func testLobbyPacks() throws {
+        let game = try Fixture.jeopardy("jp-lobby")
+        let packs = try XCTUnwrap(game.packs)
+        let own = try XCTUnwrap(packs.first { $0.id == "own-family-night" })
+        XCTAssertEqual(own.own, true, "your own boards are in the list")
+        XCTAssertFalse(own.selected)
+        XCTAssertTrue(packs.contains { $0.id == "house-classic" && $0.selected })
+        XCTAssertEqual(game.categoryCount, 52)
+        XCTAssertEqual(game.easyAvailable, true)
+        XCTAssertEqual(game.easyMode, false)
+    }
+
+    func testRealShowClues() throws {
+        let loading = try Fixture.jeopardy("jp-lobby-loading")
+        XCTAssertEqual(loading.hasArchive, true)
+        XCTAssertEqual(loading.era, "classic")
+        XCTAssertEqual(loading.archiveLoading, true)
+        XCTAssertEqual(loading.eras, ["any", "classic", "2000s", "recent"])
+
+        let loaded = try Fixture.jeopardy("jp-lobby-archive")
+        XCTAssertEqual(loaded.archiveLoading, false)
+        XCTAssertNotNil(loaded.archiveSeason)
+        XCTAssertTrue(try XCTUnwrap(loaded.packs).contains { $0.archive == true })
+        XCTAssertEqual(Seasons.label(12), "Season 12 (1995-96)")
+        XCTAssertEqual(Seasons.label(42), "Season 42 (2025-26)")
+        XCTAssertEqual(Seasons.label(nil), "")
+    }
+
+    func testBoardPreviewAndEasyMode() throws {
+        let draft = try XCTUnwrap(try Fixture.jeopardy("jp-lobby-draft").draft)
+        XCTAssertEqual(draft.map(\.count), [6, 6])
+        XCTAssertEqual(try Fixture.jeopardy("jp-lobby-easy").easyMode, true)
+    }
+
     // MARK: Board and clues
 
     func testBoardShape() throws {
-        let game = try Fixture.jeopardy("board")
-        XCTAssertEqual(game.status, .board)
-        XCTAssertEqual(game.categories.count, 6)
-        XCTAssertEqual(game.categories.first, "Around the World")
-        XCTAssertEqual(game.board.count, 6)
-        XCTAssertEqual(game.board[0].map(\.value), [200, 400, 600, 800, 1000])
-        XCTAssertTrue(game.board.joined().allSatisfy { !$0.used })
+        let game = try Fixture.jeopardy("jp-board")
+        XCTAssertEqual(game.phase, .board)
+        XCTAssertEqual(game.round, 1)
+        XCTAssertEqual(game.rounds, 2)
+        XCTAssertEqual(game.roundLabel, "Round 1")
+        let board = try XCTUnwrap(game.board)
+        XCTAssertEqual(board.count, 6)
+        XCTAssertEqual(board[0].clues.map(\.value), [200, 400, 600, 800, 1000])
+        XCTAssertTrue(board.flatMap(\.clues).allSatisfy { !$0.used })
+        XCTAssertEqual(game.controllerId, "p2")
+        XCTAssertEqual(game.player("p2")?.name, "Maya")
+        XCTAssertEqual(game.name("nobody"), "Someone")
     }
 
-    func testBoardAfterAClueMarksItUsedAndGivesControl() throws {
-        let game = try Fixture.jeopardy("board-after-clue")
-        XCTAssertTrue(game.board[0][1].used)
-        XCTAssertFalse(game.board[0][0].used)
-        XCTAssertEqual(game.control, "p1")
-        XCTAssertNil(game.clue)
+    func testRoundTwoIsWorthDouble() throws {
+        let game = try Fixture.jeopardy("jp-board-round-2")
+        XCTAssertEqual(game.round, 2)
+        XCTAssertEqual(game.roundLabel, "Round 2 · Double Up")
+        XCTAssertEqual(game.board?[0].clues.map(\.value), [400, 800, 1200, 1600, 2000])
     }
 
     func testClueSteps() throws {
-        XCTAssertEqual(try Fixture.jeopardy("clue-reading").clue?.step, .reading)
-        XCTAssertNil(try Fixture.jeopardy("clue-reading").clue?.timer)
+        let reading = try Fixture.jeopardy("jp-reading")
+        XCTAssertEqual(reading.phase, .reading)
+        XCTAssertNil(reading.timer)
+        XCTAssertEqual(reading.clue?.q, "He came up with the theory of relativity.")
+        XCTAssertNil(reading.clue?.answer, "the answer is never sent before the reveal")
 
-        let open = try XCTUnwrap(try Fixture.jeopardy("clue-open").clue)
-        XCTAssertEqual(open.step, .open)
-        XCTAssertEqual(open.category, "Around the World")
-        XCTAssertEqual(open.value, 400)
-        XCTAssertEqual(open.text, "The capital of Australia, and it is not Sydney.")
-        XCTAssertNil(open.answer)
-        XCTAssertEqual(open.timer, TimerState(kind: "buzz", totalMs: 10000, leftMs: 10000, timedOut: false))
+        let open = try Fixture.jeopardy("jp-open")
+        XCTAssertEqual(open.phase, .open)
+        XCTAssertEqual(open.timer, TimerState(kind: "buzz", totalMs: 7000, leftMs: 7000, timedOut: false))
 
-        let answering = try XCTUnwrap(try Fixture.jeopardy("clue-answering").clue)
-        XCTAssertEqual(answering.step, .answering)
-        XCTAssertEqual(answering.buzzedBy, "p2")
+        let answering = try Fixture.jeopardy("jp-answering")
+        XCTAssertEqual(answering.phase, .answering)
+        XCTAssertEqual(answering.clue?.buzzedId, "p2")
+        XCTAssertEqual(answering.clue?.buzzMs, 300)
         XCTAssertEqual(answering.timer?.kind, "answer")
+        XCTAssertEqual(answering.timer?.totalMs, 15000)
+        let buzzes = try XCTUnwrap(answering.clue?.buzzes)
+        XCTAssertEqual(buzzes.map(\.pid), ["p2", "p1"], "everyone's buzz is timed, fastest first")
+        XCTAssertEqual(buzzes.map(\.ms), [300, 380])
 
-        let afterWrong = try XCTUnwrap(try Fixture.jeopardy("clue-open-after-wrong").clue)
-        XCTAssertEqual(afterWrong.step, .open)
-        XCTAssertEqual(afterWrong.lockedOut, ["p2"])
+        let afterWrong = try Fixture.jeopardy("jp-open-after-wrong")
+        XCTAssertEqual(afterWrong.phase, .open)
+        XCTAssertEqual(afterWrong.clue?.tried, ["p2"])
+        XCTAssertEqual(afterWrong.lastResult?.correct, false)
+        XCTAssertEqual(afterWrong.lastResult?.answer, "definitely wrong")
+        XCTAssertEqual(afterWrong.timer?.totalMs, 6000)
 
-        let revealed = try XCTUnwrap(try Fixture.jeopardy("clue-revealed-correct").clue)
-        XCTAssertEqual(revealed.step, .revealed)
-        XCTAssertEqual(revealed.answer, "Canberra")
-        XCTAssertEqual(revealed.correct, "p1")
-        XCTAssertNil(revealed.timer)
+        let correct = try Fixture.jeopardy("jp-reveal-correct")
+        XCTAssertEqual(correct.phase, .reveal)
+        XCTAssertEqual(correct.clue?.answer, "Albert Einstein")
+        XCTAssertEqual(correct.lastResult?.pid, "p3")
+        XCTAssertEqual(correct.lastResult?.correct, true)
+        XCTAssertEqual(correct.lastResult?.delta, 200)
+        XCTAssertEqual(correct.controllerId, "p3", "whoever gets it right picks next")
 
-        let nobody = try XCTUnwrap(try Fixture.jeopardy("clue-revealed-nobody").clue)
-        XCTAssertNil(nobody.correct)
-        XCTAssertNotNil(nobody.answer)
+        let nobody = try Fixture.jeopardy("jp-reveal-nobody")
+        XCTAssertNil(nobody.lastResult)
+        XCTAssertEqual(nobody.clue?.answer, "Isaac Newton")
+    }
+
+    func testHostJudging() throws {
+        let reading = try Fixture.jeopardy("jp-host-reading")
+        XCTAssertTrue(reading.hostJudges)
+        XCTAssertEqual(reading.phase, .reading)
+        let answering = try Fixture.jeopardy("jp-host-answering")
+        XCTAssertEqual(answering.timer?.kind, "answer")
+        XCTAssertEqual(answering.timer?.totalMs, 10000)
+        XCTAssertEqual(answering.answerTime, 10)
     }
 
     func testDailyDouble() throws {
-        let pick = try XCTUnwrap(try Fixture.jeopardy("dd-pick-player").clue)
-        XCTAssertTrue(pick.dd)
-        XCTAssertEqual(pick.step, .wager)
-        XCTAssertNil(pick.text, "the clue stays hidden until the wager is set")
+        let wager = try Fixture.jeopardy("jp-dd-wager")
+        XCTAssertEqual(wager.phase, .ddWager)
+        XCTAssertEqual(wager.clue?.dd, true)
+        XCTAssertTrue((wager.clue?.q ?? "").isEmpty, "the clue stays hidden until the wager is set")
 
-        let answering = try XCTUnwrap(try Fixture.jeopardy("dd-answering").clue)
-        XCTAssertEqual(answering.wager, 400)
-        XCTAssertEqual(answering.ddUnit, "p3")
-        XCTAssertNotNil(answering.text)
+        let answer = try Fixture.jeopardy("jp-dd-answer")
+        XCTAssertEqual(answer.phase, .ddAnswer)
+        XCTAssertEqual(answer.clue?.wager, 300)
+        XCTAssertNotNil(answer.clue?.q)
+        XCTAssertEqual(answer.timer?.kind, "answer")
     }
 
-    func testLeaderboardView() throws {
-        let game = try Fixture.jeopardy("leaderboard")
-        XCTAssertEqual(game.view, "leaderboard")
-        XCTAssertEqual(game.status, .board)
+    func testReactionsAndStreaks() throws {
+        let game = try Fixture.jeopardy("jp-reaction")
+        XCTAssertEqual(game.reactions, [JeoReaction(id: 1, pid: "p1", e: "\u{1F525}")])
+        XCTAssertEqual(game.hotStreak, 3)
+        XCTAssertEqual(game.player("p3")?.streak, 1)
+    }
+
+    func testRoundEnd() throws {
+        let game = try Fixture.jeopardy("jp-round-end")
+        XCTAssertEqual(game.phase, .roundEnd)
+        XCTAssertEqual(game.round, 1)
     }
 
     // MARK: Final Jeopardy
 
     func testFinalJeopardySteps() throws {
-        let wager = try XCTUnwrap(try Fixture.jeopardy("final-wager").finalRound)
-        XCTAssertEqual(wager.step, .wager)
-        XCTAssertNil(wager.text)
-        XCTAssertEqual(wager.finalists.map(\.wagered), [false, false])
+        let wager = try Fixture.jeopardy("jp-final-wager")
+        XCTAssertEqual(wager.phase, .finalWager)
+        XCTAssertEqual(wager.roundLabel, "Final Jeopardy")
+        let final = try XCTUnwrap(wager.finalRound)
+        XCTAssertEqual(final.eligible, ["p1", "p3"], "only players with points play the final round")
+        XCTAssertNil(final.q)
+        XCTAssertEqual(final.wagered, [])
 
-        let locked = try XCTUnwrap(try Fixture.jeopardy("final-wager-locked").finalRound)
-        XCTAssertEqual(locked.finalists.map(\.wagered), [true, true])
-        XCTAssertNil(locked.finalists[0].wager, "wagers stay hidden until judged")
-
-        let clue = try XCTUnwrap(try Fixture.jeopardy("final-clue").finalRound)
-        XCTAssertEqual(clue.step, .clue)
-        XCTAssertEqual(clue.timer?.kind, "final")
-        XCTAssertEqual(clue.timer?.totalMs, 30000)
-        XCTAssertNotNil(clue.text)
-
-        let answered = try XCTUnwrap(try Fixture.jeopardy("final-clue-answered").finalRound)
-        XCTAssertEqual(answered.finalists.map(\.answered), [true, true])
-
-        XCTAssertEqual(try Fixture.jeopardy("final-judge").finalRound?.step, .judge)
+        let answer = try Fixture.jeopardy("jp-final-answer")
+        XCTAssertEqual(answer.finalRound?.wagered, ["p1", "p3"])
+        XCTAssertNotNil(answer.finalRound?.q)
+        XCTAssertEqual(answer.timer?.kind, "final")
+        XCTAssertEqual(answer.timer?.totalMs, 35000)
     }
 
-    func testFinalJeopardyResults() throws {
-        let results = try XCTUnwrap(try Fixture.jeopardy("final-results").finalRound)
-        XCTAssertEqual(results.step, .results)
-        XCTAssertEqual(results.answer, "John Adams")
-        XCTAssertEqual(results.finalists[0].result, true)
-        XCTAssertEqual(results.finalists[0].answer, "John Adams")
-        XCTAssertEqual(results.finalists[0].wager, 200)
-        XCTAssertEqual(results.finalists[1].result, false)
-        XCTAssertTrue(results.finalists.allSatisfy(\.judged))
+    func testFinalAnswersAreShownOneByOne() throws {
+        let first = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-first").finalRound)
+        XCTAssertEqual(first.reveals.count, 1)
+        XCTAssertEqual(first.reveals[0].id, "p3", "lowest score first")
+        XCTAssertFalse(first.reveals[0].correct)
+        XCTAssertEqual(first.reveals[0].wager, 100)
+        let more = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-more").finalRound)
+        XCTAssertEqual(more.reveals.map(\.id), ["p3", "p1"])
+        XCTAssertEqual(more.reveals.map(\.correct), [false, true])
+        XCTAssertEqual(more.answer, "Uranus")
     }
 
-    func testDone() throws {
-        let state = try Fixture.state("done")
-        XCTAssertEqual(state.jeopardy?.status, .done)
-        XCTAssertEqual(state.room.units.map(\.score), [600, -400, 200, 0])
-    }
-
-    // MARK: Rounds
-
-    func testTwoRoundGameCarriesTheRound() throws {
-        let first = try Fixture.jeopardy("rounds-board-1")
-        XCTAssertEqual(first.round, 1)
-        XCTAssertEqual(first.rounds, 2)
-        XCTAssertEqual(first.roundTitle, "Jeopardy!")
-        let second = try Fixture.jeopardy("rounds-board-2")
-        XCTAssertEqual(second.round, 2)
-        XCTAssertEqual(second.roundTitle, "Double Jeopardy!")
-        XCTAssertEqual(second.board[0][0].value, 400, "round two is worth double")
-    }
-
-    func testSidebarNamesTheRoundOnlyInTwoRoundGames() throws {
-        XCTAssertEqual(try Fixture.jeopardy("rounds-board-1").sidebarTitle, "Jeopardy!")
-        XCTAssertEqual(try Fixture.jeopardy("rounds-board-2").sidebarTitle, "Double Jeopardy!")
-        // Recorded before rounds existed: no round fields, so it is one round and shows the set's name.
-        let old = try Fixture.jeopardy("board")
-        XCTAssertNil(old.rounds)
-        XCTAssertFalse(old.isTwoRounds)
-        XCTAssertEqual(old.sidebarTitle, "Family Night Sampler")
+    func testGameOver() throws {
+        let state = try Fixture.state("jp-gameover")
+        let game = try XCTUnwrap(state.jeopardy)
+        XCTAssertEqual(game.phase, .gameover)
+        XCTAssertTrue(state.room.inProgress)
+        XCTAssertEqual(game.awards?.map(\.id), ["fast", "brain", "hot", "roller"])
+        XCTAssertEqual(game.awards?.first?.title, "Fastest Finger")
+        XCTAssertEqual(state.room.units.map(\.score), [49310, -200, 400])
     }
 
     // MARK: Leniency
 
     func testUnknownValuesDoNotBreakDecoding() throws {
-        var text = try String(decoding: Fixture.data("clue-open"), as: UTF8.self)
-        text = text.replacingOccurrences(of: "\"step\": \"open\"", with: "\"step\": \"something-new\"")
+        var text = try String(decoding: Fixture.data("jp-open"), as: UTF8.self)
+        text = text.replacingOccurrences(of: "\"phase\": \"open\"", with: "\"phase\": \"something-new\"")
         let state = try JSONDecoder().decode(ServerState.self, from: Data(text.utf8))
-        XCTAssertEqual(state.jeopardy?.clue?.step, .unknown)
+        XCTAssertEqual(state.jeopardy?.phase, .unknown)
+        XCTAssertEqual(DisplayScreen.screen(for: state), .board, "an unknown step shows the board rather than nothing")
     }
 
     func testExtraFieldsAreIgnored() throws {
-        var text = try String(decoding: Fixture.data("board"), as: UTF8.self)
-        text = text.replacingOccurrences(of: "\"status\": \"board\"", with: "\"status\": \"board\", \"brandNewField\": [1, 2, 3]")
+        var text = try String(decoding: Fixture.data("jp-board"), as: UTF8.self)
+        text = text.replacingOccurrences(of: "\"phase\": \"board\"", with: "\"phase\": \"board\", \"brandNewField\": [1, 2, 3]")
         XCTAssertNoThrow(try JSONDecoder().decode(ServerState.self, from: Data(text.utf8)))
     }
 }
