@@ -10,7 +10,7 @@
 // clocks are never consulted. A press that loses by a hair is still timed, so everyone can see the buzz order.
 import { GameError, fail, cleanName, int } from '../../lib.js';
 import { judge } from './judge.js';
-import { parseArchive, ERAS } from './archive.js';
+import { parseArchive, pickSeason, ERAS } from './archive.js';
 import { HOUSE_PACKS } from './packs/index.js';
 
 export { GameError };
@@ -283,7 +283,8 @@ export class JeopardyGame {
   #requestArchive(era) {
     this.era = era;
     this.archiveReqId += 1;
-    this.archiveRequest = { id: this.archiveReqId, era };
+    // The engine picks the season; the app only downloads it (season N of the public clue dataset) and hands it back.
+    this.archiveRequest = { id: this.archiveReqId, era, season: pickSeason(era, () => this.#rng()) };
     this.archiveLoading = true;
     this.archiveError = false;
   }

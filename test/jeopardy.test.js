@@ -75,7 +75,9 @@ test('the lobby lists packs: house packs, your own boards, and the real-show arc
   assert.ok(ids.includes('own-family-night') && ids.includes('house-classic'));
   assert.equal(v.packs.find((p) => p.id === 'own-family-night').own, true);
   assert.equal(v.packs.find((p) => p.id === 'house-classic').selected, true);
-  assert.deepEqual(g.takeArchiveRequest(), { id: 1, era: 'any' });    // init asked the app for a season
+  const first = g.takeArchiveRequest();
+  assert.deepEqual({ id: first.id, era: first.era }, { id: 1, era: 'any' });
+  assert.ok(first.season >= 3 && first.season <= 42);    // init asked the app for a season
   assert.equal(g.takeArchiveRequest(), null);
 });
 
@@ -90,7 +92,9 @@ test('a downloaded season becomes topic packs; failures are reported', () => {
   assert.ok(v.packs.some((p) => p.archive), 'archive packs present');
   g.archiveLoaded('garbage', 20, 999);          // an answer to a request nobody is waiting for is ignored
   g.setEra('classic');
-  assert.deepEqual(g.takeArchiveRequest(), { id: 2, era: 'classic' });
+  const second = g.takeArchiveRequest();
+  assert.deepEqual({ id: second.id, era: second.era }, { id: 2, era: 'classic' });
+  assert.ok(second.season >= 3 && second.season <= 16);
   g.archiveFailed(2);
   assert.equal(g.publicView().archiveError, true);
 });
