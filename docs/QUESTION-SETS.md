@@ -49,7 +49,9 @@ the bottom and says when you have unsaved changes (it also warns before you leav
   words to accept) and ✕. **Sort by points** puts the answers in order, and **Paste a list** adds many answers at once from
   lines like `Spoon - 30 | spoons`.
 - **Jeopardy:** each category is a collapsible row showing how many of its five clues are filled in. Each clue has its
-  value, a ★ Daily Double switch, the clue and the answer. Final Jeopardy is the last row.
+  value, a ★ Daily Double switch, the clue, the answer and **Also accept** (other wordings that count as right, since players type
+  their answers and the game checks them, forgiving small typos). Final Jeopardy is the last row. A board of your own is
+  played just as written when you switch it on alone (or two of them together) in the lobby.
 - **Import sets** at the top takes files, links or pasted text (below).
 
 ## Importing
@@ -161,7 +163,7 @@ Six categories of five clues each. The exact rules are `validateSet` in `games/j
 ## Boards built from public data (kept out of GitHub)
 
 `scripts/get-feud-sets.sh` and `scripts/make-feud-sets.mjs` build Family Feud sets from the public ProtoQA survey data,
-and `scripts/get-clues.sh` fetches a Jeopardy clue file for server mode's **Random board** button. These data files and the
-sets built from them (`data/feud/protoqa-*.json`, `data/feud/random-*.json`, `data/jeopardy/random-*.json`,
-`data/clues/`, `data/surveys/`) are listed in `.gitignore` and must never be committed. To use such sets on the Apple TV,
+(Jeopardy's real-show clues are not built into sets at all: the Apple TV fetches one season of the public archive for each
+room and uses it from memory.) These data files and the sets built from them (`data/feud/protoqa-*.json`,
+`data/feud/random-*.json`, `data/surveys/`) are listed in `.gitignore` and must never be committed. To use such sets on the Apple TV,
 copy them into the app on your Mac with `Tools/install-sets.sh` (see the app's [CUSTOM-FILES.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/CUSTOM-FILES.md)).

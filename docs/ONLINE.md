@@ -110,9 +110,9 @@ Two checks need more than Node and run in GitHub Actions (`.github/workflows/ci.
 ## Limits
 
 - Needs the internet on the TV and on every phone. A buzz crosses the internet (usually well under half a second),
-  so the host's judgement still decides ties; it is not a hardware-grade buzzer. Light-up buzzers are only
+  so the order messages reach the TV decides who was first (every press is timed on the TV's clock and the times are shown); it is not a hardware-grade buzzer. Light-up buzzers are only
   for [server mode](SERVER-MODE.md).
 - Supabase's free plan has message and connection limits, and pauses a project that has been idle for a long time.
   Opening the Supabase dashboard wakes it.
-- The **Random board** buttons (built from large clue and survey files) are not available online yet; they need a
-  server ([SERVER-MODE.md](SERVER-MODE.md)).
+- Family Feud's **Random board** button (built from a large survey file) needs a server ([SERVER-MODE.md](SERVER-MODE.md)).
+  Jeopardy has no such button: it fetches real-show clues itself.

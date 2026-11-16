@@ -5,43 +5,48 @@ This is what the host and players do in each game. Setup and running are in the 
 
 ## Jeopardy
 
-The host first picks the game (skipped while only one is installed). Whether
-people play on their own or in teams is worked out for you (see
-[Players and teams](#players-and-teams)).
+Jeopardy is played by **individuals, up to eight**, with every phone as a buzzer. It runs on the Apple TV, and the
+Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
+touching the host page. The first player to join is the **captain**.
 
-1. **Setup.** Players scan the QR code, enter a name and pick a colour. On the
-   host page the host chooses **1 round or 2 rounds** before Final Jeopardy, then a
-   question set for each round (a set can't be used twice). Final Jeopardy comes
-   from the last round's set. **Start game** stays greyed out, with the reason
-   shown, until every round has a board and someone has joined.
-2. **Board.** The host taps a square. The clue shows on the TV; the answer shows
-   only on the host page.
-3. **Buzzers.** The host reads the clue, then taps **Open buzzers**. First press
-   wins, the TV shows who, everyone else is locked out.
-4. **Judge.** **Correct** scores and gives that player control. **Wrong**
-   deducts, locks that player out of the clue, and re-opens buzzing for the
-   rest. **Skip / reveal** shows the answer with no score.
-5. **Daily Doubles.** The clue stays hidden until the host enters the wager.
-   Max wager is the player's score or the top board value, whichever is higher.
-6. **Final Jeopardy.** Players with a positive score wager and type an answer on
-   their phone. Everyone's scores (players and teams) show on the TV and on every
-   phone while wagering, so a wager can be judged against the rest; anyone not
-   playing the final round is marked "sitting out". The host judges each answer;
-   wagers and answers appear on the TV only as they are judged.
+1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV, or the captain's phone, chooses what
+   to play:
+   - **Your own boards** (the ones in the question editor), the **house packs** that come with the app, and
+     **topics from the real show** (a random season of the public clue archive is fetched for each room, and you can
+     choose the era: any, classic 80s and 90s, 2000s, recent). Switch on as many packs as you like; the game mixes
+     twelve categories from them.
+   - **Easy mode** keeps only casual, family-friendly packs.
+   - **Preview the board** shows the twelve categories and lets you swap any of them before you start.
+   - If you switch on **one or two of your own boards and nothing else**, they are played **just as you wrote them**
+     (your categories, your values, your Daily Doubles), one board per round.
+   - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page
+     or with the remote) taps Correct or Wrong.
+2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote). Round 2 is worth
+   double and has two Daily Doubles; the lowest score picks first.
+3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
+   phone. The first press wins. A press before the buzzers open locks that player out for a moment. Everyone who
+   pressed is timed, and the times are shown after the clue.
+4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
+   articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
+   gives that player control. **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
+   for everyone who has not tried.
+5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone. The wager is at most their
+   score or the round's top value, whichever is higher.
+6. **Final Jeopardy.** Players with a positive score wager, then type an answer in 35 seconds. The answers are shown
+   one at a time on the TV, lowest score first.
+7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).
+   **Play again** deals new categories.
 
-Two-round games: **Round 2 (Double Jeopardy!)** has every value doubled and two
-Daily Doubles; whoever has the lowest score picks first. When the first board is
-cleared the host taps **Start Double Jeopardy** (or **Start Final Jeopardy** to
-skip ahead; both ask first if squares are left).
+Also: streaks (**on fire** after three right in a row), emoji reactions that float up the TV from phones, and
+**captain controls** on the captain's phone: choose packs, start, skip a clue, flip the last ruling, continue, end the
+round, fix any score, remove a player (before the game), play again. If the captain stays away, someone else takes over.
 
-Other things the host can do: adjust, set or rename any score; give the buzz to a
-player directly (dead phone); re-open buzzers after a mistaken press; switch the
-TV between the board and a full leaderboard; remove players.
+If a clue is judged wrongly, **Flip the ruling** reverses it, including the score.
 
 
 ## The host page
 
-The host page (`/host`) is laid out like an app: **Game**, **Players**, **Scores**, **Settings** and
+The host page (`/host`; for Jeopardy it is optional, since the TV and the captain can run the game) is laid out like an app: **Game**, **Players**, **Scores**, **Settings** and
 **Questions** (the question editor) tabs (a bar along the bottom on a phone, a rail down the side on a tablet or
 laptop). The one thing to do next is always a large button pinned at the bottom
 (Start game, Open buzzers, Correct / Wrong, Back to the board...). Choices open as
@@ -93,41 +98,23 @@ repo; their survey numbers are made up, not real survey results.
 
 ## Players and teams
 
-- **Up to 5 players** play as individuals.
-- **6 or more** and the game is split into two teams, **Red** and **Blue**, picked
-  at random (as even as possible). Nobody chooses a team.
-- **More than 10 players** (more than 5 on a team) and **Green** and **Yellow**
-  come in too, for four teams. The host can also choose four teams sooner.
-- On a phone, the player's **team colour lights up**: a frame round the screen and
-  a banner with the team name and teammates.
-- **The host** has an **Auto / Individual players / Teams** switch (Auto is the
-  default and does the above), a **2 teams / 4 teams** choice, **Shuffle teams**
-  to deal again at random, and can move any player to another team from the
-  Players list. Rearranging only happens in the lobby; once a game starts nothing
-  moves, and anyone who joins late is put on the smallest team.
-- Teams can be renamed from the host page (scores list) and keep their colour.
+- **Jeopardy** is always individuals, up to eight players.
+- **Family Feud** is always two teams, Red and Blue. Players are dealt onto them at random and the host can move anyone,
+  rename a team, or **Shuffle teams** in the lobby. Rearranging only happens in the lobby; once a game starts nothing
+  moves, and anyone who joins late is put on the smaller team.
+- On a phone in Family Feud the **team colour lights up**: a frame round the screen and a banner with the team name and
+  teammates.
 
-**Timers.** There are three, all shown on the TV and on the host page.
+**Timers (Jeopardy).** All of them are shown on the TV and on the phones.
 
-1. **Buzz-in window:** when the host taps **Open buzzers**, players get 10 seconds to buzz in
-   (or switch this off in the lobby with **No timer**). If nobody does, the TV flashes **TIME'S UP**,
-   plays a buzzer and locks buzzing; the host then taps **Nobody — reveal answer**. **Restart timer**
-   opens buzzing again for another 10 seconds. After a wrong answer, or when the host re-opens
-   buzzers, the players still in get a fresh window.
-2. **Answer timer:** when someone buzzes in (or a Daily Double wager is set) a countdown starts on the
-   TV, the host page and the buzzing player's phone.
-3. **Final Jeopardy timer**, described below.
+| Timer | Default |
+|---|---|
+| Buzz in (after the clue is read) | 7 seconds, 6 after a wrong answer |
+| Typed answer | 15 seconds; a Daily Double gets 20 after the clue is read |
+| Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 3 seconds to rule) |
+| Final Jeopardy answer | 35 seconds |
 
-The answer timer is **5 or 10 seconds** (10 by default), chosen by the host in the lobby. **A Daily Double
-gets double that** (10 seconds if you chose 5, 20 if you chose 10), including when the host restarts its
-timer. At zero the
-TV flashes TIME'S UP and plays a buzzer, and the host still decides: tap Correct or Wrong, or
-**Restart timer** to give more time. Tick **Time-out counts as wrong** if you'd rather it be scored
-automatically. The Final Jeopardy countdown (30 seconds by default, adjustable in the lobby) starts
-when the clue is shown.
-
-**Early buzzes.** Pressing before the host opens buzzers locks that player out for
-a short time after they open (default 500 ms, adjustable or off in the lobby).
+**Early buzzes.** Pressing before the buzzers open locks that player out for 0.4 seconds.
 
 **Reconnects.** A phone that sleeps or refreshes rejoins as the same player with
 its score (an id is kept in the browser). The whole game, scores included, is
@@ -137,6 +124,6 @@ saved and survives a restart (inside the app on the Apple TV, or in `data/state.
 ## Sound
 
 The TV plays short sound effects: buzzers open, a buzz-in, correct, wrong, a Daily Double, Final
-Jeopardy, time's up, and a tick for the last five seconds. They are built in, so nothing needs installing.
+Jeopardy, time's up, and a tick for the last five seconds. (Jeopardy's sounds and music are the same ones the game has always used; your own files replace them.) They are built in, so nothing needs installing.
 The host can turn sound off, change the volume, or press **Test on TV** at the bottom of the host page.
 To use your own sound files, see the Apple TV app's [CUSTOM-FILES.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/CUSTOM-FILES.md) (online mode) or [SERVER-MODE.md](SERVER-MODE.md).
