@@ -1,425 +1,199 @@
-// Jeopardy on the host's phone, tablet or laptop. The page (host.js) provides the app frame and the Players,
-// Scores and Settings tabs; this module supplies what the Game tab shows (setup, board, a clue, Final Jeopardy,
-// the result), the pinned action bar for each, and the game's own timer settings.
-import { h, money, unitById, apiFetch } from '../../common.js';
-import { icon, button, seg, toggle, dot, pill, card, eyebrow, timerPill } from '../../ui.js';
-import { flat } from './flat.js';
+// Jeopardy on the host's phone, tablet or laptop. The page (host.js) provides the app frame and the Players, Scores and
+// Settings tabs; this module supplies what the Game tab shows, the pinned action bar for each step, and the game's own
+// settings. Players answer by typing and the game checks them, so the host mostly watches; with "a host judges out loud"
+// switched on the host opens the buzzers, taps the picks and rules on each answer.
+import { h, money } from '../../common.js';
+import { icon, button, card, eyebrow, pill } from '../../ui.js';
+import { loadStyles, lobbyControls, judgeControl, answerTimeControl } from './setup.js';
 
-let v = null;          // the flat view for this render
-let C = null;          // helpers from the page: act, sets, setInfo, openSheet, confirm, go, ...
+let v = null;          // the game's view (with the host's secrets)
+let C = null;          // helpers from the page: act, openSheet, confirm, go, ...
 let act = () => {};
-let boardFilter = '';  // the search box in the "choose a board" sheet
 
-const nameOf = (id) => unitById(v, id)?.name ?? '?';
-const topValue = () => Math.max(1000, ...v.board.flat().map((c) => c.value));
+const nameOf = (id) => v.players.find((p) => p.id === id)?.name ?? '?';
 const dockRow = (...kids) => h('div', { class: 'dock-row' }, kids.flat().filter(Boolean));
+/** The setup buttons are written for the captain's dark theme, so they sit in a .jp wrapper. */
+const jp = (...kids) => h('div', { class: 'jp', style: { display: 'block' } }, kids);
 
 /** What the page needs from this game. */
 export function render(raw, ctx) {
-  v = flat(raw);
+  loadStyles();
+  v = raw.game;
   C = ctx;
   act = ctx.act;
-  const screen = { lobby: setupView, board: boardView, clue: clueView, final: finalView, done: doneView }[v.status];
+  const screen = { lobby: lobbyView, board: boardView, reading: clueView, open: clueView, answering: clueView, 'dd-wager': clueView, 'dd-answer': clueView, reveal: clueView, 'round-end': roundEndView, 'final-wager': finalView, 'final-answer': finalView, 'final-reveal': finalView, gameover: doneView }[v.phase];
   const main = screen ? screen() : { body: [], dock: null };
   return { title: 'Jeopardy!', sub: subtitle(), body: main.body, dock: main.dock, settings: settingsCards(), danger: dangerButtons() };
 }
 
 function subtitle() {
   const n = v.players.length;
-  switch (v.status) {
+  switch (v.phase) {
     case 'lobby': return `Setting up · ${n} ${n === 1 ? 'player' : 'players'}`;
-    case 'board': return `${v.roundTitle}${v.control ? ` · ${nameOf(v.control)} picks` : ''}`;
-    case 'clue': return `${v.clue.category} · ${v.clue.dd ? 'Daily Double' : money(v.clue.value)}`;
-    case 'final': return 'Final Jeopardy!';
-    default: return 'Finished';
+    case 'board': return `Round ${v.round}${v.controllerId ? ` · ${nameOf(v.controllerId)} picks` : ''}`;
+    case 'reading': case 'open': case 'answering': case 'reveal': case 'dd-wager': case 'dd-answer':
+      return `${v.clue.cat} · ${v.clue.dd ? 'Daily Double' : money(v.clue.value)}`;
+    case 'round-end': return `Round ${v.round} finished`;
+    case 'gameover': return 'Finished';
+    default: return 'Final Jeopardy!';
   }
 }
 
-// ---------- random boards (built on the Pi from the clue file; see games/jeopardy/clues.js) ----------
-const rand = { source: 'everyday', since: 2001, mode: 'mix', family: true, busy: false, error: '', info: undefined };
-const SOURCE_CHOICES = [{ value: 'everyday', label: 'Regular', sub: 'normal episodes' }, { value: 'kids', label: 'Kids & Teen', sub: 'made for younger players' }, { value: 'special', label: 'Tournaments', sub: 'special events' }];
-const ERA_CHOICES = [{ value: 1984, label: 'Any year' }, { value: 2001, label: '2001+' }, { value: 2010, label: '2010+' }, { value: 2018, label: '2018+' }];
-const api = (method, body) => apiFetch('/api/games/jeopardy/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+// ---------- the pieces ----------
+const answerBox = (a, alt) => h('div', { class: 'answer' }, h('small', {}, 'Answer (only you can see this)'), h('b', {}, a ?? ''),
+  alt?.length ? h('small', { style: { color: '#bbf7d0', textTransform: 'none', letterSpacing: '0' } }, `Also accepted: ${alt.join(', ')}`) : null);
 
-/** Whether the clue file is installed on the Pi (asked once, and again on "Check again"). */
-function loadRandomInfo(force = false) {
-  if (!force && rand.info !== undefined) return;
-  rand.info = null;
-  api('GET').then((r) => (r.ok ? r.json() : null)).then((j) => { rand.info = j ?? { available: false }; C.refresh(); }).catch(() => { rand.info = { available: false }; C.refresh(); });
+function clueCard() {
+  const c = v.clue; const s = v.secret;
+  return card(
+    eyebrow(`${c.cat} · ${c.dd ? `Daily Double${c.wager ? ` · wager ${money(c.wager)}` : ''}` : money(c.value)}`),
+    h('div', { class: 'card-title' }, s.q ?? c.q ?? ''),
+    answerBox(s.answer, s.alt));
 }
 
-/** Build a board for each of these rounds and put it in place. */
-async function roll(rounds) {
-  rand.busy = true; rand.error = ''; C.refresh();
-  try {
-    let date = null;
-    const avoid = [];
-    for (const r of rounds) {
-      const other = C.setInfo(r === 1 ? v.setId2 : v.setId);
-      const ask = (withDate) => api('POST', {
-        source: rand.source, since: rand.since, mode: rand.mode, family: rand.family, round: r, bothRounds: rounds.length === 2 && !date,
-        ...(withDate && date ? { date } : {}), avoid: [...avoid, ...(rounds.length === 1 && other ? other.categories : [])],
-      });
-      let res = await ask(true);
-      if (!res.ok && date) res = await ask(false);   // that episode has no board for this round: take any
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error ?? 'Could not build a board');
-      date = j.date; avoid.push(...j.categories);
-      act('chooseSet', { id: j.id, round: r });
-    }
-    C.reloadSets?.();
-  } catch (e) {
-    rand.error = e.message;
-  } finally {
-    rand.busy = false; C.refresh();
+function clockPill() {
+  const t = v.timer;
+  if (!t) return null;
+  const left = Math.ceil(t.leftMs / 1000);
+  return pill(t.leftMs <= 0 ? 'Time’s up' : `${left}s`, t.leftMs <= 0 ? 'bad' : 'live');
+}
+
+function miniBoard({ pickable }) {
+  const dd = v.secret?.dd ?? [];
+  const cells = v.board.map((c, ci) => h('div', { class: 'h', style: { '--col': `var(--c${ci})` } }, c.name));
+  for (let ri = 0; ri < 5; ri++) {
+    v.board.forEach((c, ci) => {
+      const cl = c.clues[ri];
+      cells.push(h('button', { type: 'button', class: dd[ci]?.[ri] && !cl.used ? 'dd' : '', style: { '--col': `var(--c${ci})` }, disabled: cl.used || !pickable, onclick: () => act('pick', { ci, ri }) }, cl.value));
+    });
   }
+  return h('div', { class: 'jp' }, h('div', { class: 'jp-mini', style: { minHeight: '320px' } }, cells));
 }
 
-function randomCard(two) {
-  loadRandomInfo();
-  if (rand.info === undefined || rand.info === null) return card(eyebrow('Random boards'), h('p', { class: 'dim' }, 'Checking…'));
-  if (!rand.info.available) {
-    return card(eyebrow('Random boards'), h('div', { class: 'card-title' }, 'Not set up on this Pi yet'),
-      h('p', { class: 'dim' }, 'Download the public clue file once, on the Pi, and the host screen can build a fresh board whenever you like. The file stays on the Pi.'),
-      h('div', { class: 'answer' }, h('small', {}, 'On the Pi, in the gamenight folder'), h('b', {}, './scripts/get-clues.sh')),
-      button({ label: 'Check again', icon: 'refresh', onclick: () => loadRandomInfo(true) }));
-  }
-  return card(eyebrow('Random boards'), h('div', { class: 'card-title' }, 'Build a fresh board'),
-    h('p', { class: 'dim' }, 'Real clues from past games. Each category runs from easier clues at the top to harder ones at the bottom, as on the show.'),
-    h('div', { class: 'field' }, h('span', {}, 'Where the clues come from'), seg(SOURCE_CHOICES, rand.source, (x) => { rand.source = x; C.refresh(); })),
-    h('div', { class: 'field' }, h('span', {}, 'How recent'), seg(ERA_CHOICES, rand.since, (x) => { rand.since = x; C.refresh(); })),
-    h('div', { class: 'field' }, h('span', {}, 'Categories'), seg([{ value: 'mix', label: 'A mix', sub: 'six different games' }, { value: 'episode', label: 'One real game', sub: 'six from one show' }], rand.mode, (x) => { rand.mode = x; C.refresh(); })),
-    toggle({ label: 'Keep it family-friendly', sub: 'Leaves out clues with adult topics', checked: rand.family, onchange: (on) => { rand.family = on; C.refresh(); } }),
-    rand.error && h('p', { class: 'pill bad', role: 'alert' }, rand.error),
-    button({ label: rand.busy ? 'Building…' : two ? 'Build both boards' : 'Build the board', icon: 'shuffle', kind: 'primary', block: true, disabled: rand.busy, onclick: () => roll(two ? [1, 2] : [1]) }),
-    rand.busy && h('p', { class: 'dim' }, 'The first board after a while takes a few seconds.'));
-}
-
-// ---------- setup (lobby) ----------
-function setupView() {
-  const two = v.settings.rounds === 2;
+// ---------- setup ----------
+function lobbyView() {
   const problems = [];
-  if (!v.setId) problems.push('Choose a board for Round 1.');
-  if (two && !v.setId2) problems.push('Choose a board for Round 2, or switch to one round.');
   if (!v.players.length) problems.push('Waiting for players to join.');
+  if (!v.asWritten && v.categoryCount < 12) problems.push('Pick packs with at least 12 categories in total.');
   const ready = problems.length === 0;
-  const last = C.setInfo(two ? v.setId2 : v.setId);
-  const teams = v.mode === 'teams';
-
   const body = [
-    card(eyebrow('Format'), h('div', { class: 'card-title' }, 'How many rounds?'),
-      seg([{ value: 1, label: '1 round', sub: 'Jeopardy!' }, { value: 2, label: '2 rounds', sub: 'Jeopardy! + Double Jeopardy!' }], v.settings.rounds, (n) => act('setSettings', { rounds: n })),
-      h('div', { class: 'flow' },
-        flowStep('Round 1', 'Jeopardy!'), icon('chevron', 16),
-        two && [flowStep('Round 2', 'Double Jeopardy!'), icon('chevron', 16)],
-        flowStep('Final', 'Final Jeopardy!'))),
-    boardCard(1),
-    two && boardCard(2),
-    randomCard(two),
-    (v.setId || v.setId2) && h('div', { class: 'note' }, icon('star', 16), h('span', {}, `Final Jeopardy: ${last?.final ?? '…'} · from ${last?.title ?? 'the last board'}`)),
     card(eyebrow('Players'),
-      h('div', { class: 'card-title' }, v.players.length ? `${v.players.length} ${v.players.length === 1 ? 'player' : 'players'} · ${teams ? `${v.teams.length} teams` : 'individuals'}` : 'No one yet'),
-      h('p', { class: 'dim' }, v.players.length ? 'Teams are picked at random once there are more than five players.' : 'Players scan the QR code on the TV to join.'),
-      button({ label: 'Manage players and teams', icon: 'users', onclick: () => C.go('players') })),
-    card(eyebrow('Timers'),
-      h('p', {}, `Buzz in ${secs(v.settings.buzzSeconds)} · Answer ${secs(v.settings.answerSeconds)} · Final ${secs(v.settings.finalSeconds)}`),
-      button({ label: 'Change timers and rules', icon: 'clock', onclick: () => C.go('settings') })),
+      h('div', { class: 'card-title' }, v.players.length ? `${v.players.length} of ${v.maxPlayers} ${v.players.length === 1 ? 'player' : 'players'}` : 'No one yet'),
+      h('p', { class: 'dim' }, v.players.length ? 'Everyone plays on their own. The first to join is the captain and can also set things up from their phone.' : 'Players scan the QR code on the TV to join.'),
+      button({ label: 'Manage players', icon: 'users', onclick: () => C.go('players') })),
+    card(eyebrow('Questions'), jp(lobbyControls(v, act)),
+      h('a', { class: 'b b-block', href: '/editor?game=jeopardy', style: { textDecoration: 'none', marginTop: '10px' } }, icon('edit', 20), h('span', {}, 'Write your own board'))),
   ];
   const dock = [
     !ready && h('div', { class: 'dock-note' }, problems[0]),
-    button({ label: 'Start game', icon: 'play', kind: ready ? 'ok' : '', size: 'lg', block: true, disabled: !ready, onclick: () => act('startGame') }),
+    button({ label: 'Start game', icon: 'play', kind: ready ? 'ok' : '', size: 'lg', block: true, disabled: !ready, onclick: () => act('start') }),
   ];
   return { body, dock };
 }
 
-const secs = (n) => (n ? `${n}s` : 'no timer');
-const flowStep = (a, b) => h('div', { class: 'flow-step' }, a, h('small', {}, b));
-
-function boardCard(round) {
-  const id = round === 1 ? v.setId : v.setId2;
-  const info = C.setInfo(id);
-  const title = info?.title ?? C.sets.find((s) => s.id === id)?.title;
-  return card(
-    h('div', { class: 'card-head' }, h('div', {}, eyebrow(`Round ${round}`), h('div', { class: 'card-title' }, round === 1 ? 'Jeopardy!' : 'Double Jeopardy!')),
-      round === 2 && pill('worth double')),
-    id
-      ? [h('div', { class: 'setname' }, title ?? 'Loading…'),
-        info && h('div', { class: 'chips' }, info.categories.map((n) => h('span', { class: 'chip' }, n)))]
-      : h('p', { class: 'dim' }, 'No board chosen yet.'),
-    h('div', { class: 'dock-row' },
-      button({ label: id ? 'Change board' : 'Choose a board', kind: id ? '' : 'primary', icon: id ? 'swap' : 'plus', onclick: () => openBoardSheet(round) }),
-      rand.info?.available && button({ label: rand.busy ? 'Building…' : 'Random', icon: 'shuffle', disabled: rand.busy, onclick: () => roll([round]) })));
-}
-
-function openBoardSheet(round) {
-  boardFilter = '';
-  C.openSheet({
-    title: `Board for Round ${round}`,
-    build: () => {
-      const current = round === 1 ? v.setId : v.setId2;
-      const other = round === 1 ? v.setId2 : v.setId;
-      const q = boardFilter.trim().toLowerCase();
-      const shown = C.sets.filter((s) => !q || s.title.toLowerCase().includes(q));
-      const search = h('input', { type: 'search', placeholder: 'Search boards', value: boardFilter, 'data-k': 'boardq', 'aria-label': 'Search boards', oninput: (e) => { boardFilter = e.target.value; C.refresh(); } });
-      return [
-        C.sets.length > 6 && search,
-        shown.length
-          ? h('div', { class: 'list' }, shown.map((s) => h('button', {
-            type: 'button', class: 'pick', 'aria-pressed': String(s.id === current), disabled: s.id === other,
-            onclick: () => { act('chooseSet', { id: s.id, round }); C.closeSheet(); },
-          }, h('div', { class: 'grow' }, h('div', { class: 't' }, s.title), s.id === other && h('div', { class: 's dim' }, `Already used for Round ${round === 1 ? 2 : 1}`)),
-          s.id === current && icon('check', 20))))
-          : h('p', { class: 'dim' }, C.sets.length ? 'No boards match.' : 'No boards yet. Write one in the question editor.'),
-      ];
-    },
-  });
-}
-
 // ---------- the board ----------
 function boardView() {
-  const played = v.board.flat().filter((c) => c.used).length;
-  const total = v.board.flat().length || 30;
-  const ctl = unitById(v, v.control);
-  const two = v.settings.rounds === 2;
-  const toSecond = two && v.round === 1;
-  const nextLabel = toSecond ? 'Start Double Jeopardy' : 'Start Final Jeopardy';
-  const goNext = () => act(toSecond ? 'startRound2' : 'startFinal');
-
-  const cats = v.categories.map((name, c) => h('div', { class: 'bcat' }, h('div', { class: 'bcat-name' }, name),
-    h('div', { class: 'bcat-cells' }, v.board[c].map((cell, r) => h('button', {
-      type: 'button', class: `cell ${cell.used ? 'used' : ''} ${v.dailyDoubles.includes(`${c},${r}`) ? 'dd' : ''}`,
-      disabled: cell.used, 'aria-label': `${name} ${money(cell.value)}${cell.used ? ', played' : ''}`, onclick: () => act('select', { c, r }),
-    }, money(cell.value))))));
-
+  const dd = v.secret?.dd ?? [];
+  const ddLeft = v.board.reduce((n, c, ci) => n + c.clues.filter((x, ri) => !x.used && dd[ci]?.[ri]).length, 0);
   const body = [
-    card(
-      h('div', { class: 'strip' }, pill(v.roundTitle, 'warn'),
-        ctl ? h('span', { class: 'picks' }, dot(ctl.color, 14), `${ctl.name} picks`) : h('span', { class: 'dim' }, 'Anyone can pick'),
-        h('span', { class: 'dim grow', style: { textAlign: 'right' } }, `${played} of ${total} played`)),
-      h('div', { class: 'progress' }, h('i', { style: { width: `${(played / total) * 100}%` } })),
-      h('div', { class: 'field' }, h('span', {}, 'The TV is showing'),
-        seg([{ value: 'board', label: 'The board' }, { value: 'leaderboard', label: 'Scores' }], v.view, (x) => act('setView', { view: x })))),
-    h('div', { class: 'note' }, icon('star', 16), h('span', {}, 'A star marks a Daily Double. Only you can see it.')),
-    h('div', { class: 'board' }, cats),
+    card(eyebrow(`Round ${v.round}`),
+      h('div', { class: 'card-title' }, v.hostJudges ? `Ask ${nameOf(v.controllerId)} for a pick` : `${nameOf(v.controllerId)} is picking on their phone`),
+      h('p', { class: 'dim' }, v.hostJudges
+        ? `They say a category and an amount, then you tap it here.${ddLeft ? ` The white tiles are Daily Doubles (${ddLeft} left; only you can see them).` : ''}`
+        : `Tap a tile only if you need to pick for them.${ddLeft ? ` White tiles are Daily Doubles (${ddLeft} left).` : ''}`),
+      miniBoard({ pickable: true })),
   ];
-  if (v.boardCleared) body.push(h('div', { class: 'banner' }, icon('flag', 22), h('div', { class: 'grow' }, 'Every square is played', h('small', {}, toSecond ? 'Time for Double Jeopardy.' : 'Time for Final Jeopardy.'))));
-
-  const dock = [
-    button({
-      label: nextLabel, icon: 'chevron', kind: v.boardCleared ? 'ok' : 'ghost', size: v.boardCleared ? 'lg' : '', block: true,
-      onclick: () => (v.boardCleared ? goNext() : C.confirm({
-        title: `${nextLabel}?`, message: `${total - played} squares are still unplayed. Move on anyway?`, confirmLabel: 'Move on', kind: 'primary', onConfirm: goNext,
-      })),
-    }),
-  ];
+  const dock = [dockRow(button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }))];
   return { body, dock };
 }
 
 // ---------- a clue ----------
 function clueView() {
-  const cl = v.clue;
-  const order = cl.dd ? ['wager', 'answering', 'revealed'] : ['reading', 'open', 'answering', 'revealed'];
-  const labels = { wager: 'Wager', reading: 'Read', open: 'Buzz', answering: 'Answer', revealed: 'Result' };
-  const at = order.indexOf(cl.step);
-  const tracker = h('div', { class: 'steps', 'aria-label': 'Progress' }, order.map((s, i) => h('span', { class: i < at ? 'done' : i === at ? 'on' : '' }, labels[s])));
-
-  const body = [
-    card(tracker,
-      h('div', { class: 'meta' }, cl.category, h('span', {}, '·'), cl.dd ? pill('Daily Double', 'warn') : money(cl.value)),
-      cl.step === 'wager'
-        ? h('div', { class: 'clue-text dim' }, 'Hidden until the wager is set')
-        : [h('div', { class: 'clue-text' }, cl.text),
-          h('div', { class: 'answer' }, h('small', {}, 'Answer'), h('b', {}, cl.answer))]),
-  ];
+  const ph = v.phase; const c = v.clue;
+  const body = [clueCard()];
   const dock = [];
-  const give = button({ label: 'Give buzz to…', icon: 'user', size: 'sm', onclick: openGiveSheet });
-
-  if (cl.step === 'wager') {
-    const u = unitById(v, cl.ddUnit);
-    body.push(card(eyebrow('Daily Double'), h('div', { class: 'card-title' }, u ? `Ask ${u.name} for a wager` : 'Who is playing?'),
-      h('p', { class: 'dim' }, 'The clue and the answer stay hidden here and on the TV until the wager is locked in.')));
-    dock.push(button({ label: 'Enter the wager', icon: 'star', kind: 'ok', size: 'lg', block: true, onclick: openWagerSheet }));
-    wagerPopupOnce(cl);
-  } else if (cl.step === 'reading') {
-    dock.push(button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openBuzzers') }),
-      dockRow(give, button({ label: 'Skip and reveal', size: 'sm', onclick: () => act('reveal') })));
-  } else if (cl.step === 'open') {
-    const late = cl.timer?.timedOut;
-    body.push(h('div', { class: 'banner' }, icon('clock', 22), h('div', { class: 'grow' }, late ? 'Time’s up. Nobody buzzed in.' : 'Buzzers are live', h('small', {}, 'First to press answers.')), timerPill(cl.timer)));
-    dock.push(button({ label: 'Nobody. Reveal the answer', kind: late ? 'primary' : '', size: late ? 'lg' : '', block: true, onclick: () => act('reveal') }),
-      dockRow(give, cl.timer && button({ label: 'Restart timer', icon: 'refresh', size: 'sm', onclick: () => act('restartTimer') })));
-  } else if (cl.step === 'answering') {
-    const u = unitById(v, cl.buzzedBy);
-    body.push(h('div', { class: 'banner', style: { background: u?.color ?? '', color: u ? inkOn(u.color) : '' } }, dot(inkOn(u?.color ?? '#888'), 12),
-      h('div', { class: 'grow' }, `${u?.name ?? '?'} is answering`, cl.dd && h('small', {}, `Wager ${money(cl.wager)}`)), timerPill(cl.timer)));
-    dock.push(dockRow(
-      button({ label: `Correct  +${money(cl.value)}`, icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('correct') }),
-      button({ label: `Wrong  −${money(cl.value)}`, icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('wrong') })),
-    dockRow(!cl.dd && button({ label: 'Re-open buzzers', size: 'sm', onclick: () => act('reopen') }),
-      button({ label: 'Restart timer', icon: 'refresh', size: 'sm', onclick: () => act('restartTimer') }),
-      button({ label: 'Reveal, no score', size: 'sm', onclick: () => act('reveal') })));
-  } else if (cl.step === 'revealed') {
-    const w = unitById(v, cl.correct);
-    body.push(h('div', { class: 'banner', style: { background: w ? '#14532d' : '' } }, icon(w ? 'check' : 'x', 22),
-      h('div', { class: 'grow' }, w ? `${w.name} got it` : 'No score', w && h('small', {}, `+${money(cl.value)}`))));
-    dock.push(button({ label: 'Back to the board', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('closeClue') }));
+  const flip = v.lastResult && ph === 'reveal' ? button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }) : null;
+  if (ph === 'reading') {
+    body.push(card(eyebrow('Reading'), h('p', { class: 'dim' }, v.hostJudges ? 'Read the clue out loud, then open the buzzers.' : 'The buzzers open by themselves once the clue has been read.')));
+    dock.push(button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openNow') }), dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
+  } else if (ph === 'open') {
+    const r = v.lastResult;
+    body.push(card(eyebrow('Buzzers open'), clockPill(), h('p', { class: 'dim' }, r && !r.correct ? `${nameOf(r.pid)} missed. Others can buzz in.` : 'Waiting for someone to buzz in…')));
+    dock.push(button({ label: 'Nobody. Show the answer', size: 'lg', block: true, onclick: () => act('skip') }));
+  } else if (ph === 'answering' || ph === 'dd-answer') {
+    const who = ph === 'answering' ? c.buzzedId : v.controllerId;
+    body.push(card(eyebrow('Answering'), h('div', { class: 'card-title' }, `${nameOf(who)} is answering`), clockPill(),
+      h('p', { class: 'dim' }, v.hostJudges ? 'Listen to the answer, then rule on it below.' : 'They type their answer and the game checks it. Use “Flip the ruling” afterwards if it got one wrong.')));
+    if (v.hostJudges) dock.push(dockRow(button({ label: 'Correct', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('judge', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('judge', { correct: false }) })));
+    dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
+  } else if (ph === 'dd-wager') {
+    body.push(card(eyebrow('Daily Double'), h('p', { class: 'dim' }, `${nameOf(v.controllerId)} is choosing a wager on their phone. Don’t read the clue until they lock it in.`)));
+    dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
+  } else if (ph === 'reveal') {
+    const r = v.lastResult;
+    body.push(card(eyebrow('Result'), h('div', { class: 'card-title' }, r ? `${nameOf(r.pid)} ${r.correct ? 'got it' : 'missed it'}` : 'Nobody got it'),
+      h('p', { class: 'dim' }, 'Back to the board in a moment.')));
+    dock.push(button({ label: 'Back to the board', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }), dockRow(flip));
   }
-  if (cl.lockedOut.length) body.push(h('div', { class: 'note' }, 'Locked out:', h('div', { class: 'chips' }, cl.lockedOut.map((id) => h('span', { class: 'chip lock' }, nameOf(id))))));
   return { body, dock };
 }
 
-// ---------- the Daily Double wager popup ----------
-// It opens by itself when a Daily Double is picked, so the host asks for the wager before anything is shown.
-let wagerFor = null;   // which clue the popup has already opened for ("round,c,r")
-let wagerText = '';    // what is typed in the box
-function wagerPopupOnce(cl) {
-  const key = `${v.round},${cl.c},${cl.r}`;
-  if (wagerFor === key) return;
-  wagerFor = key; wagerText = '';
-  setTimeout(openWagerSheet, 0);   // after this render finishes
-}
-const wagerMax = (cl) => Math.max(unitById(v, cl.ddUnit)?.score ?? 0, topValue());
-
-function openWagerSheet() {
-  C.openSheet({
-    title: 'Daily Double!',
-    build: () => {
-      const cl = v.clue;
-      if (!cl || cl.step !== 'wager') return h('p', { class: 'dim' }, 'The wager is set.');
-      const u = unitById(v, cl.ddUnit);
-      const max = wagerMax(cl);
-      const amount = wagerText.trim() === '' ? null : Number(wagerText);
-      const valid = amount !== null && Number.isInteger(amount) && amount >= 0 && amount <= max;
-      const box = h('input', {
-        type: 'number', inputMode: 'numeric', min: 0, max, step: 100, value: wagerText, placeholder: '0', 'data-k': 'ddw', 'aria-label': 'Wager',
-        oninput: (e) => { wagerText = e.target.value; C.refresh(); },
-      });
-      const set = (n) => { wagerText = String(n); C.refresh(); };
-      return [
-        h('p', {}, 'Ask who is playing how much they want to wager, then enter it here. The clue shows on the TV once you lock it in.'),
-        h('div', { class: 'field' }, h('span', {}, 'Who is playing'),
-          h('div', { class: 'list' }, v.units.map((x) => h('button', {
-            type: 'button', class: 'pick', 'aria-pressed': String(x.id === cl.ddUnit), onclick: () => act('setDailyDoubleUnit', { id: x.id }),
-          }, dot(x.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, x.name)), h('span', { class: 'dim' }, money(x.score)), x.id === cl.ddUnit && icon('check', 20))))),
-        h('div', { class: 'field' }, h('span', {}, u ? `${u.name}'s wager (up to ${money(max)})` : `Wager (up to ${money(max)})`), box),
-        h('div', { class: 'chips' },
-          [['$0', 0], ['Half', Math.floor(max / 2 / 100) * 100], [`All in · ${money(max)}`, max]].map(([label, n]) => h('button', { type: 'button', class: 'chip', onclick: () => set(n) }, label))),
-        amount !== null && !valid && h('p', { class: 'pill bad', role: 'alert' }, `Enter a whole number from $0 to ${money(max)}`),
-        button({
-          label: !cl.ddUnit ? 'Choose who is playing' : valid ? `Lock in ${money(amount)} and show the clue` : 'Enter a wager to continue', icon: 'check', kind: 'ok', size: 'lg', block: true,
-          disabled: !valid || !cl.ddUnit, onclick: () => { act('setDailyDoubleWager', { amount: wagerText }); C.closeSheet(); },
-        }),
-      ];
-    },
-  });
-}
-
-function inkOn(hex) {
-  const n = parseInt(String(hex).slice(1), 16);
-  const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  return lum > 0.55 ? '#0b1020' : '#ffffff';
-}
-
-function openGiveSheet() {
-  C.openSheet({
-    title: 'Give the buzz to…',
-    build: () => h('div', { class: 'list' }, v.units.map((u) => h('button', {
-      type: 'button', class: 'pick', onclick: () => { act('awardBuzz', { id: u.id }); C.closeSheet(); },
-    }, dot(u.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, u.name)), h('span', { class: 'dim' }, money(u.score))))),
-  });
+function roundEndView() {
+  const ranked = [...v.players].sort((a, b) => b.score - a.score);
+  return {
+    body: [card(eyebrow(`Round ${v.round} finished`), h('div', { class: 'list' }, ranked.map((p, i) => h('div', { class: 'rowi' }, h('span', { class: 'rank' }, String(i + 1)), h('div', { class: 'grow t' }, p.name), h('span', { class: 'pts' }, money(p.score))))))],
+    dock: [button({ label: v.round < v.rounds ? 'Start the next round' : 'On to Final Jeopardy', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') })],
+  };
 }
 
 // ---------- Final Jeopardy ----------
 function finalView() {
-  const f = v.final;
-  const order = ['wager', 'clue', 'judge', 'results'];
-  const labels = { wager: 'Wagers', clue: 'Clue', judge: 'Judge', results: 'Results' };
-  const at = order.indexOf(f.step);
-  const tracker = h('div', { class: 'steps' }, order.map((s, i) => h('span', { class: i < at ? 'done' : i === at ? 'on' : '' }, labels[s])));
-  const finalistIds = new Set(f.finalists.map((x) => x.id));
-  const out = v.units.filter((u) => !finalistIds.has(u.id));
-
-  const rows = f.finalists.map((fu) => {
-    const u = unitById(v, fu.id);
-    const left = h('div', { class: 'grow' }, h('div', { class: 't' }, u.name), h('div', { class: 's' }, `Score ${money(u.score)}`));
-    if (f.step === 'wager') {
-      const inp = h('input', { type: 'number', inputMode: 'numeric', min: 0, max: u.score, placeholder: fu.wager !== null ? String(fu.wager) : 'Wager', 'data-k': `fw-${u.id}`, 'aria-label': `${u.name}'s wager`, style: { width: '110px' } });
-      return h('div', { class: 'rowi' }, dot(u.color, 16), left, pill(fu.wager !== null ? `Wagered ${money(fu.wager)}` : fu.wagered ? 'Locked in' : 'Waiting', fu.wagered || fu.wager !== null ? 'ok' : ''), inp,
-        button({ label: 'Set', size: 'sm', onclick: () => act('setFinalWager', { id: u.id, amount: inp.value }) }));
-    }
-    if (f.step === 'clue') {
-      return h('div', { class: 'rowi' }, dot(u.color, 16), left, pill(`Wager ${money(fu.wager ?? 0)}`), pill(fu.answer ? `“${fu.answer}”` : 'No answer yet', fu.answer ? 'ok' : ''));
-    }
-    return h('div', { class: 'rowi' }, dot(u.color, 16),
-      h('div', { class: 'grow' }, h('div', { class: 't' }, u.name), h('div', { class: 's' }, `Wagered ${money(fu.wager ?? 0)} · “${fu.answer || '—'}”`)),
-      fu.result === null
-        ? [button({ icon: 'check', kind: 'ok', size: 'sm', aria: `${u.name} correct`, onclick: () => act('finalJudge', { id: u.id, ok: true }) }),
-          button({ icon: 'x', kind: 'bad', size: 'sm', aria: `${u.name} wrong`, onclick: () => act('finalJudge', { id: u.id, ok: false }) })]
-        : pill(fu.result ? 'Correct' : 'Wrong', fu.result ? 'ok' : 'bad'));
-  });
-
-  const body = [
-    card(tracker, h('div', { class: 'meta' }, f.category),
-      f.step !== 'wager' && h('div', { class: 'clue-text' }, f.text),
-      h('div', { class: 'answer' }, h('small', {}, 'Answer'), h('b', {}, f.answer))),
-    card(eyebrow(f.step === 'wager' ? 'Wagers' : f.step === 'clue' ? 'Answers coming in' : f.step === 'judge' ? 'Judging' : 'Final results'), h('div', { class: 'list' }, rows),
-      out.length > 0 && h('p', { class: 'dim' }, `Not playing (need a positive score): ${out.map((u) => u.name).join(', ')}`)),
-  ];
-  const dock = [];
-  if (f.step === 'wager') dock.push(button({ label: 'Show the clue on the TV', icon: 'tv', kind: 'ok', size: 'lg', block: true, onclick: () => act('finalNext') }));
-  else if (f.step === 'clue') {
-    body.splice(1, 0, h('div', { class: 'banner' }, icon('clock', 22), h('div', { class: 'grow' }, 'Players are answering', h('small', {}, 'Answers arrive from their phones.')), timerPill(f.timer)));
-    dock.push(button({ label: 'Time’s up. Start judging', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('finalNext') }),
-      button({ label: 'Restart timer', icon: 'refresh', size: 'sm', block: true, onclick: () => act('restartTimer') }));
-  } else if (f.step === 'judge') {
-    const allJudged = f.finalists.every((x) => x.result !== null);
-    dock.push(button({ label: allJudged ? 'Show the results' : 'Skip the rest and show results', icon: 'chevron', kind: allJudged ? 'ok' : 'ghost', size: allJudged ? 'lg' : '', block: true, onclick: () => act('finishFinal') }));
+  const f = v.final; const s = v.secret; const ph = v.phase;
+  const body = [];
+  if (ph === 'final-wager') {
+    body.push(card(eyebrow('Final Jeopardy'), h('div', { class: 'card-title' }, f.category),
+      h('p', { class: 'dim' }, 'Players are wagering on their phones.'),
+      h('div', { class: 'list' }, f.eligible.map((id) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, nameOf(id)), pill(f.wagered.includes(id) ? 'locked in' : 'thinking…', f.wagered.includes(id) ? 'ok' : '')))),
+      answerBox(s.finalAnswer)));
+  } else if (ph === 'final-answer') {
+    const got = s.finalAnswers ?? {};
+    body.push(card(eyebrow(`Final Jeopardy · ${f.category}`), h('div', { class: 'card-title' }, f.q), clockPill(), answerBox(s.finalAnswer),
+      h('div', { class: 'list' }, f.eligible.map((id) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, nameOf(id)), h('span', { class: 's' }, id in got ? `🔒 ${got[id] || '(blank)'}` : 'typing…'))))));
   } else {
-    dock.push(button({ label: 'Show the winner', icon: 'award', kind: 'ok', size: 'lg', block: true, onclick: () => act('finishGame') }));
+    body.push(card(eyebrow('Final Jeopardy results'), h('p', { class: 'dim' }, `The answer: ${f.answer ?? s.finalAnswer}. Typed answers are checked automatically. Flip one if it was judged wrong.`),
+      h('div', { class: 'list' }, f.reveals.map((r) => h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, nameOf(r.id)), h('div', { class: 's' }, `“${r.answer}” · bet ${money(r.wager)}`)),
+        pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), button({ label: 'Flip', size: 'sm', onclick: () => act('finalOverride', { pid: r.id }) }))))));
   }
+  const dock = [];
+  if (ph === 'final-wager') dock.push(button({ label: 'Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, onclick: () => act('advance') }));
+  if (ph === 'final-answer') dock.push(button({ label: 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+  if (ph === 'final-reveal') dock.push(button({ label: 'Next reveal', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
   return { body, dock };
 }
 
-// ---------- the end ----------
 function doneView() {
-  const ranked = [...v.units].sort((a, b) => b.score - a.score);
-  const top = ranked[0]?.score;
-  const winners = ranked.filter((u) => u.score === top);
+  const ranked = [...v.players].sort((a, b) => b.score - a.score);
   return {
-    body: [card(eyebrow('Game over'), h('div', { class: 'card-title' }, winners.length > 1 ? `A tie: ${winners.map((u) => u.name).join(' and ')}` : `${winners[0]?.name ?? 'Nobody'} wins`),
-      h('div', { class: 'list' }, ranked.map((u, i) => h('div', { class: 'rowi' }, h('span', { class: 'rank' }, String(i + 1)), dot(u.color, 16), h('div', { class: 'grow t' }, u.name), h('span', { class: `pts ${u.score < 0 ? 'neg' : ''}` }, money(u.score))))),
-      h('p', { class: 'dim' }, 'Starting again resets the scores. Everyone stays in the game.'))],
-    dock: [button({ label: 'Back to setup', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('endGame') })],
+    body: [
+      card(eyebrow('Final scores'), h('div', { class: 'list' }, ranked.map((p, i) => h('div', { class: 'rowi' }, h('span', { class: 'rank' }, String(i + 1)), h('div', { class: 'grow t' }, p.name), h('span', { class: 'pts' }, money(p.score)))))),
+      v.awards?.length ? card(eyebrow('Awards'), h('div', { class: 'list' }, v.awards.map((a) => h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, a.title), h('div', { class: 's' }, `${nameOf(a.pid)} · ${a.detail}`)))))) : null,
+      f_final(),
+    ].filter(Boolean),
+    dock: [button({ label: 'Play again', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('playAgain') })],
   };
 }
+const f_final = () => (v.final ? card(eyebrow('Final Jeopardy'), h('p', { class: 'dim' }, `${v.final.category}: ${v.final.answer ?? ''}`)) : null);
 
 // ---------- Settings tab cards, and the danger zone ----------
-function presets(list, value, key) {
-  const options = list.map((n) => ({ value: n, label: n ? `${n}s` : 'None' }));
-  if (!list.includes(value)) options.push({ value, label: `${value}s` });
-  return seg(options, value, (n) => act('setSettings', { [key]: n }));
-}
-
 function settingsCards() {
-  const s = v.settings;
-  const pen = h('input', { type: 'number', inputMode: 'numeric', min: 0, max: 5000, step: 100, value: s.penaltyMs, 'data-k': 'pen', 'aria-label': 'Penalty in milliseconds' });
-  return [
-    card(eyebrow('Timers'),
-      h('label', { class: 'field' }, h('span', {}, 'Time to buzz in after you open buzzers'), presets([5, 10, 15, 0], s.buzzSeconds, 'buzzSeconds')),
-      h('label', { class: 'field' }, h('span', {}, 'Time to answer after a buzz'), presets([5, 10, 15], s.answerSeconds, 'answerSeconds'),
-        h('span', { class: 's dim' }, `Daily Doubles get double: ${s.answerSeconds ? `${s.answerSeconds * 2}s` : 'no timer'}.`)),
-      h('label', { class: 'field' }, h('span', {}, 'Final Jeopardy time'), presets([30, 45, 60, 0], s.finalSeconds, 'finalSeconds')),
-      toggle({ label: 'Time-out counts as wrong', sub: 'When the answer timer runs out, score it as wrong automatically', checked: s.autoWrong, onchange: (on) => act('setSettings', { autoWrong: on }) })),
-    card(eyebrow('Early buzzes'),
-      toggle({ label: 'Lock out early buzzers', sub: 'Pressing before you open buzzers locks that player out for a moment', checked: s.earlyPenalty, onchange: (on) => act('setSettings', { earlyPenalty: on }) }),
-      h('div', { class: 'field' }, h('span', {}, 'How long (milliseconds)'), h('div', { class: 'inline' }, pen, button({ label: 'Save', onclick: () => act('setSettings', { penaltyMs: pen.value }) })))),
-  ];
+  const lobby = v.phase === 'lobby';
+  return [card(eyebrow('How answers work'),
+    lobby ? jp(judgeControl(v, act), v.hostJudges && answerTimeControl(v, act))
+      : h('p', { class: 'dim' }, v.hostJudges ? 'A host judges spoken answers. This can only be changed before the game starts.' : 'Players type their answers and the game checks them. This can only be changed before the game starts.'),
+    h('p', { class: 'dim' }, 'Buzzers open a few seconds after the clue appears, stay open for seven seconds, and a wrong answer opens them again for everyone who has not tried.'))];
 }
 
 function dangerButtons() {
-  if (v.status === 'lobby') return [];
-  return [button({
-    label: 'End game and reset scores', icon: 'x', kind: 'bad', block: true,
-    onclick: () => C.confirm({ title: 'End the game?', message: 'Scores reset and everyone goes back to setup.', confirmLabel: 'End game', onConfirm: () => act('endGame') }),
-  })];
+  if (v.phase === 'lobby') return [];
+  return [button({ label: 'End the game', icon: 'flag', kind: 'bad', block: true, onclick: () => C.confirm({ title: 'End the game?', message: 'Scores are reset and everyone goes back to the lobby. Players stay in the room.', confirmLabel: 'End game', onConfirm: () => act('endGame') }) })];
 }

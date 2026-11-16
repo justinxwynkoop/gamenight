@@ -12,6 +12,7 @@ import { createEngine } from '../engine/core.js';
 import { GAMES } from '../games/index.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+await import('./build-web.mjs');
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_PATH ?? 'playwright');
 const feud = JSON.parse(readFileSync(path.join(root, 'data/feud/family-night-basics.json'), 'utf8'));
@@ -40,6 +41,7 @@ const ticker = setInterval(() => engine.tick(), 250);
 
 // --- the site (web/), with the stand-in's address in config.js ---
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
+// web/ is the built site: run `node scripts/build-web.mjs` first (this script does it for you).
 const pages = { '/': 'play.html', '/play': 'play.html', '/host': 'host.html', '/editor': 'editor.html' };
 const site = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -67,20 +69,46 @@ try {
   await until(() => engine.room.players.some((p) => p.name === 'Ann'), 'Ann to join the room');
   console.log('Ann joined');
 
-  // Jeopardy: between clues the phone shows the board; while a clue is live it shows the buzz button.
+  // Jeopardy, played through the real phone page: the captain sets up and starts, the player in control picks on a
+  // mini board, the buzzer, a typed answer that the game checks, then the reveal.
+  const bo = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(bo, 'bo');
+  await bo.goto(`${base}/?r=ABCD`);
+  await until(async () => (await bo.locator('input').count()) > 0, 'Bo\'s join form');
+  await bo.locator('input').first().fill('Bo');
+  await bo.getByRole('button', { name: /join|play|enter|ready/i }).first().click();
+  await until(() => engine.room.players.some((p) => p.name === 'Bo'), 'Bo to join the room');
   engine.room.act('chooseGame', { id: 'jeopardy' });
-  engine.room.act('chooseSet', { id: 'family-night' });
-  engine.room.act('startGame', {});
-  await until(async () => (await player.locator('.phone-board:not(.hidden) .pb-cell').count()) > 20, 'the board on the phone');
-  const cats = await player.locator('.phone-board .pb-cat').allInnerTexts();
-  console.log(`phone shows the Jeopardy board: ${cats.length} categories, ${await player.locator('.phone-board .pb-cell').count()} squares`);
-  if (process.env.SHOT) await player.screenshot({ path: process.env.SHOT });
-  if (await player.locator('button.buzz').isVisible()) fail('the buzz button is showing next to the board');
-  engine.room.act('select', { c: 0, r: 0 });
-  await until(async () => await player.locator('button.buzz').isVisible(), 'the buzz button once a clue is picked');
-  if (await player.locator('.phone-board:not(.hidden)').count()) fail('the board is still showing during a clue');
-  console.log('during a clue the phone shows the buzz button instead');
+  await until(async () => (await player.locator('.jp').count()) > 0, 'the Jeopardy phone screen');
+  await until(async () => /captain/i.test(await player.locator('.jp').innerText()), 'the captain\'s lobby on the first player\'s phone');
+  const shotJ = (page, name) => (process.env.SHOT_DIR ? page.screenshot({ path: `${process.env.SHOT_DIR}/jeopardy-${name}.png` }) : null);
+  await shotJ(player, 'lobby');
+  await player.getByRole('button', { name: /start game/i }).click();
+  await until(() => engine.room.game.phase === 'board', 'the captain to start the game from the phone');
+  console.log('captain started Jeopardy from the phone; Ann and Bo are the players');
+  const g = engine.room.game;
+  const phones = { [engine.room.players.find((p) => p.name === 'Ann').id]: player, [engine.room.players.find((p) => p.name === 'Bo').id]: bo };
+  const ctl = phones[g.controllerId];
+  await until(async () => (await ctl.locator('.jp-mini button').count()) === 30, 'the mini board on the picker\'s phone');
+  await shotJ(ctl, 'board');
+  const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
+  await ctl.locator('.jp-mini button').nth(first.ri * 6 + first.ci).click();
+  await until(() => ['reading', 'open'].includes(g.phase), 'the pick to reach the game');
+  await until(async () => await player.locator('.jp-buzzer').isVisible(), 'the buzzer on a phone while a clue is up');
+  await until(() => g.phase === 'open', 'the buzzers to open', 12000);
+  await until(async () => /BUZZ!/.test(await player.locator('.jp-buzzer').innerText()), 'the buzzer to say BUZZ');
+  await shotJ(player, 'buzz');
+  await player.locator('.jp-buzzer').dispatchEvent('pointerdown');
+  await until(() => g.phase === 'answering', 'Ann\'s buzz to win');
+  await until(async () => (await player.locator('input.jp-in').count()) > 0, 'the answer box for the buzzer winner');
+  await shotJ(player, 'answer');
+  await player.locator('input.jp-in').fill(first.cl.a);
+  await player.getByRole('button', { name: /lock it in/i }).click();
+  await until(() => g.phase === 'reveal' && g.lastResult?.correct, 'the typed answer to be accepted');
+  await until(async () => (await player.locator('.jp').innerText()).includes(first.cl.a), 'the reveal to show the answer');
+  await shotJ(player, 'reveal');
+  console.log('buzzed on a phone, typed the answer, the game accepted it and showed the reveal');
   engine.room.act('endGame', {});
+  await bo.close();
 
   const host = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(host, 'host');
   await host.goto(`${base}/host?r=ABCD`);
@@ -94,7 +122,7 @@ try {
   console.log('host chose Family Feud through the relay');
 
   // From the host page, the Questions tab opens the editor with the PIN and room already known (one address to remember).
-  await host.getByRole('button', { name: /questions/i }).click();
+  await host.getByRole('button', { name: 'Questions', exact: true }).click();
   await until(async () => (await host.locator('summary').count()) > 0, 'the editor to open from the host page without asking for the PIN again');
   console.log('host page → Questions tab → editor, no PIN or room code asked again');
   if (process.env.SHOT2) await host.screenshot({ path: process.env.SHOT2 });

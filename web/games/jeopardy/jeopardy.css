@@ -1,0 +1,103 @@
+/* Jeopardy's phone and host screens, in the look of the Apple TV app: a night-time stage, six bright column
+   colours, chunky Unbounded type for money and names, friendly Outfit type for everything else. Scoped to .jp. */
+.jp {
+  --jp-bg: #0e0f1a; --jp-panel: #1c1f36; --jp-panel2: #272b4a; --jp-line: rgba(255, 255, 255, .10);
+  --jp-text: #f6f4ee; --jp-muted: #9fa3c2; --jp-ink: #0e0f1a;
+  --jp-hot: #ff5a5f; --jp-sun: #ffd23f; --jp-cool: #3abeff; --jp-good: #3ddc97;
+  --c0: #ff5a5f; --c1: #ff9f1c; --c2: #ffd23f; --c3: #3ddc97; --c4: #3abeff; --c5: #b388ff;
+  --jp-display: 'Unbounded', system-ui, sans-serif;
+  display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; color: var(--jp-text);
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+.jp * { box-sizing: border-box; }
+.jp button { font-family: inherit; }
+.jp .jp-center { flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center; text-align: center; gap: 14px; min-height: 0; overflow: auto; }
+.jp .jp-logo { font-family: var(--jp-display); font-weight: 900; font-size: 32px; line-height: 1.05; color: var(--jp-sun); }
+.jp .jp-msg { font-size: 20px; font-weight: 600; }
+.jp .jp-muted { color: var(--jp-muted); }
+.jp .jp-small { font-size: 13px; }
+.jp .jp-err { color: var(--jp-hot); min-height: 20px; }
+.jp .jp-stack { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+.jp .jp-big { font-family: var(--jp-display); font-weight: 900; font-size: 30px; line-height: 1.1; }
+.jp .jp-ok { color: var(--jp-good); }
+.jp .jp-no { color: var(--jp-hot); }
+.jp .jp-sun { color: var(--jp-sun); }
+.jp .jp-eyebrow { color: var(--jp-muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+
+.jp .jp-btn { font-weight: 800; font-size: 16px; border: 0; border-radius: 14px; padding: 14px 18px; background: var(--jp-sun); color: var(--jp-ink); cursor: pointer; touch-action: manipulation; }
+.jp .jp-btn.ghost { background: var(--jp-panel2); color: var(--jp-text); border: 1px solid var(--jp-line); font-weight: 600; }
+.jp .jp-btn.good { background: var(--jp-good); color: #06241b; }
+.jp .jp-btn.bad { background: var(--jp-hot); color: #fff; }
+.jp .jp-btn.block { width: 100%; }
+.jp .jp-btn.left { text-align: left; }
+.jp .jp-btn.ring { border: 2px solid var(--jp-sun); }
+.jp .jp-btn:disabled { opacity: .4; }
+.jp .jp-btn small { display: block; font-weight: 600; opacity: .75; }
+.jp .jp-quick { display: flex; gap: 8px; flex-wrap: wrap; }
+.jp .jp-quick .jp-btn { flex: 1; padding: 10px 0; font-size: 14px; }
+.jp input.jp-in { font: inherit; font-size: 20px; width: 100%; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--jp-line); background: rgba(0, 0, 0, .3); color: var(--jp-text); outline: none; }
+.jp input.jp-in:focus { border-color: var(--jp-sun); }
+.jp input.jp-in.num { text-align: center; font-family: var(--jp-display); font-weight: 900; font-size: 28px; }
+
+/* the strip under the page header: round, captain, streak */
+.jp .jp-strip { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--jp-muted); font-weight: 600; margin-top: -6px; }
+.jp .jp-strip b { color: var(--jp-sun); font-family: var(--jp-display); font-size: 12px; }
+
+/* the clue */
+.jp .jp-cat { font-family: var(--jp-display); font-weight: 900; color: var(--jp-sun); font-size: 14px; }
+.jp .jp-clue { font-size: 18px; line-height: 1.35; background: var(--jp-panel); padding: 12px 14px; border-radius: 14px; }
+
+/* timers */
+.jp .jp-timer { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .10); overflow: hidden; width: 100%; }
+.jp .jp-timer i { display: block; height: 100%; background: linear-gradient(90deg, var(--c0), var(--jp-sun)); transform-origin: left; transition: transform .12s linear; }
+.jp .jp-clock { font-family: var(--jp-display); font-weight: 900; font-size: 44px; color: var(--jp-sun); line-height: 1; }
+
+/* the buzzer */
+.jp .jp-buzzer { width: min(74vw, 42vh); height: min(74vw, 42vh); border-radius: 50%; font-family: var(--jp-display); font-weight: 900; font-size: min(11vw, 6.5vh); color: #fff; touch-action: manipulation; transition: transform .06s, filter .2s; border: 0; user-select: none; -webkit-user-select: none; }
+.jp .jp-buzzer.idle { background: radial-gradient(circle at 35% 30%, #5a4a7a, #2a2140); box-shadow: 0 10px 0 #18122a; color: var(--jp-muted); }
+.jp .jp-buzzer.live { background: radial-gradient(circle at 35% 30%, #ff8fb1, #e0245e 60%, #a1123d); box-shadow: 0 10px 0 #6d0b29, 0 0 40px rgba(255, 93, 143, .7); animation: jp-glow .6s infinite alternate; }
+.jp .jp-buzzer.live:active { transform: translateY(8px); box-shadow: 0 2px 0 #6d0b29; }
+.jp .jp-buzzer.locked { background: radial-gradient(circle at 35% 30%, #555, #2b2b2b); box-shadow: 0 10px 0 #111; color: #888; }
+@keyframes jp-glow { to { filter: brightness(1.15); } }
+.jp .jp-mytime { font-family: var(--jp-display); font-weight: 700; font-size: 16px; color: var(--jp-ink); background: var(--jp-sun); padding: 4px 12px; border-radius: 20px; }
+.jp .jp-times { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 360px; }
+.jp .jp-times div { display: flex; justify-content: space-between; background: var(--jp-panel); border-left: 5px solid var(--c); border-radius: 10px; padding: 6px 12px; font-weight: 600; }
+.jp .jp-times div.me { outline: 2px solid var(--jp-sun); }
+.jp .jp-times b { font-family: var(--jp-display); font-weight: 700; font-size: 14px; }
+
+/* the mini board */
+.jp .jp-mini { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; flex: 1; grid-template-rows: auto repeat(5, 1fr); min-height: 0; }
+.jp .jp-mini .h { font-size: 9px; font-weight: 800; text-transform: uppercase; text-align: center; line-height: 1.1; display: flex; align-items: center; justify-content: center; padding: 4px 2px; background: var(--jp-panel); border-bottom: 3px solid var(--col); border-radius: 6px; overflow-wrap: anywhere; hyphens: auto; }
+.jp .jp-mini button { padding: 0; border: 0; font-family: var(--jp-display); font-weight: 900; font-size: 13px; color: var(--jp-ink); background: var(--col); border-radius: 8px; min-height: 44px; }
+.jp .jp-mini button:disabled { background: rgba(255, 255, 255, .04); color: transparent; opacity: 1; }
+.jp .jp-mini button.dd { background: #fff; box-shadow: inset 0 0 0 3px var(--col); }
+.jp .jp-mini button.dd::after { content: 'DD'; display: block; font-size: 9px; line-height: 1; }
+.jp .jp-mini button.dd:disabled { background: rgba(255, 255, 255, .12); box-shadow: none; }
+.jp .jp-mini button.dd:disabled::after { content: ''; }
+
+/* reactions, captain bar, sheets */
+.jp .jp-react { display: flex; justify-content: center; gap: 6px; }
+.jp .jp-react button { flex: 1; max-width: 64px; font-size: 26px; padding: 8px 0; background: var(--jp-panel); border: 1px solid var(--jp-line); border-radius: 14px; }
+.jp .jp-react button:active { transform: scale(.9); }
+.jp .jp-captain { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, .15); }
+.jp .jp-captain::before { content: 'Captain controls'; width: 100%; text-align: center; font-size: 11px; color: var(--jp-muted); text-transform: uppercase; letter-spacing: .1em; }
+.jp .jp-captain .jp-btn { padding: 10px 14px; font-size: 14px; }
+.jp .jp-sheet { position: fixed; inset: 0; background: rgba(8, 8, 16, .75); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
+.jp .jp-sheet-in { width: 100%; max-width: 480px; max-height: 88vh; overflow: auto; background: #151729; border-radius: 20px 20px 0 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.jp .jp-sheet .hd { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 18px; }
+.jp .jp-sheet .hd .jp-btn { padding: 8px 14px; font-size: 14px; }
+.jp .jp-srow { display: grid; grid-template-columns: 1fr auto 44px 44px 52px; gap: 6px; align-items: center; background: var(--jp-panel); border-left: 5px solid var(--c); border-radius: 12px; padding: 8px 8px 8px 12px; }
+.jp .jp-srow .n { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp .jp-srow b { font-family: var(--jp-display); font-weight: 900; font-size: 15px; margin-right: 4px; }
+.jp .jp-srow b.neg { color: var(--jp-hot); }
+.jp .jp-srow .jp-btn { padding: 8px 0; font-size: 18px; }
+.jp .jp-srow .jp-btn.set { font-size: 13px; }
+.jp .jp-award { background: var(--jp-panel); border-top: 4px solid var(--jp-sun); border-radius: 12px; padding: 8px 14px; }
+.jp .jp-award b { color: var(--jp-sun); text-transform: uppercase; letter-spacing: .1em; font-size: 12px; display: block; }
+.jp .jp-kick { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.jp .jp-kick .jp-btn { padding: 6px 10px; font-size: 13px; }
+.jp .jp-answer-box { background: rgba(255, 209, 102, .12); border: 2px solid var(--jp-sun); border-radius: 14px; padding: 10px 14px; text-align: left; }
+.jp .jp-answer-box .a { font-family: var(--jp-display); font-weight: 900; font-size: 22px; color: var(--jp-sun); }
+.jp .jp-judge { display: flex; gap: 10px; width: 100%; }
+.jp .jp-judge .jp-btn { flex: 1; padding: 22px 0; font-size: 22px; }
+.jp .jp-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--jp-panel); padding: 10px 12px; border-radius: 12px; }

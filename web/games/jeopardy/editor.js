@@ -14,6 +14,17 @@ function blank() {
   };
 }
 
+/** "Also accept": other answers that count as right, typed as a comma separated list and stored as an array on obj.alt. */
+function altField(obj, touch) {
+  const el = h('input', { value: (obj.alt ?? []).join(', '), placeholder: 'Also accept (optional), separated by commas', autocomplete: 'off', 'aria-label': 'Also accept' });
+  el.addEventListener('input', () => {
+    const list = el.value.split(',').map((x) => x.trim()).filter(Boolean);
+    if (list.length) obj.alt = list; else delete obj.alt;
+    touch();
+  });
+  return el;
+}
+
 export function mount(container, api, ui) {
   let sets = [];
   let id = '';        // id of the set being edited ('' = brand new)
@@ -70,7 +81,8 @@ export function mount(container, api, ui) {
       return h('div', { class: 'clue' },
         h('div', { class: 'clue-top' }, field('input', cl, 'value', { type: 'number', inputMode: 'numeric', min: 1, step: 100, 'aria-label': 'Value' }, touch), h('div', { class: 'grow' }), dd),
         field('textarea', cl, 'clue', { rows: 2, placeholder: 'Clue (what the host reads)' }, () => { touch(); after(); }),
-        field('input', cl, 'answer', { placeholder: 'Answer (only the host sees it)', autocomplete: 'off' }, () => { touch(); after(); }));
+        field('input', cl, 'answer', { placeholder: 'Answer (checked against what players type)', autocomplete: 'off' }, () => { touch(); after(); }),
+        altField(cl, touch));
     });
     const body = h('div', { style: { display: 'contents' } },
       row('Category name', field('input', cat, 'name', { maxLength: 40, placeholder: `Category ${c + 1}`, autocomplete: 'off' }, () => { touch(); after(); })),
@@ -87,7 +99,8 @@ export function mount(container, api, ui) {
     const body = h('div', { style: { display: 'contents' } },
       row('Category', field('input', f, 'category', { placeholder: 'Category', autocomplete: 'off' }, () => { touch(); after(); })),
       row('Clue', field('textarea', f, 'clue', { rows: 3, placeholder: 'The final clue' }, () => { touch(); after(); })),
-      row('Answer', field('input', f, 'answer', { placeholder: 'The answer', autocomplete: 'off' }, () => { touch(); after(); })));
+      row('Answer', field('input', f, 'answer', { placeholder: 'The answer', autocomplete: 'off' }, () => { touch(); after(); })),
+      row('Also accept', altField(f, touch), 'Other wordings that count as right, separated by commas. Small typos and “the/a” are forgiven already.'));
     item = group.add({ badge: '★', ...summary(), placeholder: 'Final Jeopardy', body, open: openKey === 'final', onToggle: (on) => { if (on) openKey = 'final'; } });
     return item.el;
   }
@@ -101,7 +114,7 @@ export function mount(container, api, ui) {
       (() => { const el = h('input', { value: id, placeholder: 'auto from the title', style: { marginTop: '8px' } }); el.addEventListener('input', () => { id = el.value; touch(); }); return el; })());
     const setCard = h('div', { class: 'card' }, row('Question set', picker),
       row('Title', field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. Holiday Trivia', autocomplete: 'off' }, touch)), fileName,
-      h('div', { class: 'tag' }, 'Leave Daily Doubles unmarked and the game places one at random each time. Mark any to choose the spots yourself.'));
+      h('div', { class: 'tag' }, 'Players type their answers and the game checks them, forgiving small typos, so add other wordings under “Also accept”. Mark Daily Doubles to choose the spots yourself, or leave them for the game to place. A board you write is played just as written; the question packs are mixed from the lobby.'));
     setKids(container, setCard, doc.categories.map((cat, c) => categoryAcc(group, cat, c)), finalAcc(group));
   }
 

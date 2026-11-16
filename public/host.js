@@ -220,7 +220,11 @@ function playersTab() {
   const teamOf = (p) => room.teams.find((t) => t.id === p.teamId);
   const cards = [];
 
-  const how = room.fixedTeams ? [
+  const how = room.individualsOnly ? [
+    eyebrow('How to play'),
+    h('div', { class: 'card-title' }, 'Individual players'),
+    h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by individuals, up to ${room.maxPlayers} of them. The first player to join is the captain.`),
+  ] : room.fixedTeams ? [
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, `${room.fixedTeams} teams`),
     h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by ${room.fixedTeams} teams. Players are dealt onto them at random.`),
