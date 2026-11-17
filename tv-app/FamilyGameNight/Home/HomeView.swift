@@ -75,6 +75,8 @@ struct HomeView: View {
         }
         .onAppear {
             focused = Self.focusForScreenshots ?? lastOpened ?? FamilyGame.allCases.first
+            // The CI screenshot job launches with GN_HOME_OPEN=<game> to picture that game's lobby.
+            if let game = Self.openForScreenshots, lastOpened == nil { open(game) }
             withAnimation(.easeOut(duration: 0.7)) { appeared = true }
             if musicOn { MenuMusic.shared.start() }
         }
@@ -111,6 +113,9 @@ struct HomeView: View {
     }
 
     /// The CI screenshot job launches the app with GN_HOME_FOCUS=<game> to picture each card highlighted.
+    private static let openForScreenshots: FamilyGame? =
+        ProcessInfo.processInfo.environment["GN_HOME_OPEN"].flatMap(FamilyGame.init(rawValue:))
+
     private static let focusForScreenshots: FamilyGame? =
         ProcessInfo.processInfo.environment["GN_HOME_FOCUS"].flatMap(FamilyGame.init(rawValue:))
 

@@ -113,26 +113,14 @@
 .bw .waitchip .av { width: 3.6vh; height: 3.6vh; font-size: 1.6vh; }
 
 /* Lobby */
-.bw .bwlobby { flex: 1; display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 4vw; align-items: center; min-height: 0; }
-.bw .bwlobby > div:first-child { min-height: 0; overflow: auto; max-height: 100%; padding-bottom: 2vh; }
-.bw .bwlobby .wm { font-size: 10vh; }
-.bw .bwlobby .tag { font-size: 2.8vh; color: var(--muted); margin: 2vh 0 3vh; }
-.bw .steps { font-size: 2.4vh; line-height: 1.7; }
-.bw .steps b { color: var(--sun); }
-.bw .bwlobby.building .wm { font-size: 7vh; margin-bottom: 2vh; }
-.bw .bwlobby.building .tag { display: none; }
-.bw .bwlobby.building .steps { font-size: 2vh; line-height: 1.5; }
-.bw .bwlobby.building .pack { font-size: 1.7vh; padding: .6vh 1vw; }
-.bw .joinbox { background: var(--panel); border: 1px solid var(--line); border-radius: 4vh; padding: 4vh; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.6vh; }
+.bw .joinbox { background: var(--panel); border: 1px solid var(--line); border-radius: 3.6vh; padding: 3.6vh; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.4vh; box-shadow: 0 3vh 8vh rgba(0, 0, 0, .45); }
+.bw .joinbox .eyebrow { font-size: 2.2vh; letter-spacing: .2em; }
 .bw .qr-big { background: #fff; padding: 2vh; border-radius: 2.4vh; display: inline-block; }
-.bw .qr-big img { width: 32vh; height: 32vh; display: block; }
+.bw .qr-big img { width: 36vh; height: 36vh; display: block; }
 .bw .codetiles { display: flex; gap: 1vh; }
 .bw .codetiles span { width: 10vh; height: 10vh; border-radius: 2vh; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 900; font-size: 5.6vh; color: var(--ink); }
-.bw .url { font-size: 2.3vh; color: var(--muted); word-break: break-all; }
+.bw .url { font-size: 2.3vh; line-height: 1.45; color: var(--muted); word-break: break-word; }
 .bw .url b { color: var(--text); }
-.bw .roster { display: flex; flex-wrap: wrap; gap: 1vh; margin-top: 2.4vh; }
-.bw .roster .chip { min-width: 0; padding: .6vh 1.4vw .6vh .6vh; border-radius: 4vh; font-size: 2.4vh; font-weight: 800; animation: bw-zoom .3s ease; }
-.bw .roster .chip .av { width: 4vh; height: 4vh; font-size: 1.8vh; }
 .bw .packs { margin-top: 2.4vh; display: flex; flex-wrap: wrap; gap: .8vh; align-items: center; }
 .bw .packlabel { width: 100%; font-size: 1.8vh; color: var(--muted); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .bw .packlabel .warn { color: var(--bad); }
@@ -186,3 +174,53 @@
 /* Redrawn for a small change (a buzz, a reaction): no entrance animations again. */
 .bw.still .clue, .bw.still .ans, .bw.still .hot, .bw.still .big, .bw.still .rcard, .bw.still .award,
 .bw.still .roster .chip, .bw.still .buzzorder .b { animation: none; }
+
+/* ---------- The lobby (the Jeopardy main screen): how to join, who is in, what will be played ---------- */
+.bw .bwlobby { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 30vw; gap: 4vw; padding: 1vh 0 0; }
+.bw .lb-left { display: flex; flex-direction: column; gap: 3vh; min-width: 0; min-height: 0; }
+.bw .lb-hero { display: grid; gap: 1.4vh; }
+.bw .eyebrow.sun { color: var(--sun); }
+.bw .lb-hero h1 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 7.2vh; line-height: 1.02; letter-spacing: -.02em; }
+.bw .lb-hero h1 i { font-style: normal; color: var(--sun); }
+.bw .lb-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1vw; }
+.bw .lb-steps li { background: var(--panel); border: 1px solid var(--line); border-radius: 2.2vh; padding: 1.8vh 1.2vw; display: flex; gap: 1vw; align-items: center; min-width: 0; }
+.bw .lb-steps .num { flex: none; width: 5vh; height: 5vh; border-radius: 50%; color: var(--ink); display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 2.2vh; }
+.bw .lb-steps b { display: block; font-size: 2.4vh; font-weight: 800; }
+.bw .lb-steps small { display: block; font-size: 1.85vh; color: var(--muted); }
+.bw .lb-panel { flex: 1; min-height: 0; background: rgba(28, 31, 54, .72); border: 1px solid var(--line); border-radius: 3vh; padding: 2.4vh 1.6vw; display: flex; flex-direction: column; gap: 2vh; }
+.bw .lb-head { display: flex; align-items: baseline; gap: 1vw; }
+.bw .lb-head b { font-family: var(--display); font-weight: 700; font-size: 2.4vh; }
+.bw .lb-head .aside { margin-left: auto; font-size: 2vh; color: var(--muted); }
+.bw .lb-head .done { margin-left: auto; font-size: 1.8vh; }
+.bw .seats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4vh .8vw; align-content: start; overflow: hidden; }
+.bw .seat { background: var(--panel2); border-radius: 2vh; padding: 1.4vh .9vw; display: flex; align-items: center; gap: .9vw; min-width: 0; animation: bw-zoom .3s ease; }
+.bw .seat .av { width: 6vh; height: 6vh; font-size: 2.6vh; }
+.bw .seat .who { display: flex; flex-direction: column; min-width: 0; }
+.bw .seat b { font-size: 2.5vh; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw .seat small { font-size: 1.7vh; font-weight: 600; color: var(--good); }
+.bw .seat small.cap { color: var(--sun); }
+.bw .seat.off { opacity: .45; }
+.bw .seat.off small { color: var(--muted); }
+.bw .seat.open { background: none; border: 2px dashed rgba(255, 255, 255, .14); animation: none; }
+.bw .seat.open .av { background: none; border: 2px dashed rgba(255, 255, 255, .22); color: var(--muted); font-family: inherit; font-weight: 400; font-size: 3vh; }
+.bw .seat.open small { color: var(--muted); font-size: 2vh; }
+.bw .seats.many { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bw .seats.many .seat .av { width: 4.6vh; height: 4.6vh; font-size: 2vh; }
+.bw .seats.many .seat b { font-size: 2vh; }
+.bw .lb-packs { display: none; }
+.bw .bwlobby.choosing .lb-packs { display: flex; }
+.bw .bwlobby.choosing .lb-players { display: none; }
+.bw .lb-packs .packs { margin: 0; overflow: auto; min-height: 0; }
+.bw .lb-board { display: flex; align-items: center; gap: 1.4vw; background: var(--panel); border: 1px solid var(--line); border-radius: 2.2vh; padding: 1.6vh 1.6vw; }
+.bw .lb-board .strip { display: grid; grid-template-columns: repeat(6, 1.4vh); gap: .45vh; flex: none; }
+.bw .lb-board .strip i { height: 4vh; border-radius: .6vh; }
+.bw .lb-board .what { min-width: 0; display: grid; gap: .3vh; font-size: 2.3vh; font-weight: 600; }
+.bw .lb-board .what .eyebrow { font-size: 1.6vh; }
+.bw .lb-board .what span { color: var(--muted); }
+.bw .lb-board .what .warn { color: var(--bad); }
+.bw .lb-board .aside { margin-left: auto; font-size: 1.8vh; color: var(--muted); text-align: right; }
+.bw .lb-board button { margin-left: auto; flex: none; font-size: 1.9vh; }
+.bw .lb-foot { display: flex; justify-content: center; white-space: pre; padding-top: 2.4vh; font-size: 2.3vh; font-weight: 600; color: var(--muted); }
+.bw .lb-foot b { color: var(--text); }
+.bw.still .seat { animation: none; }
+.bw .bwlobby.choosing .lb-hero, .bw .bwlobby.choosing .lb-steps { display: none; }

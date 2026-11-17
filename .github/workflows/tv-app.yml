@@ -100,6 +100,11 @@ jobs:
             sips -Z 1280 -s format jpeg -s formatOptions 70 "shots/home-$g.png" --out "shots/home-$g.jpg" > /dev/null
             echo "SHOT_BEGIN home-$g"; base64 -i "shots/home-$g.jpg" | fold -w 1000; echo "SHOT_END home-$g"
           done
+          # Jeopardy's lobby, the screen everyone sees while joining (it starts a real room on the relay).
+          xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+          SIMCTL_CHILD_GN_HOME_OPEN=jeopardy xcrun simctl launch "$UDID" "$BUNDLE"
+          sleep 20
+          xcrun simctl io "$UDID" screenshot "shots/jeopardy-lobby.png"
       - uses: actions/upload-artifact@v4
         with:
           name: home-screenshots
