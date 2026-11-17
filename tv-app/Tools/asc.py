@@ -99,8 +99,18 @@ def prepare(bundle_id, app_name):
         print(f"Registered bundle ID {bundle_id}")
     team = bundle["attributes"].get("seedId", "")
 
-    status, res = call("GET", "/v1/apps", params={"filter[bundleId]": bundle_id})
-    apps = [a for a in res.get("data", []) if a["attributes"].get("bundleId") == bundle_id] if status == 200 else []
+    # Apple's API now and then answers with an error or an empty list for an app that exists (a build went up fine
+    # hours before such a run), so ask a few times before deciding, and never treat an error as "no app".
+    for attempt in range(5):
+        if attempt:
+            time.sleep(10 * attempt)
+        status, res = call("GET", "/v1/apps", params={"filter[bundleId]": bundle_id})
+        apps = [a for a in res.get("data", []) if a["attributes"].get("bundleId") == bundle_id] if status == 200 else []
+        if apps:
+            break
+        print(f"Looking up the app for {bundle_id}: {'no match' if status == 200 else f'error {status}'} (try {attempt + 1} of 5)")
+    if status != 200:
+        sys.exit(f"App Store Connect would not list the apps ({status}), so nothing was uploaded. Run the workflow again. {res}")
     if not apps:
         output(team_id=team, app_exists="false")
         print(f"::warning::There is no app with bundle ID {bundle_id} in App Store Connect yet. Create it "
