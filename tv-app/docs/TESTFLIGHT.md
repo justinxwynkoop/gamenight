@@ -66,10 +66,24 @@ refuse it. Use the script (or the GitHub workflow below).
 2. In this repository on GitHub: **Settings → Secrets and variables → Actions → New repository secret**, and add three:
    `ASC_KEY_ID` (the Key ID), `ASC_ISSUER_ID` (the Issuer ID), and `ASC_KEY_P8` (open the `.p8` file in a text editor and
    paste all of it, including the BEGIN and END lines).
-3. **Actions → Send to TestFlight → Run workflow**, and type the version (for example `1.2`; it must be higher than the last
-   one in `Config/testflight-version.txt`). It checks the app exists, makes a TestFlight group called **Family**
-   if there is none, then builds, signs and uploads. A warning that the app does not exist yet means step "create the app"
-   above is still to do.
+3. That's it: from now on it uploads by itself. **Every merge into `main`** here (except docs-only changes), **every
+   merge into `main` in the gamenight repo** (see step 4), and **the 1st of every other month** (so a build never hits the
+   90-day expiry) build, sign and upload a new TestFlight build. Each run first builds the newest engine and question
+   sets from gamenight into the app and runs the tests, so a broken engine never reaches the TVs. To upload by hand:
+   **Actions → Send to TestFlight → Run workflow** (the version box is optional). It checks the app exists, makes a
+   TestFlight group called **Family** if there is none, then builds, signs and uploads. A warning that the app does not
+   exist yet means step "create the app" above is still to do.
+4. **Merges in gamenight** reach this workflow through a token, once: on GitHub, **your picture → Settings → Developer
+   settings → Personal access tokens → Fine-grained tokens → Generate new token**. Name it "gamenight to TestFlight",
+   pick the longest expiry, Resource owner the account that owns `familygamenight`, **Only select repositories →
+   familygamenight**, and under Repository permissions set **Contents: Read and write** (it only lets gamenight start
+   this workflow). Copy the token, then in the **gamenight** repo: **Settings → Secrets and variables → Actions → New
+   repository secret**, name `FAMILYGAMENIGHT_TOKEN`, paste it. Without it, gamenight merges reach the TVs at the next
+   merge here or the next scheduled build.
+
+Automatic builds use the version in `Config/testflight-version.txt` (the first number) and the workflow's run number as
+the build number, which always goes up, so they never clash: TestFlight shows them as 1.1 (4), 1.1 (5) and so on. To
+start a new version, upload it by hand (or with the script) and commit the new number in that file.
 
 The key is as powerful as an Admin login: never put it in a file in the repository, and delete the key in App Store Connect
 if it ever leaks. The workflow does nothing without the secrets, so it is safe to leave in place. A cloud build does not
@@ -89,7 +103,8 @@ Family Game Night. New builds arrive on their own (and can be turned off in Test
 
 ## Good to know
 
-- **A build lasts 90 days.** After that it stops opening; upload a new one (Way 1 or Way 2) before then.
+- **A build lasts 90 days.** After that it stops opening. The GitHub workflow uploads a fresh one every other month, and
+  on every merge, so this only matters if the secrets are removed.
 - **Version and build.** TestFlight shows the version (1.2) and the build number in brackets, 1.2 (1). Apple only needs a
   build number to be unique within one version, so each new version starts again at 1. The first version, 1.0, ended up with
   build 2611120829 because an earlier script used the date; that stays in the history and does not matter.
