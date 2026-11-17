@@ -95,6 +95,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
+          ASC_KEY_ID=$(printf %s "$ASC_KEY_ID" | tr -d "[:space:]"); ASC_ISSUER_ID=$(printf %s "${ASC_ISSUER_ID:-}" | tr -d "[:space:]"); export ASC_KEY_ID ASC_ISSUER_ID   # a pasted space or newline breaks the sign-in
           mkdir -p ~/private_keys
           # Rebuild the .p8 from whatever was pasted into the secret: Windows line endings, the BEGIN/END lines missing,
           # or everything on one line all still work. Only the shape is checked and reported, never the key itself.
@@ -122,6 +123,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          ASC_KEY_ID=$(printf %s "$ASC_KEY_ID" | tr -d "[:space:]"); ASC_ISSUER_ID=$(printf %s "${ASC_ISSUER_ID:-}" | tr -d "[:space:]"); export ASC_KEY_ID ASC_ISSUER_ID   # a pasted space or newline breaks the sign-in
           python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
           python3 Tools/asc.py prepare "$BUNDLE_ID" "$APP_NAME"
       - name: Build, sign and upload to TestFlight
@@ -131,6 +133,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           TEAM_ID: ${{ steps.asc.outputs.team_id }}
         run: |
+          ASC_KEY_ID=$(printf %s "$ASC_KEY_ID" | tr -d "[:space:]"); ASC_ISSUER_ID=$(printf %s "${ASC_ISSUER_ID:-}" | tr -d "[:space:]"); export ASC_KEY_ID ASC_ISSUER_ID   # a pasted space or newline breaks the sign-in
           set -o pipefail
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then read -r VERSION _ < Config/testflight-version.txt; fi

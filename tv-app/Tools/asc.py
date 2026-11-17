@@ -54,6 +54,23 @@ def call(method, path, body=None, params=None):
             return e.code, {"raw": raw.decode(errors="replace")}
 
 
+def diagnose():
+    """Says what shape the secrets are in (never their values), for a sign-in Apple refused."""
+    import re
+    kid = os.environ.get("ASC_KEY_ID", "")
+    iss = os.environ.get("ASC_ISSUER_ID", "")
+    print(f"ASC_KEY_ID: {len(kid)} characters, {'looks right' if re.fullmatch(r'[A-Z0-9]{10}', kid) else 'expected 10 capital letters and digits'}")
+    print(f"ASC_ISSUER_ID: {len(iss)} characters, {'looks right' if re.fullmatch(r'[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}', iss) else 'expected a 36-character id like 1a2b3c4d-...'}")
+    try:
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        k = load_pem_private_key(open(os.environ["ASC_KEY_PATH"], "rb").read(), None)
+        print(f"ASC_KEY_P8: loads, curve {getattr(getattr(k, 'curve', None), 'name', '?')} (App Store Connect keys are secp256r1)")
+    except Exception as e:
+        print(f"ASC_KEY_P8: does not load ({type(e).__name__})")
+    print("If all three look right: the key may be an Individual key (use a Team key), revoked, or from another team, "
+          "or ASC_KEY_ID may not be the ID of the key in ASC_KEY_P8 (the file is named AuthKey_<KEY ID>.p8).")
+
+
 def output(**kv):
     lines = "".join(f"{k}={v}\n" for k, v in kv.items())
     print(lines, end="")
@@ -66,6 +83,8 @@ def output(**kv):
 def prepare(bundle_id, app_name):
     status, res = call("GET", "/v1/bundleIds", params={"filter[identifier]": bundle_id, "limit": 200})
     if status != 200:
+        if status == 401:
+            diagnose()
         sys.exit(f"Could not read bundle IDs ({status}). Check the API key secrets and that the key has the Admin role. {res}")
     match = [b for b in res.get("data", []) if b["attributes"]["identifier"] == bundle_id]
     if match:
