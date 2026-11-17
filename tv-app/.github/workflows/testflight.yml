@@ -37,6 +37,14 @@ jobs:
           fi
       - uses: actions/checkout@v4
         if: env.ready == 'true'
+      - name: Use Xcode 26 (Apple only accepts apps built with the tvOS 26 SDK or later)
+        if: env.ready == 'true'
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$XCODE" ]; then echo "::error::No Xcode 26 on this runner"; ls -d /Applications/Xcode*; exit 1; fi
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
       - name: Write the key file
         if: env.ready == 'true'
         env:
