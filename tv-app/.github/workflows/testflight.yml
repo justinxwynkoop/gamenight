@@ -1,21 +1,41 @@
-# Builds the Apple TV app on a Mac in the cloud, signs it and uploads it to TestFlight. Run it by hand:
-#   GitHub → Actions → "Send to TestFlight" → Run workflow.
+# Builds the Apple TV app on a Mac in the cloud, signs it and uploads it to TestFlight. It runs by itself:
+#   - when a change is merged into main here (docs-only changes are skipped),
+#   - when a change is merged into main in the gamenight repo (that repo's "Tell the Apple TV app" workflow sends a
+#     "gamenight-updated" event here; it needs the FAMILYGAMENIGHT_TOKEN secret in gamenight, see docs/TESTFLIGHT.md),
+#   - on the 1st of every other month, so the build on the TVs never reaches Apple's 90-day expiry,
+#   - and by hand: GitHub → Actions → "Send to TestFlight" → Run workflow (the version box is optional).
+# Every run builds the newest game engine and question sets from gamenight's main branch into the app first, and runs
+# the tests, so the TVs always get the latest rules and phone-matching engine.
 # It needs three repository secrets from an App Store Connect API key (see docs/TESTFLIGHT.md):
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole contents of the .p8 file).
 # Without them it does nothing but say so. Adapted from the workflow in the Buzzworthy Apple TV app.
+#
+# Version and build: the version is the one typed in, or else the first number in Config/testflight-version.txt; the
+# build number is this workflow's run number, which only ever goes up, so automatic uploads never clash.
 #
 # A build made here does not contain your own sound files or extra question sets (they are not in the repository).
 # To include them, archive from Xcode on your Mac instead (docs/TESTFLIGHT.md).
 name: Send to TestFlight
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  repository_dispatch:
+    types: [gamenight-updated]
+  schedule:
+    - cron: '17 9 1 */2 *'   # 09:17 UTC on the 1st of every other month
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to upload, like 1.2 (it must be higher than the last one uploaded; see Config/testflight-version.txt)'
-        required: true
+        description: 'Version to upload, like 1.2 (optional; empty uses the one in Config/testflight-version.txt)'
+        required: false
 
-concurrency: testflight
+concurrency:
+  group: testflight
+  cancel-in-progress: false
 
 env:
   BUNDLE_ID: family.singonight.app
@@ -45,6 +65,22 @@ jobs:
           echo "Using $XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
+      - name: Build the newest engine and question sets from gamenight
+        if: env.ready == 'true'
+        run: |
+          git clone --depth 1 https://github.com/justinxwynkoop/gamenight.git ../gamenight
+          echo "gamenight at $(git -C ../gamenight log -1 --format='%h %s')"
+          (cd ../gamenight && npm ci --no-audit --no-fund)
+          node ../gamenight/scripts/build-engine.mjs "$PWD/FamilyGameNight/GameNight/Engine/engine.js"
+          node ../gamenight/scripts/bundle-sets.mjs "$PWD/FamilyGameNight/GameNight/Engine/sets.json"
+          git diff --stat -- FamilyGameNight/GameNight/Engine || true
+      - name: Run the tests with that engine
+        if: env.ready == 'true'
+        run: |
+          swift test > test.log 2>&1 && status=0 || status=$?
+          grep -E "error:|failed \(" test.log || true
+          grep -E "Executed [0-9]+ tests" test.log | tail -n 3
+          exit $status
       - name: Write the key file
         if: env.ready == 'true'
         env:
@@ -72,6 +108,8 @@ jobs:
         run: |
           set -o pipefail
           VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then read -r VERSION _ < Config/testflight-version.txt; fi
+          case "$VERSION" in *[!0-9.]*|.*|*.|*..*|"") echo "::error::The version must look like 1.2, not $VERSION"; exit 1 ;; esac
           BUILD="${{ github.run_number }}"
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
