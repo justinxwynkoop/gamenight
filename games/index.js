@@ -3,5 +3,6 @@
 // public/games/<id>/ (tv.js, host.js, player.js, editor.js), and list it here.
 import jeopardy from './jeopardy/index.js';
 import feud from './feud/index.js';
+import singo from './singo/index.js';
 
-export const GAMES = Object.fromEntries([jeopardy, feud].map((g) => [g.id, g]));
+export const GAMES = Object.fromEntries([jeopardy, feud, singo].map((g) => [g.id, g]));

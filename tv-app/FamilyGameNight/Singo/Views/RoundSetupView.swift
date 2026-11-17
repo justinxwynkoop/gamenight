@@ -6,6 +6,7 @@ struct RoundSetupView: View {
     let playlist: Playlist
     let library: MusicLibrary
     @Bindable var store: SettingsStore
+    let phones: SingoPhones
 
     @State private var songs: [Song] = []
     @State private var isLoading = true
@@ -63,7 +64,7 @@ struct RoundSetupView: View {
         VStack(alignment: .leading, spacing: 30) {
             Group {
                 if let artwork = playlist.artwork {
-                    ArtworkImage(artwork, width: 520, height: 520)
+                    ArtworkImage(artwork, width: 380, height: 380)
                 } else {
                     ZStack {
                         LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -73,7 +74,8 @@ struct RoundSetupView: View {
                     }
                 }
             }
-            .frame(width: 520, height: 520)
+            // Smaller than the column, to leave room for the phones' join card below.
+            .frame(width: 380, height: 380)
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .shadow(color: .black.opacity(0.5), radius: 30, y: 16)
 
@@ -92,7 +94,9 @@ struct RoundSetupView: View {
                     .frame(height: 84)
             } else if errorMessage == nil {
                 Button {
-                    round = GameController(songs: songs, settings: settings, playlist: playlist)
+                    let controller = GameController(songs: songs, settings: settings, playlist: playlist)
+                    controller.phones = phones
+                    round = controller
                 } label: {
                     Label("Start Round", systemImage: "play.fill")
                 }
@@ -105,6 +109,8 @@ struct RoundSetupView: View {
                   systemImage: "moon.fill")
                 .font(.system(size: 22))
                 .foregroundStyle(.white.opacity(0.55))
+
+            SingoJoinCard(phones: phones, compact: false)
         }
     }
 

@@ -36,6 +36,8 @@ final class GameNightClient {
     private(set) var relayIssue: String?
     /// Set when the server sent a state this app could not read.
     private(set) var readError: String?
+    /// Singo Night's phone cards, while Singo is the game (ServerState sees it only as an unsupported game).
+    private(set) var singo: SingoPhoneState?
 
     @ObservationIgnored private var runTask: Task<Void, Never>?
     @ObservationIgnored private var infoTask: Task<Void, Never>?
@@ -84,6 +86,7 @@ final class GameNightClient {
         state = nil
         joinURL = nil
         readError = nil
+        singo = nil
     }
 
     // MARK: - The game on this Apple TV
@@ -278,6 +281,8 @@ final class GameNightClient {
     private func handle(_ data: Data) {
         guard let kind = try? decoder.decode(ServerMessageKind.self, from: data), kind.t == "state" else { return }
         connection = .connected
+        let singoState = SingoPhoneState.from(data)
+        if singo != singoState { singo = singoState }
         do {
             let decoded = try decoder.decode(StateMessage.self, from: data)
             readError = nil

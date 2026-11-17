@@ -10,32 +10,42 @@ struct SingoRootView: View {
 
     @State private var library = MusicLibrary()
     @State private var store = SettingsStore()
+    /// Bingo cards on the phones: the room opens with Singo and stays open while Singo is on screen.
+    @State private var phones = SingoPhones()
 
     var body: some View {
         NavigationStack {
             switch library.status {
             case .authorized:
                 PlaylistPickerView(library: library)
-                    .onExitCommand(perform: onExit)
+                    .onExitCommand(perform: leave)
                     .navigationDestination(for: Playlist.self) { playlist in
-                        RoundSetupView(playlist: playlist, library: library, store: store)
+                        RoundSetupView(playlist: playlist, library: library, store: store, phones: phones)
                     }
             case .notDetermined:
                 AccessView(
                     message: "Singo plays songs from the Apple Music library on this Apple TV.",
                     buttonTitle: "Allow Apple Music",
                     action: { Task { await library.requestAccess() } },
-                    onBack: onExit
+                    onBack: leave
                 )
             default:
                 AccessView(
                     message: "Singo needs Apple Music access. Turn it on in Settings › General › Privacy & Security › Media & Apple Music, then reopen Family Game Night.",
                     buttonTitle: nil,
                     action: {},
-                    onBack: onExit
+                    onBack: leave
                 )
             }
         }
+        // Not onDisappear: that can also fire while a round covers this screen, and the phones must stay in.
+        .onAppear { phones.start() }
+    }
+
+    /// Back to the game picker: the phones' room closes with Singo.
+    private func leave() {
+        phones.stop()
+        onExit()
     }
 }
 

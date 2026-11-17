@@ -31,14 +31,28 @@ struct RoundView: View {
             } else {
                 stage
             }
+            if let claim = controller.phones?.announcement {
+                SingoClaimBanner(claim: claim)
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+            }
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: controller.phones?.announcement)
+        .onChange(of: controller.phones?.state?.claims.last?.n) { _, _ in announceClaim() }
         .defaultFocus($focus, .called)
         .onAppear {
             controller.begin()
             focus = .called
         }
         .onDisappear { controller.end() }
-        .onPlayPauseCommand { controller.togglePause() }
+        .onPlayPauseCommand {
+            // Play after a "SINGO!" puts the banner away and carries on.
+            if controller.phones?.announcement != nil {
+                controller.phones?.dismissAnnouncement()
+                controller.setPaused(false)
+            } else {
+                controller.togglePause()
+            }
+        }
         .onExitCommand {
             if engine.phase == .finished {
                 dismiss()
@@ -56,6 +70,20 @@ struct RoundView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { controller.setPaused(true) }
+        }
+    }
+
+    /// A phone called "SINGO!". A good one pauses the music and stays up until Play; one called too early shows briefly.
+    private func announceClaim() {
+        guard let phones = controller.phones, let claim = phones.takeNewClaim() else { return }
+        if claim.ok {
+            controller.setPaused(true)
+        } else {
+            let n = claim.n
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(4))
+                if phones.announcement?.n == n { phones.dismissAnnouncement() }
+            }
         }
     }
 
@@ -120,10 +148,16 @@ struct RoundView: View {
             controls
         }
         .overlay(alignment: .topLeading) {
-            if engine.isPaused {
-                Label("Paused", systemImage: "pause.fill")
-                    .font(.system(size: 28, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
+            VStack(alignment: .leading, spacing: 14) {
+                if engine.isPaused {
+                    Label("Paused", systemImage: "pause.fill")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                if let phones = controller.phones {
+                    SingoJoinCard(phones: phones, compact: true)
+                        .frame(maxWidth: 340, alignment: .leading)
+                }
             }
         }
         .overlay(alignment: .topTrailing) {

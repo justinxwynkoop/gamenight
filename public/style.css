@@ -312,3 +312,25 @@ body.tv-idle .tvmenu:has(.tvmenu-panel.hidden) .tvmenu-btn { opacity: 0; transit
 .fd-members { font-size: 3.4vmin; font-weight: 700; color: var(--dim); }
 .fd-final .r.top { background: #1b2a7a; box-shadow: 0 0 3vmin rgba(255, 210, 74, .35); }
 .fd-sub.dim { color: var(--dim); font-size: 2.4vmin; }
+
+/* Singo Night on a phone: the bingo card */
+.sg { display: grid; gap: 10px; }
+.sg-head { display: grid; gap: 2px; }
+.sg-title { font-weight: 900; font-size: 1.2rem; }
+.sg-card { display: grid; gap: 4px; }
+.sg-cell { aspect-ratio: 1; display: grid; align-content: center; justify-items: center; gap: 2px; padding: 3px; border-radius: 8px; border: 1px solid var(--line); background: #13205e; color: var(--text); overflow: hidden; text-align: center; line-height: 1.1; }
+.sg-cell .t { font-size: .68rem; font-weight: 800; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; hyphens: auto; }
+.sg-cell .a { font-size: .55rem; color: var(--dim); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.sg-card.s4 .sg-cell .t, .sg-card.s3 .sg-cell .t { font-size: .85rem; }
+.sg-cell.on { background: radial-gradient(circle, #ff4fa3 0 58%, #b8236e 60%); border-color: #ff9fd0; }
+.sg-cell.on .a { color: #ffe1f0; }
+.sg-cell.free { background: linear-gradient(#ffd24a, #e0a81a); color: #1b1300; border-color: #fff1a8; }
+.sg-cell.win { outline: 3px solid var(--gold); outline-offset: -3px; }
+.sg-claim { min-height: 76px; border: none; border-radius: 18px; font-size: 2rem; font-weight: 900; letter-spacing: .06em; color: #fff; background: linear-gradient(#ff4fa3, #c2186f); box-shadow: 0 6px 0 #7a0f46; }
+.sg-claim:active { transform: translateY(3px); box-shadow: 0 3px 0 #7a0f46; }
+.sg-claim:disabled { opacity: .6; }
+.sg-won { padding: 10px 12px; border-radius: 10px; background: #14532d; font-weight: 700; }
+.sg-called summary { font-weight: 700; cursor: pointer; }
+.sg-list { margin: 8px 0 0; padding-left: 1.6em; display: grid; gap: 4px; font-size: .9rem; }
+.sg-wait { text-align: center; }
+.sg-logo { font-size: 3rem; }

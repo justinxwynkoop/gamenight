@@ -8,7 +8,7 @@ const parse = (json) => (typeof json === 'string' ? JSON.parse(json) : json);
 
 globalThis.Engine = {
   /** The games this engine can run, for the host's menus. */
-  games: () => JSON.stringify(Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
+  games: () => JSON.stringify(Object.values(GAMES).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
 
   /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } } }. The room code is the relay's. */
   start(optionsJson) {

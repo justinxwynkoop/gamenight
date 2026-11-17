@@ -1,0 +1,91 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": true,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 1,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": 0,
+        "connected": false,
+        "members": 1
+      }
+    ],
+    "gameId": "singo",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "singo",
+    "scoreFormat": "points",
+    "lobbyTitle": "Singo Night",
+    "status": "playing",
+    "round": {
+      "n": 1,
+      "size": 5,
+      "playlist": "Road Trip",
+      "status": "playing",
+      "songs": 30,
+      "calledCount": 5
+    },
+    "claims": [
+      {
+        "n": 1,
+        "playerId": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "ok": false,
+        "line": [],
+        "missing": [
+          "Song 19",
+          "Song 27",
+          "Song 12",
+          "Song 9"
+        ]
+      },
+      {
+        "n": 2,
+        "playerId": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "ok": true,
+        "line": [
+          "Song 0",
+          "Song 5",
+          "Song 13",
+          "Song 11",
+          "Song 14"
+        ],
+        "missing": []
+      }
+    ],
+    "winners": [
+      {
+        "playerId": "p1",
+        "name": "Leo",
+        "color": "#ef4444"
+      }
+    ]
+  }
+}
