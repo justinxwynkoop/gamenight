@@ -1,0 +1,104 @@
+// The game engine hosted by a web browser: the TV page on the website (web/tv.html) runs the same engine the Apple TV
+// app runs, and phones reach it through the same Supabase relay. So any screen with a browser (a laptop on the TV, a
+// smart TV's browser) can be the TV. scripts/build-web.mjs bundles this file into web/tvhost.js.
+//
+//   const tv = await hostTv({ config, game, onState, onStatus });
+//   tv.code, tv.pin, tv.joinUrl, tv.qrSvg       for the screen
+//   tv.newRoom()                                 a new room code (reloads the page)
+import { GAMES } from '../../games/index.js';
+import { createEngine } from '../core.js';
+import { Realtime } from '../../public/relay/phoenix.js';
+import QRCode from 'qrcode';
+
+const KEYS = { room: 'gn-tv-room', code: 'gn-tv-code', sets: 'gn-tv-sets' };
+const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const put = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
+const json = (text) => { try { return text ? JSON.parse(text) : null; } catch { return null; } };
+
+/** One season of the public clue archive (github.com/jwolle1/jeopardy_clue_dataset), as raw text, or null. */
+async function downloadSeason(season) {
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/jwolle1/jeopardy_clue_dataset/main/seasons/season${season}.tsv`);
+    const text = r.ok ? await r.text() : '';
+    return text.startsWith('round') ? text : null;
+  } catch { return null; }
+}
+
+/**
+ * config     { url, key }: the Supabase project and its publishable key
+ * game       'jeopardy' or 'feud' to start that game (null: the host picks)
+ * onState    (view) => void, what the TV shows
+ * onStatus   (phonesConnected: boolean, issue: string | null) => void
+ */
+export async function hostTv({ config, game = null, onState, onStatus = () => {} }) {
+  let content = {};
+  try { content = await (await fetch('/sets.json', { cache: 'no-cache' })).json(); } catch { /* no shipped sets: the editor still works */ }
+
+  let saved = get(KEYS.room);
+  // A page for one game never resumes a room that was playing another: that room starts fresh.
+  if (saved && game) { const was = json(saved)?.gameId; if (was && was !== game) saved = null; }
+  const code = /^\d{4}$/.test(get(KEYS.code) ?? '') ? get(KEYS.code) : undefined;
+  const pin = String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
+
+  let rt = null;
+  let saveTimer = null;
+  const engine = createEngine({
+    games: GAMES,
+    pin,
+    saved,
+    content,
+    userSets: json(get(KEYS.sets)) ?? {},
+    onSetsChanged: (changes) => put(KEYS.sets, JSON.stringify(changes)),
+    now: () => performance.now(),
+    code,
+    broadcast: (topic, event, payload) => rt?.send(topic, event, payload),
+    // Only the TV's own display is local; phones and the host are answered through the relay.
+    send: (id, message) => { if (id === 'tv' && message?.t === 'state') onState(message.view); },
+    save: (text) => { clearTimeout(saveTimer); saveTimer = setTimeout(() => put(KEYS.room, text), 400); },
+    onError: (e) => console.error(e),
+  });
+  put(KEYS.code, engine.code);
+
+  rt = new Realtime({
+    url: config.url, key: config.key, WebSocketImpl: globalThis.WebSocket,
+    onStatus: (up) => onStatus(up, up ? null : rt?.lastIssue ?? null),
+    onBroadcast: (topic, event, payload) => engine.onBroadcast(topic, event, payload),
+  });
+  rt.join(engine.relayTopic);
+  rt.connect();
+
+  engine.open('tv');
+  if (game) { try { engine.room.chooseGame(game); } catch { /* a game is under way, or no such game */ } }
+  engine.receive('tv', { t: 'hello', role: 'tv' });
+
+  async function loadArchive(want) {
+    let season = want.season;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const text = await downloadSeason(season);
+      if (text) { engine.archiveLoaded(text, season, want.id); return; }
+      season = Math.max(3, season - 1 - attempt);
+    }
+    engine.archiveFailed(want.id);
+  }
+  setInterval(() => {
+    engine.tick();
+    const want = engine.takeArchiveRequest();
+    if (want) loadArchive(want);
+  }, 250);
+  addEventListener('pagehide', () => { clearTimeout(saveTimer); try { put(KEYS.room, JSON.stringify(engine.room)); } catch { /* fine */ } });
+
+  const joinUrl = `${location.origin}/?r=${engine.code}`;
+  let qrSvg = '';
+  try { qrSvg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, color: { dark: '#000000', light: '#ffffff' } }); } catch { /* no QR: the code is on screen */ }
+
+  return {
+    code: engine.code,
+    pin,
+    joinUrl,
+    qrSvg,
+    chooseGame(id) { try { engine.room.chooseGame(id); } catch { /* under way */ } },
+    newRoom() { put(KEYS.code, null); put(KEYS.room, null); location.reload(); },
+    /** Forget the game in this room (same code) and show the game picker. */
+    changeGame() { put(KEYS.room, null); location.replace(location.pathname); },
+  };
+}

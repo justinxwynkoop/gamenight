@@ -138,7 +138,7 @@ export async function onlineHostConnect(pin) {
   });
 }
 
-/** The room code this page is using when it runs on the online relay, or null on the Pi. */
+/** The room code this page is using when it runs on the online relay, or null on a home server. */
 export const onlineRoom = () => (globalThis.GN_RELAY ? roomFromPage() : null);
 /** Forget the room code and ask for another one. */
 export function changeRoom() {
@@ -147,7 +147,7 @@ export function changeRoom() {
 }
 const reply = (ok, body, status = ok ? 200 : 400) => ({ ok, status, json: async () => body });
 /**
- * fetch() for the host's /api calls. On the Pi that is plain fetch. Online there is no server to ask, so the few calls
+ * fetch() for the host's /api calls. On a home server that is plain fetch. Online there is no server to ask, so the few calls
  * the host page makes (which sets exist, what is in one) go to the TV through the relay instead.
  */
 export async function apiFetch(url, init = {}) {
@@ -192,4 +192,9 @@ export const unitById = (view, id) => view.units.find((u) => u.id === id) ?? nul
  */
 let qrKey = '';
 export const setQrKey = (key) => { qrKey = key; };
-export const qrImg = () => h('img', { src: `/api/qr.svg?for=${encodeURIComponent(qrKey)}`, alt: 'Join QR code' });
+let qrSvg = null;   // online, the TV page draws its own QR code (there is no server to ask)
+export const setQrSvg = (svg) => { qrSvg = svg || null; };
+export const qrImg = () => h('img', {
+  src: qrSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}` : `/api/qr.svg?for=${encodeURIComponent(qrKey)}`,
+  alt: 'Join QR code',
+});
