@@ -87,6 +87,11 @@ function menu() {
   );
   const toggle = () => panel.classList.toggle('hidden');
   addEventListener('keydown', (e) => { if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') toggle(); });
+  // The button fades away when nobody is using the mouse or keyboard, so it never sits on a score during play.
+  let idle = null;
+  const wake = () => { document.body.classList.remove('tv-idle'); clearTimeout(idle); idle = setTimeout(() => document.body.classList.add('tv-idle'), 4000); };
+  for (const ev of ['mousemove', 'mousedown', 'keydown', 'touchstart']) addEventListener(ev, wake, { passive: true });
+  wake();
   return h('div', { class: 'tvmenu' }, h('button', { class: 'tvmenu-btn', onclick: toggle }, 'Menu (M)'), panel);
 }
 

@@ -157,3 +157,36 @@ test('the realtime client reconnects and rejoins its channels when the link drop
     rt.close();
   } finally { sb.close(); }
 });
+
+test('phones carry on after the TV restarts: the new TV asks them who they are, and they say hello again', async () => {
+  const sb = await fakeSupabase();
+  const config = { url: sb.url, key: 'sb_publishable_test' };
+  const tvUp = (saved) => {
+    let engine; let text = null;
+    const rt = new Realtime({ ...config, WebSocketImpl: WebSocket, onBroadcast: (t, e, p) => engine.onBroadcast(t, e, p) });
+    engine = createEngine({ games: GAMES, pin: '4321', code: 'ABCD', now: () => Date.now(), saved, content: { feud: { basics: feudSet } },
+      send: () => {}, save: (s) => { text = s; }, broadcast: (topic, event, payload) => rt.send(topic, event, payload) });
+    rt.join(engine.relayTopic); rt.connect();
+    return { engine, rt, saved: () => text };
+  };
+  const got = { states: [], messages: [] };
+  let token = null;
+  const hello = () => ({ t: 'hello', role: 'player', token });
+  const link = connectRelay({ config, room: 'ABCD', clientId: 'annrestart', hello, WebSocketImpl: WebSocket, onState: (v) => got.states.push(v), onMessage: (m) => { got.messages.push(m); if (m.t === 'joined') token = m.token; }, pingMs: 40, quietMs: 400 });
+  let tv = tvUp(null);
+  try {
+    await until(() => got.messages.some((m) => m.t === 'need-join'), 'the join request');
+    link.send({ t: 'join', name: 'Ann' });
+    await until(() => token, 'joined');
+    await until(() => tv.saved()?.includes('Ann'), 'the room to be saved');
+    const saved = tv.saved();
+    tv.rt.close();
+    tv = tvUp(saved);   // the TV page reloads (or the Apple TV app restarts) with the same room
+    await until(() => tv.engine.room.connected.size === 1, 'Ann to be back without touching her phone');
+    const before = got.states.length;
+    tv.engine.room.act('chooseGame', { id: 'feud' });
+    tv.engine.broadcast();
+    await until(() => got.states.length > before && got.states.at(-1).room.gameId === 'feud', 'Ann to see the room change again');
+    assert.equal(got.states.at(-1).room.me.name, 'Ann');
+  } finally { link.close(); tv.rt.close(); sb.close(); }
+});

@@ -140,7 +140,7 @@ export function mount(container, { send, flash }) {
           v.timer && timerEl(true), h('div', { class: 'jp-muted' }, 'The host will decide if you’re right.'))] };
       }
       return { key: `ans-${id}`, nodes: answerForm('No need to phrase it as a question. Small typos are fine.', 'answer', 'Your answer',
-        [h('div', { class: 'jp-big jp-ok', style: { textAlign: 'center' } }, 'YOU GOT IT!'), h('div', { style: { textAlign: 'center' } }, myTime(c)), head]) };
+        [h('div', { class: 'jp-big jp-ok', style: { textAlign: 'center' } }, 'YOU BUZZED FIRST!'), h('div', { style: { textAlign: 'center' } }, myTime(c)), head]) };
     }
     let cls = 'idle'; let label = 'WAIT'; let sub = 'The buzzers unlock after the clue is read. Buzzing early locks you out for a moment.';
     if (ph === 'open') { cls = 'live'; label = 'BUZZ!'; sub = 'Go go go!'; }
@@ -342,7 +342,7 @@ export function mount(container, { send, flash }) {
         if (m.result === 'won') navigator.vibrate?.(60);
         else if (m.result === 'early') { navigator.vibrate?.([40, 40, 40]); say('Too early! Wait for the red button.', 900); }
         else if (m.result === 'late') say(`Beaten to it! Your time: ${secs(m.ms)}s`, 2500);
-      } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer sent');
+      } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer locked in', 'ok');
     },
     destroy() { clearInterval(ticker); clearTimeout(noteTimer); },
   };

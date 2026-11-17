@@ -5,7 +5,7 @@ import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
 import { GameError } from '../lib.js';
 import { validateSet, T, readingTime } from '../games/jeopardy/game.js';
-import { judge } from '../games/jeopardy/judge.js';
+import { judge, asksForPerson } from '../games/jeopardy/judge.js';
 import { createHub } from '../engine/hub.js';
 
 const own = JSON.parse(readFileSync(new URL('../data/jeopardy/family-night.json', import.meta.url)));
@@ -46,6 +46,19 @@ test('judge is lenient about case, articles, punctuation and small typos', () =>
   assert.ok(judge('Teddy', ['Theodore Roosevelt', 'Teddy Roosevelt', 'Teddy']));
   assert.ok(!judge('London', ['Paris']));
   assert.ok(!judge('', ['Paris']));
+});
+
+test('judge reads short forms, lets a place drop "Ocean" or "Mount", takes a last name for a person, and is strict on short words', () => {
+  assert.ok(judge('mt everst', ['Mount Everest']));
+  assert.ok(judge('st louis', ['Saint Louis']) && judge('saint louis', ['St. Louis']));
+  assert.ok(judge('pacific', ['Pacific Ocean']) && judge('superior', ['Lake Superior']));
+  assert.ok(!judge('ocean', ['Pacific Ocean']) && !judge('red', ['Red Sea']));
+  assert.ok(judge('lincoln', ['Abraham Lincoln'], { person: true }));
+  assert.ok(!judge('lincoln', ['Abraham Lincoln']), 'not when the clue is not about a person');
+  assert.ok(!judge('way', ['Milky Way'], { person: true }), 'too short to stand alone');
+  assert.ok(!judge('plato', ['Pluto']) && !judge('pairs', ['Paris']));
+  assert.ok(asksForPerson('This president freed the slaves.') && asksForPerson('He wrote Hamlet.'));
+  assert.ok(!asksForPerson('The largest planet in our solar system.'));
 });
 
 test('own boards: validateSet accepts the sample sets and an optional "alt"', () => {

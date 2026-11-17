@@ -153,7 +153,7 @@ struct FeudRoundScreen: View {
                 .font(JP.display(136))
                 .monospacedDigit()
                 .shadow(color: .black.opacity(0.4), radius: 0, y: 6)
-            Text("points on the board")
+            Text(round.step == .roundEnd ? "points won" : "points on the board")
                 .font(JP.text(26, .medium))
                 .foregroundStyle(JP.muted)
         }
@@ -188,7 +188,7 @@ struct FeudTeamBox: View {
             Text("\(unit.score)")
                 .font(JP.display(104))
                 .monospacedDigit()
-            Text(playing ? (round?.step == .steal ? "STEAL" : "PLAYING") : " ")
+            Text(playing ? (round?.step == .steal ? "STEAL" : round?.step == .roundEnd ? "WINS" : "PLAYING") : " ")
                 .font(JP.label(30))
                 .tracking(6)
         }

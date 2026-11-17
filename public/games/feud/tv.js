@@ -132,7 +132,7 @@ function teamBox(v, u, r) {
   return h('div', { class: `fd-score ${playing ? 'on' : ''}`, style: { '--c': u.color, background: u.color, color: ink(u.color) } },
     h('div', { class: 'n' }, u.name),
     h('div', { class: 'p' }, String(u.score)),
-    h('div', { class: 's' }, playing ? (r.step === 'steal' ? 'STEAL' : 'PLAYING') : ' '));
+    h('div', { class: 's' }, playing ? (r.step === 'steal' ? 'STEAL' : r.step === 'roundEnd' ? 'WINS' : 'PLAYING') : ' '));
 }
 
 function strikes(r) {
@@ -174,7 +174,7 @@ function roundScreen(v) {
   const rows = Math.ceil(r.answers.length / 2);
   return h('div', { class: 'fd-screen' },
     h('div', { class: 'fd-top' }, a && teamBox(v, a, r),
-      h('div', { class: 'fd-mid' }, h('div', { class: 'rd' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''}`), h('div', { class: 'pot' }, String(r.pot)), h('div', { class: 'pl' }, 'points on the board')),
+      h('div', { class: 'fd-mid' }, h('div', { class: 'rd' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''}`), h('div', { class: 'pot' }, String(r.pot)), h('div', { class: 'pl' }, r.step === 'roundEnd' ? 'points won' : 'points on the board')),
       b && teamBox(v, b, r)),
     h('div', { class: 'fd-question' }, r.question),
     h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map((a) => slot(a, r.number))),

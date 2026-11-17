@@ -119,8 +119,8 @@ function frame(mainKids, { chips = true } = {}) {
       tag && h('div', { class: 'roundtag' }, tag),
       g.phase !== 'lobby' && h('div', { class: 'joininfo' }, 'Join at ', h('span', {}, join), ctxInfo.code && h('b', {}, ctxInfo.code))),
     h('main', {}, mainKids),
-    chips && footer(),
-    controls());
+    // The score chips and the TV's own buttons share the bottom row, so the buttons never cover a tile or the clock.
+    h('div', { class: 'bottombar' }, chips && footer(), controls()));
 }
 
 function footer() {
@@ -229,7 +229,7 @@ export function lobby(view, ctx = {}) {
 
 function eraRow() {
   if (!g.hasArchive) return null;
-  const note = g.archiveLoading ? 'Loading clues…' : g.archiveError ? h('span', { class: 'warn' }, 'Could not load that era. Try again.') : seasonLabel(g.archiveSeason);
+  const note = g.archiveLoading ? 'Loading clues…' : g.archiveError ? h('span', { class: 'warn' }, act ? 'Real-show clues did not load. Click an era to retry.' : 'Real-show clues did not load. Pick an era to retry.') : seasonLabel(g.archiveSeason);
   return [h('div', { class: 'packlabel' }, 'Clues from · ', note),
     (g.eras ?? []).map((e) => actBtn(`pack era ${g.era === e ? 'on' : ''}`, [g.era === e ? '✓ ' : '', ERA_LABELS[e] ?? e], 'setEra', { era: e })),
     h('div', { class: 'brk' })];
@@ -239,7 +239,7 @@ function packRow() {
   return [
     h('div', { class: 'packlabel' }, g.asWritten ? 'Playing your own board just as you wrote it' : ['Question packs', act ? ' (click to switch on or off)' : '', ` · ${n} categories`, n < 12 ? h('span', { class: 'warn' }, ' need at least 12') : '']),
     g.easyAvailable && actBtn(`pack ${g.easyMode ? 'on' : ''}`, [g.easyMode ? '✓ ' : '', '★ Easy mode'], 'toggleEasy', {}, 'Only casual, family-friendly questions'),
-    (g.packs ?? []).map((pk) => actBtn(`pack ${pk.selected ? 'on' : ''}`, [pk.selected ? '✓ ' : '', pk.title, ' ', h('small', {}, pk.own ? 'your board' : String(pk.count))], 'togglePack', { pack: pk.id }, pk.description)),
+    (g.packs ?? []).map((pk) => actBtn(`pack ${pk.selected ? 'on' : ''}`, [pk.selected ? '✓ ' : '', pk.title, ' ', h('small', {}, pk.own ? 'board' : String(pk.count))], 'togglePack', { pack: pk.id }, pk.description)),
     !g.asWritten && n >= 12 && act && actBtn('pack sun', '▦ Preview the board', 'previewBoard'),
   ];
 }

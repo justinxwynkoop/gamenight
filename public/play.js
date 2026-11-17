@@ -55,8 +55,8 @@ setTimeout(() => {
       h('a', { class: 'btn primary', href: '/check', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, 'Test my connection')));
 }, 6000);
 
-function flash(text) {
-  const t = h('div', { class: 'toast' }, text);
+function flash(text, kind = '') {
+  const t = h('div', { class: `toast ${kind}` }, text);
   document.body.append(t);
   setTimeout(() => t.remove(), 2500);
 }

@@ -24,8 +24,9 @@ input, select, textarea { font: inherit; color: var(--text); background: #0d1540
 textarea { min-height: 70px; resize: vertical; }
 label { display: block; color: var(--dim); font-size: .85rem; margin: .8em 0 .3em; }
 .err { color: #fecaca; background: #7f1d1d66; border: 1px solid #ef444488; border-radius: 10px; padding: .6em .9em; margin: .6em 0; }
-.toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: #7f1d1d; padding: .6em 1em;
+.toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: #7f1d1d; padding: .6em 1em;
   border-radius: 10px; z-index: 50; max-width: 90vw; }
+.toast.ok { background: #14532d; }
 .offline { position: fixed; top: 0; left: 0; right: 0; background: #b45309; color: #fff; text-align: center; padding: 4px; font-size: .85rem; z-index: 60; }
 
 /* ---------- TV ---------- */
@@ -100,7 +101,7 @@ body.play { min-height: 100dvh; display: flex; flex-direction: column; touch-act
 .buzz.bad { background: #b91c1c !important; }
 .phone-board { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 4px; padding: 6px; border-radius: 16px; background: #0b1a6e; border: 3px solid transparent; }
 .phone-board.mine { border-color: #facc15; }
-.pb-cat { display: grid; place-items: center; text-align: center; min-height: 3.4em; padding: 2px; border-radius: 6px; background: #1d3bd1; color: #fff; font-size: .62rem; font-weight: 800; line-height: 1.1; text-transform: uppercase; overflow-wrap: anywhere; }
+.pb-cat { display: grid; place-items: center; text-align: center; min-height: 3.4em; padding: 2px; border-radius: 6px; background: #1d3bd1; color: #fff; font-size: .62rem; font-weight: 800; line-height: 1.1; text-transform: uppercase; overflow-wrap: break-word; word-break: normal; letter-spacing: -.02em; }
 .pb-cell { display: grid; place-items: center; min-height: 2.6em; border-radius: 6px; background: #1d3bd1; color: #facc15; font-size: .82rem; font-weight: 900; }
 .pb-cell.used { background: #0a1450; }
 .status-line { text-align: center; color: var(--dim); min-height: 1.5em; }
@@ -256,6 +257,7 @@ body.tv.browser-tv { cursor: default; }
 .tvmenu { position: fixed; right: 1.6vmin; top: 1.6vmin; text-align: right; z-index: 20; font-size: 1.8vmin; }
 .tvmenu-btn { background: #0008; color: var(--dim); border: 1px solid var(--line); border-radius: 1vmin; padding: .5vmin 1.2vmin; font: inherit; cursor: pointer; opacity: .55; }
 .tvmenu-btn:hover { opacity: 1; }
+body.tv-idle .tvmenu:has(.tvmenu-panel.hidden) .tvmenu-btn { opacity: 0; transition: opacity .6s; }
 .tvmenu-panel { margin-top: .8vmin; text-align: left; background: var(--bg2); border: 1px solid var(--line); border-radius: 1.2vmin; padding: 1.4vmin 2vmin; display: grid; gap: .8vmin; font-size: 2.4vmin; min-width: 30vmin; }
 .tvmenu-panel p { margin: 0; }
 .tvmenu-panel b { color: var(--gold); }

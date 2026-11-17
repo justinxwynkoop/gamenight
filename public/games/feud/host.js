@@ -63,6 +63,8 @@ async function roll() {
 }
 
 function randomCard() {
+  // Random boards are built by a home server (server mode); the online site has none to ask.
+  if (globalThis.GN_RELAY) return null;
   loadRandomInfo();
   if (rand.info === undefined || rand.info === null) return card(eyebrow('Random board'), h('p', { class: 'dim' }, 'Checking…'));
   if (!rand.info.available) {
@@ -136,7 +138,7 @@ function scoreStrip(r) {
   return h('div', { class: 'fd-teams' }, room.units.map((u) => h('div', { class: `fd-team ${r.control === u.id ? 'on' : ''}`, style: { '--c': u.color } },
     h('div', { class: 'n' }, dot(u.color, 12), u.name),
     h('div', { class: 'pts' }, String(u.score)),
-    r.control === u.id && h('div', { class: 's' }, r.step === 'steal' ? 'stealing' : 'playing'))));
+    r.control === u.id && h('div', { class: 's' }, r.step === 'steal' ? 'stealing' : r.step === 'roundEnd' ? 'won the round' : 'playing'))));
 }
 const strikeBoxes = (r) => h('div', { class: 'fd-strikes', 'aria-label': `${r.strikes} of ${r.maxStrikes} strikes` },
   Array.from({ length: r.maxStrikes }, (_, i) => h('span', { class: i < r.strikes ? 'x on' : 'x' }, '✕')));

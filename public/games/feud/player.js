@@ -130,7 +130,7 @@ export function mount(container, { send, flash }) {
     update(v) { view = v; receivedAt = performance.now(); refresh(); },
     onMessage(m) {
       if (m.t === 'buzz-result') { if (m.ok) navigator.vibrate?.(60); else if (m.reason === 'not-your-turn') flash('Only the two face-off players buzz.'); }
-      else if (m.t === 'ack') { if (quiet > 0) quiet -= 1; else flash('Answers saved'); }
+      else if (m.t === 'ack') { if (quiet > 0) quiet -= 1; else flash('Answers saved', 'ok'); }
     },
     destroy() { clearInterval(timer); },
   };

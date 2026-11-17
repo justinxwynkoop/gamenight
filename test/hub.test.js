@@ -112,3 +112,15 @@ test('a buzz from a player reaches the game and its reply comes back', async () 
   assert.equal(to(id).at(-1).t, 'buzz-result');
   assert.equal(to(id).at(-1).ok, true);
 });
+
+test('a TV that restarted asks a phone it does not know to say hello again, instead of ignoring it', () => {
+  const { hub, to } = setup();
+  hub.receive('p1', { t: 'ping' });
+  assert.deepEqual(to('p1'), [{ t: 'who' }], 'a ping from a stranger gets "who are you?", not a pong');
+  hub.receive('p2', { t: 'act', action: 'start', args: {} });
+  assert.deepEqual(to('p2'), [{ t: 'who' }]);
+  hub.receive('p1', { t: 'hello', role: 'player' });
+  assert.ok(to('p1').some((m) => m.t === 'need-join'));
+  hub.receive('p1', { t: 'ping' });
+  assert.deepEqual(to('p1').at(-1), { t: 'pong' }, 'once it has said hello, pings are answered as usual');
+});

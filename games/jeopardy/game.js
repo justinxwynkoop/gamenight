@@ -9,7 +9,7 @@
 // Fairness: buzz() is called in the order messages arrive at the room and stamps the press with the room clock. Device
 // clocks are never consulted. A press that loses by a hair is still timed, so everyone can see the buzz order.
 import { GameError, fail, cleanName, int } from '../../lib.js';
-import { judge } from './judge.js';
+import { judge, asksForPerson } from './judge.js';
 import { parseArchive, pickSeason, ERAS } from './archive.js';
 import { HOUSE_PACKS } from './packs/index.js';
 
@@ -196,7 +196,7 @@ export class JeopardyGame {
       if (!set) continue;
       try { validateSet(set); } catch { continue; }
       own.push(normalizePack(`own-${id}`, {
-        title: set.title, description: 'One of your boards', selected: false, own: true,
+        title: set.title, description: 'A full board from the question editor (Questions on the host page)', selected: false, own: true,
         categories: set.categories.map((c) => ({
           name: c.name,
           clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble })),
@@ -535,7 +535,7 @@ export class JeopardyGame {
   submitAnswer(pid, text, timedOut, verdict) {
     const spoken = text === null;
     text = spoken ? null : String(text || '').slice(0, 80);
-    const decide = () => (verdict !== undefined ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt]));
+    const decide = () => (verdict !== undefined ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt], { person: asksForPerson(this.clue.q) }));
     const shown = () => (spoken ? null : text || '(no answer)');
     if (this.phase === 'answering' && this.clue.buzzedId === pid) {
       const correct = decide();
@@ -713,7 +713,7 @@ export class JeopardyGame {
     const f = this.final;
     for (const id of f.eligible) {
       const ans = f.answers[id] || '';
-      f.results[id] = { answer: ans || '(no answer)', correct: judge(ans, [f.a, ...f.alt]), shown: false, applied: false };
+      f.results[id] = { answer: ans || '(no answer)', correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
     }
     f.revealOrder = f.eligible.slice().sort((a, b) => this.#player(a).score - this.#player(b).score);
     f.revealIndex = -1;
@@ -760,6 +760,8 @@ export class JeopardyGame {
     this.#resetStats();
     this.#resetRun();
     this.#refreshPacks();
+    // A room brought back after the TV restarted has no real-show topics yet: fetch them again for the next game.
+    if (!this.archivePacks.length && !this.archiveLoading) this.#requestArchive(this.era);
     this.#changed();
   }
   /** End a game that is under way, back to the lobby (the host's "end game"). */
@@ -768,6 +770,8 @@ export class JeopardyGame {
     this.#resetStats();
     this.#resetRun();
     this.#refreshPacks();
+    // A room brought back after the TV restarted has no real-show topics yet: fetch them again for the next game.
+    if (!this.archivePacks.length && !this.archiveLoading) this.#requestArchive(this.era);
     this.#changed();
   }
 

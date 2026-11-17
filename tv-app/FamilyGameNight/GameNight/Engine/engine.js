@@ -103,9 +103,12 @@
     s = String(s || "").toLowerCase().normalize("NFD").replace(/\p{Mn}/gu, "").replace(/&/g, " and ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
     s = s.replace(/^(what|who|where|when|which|whats|whos|wheres)( (is|are|was|were|s))?\s+/, "");
     s = s.replace(/^(a|an|the)\s+/, "");
-    s = s.split(" ").map((w) => w in NUM_WORDS ? String(NUM_WORDS[w]) : w).join(" ");
+    s = s.split(" ").map((w) => w in NUM_WORDS ? String(NUM_WORDS[w]) : ABBREV[w] ?? w).join(" ");
     return s.trim();
   }
+  var ABBREV = { mt: "mount", mtn: "mountain", st: "saint", ste: "sainte", ft: "fort", dr: "doctor", jr: "junior", sr: "senior", mr: "mister", mrs: "missus", pt: "point", pres: "president", gen: "general", capt: "captain", usa: "united states", us: "united states", uk: "united kingdom", nyc: "new york city" };
+  var PLACE_WORDS = /* @__PURE__ */ new Set(["ocean", "sea", "river", "lake", "mount", "mountain", "mountains", "island", "islands", "desert", "bay", "gulf", "canal", "falls", "peninsula", "strait", "city", "state", "county", "national", "park"]);
+  var withoutPlaceWords = (s) => s.split(" ").filter((w) => !PLACE_WORDS.has(w)).join(" ");
   function lev(a, b) {
     if (a === b) return 0;
     const m = a.length, n = b.length;
@@ -121,7 +124,7 @@
     return prev[n];
   }
   function tolerance(len) {
-    if (len <= 4) return 0;
+    if (len <= 5) return 0;
     if (len <= 7) return 1;
     if (len <= 11) return 2;
     return Math.floor(len / 5);
@@ -135,12 +138,26 @@
     if (/^\d+$/.test(ns) || /^\d+$/.test(gs)) return gs === ns;
     if (lev(gs, ns) <= tolerance(ns.length)) return true;
     if ((" " + g + " ").includes(" " + n + " ") && g.length <= n.length + 14) return true;
+    const gp = withoutPlaceWords(g).replace(/ /g, ""), np = withoutPlaceWords(n).replace(/ /g, "");
+    if (gp && np && np !== ns && gp.length >= 4 && (gp === np || lev(gp, np) <= tolerance(np.length))) return true;
     return false;
   }
-  function judge(given, answers) {
+  function surname(g, ans) {
+    const words = norm(ans).split(" ").filter((w) => !["junior", "senior", "ii", "iii", "iv"].includes(w));
+    if (words.length < 2 || words.length > 4) return false;
+    const last = words.at(-1);
+    if (last.length < 4 || /^\d+$/.test(last)) return false;
+    const gs = g.replace(/ /g, "");
+    return gs === last || lev(gs, last) <= tolerance(last.length);
+  }
+  function asksForPerson(clue) {
+    return /\b(he|she|his|her|him|who)\b/i.test(String(clue || "")) || /\bth(is|ese)\s+(\w+\s+)?(man|woman|person|people|author|writer|novelist|poet|playwright|president|first lady|actor|actress|singer|rapper|artist|painter|sculptor|composer|scientist|physicist|chemist|inventor|explorer|astronaut|king|queen|emperor|empress|pharaoh|general|leader|director|athlete|player|pitcher|quarterback|coach|chef|comedian|host|philosopher|saint|pope|prophet|founder|aviator|naturalist|mathematician|economist|senator|governor|mayor|dictator|prime minister)s?\b/i.test(String(clue || ""));
+  }
+  function judge(given, answers, opts = {}) {
     const g = norm(given);
     if (!g) return false;
-    return answers.filter(Boolean).some((a) => matchOne(g, a));
+    const list = answers.filter(Boolean);
+    return list.some((a) => matchOne(g, a)) || !!opts.person && list.some((a) => surname(g, a));
   }
 
   // games/jeopardy/archive.js
@@ -654,7 +671,7 @@
     submitAnswer(pid, text, timedOut, verdict) {
       const spoken = text === null;
       text = spoken ? null : String(text || "").slice(0, 80);
-      const decide = () => verdict !== void 0 ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt]);
+      const decide = () => verdict !== void 0 ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt], { person: asksForPerson(this.clue.q) });
       const shown = () => spoken ? null : text || "(no answer)";
       if (this.phase === "answering" && this.clue.buzzedId === pid) {
         const correct = decide();
@@ -801,6 +818,7 @@
       __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      if (!this.archivePacks.length && !this.archiveLoading) __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, this.era);
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     /** End a game that is under way, back to the lobby (the host's "end game"). */
@@ -809,6 +827,7 @@
       __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
+      if (!this.archivePacks.length && !this.archiveLoading) __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, this.era);
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     // ---------- reactions and awards ----------
@@ -1154,7 +1173,7 @@
       }
       own.push(normalizePack(`own-${id}`, {
         title: set.title,
-        description: "One of your boards",
+        description: "A full board from the question editor (Questions on the host page)",
         selected: false,
         own: true,
         categories: set.categories.map((c) => ({
@@ -1385,7 +1404,7 @@
     const f = this.final;
     for (const id of f.eligible) {
       const ans = f.answers[id] || "";
-      f.results[id] = { answer: ans || "(no answer)", correct: judge(ans, [f.a, ...f.alt]), shown: false, applied: false };
+      f.results[id] = { answer: ans || "(no answer)", correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
     }
     f.revealOrder = f.eligible.slice().sort((a, b) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, a).score - __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, b).score);
     f.revealIndex = -1;
@@ -2153,7 +2172,8 @@
       strikes: run.strikes,
       maxStrikes: MAX_STRIKES,
       pot: this.pot(),
-      control: run.control,
+      // Once the round is over the team that won the points is the one lit up (after a failed steal that is not the stealer).
+      control: run.step === "roundEnd" ? run.winner : run.control,
       stealFrom: run.stealFrom,
       answers: answers.map((a, i) => {
         const up = run.revealed.includes(i);
@@ -2671,6 +2691,10 @@
       room.setConnected(player.id, true);
     }
     function handle(id, client, msg) {
+      if (msg.t !== "hello" && !client.role) {
+        send(id, { t: "who" });
+        return;
+      }
       switch (msg.t) {
         case "hello": {
           if (msg.role === "tv") client.role = "tv";

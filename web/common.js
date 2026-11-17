@@ -60,7 +60,9 @@ export function connect({ hello, onState, onMessage = () => {}, onStatus = () =>
     ws.onopen = () => { retry = 500; onStatus(true); ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello)); };
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.t === 'state') onState(msg.view); else onMessage(msg);
+      if (msg.t === 'state') onState(msg.view);
+      else if (msg.t === 'who') ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello));
+      else onMessage(msg);
     };
     ws.onclose = () => { onStatus(false); if (!closed) setTimeout(open, retry = Math.min(retry * 1.6, 3000)); };
     ws.onerror = () => ws.close();
@@ -88,7 +90,7 @@ function askForRoom(problem) {
     input.addEventListener('input', () => { input.value = cleanCode(input.value); if (input.value.length === 4) go(); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
     const overlay = h('div', { style: { position: 'fixed', inset: 0, zIndex: 99, background: 'rgba(8,12,40,.96)', color: '#fff', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '24px' } },
-      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four-digit room code shown on the TV.'), input, h('p', {}, h('button', { onclick: go }, 'Join'))));
+      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four-digit room code shown on the TV.'), input, h('p', {}, h('button', { onclick: go, style: { font: 'inherit', fontSize: '22px', fontWeight: '800', padding: '14px 48px', marginTop: '18px', border: '0', borderRadius: '14px', background: '#ffd23f', color: '#0e0f1a', cursor: 'pointer' } }, 'Join'))));
     document.body.append(overlay);
     input.focus();
   });

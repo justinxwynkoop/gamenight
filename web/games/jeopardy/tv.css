@@ -140,7 +140,10 @@
 .bw:not(.can-act) .packs button { pointer-events: none; }
 
 /* The TV's own controls (only where the TV may act: the website's TV page) */
-.bw .controls { position: fixed; right: 1.5vw; bottom: 16vh; display: flex; flex-direction: column; gap: .8vh; opacity: .25; transition: opacity .2s; z-index: 5; }
+.bw .bottombar { display: flex; align-items: center; gap: 1vw; padding-right: 2vw; }
+.bw .bottombar footer { flex: 1; }
+.bw .bottombar:not(:has(footer)) { padding: 1.4vh 2vw; }
+.bw .controls { margin-left: auto; display: flex; flex-direction: row; gap: .8vw; opacity: .45; transition: opacity .2s; z-index: 5; }
 .bw .controls:hover, .bw .controls:focus-within { opacity: 1; }
 .bw .controls button { font-size: 1.8vh; padding: .8vh 1.2vw; }
 
