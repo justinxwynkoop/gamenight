@@ -1,0 +1,380 @@
+{
+  "title": "Food and Treats",
+  "rounds": [
+    {
+      "question": "Name a pizza topping",
+      "answers": [
+        {
+          "text": "Pepperoni",
+          "points": 38,
+          "aliases": [
+            "pepperonis"
+          ]
+        },
+        {
+          "text": "Cheese",
+          "points": 18,
+          "aliases": [
+            "extra cheese"
+          ]
+        },
+        {
+          "text": "Sausage",
+          "points": 14
+        },
+        {
+          "text": "Mushrooms",
+          "points": 11,
+          "aliases": [
+            "mushroom"
+          ]
+        },
+        {
+          "text": "Pineapple",
+          "points": 8
+        },
+        {
+          "text": "Olives",
+          "points": 6,
+          "aliases": [
+            "black olives",
+            "olive"
+          ]
+        },
+        {
+          "text": "Peppers",
+          "points": 5,
+          "aliases": [
+            "green peppers",
+            "pepper"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you put in a sandwich",
+      "answers": [
+        {
+          "text": "Cheese",
+          "points": 30
+        },
+        {
+          "text": "Ham",
+          "points": 22
+        },
+        {
+          "text": "Turkey",
+          "points": 18
+        },
+        {
+          "text": "Lettuce",
+          "points": 12
+        },
+        {
+          "text": "Peanut butter",
+          "points": 10,
+          "aliases": [
+            "pb",
+            "peanut butter and jelly"
+          ]
+        },
+        {
+          "text": "Tomato",
+          "points": 8,
+          "aliases": [
+            "tomatoes"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a type of candy",
+      "answers": [
+        {
+          "text": "Chocolate",
+          "points": 36,
+          "aliases": [
+            "chocolate bar",
+            "candy bar"
+          ]
+        },
+        {
+          "text": "Gummy bears",
+          "points": 20,
+          "aliases": [
+            "gummies",
+            "gummy worms"
+          ]
+        },
+        {
+          "text": "Lollipop",
+          "points": 16,
+          "aliases": [
+            "sucker",
+            "lollipops"
+          ]
+        },
+        {
+          "text": "Jelly beans",
+          "points": 12
+        },
+        {
+          "text": "Candy corn",
+          "points": 9
+        },
+        {
+          "text": "Licorice",
+          "points": 7
+        }
+      ]
+    },
+    {
+      "question": "Name something you eat with a spoon",
+      "answers": [
+        {
+          "text": "Soup",
+          "points": 40
+        },
+        {
+          "text": "Cereal",
+          "points": 28
+        },
+        {
+          "text": "Ice cream",
+          "points": 16
+        },
+        {
+          "text": "Yogurt",
+          "points": 10
+        },
+        {
+          "text": "Pudding",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name a food that is crunchy",
+      "answers": [
+        {
+          "text": "Chips",
+          "points": 34,
+          "aliases": [
+            "potato chips"
+          ]
+        },
+        {
+          "text": "Carrots",
+          "points": 20,
+          "aliases": [
+            "carrot"
+          ]
+        },
+        {
+          "text": "Popcorn",
+          "points": 16
+        },
+        {
+          "text": "Apple",
+          "points": 12,
+          "aliases": [
+            "apples"
+          ]
+        },
+        {
+          "text": "Crackers",
+          "points": 10,
+          "aliases": [
+            "cracker"
+          ]
+        },
+        {
+          "text": "Pretzels",
+          "points": 8,
+          "aliases": [
+            "pretzel"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something you dip in ketchup",
+      "answers": [
+        {
+          "text": "French fries",
+          "points": 52,
+          "aliases": [
+            "fries",
+            "french fry"
+          ]
+        },
+        {
+          "text": "Chicken nuggets",
+          "points": 20,
+          "aliases": [
+            "nuggets",
+            "chicken"
+          ]
+        },
+        {
+          "text": "Hot dog",
+          "points": 12,
+          "aliases": [
+            "hot dogs"
+          ]
+        },
+        {
+          "text": "Tater tots",
+          "points": 9,
+          "aliases": [
+            "tots"
+          ]
+        },
+        {
+          "text": "Onion rings",
+          "points": 7
+        }
+      ]
+    },
+    {
+      "question": "Name a kind of cookie",
+      "answers": [
+        {
+          "text": "Chocolate chip",
+          "points": 48
+        },
+        {
+          "text": "Oatmeal raisin",
+          "points": 16,
+          "aliases": [
+            "oatmeal"
+          ]
+        },
+        {
+          "text": "Sugar cookie",
+          "points": 14,
+          "aliases": [
+            "sugar"
+          ]
+        },
+        {
+          "text": "Peanut butter",
+          "points": 12
+        },
+        {
+          "text": "Snickerdoodle",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name a food you eat at a picnic",
+      "answers": [
+        {
+          "text": "Sandwiches",
+          "points": 32,
+          "aliases": [
+            "sandwich"
+          ]
+        },
+        {
+          "text": "Watermelon",
+          "points": 22
+        },
+        {
+          "text": "Potato salad",
+          "points": 16
+        },
+        {
+          "text": "Hot dogs",
+          "points": 14,
+          "aliases": [
+            "hot dog"
+          ]
+        },
+        {
+          "text": "Chips",
+          "points": 10
+        },
+        {
+          "text": "Fried chicken",
+          "points": 6,
+          "aliases": [
+            "chicken"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something sweet you drink",
+      "answers": [
+        {
+          "text": "Soda",
+          "points": 34,
+          "aliases": [
+            "pop",
+            "coke"
+          ]
+        },
+        {
+          "text": "Lemonade",
+          "points": 24
+        },
+        {
+          "text": "Juice",
+          "points": 20,
+          "aliases": [
+            "orange juice",
+            "apple juice"
+          ]
+        },
+        {
+          "text": "Hot chocolate",
+          "points": 12,
+          "aliases": [
+            "hot cocoa",
+            "cocoa"
+          ]
+        },
+        {
+          "text": "Milkshake",
+          "points": 10,
+          "aliases": [
+            "shake"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a vegetable kids won't eat",
+      "answers": [
+        {
+          "text": "Broccoli",
+          "points": 40
+        },
+        {
+          "text": "Brussels sprouts",
+          "points": 24,
+          "aliases": [
+            "brussel sprouts",
+            "sprouts"
+          ]
+        },
+        {
+          "text": "Spinach",
+          "points": 14
+        },
+        {
+          "text": "Peas",
+          "points": 12
+        },
+        {
+          "text": "Cauliflower",
+          "points": 10
+        }
+      ]
+    }
+  ]
+}

@@ -65,13 +65,19 @@ dealt onto them at random and the host can move anyone.
    The first one answers out loud and the host taps the matching survey answer, or **Not on the board**.
    The top answer wins the face-off outright; otherwise the other player gets a go and the better answer
    wins. If both miss, replay it or pick a winner.
-3. **Play or pass.** The winners choose. Their team then names answers; the host taps each one and it
+3. **Play or pass.** The winners choose (anyone on that team can tap **Play** or **Pass** on their phone). Their team then names answers; the host taps each one and it
    flips on the TV. A **strike** puts a big boxed X in the middle of the TV, which then slides down into
    the next empty strike box. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
    whole pot, a miss leaves it with the first team.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
    rounds.
+**No host?** Switch on **No host: type answers on phones** (the first player to join, the captain, sees it on
+their phone; it is also on the host page). Then the buzzers open by themselves, whoever's turn it is types the
+guess, and the survey checks it (each answer's aliases count too). A guess that is already on the board is not a
+strike. The captain's phone starts the game, picks the question set and moves on to the next round; Fast Money
+moves on when time is up and reveals itself. Every phone shows the question and a small copy of the board.
+
 5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
    their phone, or the host types what they say. On the phone the questions come one at a time with a big

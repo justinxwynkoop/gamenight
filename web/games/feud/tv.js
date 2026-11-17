@@ -165,6 +165,8 @@ function banner(v, r) {
   else if (r.step === 'play') { text = `${nameOf(v, r.control)} — name an answer`; color = colorOf(v, r.control); }
   else if (r.step === 'steal') { cls.push('steal'); text = `Steal! ${nameOf(v, r.control)}, one guess`; }
   else if (r.step === 'roundEnd') { text = `${nameOf(v, r.result?.winner)} wins ${r.result?.awarded ?? 0}${r.multiplier > 1 ? ` (×${r.multiplier})` : ''}`; color = colorOf(v, r.result?.winner); cls.push('win'); }
+  // With nobody hosting, the last typed guess shows under the banner, so the room sees what was said.
+  if (!sub && r.said && r.step !== 'choose') sub = `${r.said.name}: “${r.said.text}”${r.said.index === -1 ? '  ✕' : ''}`;
   return h('div', { class: `fd-banner ${cls.join(' ')}`, style: color ? { background: color, color: ink(color) } : {} }, h('span', {}, text), sub && h('small', {}, sub));
 }
 
@@ -217,17 +219,33 @@ function fmScreen(v) {
       f.step === 'results' && h('div', { class: `fd-banner ${f.won ? 'win' : ''}`, style: f.won ? { background: '#15803d' } : {} }, f.won ? 'You did it!' : 'So close!')));
 }
 
+// Confetti lives outside the screen that is redrawn on every update, so it keeps falling.
+function confetti(colors) {
+  const old = document.querySelector('.fd-confetti');
+  if (!colors) { old?.remove(); return; }
+  if (old) return;
+  document.body.append(h('div', { class: 'fd-confetti', 'aria-hidden': 'true' }, Array.from({ length: 90 }, (_, i) => h('i', {
+    style: { left: `${Math.random() * 100}vw`, background: colors[i % colors.length], animationDuration: `${3 + Math.random() * 4}s`, animationDelay: `${-Math.random() * 6}s` },
+  }))));
+}
+export function leave() { live = null; confetti(null); }
+
 function doneScreen(v) {
   const g = v.game;
   const sorted = [...v.room.units].sort((a, b) => b.score - a.score);
   const tie = sorted[0] && sorted[1] && sorted[0].score === sorted[1].score;
   const fm = g.result?.fastMoney;
   const w = sorted[0];
+  confetti(tie || !w ? ['#ffd24a', '#ffffff', '#5b72ff'] : [w.color, '#ffd24a', '#ffffff']);
+  const fmLine = fm?.played && (fm.won ? `${unitOf(v, fm.team)?.name ?? 'They'} won Fast Money with ${fm.total} points!` : `Fast Money: ${fm.total} of ${fm.goal}, so close!`);
   return h('div', { class: 'fd-screen center' },
-    h('div', { class: 'fd-big' }, tie ? 'It’s a tie!' : 'Winner'),
+    h('div', { class: 'fd-big' }, tie ? 'It’s a tie!' : 'The winner is'),
     !tie && w && h('div', { class: 'fd-winner', style: { color: w.color } }, w.name),
-    h('div', { class: 'fd-final' }, sorted.map((u) => h('div', { class: 'r', style: { borderColor: u.color } }, h('span', {}, u.name), h('b', {}, String(u.score))))),
-    fm?.played && h('p', { class: 'fd-sub' }, `Fast Money: ${fm.total} of ${fm.goal} — ${fm.won ? 'they won the bonus round!' : 'just short'}`));
+    !tie && w?.memberNames?.length && h('div', { class: 'fd-members' }, w.memberNames.join(' · ')),
+    h('div', { class: 'fd-final' }, sorted.map((u, i) => h('div', { class: `r ${i === 0 && !tie ? 'top' : ''}`, style: { borderColor: u.color } },
+      h('span', {}, i === 0 && !tie ? `🏆 ${u.name}` : u.name), h('b', {}, String(u.score))))),
+    fmLine && h('p', { class: 'fd-sub' }, fmLine),
+    h('p', { class: 'fd-sub dim' }, 'Thanks for playing! Play again from the host or the captain’s phone.'));
 }
 
 /** Returns the element to show for the current state. The TV page swaps it in. */
@@ -236,6 +254,7 @@ export function render(view, ctx) {
   live = null; // each screen sets up its own countdown, if it has one
   const g = view.game;
   if (g.status === 'done') return doneScreen(view);
+  confetti(null);
   if (g.status === 'fastmoney' && g.fm) return fmScreen(view);
   if (g.status === 'round' && g.round) return roundScreen(view);
   return h('div', { class: 'fd-screen center' }, h('div', { class: 'fd-big' }, 'Family Feud'));

@@ -1,0 +1,361 @@
+{
+  "title": "Grab Bag",
+  "rounds": [
+    {
+      "question": "Name something that has buttons",
+      "answers": [
+        {
+          "text": "Shirt",
+          "points": 30,
+          "aliases": [
+            "coat",
+            "jacket"
+          ]
+        },
+        {
+          "text": "Phone",
+          "points": 24,
+          "aliases": [
+            "cell phone"
+          ]
+        },
+        {
+          "text": "Remote",
+          "points": 20,
+          "aliases": [
+            "tv remote"
+          ]
+        },
+        {
+          "text": "Elevator",
+          "points": 14
+        },
+        {
+          "text": "Keyboard",
+          "points": 12,
+          "aliases": [
+            "computer"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you can't live without",
+      "answers": [
+        {
+          "text": "Phone",
+          "points": 34,
+          "aliases": [
+            "cell phone"
+          ]
+        },
+        {
+          "text": "Water",
+          "points": 24
+        },
+        {
+          "text": "Family",
+          "points": 18
+        },
+        {
+          "text": "Food",
+          "points": 14
+        },
+        {
+          "text": "Coffee",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name a reason you might be late",
+      "answers": [
+        {
+          "text": "Traffic",
+          "points": 40
+        },
+        {
+          "text": "Overslept",
+          "points": 26,
+          "aliases": [
+            "slept in",
+            "alarm"
+          ]
+        },
+        {
+          "text": "Car trouble",
+          "points": 14,
+          "aliases": [
+            "flat tire",
+            "car broke down"
+          ]
+        },
+        {
+          "text": "Lost keys",
+          "points": 12,
+          "aliases": [
+            "keys"
+          ]
+        },
+        {
+          "text": "Weather",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something people collect",
+      "answers": [
+        {
+          "text": "Stamps",
+          "points": 28
+        },
+        {
+          "text": "Coins",
+          "points": 26
+        },
+        {
+          "text": "Cards",
+          "points": 18,
+          "aliases": [
+            "baseball cards",
+            "trading cards"
+          ]
+        },
+        {
+          "text": "Shells",
+          "points": 12,
+          "aliases": [
+            "sea shells"
+          ]
+        },
+        {
+          "text": "Rocks",
+          "points": 10
+        },
+        {
+          "text": "Toys",
+          "points": 6
+        }
+      ]
+    },
+    {
+      "question": "Name something with a lot of keys",
+      "answers": [
+        {
+          "text": "Piano",
+          "points": 44
+        },
+        {
+          "text": "Keyboard",
+          "points": 28,
+          "aliases": [
+            "computer"
+          ]
+        },
+        {
+          "text": "Janitor",
+          "points": 14,
+          "aliases": [
+            "key ring"
+          ]
+        },
+        {
+          "text": "Typewriter",
+          "points": 8
+        },
+        {
+          "text": "Car dealer",
+          "points": 6
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name a job that uses a uniform",
+      "answers": [
+        {
+          "text": "Police officer",
+          "points": 32,
+          "aliases": [
+            "police",
+            "cop"
+          ]
+        },
+        {
+          "text": "Firefighter",
+          "points": 24,
+          "aliases": [
+            "fireman"
+          ]
+        },
+        {
+          "text": "Nurse",
+          "points": 18,
+          "aliases": [
+            "doctor"
+          ]
+        },
+        {
+          "text": "Soldier",
+          "points": 16,
+          "aliases": [
+            "military"
+          ]
+        },
+        {
+          "text": "Mail carrier",
+          "points": 10,
+          "aliases": [
+            "mailman",
+            "postman"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that has a bell",
+      "answers": [
+        {
+          "text": "Bicycle",
+          "points": 30,
+          "aliases": [
+            "bike"
+          ]
+        },
+        {
+          "text": "School",
+          "points": 22,
+          "aliases": [
+            "school bell"
+          ]
+        },
+        {
+          "text": "Church",
+          "points": 18
+        },
+        {
+          "text": "Door",
+          "points": 16,
+          "aliases": [
+            "doorbell"
+          ]
+        },
+        {
+          "text": "Ice cream truck",
+          "points": 14
+        }
+      ]
+    },
+    {
+      "question": "Name something you open",
+      "answers": [
+        {
+          "text": "Door",
+          "points": 40
+        },
+        {
+          "text": "Window",
+          "points": 20
+        },
+        {
+          "text": "Present",
+          "points": 16,
+          "aliases": [
+            "gift"
+          ]
+        },
+        {
+          "text": "Book",
+          "points": 12
+        },
+        {
+          "text": "Mail",
+          "points": 12,
+          "aliases": [
+            "letter"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that is yellow",
+      "answers": [
+        {
+          "text": "Banana",
+          "points": 34,
+          "aliases": [
+            "bananas"
+          ]
+        },
+        {
+          "text": "Sun",
+          "points": 28
+        },
+        {
+          "text": "School bus",
+          "points": 16,
+          "aliases": [
+            "bus"
+          ]
+        },
+        {
+          "text": "Lemon",
+          "points": 12,
+          "aliases": [
+            "lemons"
+          ]
+        },
+        {
+          "text": "Taxi",
+          "points": 10,
+          "aliases": [
+            "cab"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you do when you can't sleep",
+      "answers": [
+        {
+          "text": "Count sheep",
+          "points": 30,
+          "aliases": [
+            "counting sheep"
+          ]
+        },
+        {
+          "text": "Read",
+          "points": 24,
+          "aliases": [
+            "read a book"
+          ]
+        },
+        {
+          "text": "Watch TV",
+          "points": 20,
+          "aliases": [
+            "tv"
+          ]
+        },
+        {
+          "text": "Get a snack",
+          "points": 14,
+          "aliases": [
+            "eat",
+            "snack"
+          ]
+        },
+        {
+          "text": "Drink milk",
+          "points": 12,
+          "aliases": [
+            "warm milk"
+          ]
+        }
+      ]
+    }
+  ]
+}

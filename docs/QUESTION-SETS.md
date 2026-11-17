@@ -36,8 +36,10 @@ Daily Doubles are placed at random) and five Family Feud sets (their survey numb
 | `music-and-pop-culture` | instruments, rhymes, legends, musicals, music basics, games |
 | `holidays-and-seasons` | Christmas, Halloween, Thanksgiving, spring, summer, celebrations |
 
-The Family Feud sets are `family-night-basics`, `home-and-kitchen`, `kids-corner`, `out-and-about` and
-`holidays-and-seasons`. The host picks a set in the lobby.
+The Family Feud sets are `family-night-basics`, `home-and-kitchen`, `kids-corner`, `out-and-about`,
+`holidays-and-seasons`, `food-and-treats`, `animals-and-nature`, `sports-and-games`, `mom-and-dad` and `grab-bag`.
+The host (or the captain, on their phone) picks a set in the lobby. Aliases matter: when nobody hosts, a typed guess
+is matched against each answer and its aliases.
 
 ## Using the editor
 

@@ -1,0 +1,366 @@
+{
+  "title": "Sports and Games",
+  "rounds": [
+    {
+      "question": "Name a board game",
+      "answers": [
+        {
+          "text": "Monopoly",
+          "points": 36
+        },
+        {
+          "text": "Scrabble",
+          "points": 18
+        },
+        {
+          "text": "Chess",
+          "points": 14
+        },
+        {
+          "text": "Candy Land",
+          "points": 12,
+          "aliases": [
+            "candyland"
+          ]
+        },
+        {
+          "text": "Checkers",
+          "points": 10
+        },
+        {
+          "text": "Sorry",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name something you need to play baseball",
+      "answers": [
+        {
+          "text": "Bat",
+          "points": 38,
+          "aliases": [
+            "bats"
+          ]
+        },
+        {
+          "text": "Ball",
+          "points": 26,
+          "aliases": [
+            "baseball"
+          ]
+        },
+        {
+          "text": "Glove",
+          "points": 20,
+          "aliases": [
+            "mitt",
+            "gloves"
+          ]
+        },
+        {
+          "text": "Helmet",
+          "points": 8
+        },
+        {
+          "text": "Bases",
+          "points": 8,
+          "aliases": [
+            "base"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a sport you watch on TV",
+      "answers": [
+        {
+          "text": "Football",
+          "points": 42
+        },
+        {
+          "text": "Basketball",
+          "points": 24
+        },
+        {
+          "text": "Baseball",
+          "points": 16
+        },
+        {
+          "text": "Soccer",
+          "points": 10
+        },
+        {
+          "text": "Hockey",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name a card game",
+      "answers": [
+        {
+          "text": "Go Fish",
+          "points": 30,
+          "aliases": [
+            "gofish"
+          ]
+        },
+        {
+          "text": "Uno",
+          "points": 26
+        },
+        {
+          "text": "Poker",
+          "points": 14
+        },
+        {
+          "text": "Old Maid",
+          "points": 12
+        },
+        {
+          "text": "War",
+          "points": 10
+        },
+        {
+          "text": "Solitaire",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name something a coach yells",
+      "answers": [
+        {
+          "text": "Run",
+          "points": 28,
+          "aliases": [
+            "run faster",
+            "hustle"
+          ]
+        },
+        {
+          "text": "Go",
+          "points": 22,
+          "aliases": [
+            "go go go"
+          ]
+        },
+        {
+          "text": "Pass",
+          "points": 16,
+          "aliases": [
+            "pass the ball"
+          ]
+        },
+        {
+          "text": "Good job",
+          "points": 14,
+          "aliases": [
+            "nice job"
+          ]
+        },
+        {
+          "text": "Time out",
+          "points": 12,
+          "aliases": [
+            "timeout"
+          ]
+        },
+        {
+          "text": "Defense",
+          "points": 8
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name a game kids play outside",
+      "answers": [
+        {
+          "text": "Tag",
+          "points": 38
+        },
+        {
+          "text": "Hide and seek",
+          "points": 28,
+          "aliases": [
+            "hide and go seek"
+          ]
+        },
+        {
+          "text": "Hopscotch",
+          "points": 12
+        },
+        {
+          "text": "Jump rope",
+          "points": 12,
+          "aliases": [
+            "jumping rope"
+          ]
+        },
+        {
+          "text": "Red light green light",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name something you can kick",
+      "answers": [
+        {
+          "text": "Ball",
+          "points": 52,
+          "aliases": [
+            "soccer ball",
+            "football"
+          ]
+        },
+        {
+          "text": "Can",
+          "points": 14,
+          "aliases": [
+            "can kicking"
+          ]
+        },
+        {
+          "text": "Door",
+          "points": 12
+        },
+        {
+          "text": "Rock",
+          "points": 12,
+          "aliases": [
+            "rocks"
+          ]
+        },
+        {
+          "text": "Leaves",
+          "points": 10,
+          "aliases": [
+            "pile of leaves"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a winter Olympic sport",
+      "answers": [
+        {
+          "text": "Skiing",
+          "points": 32,
+          "aliases": [
+            "ski"
+          ]
+        },
+        {
+          "text": "Figure skating",
+          "points": 24,
+          "aliases": [
+            "skating",
+            "ice skating"
+          ]
+        },
+        {
+          "text": "Hockey",
+          "points": 20,
+          "aliases": [
+            "ice hockey"
+          ]
+        },
+        {
+          "text": "Snowboarding",
+          "points": 14,
+          "aliases": [
+            "snowboard"
+          ]
+        },
+        {
+          "text": "Bobsled",
+          "points": 10,
+          "aliases": [
+            "bobsledding"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that has a net",
+      "answers": [
+        {
+          "text": "Basketball hoop",
+          "points": 30,
+          "aliases": [
+            "basketball",
+            "hoop"
+          ]
+        },
+        {
+          "text": "Tennis",
+          "points": 24,
+          "aliases": [
+            "tennis court"
+          ]
+        },
+        {
+          "text": "Soccer goal",
+          "points": 20,
+          "aliases": [
+            "soccer",
+            "goal"
+          ]
+        },
+        {
+          "text": "Volleyball",
+          "points": 16
+        },
+        {
+          "text": "Fishing",
+          "points": 10,
+          "aliases": [
+            "fishing net"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a reason a game gets stopped",
+      "answers": [
+        {
+          "text": "Rain",
+          "points": 36,
+          "aliases": [
+            "weather"
+          ]
+        },
+        {
+          "text": "Injury",
+          "points": 28,
+          "aliases": [
+            "someone gets hurt",
+            "hurt"
+          ]
+        },
+        {
+          "text": "Time out",
+          "points": 16,
+          "aliases": [
+            "timeout"
+          ]
+        },
+        {
+          "text": "Foul",
+          "points": 12,
+          "aliases": [
+            "penalty"
+          ]
+        },
+        {
+          "text": "Fight",
+          "points": 8
+        }
+      ]
+    }
+  ]
+}

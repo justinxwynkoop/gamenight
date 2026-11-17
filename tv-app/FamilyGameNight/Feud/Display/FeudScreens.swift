@@ -342,7 +342,7 @@ struct FeudBanner: View {
                 .textCase(.uppercase)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-            if let sub = content.sub {
+            if let sub = content.sub ?? saidLine {
                 Text(sub)
                     .font(JP.text(30, .semibold))
                     .opacity(0.9)
@@ -354,6 +354,13 @@ struct FeudBanner: View {
         .padding(.horizontal, 24)
         .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(fill))
         .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+    }
+
+    /// With nobody hosting, the last typed guess shows under the banner, so the room sees what was said.
+    private var saidLine: String? {
+        guard let said = round.said, round.step != .choose else { return nil }
+        let who = said.name.map { "\($0): " } ?? ""
+        return "\(who)“\(said.text)”" + (said.index == -1 ? "  ✕" : "")
     }
 
     private var text: (title: String, sub: String?, color: String?, fill: Color) {

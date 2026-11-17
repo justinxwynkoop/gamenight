@@ -2,14 +2,19 @@
 // Two teams play survey questions. The room supplies players, teams and scores; this class owns the
 // face-off, the board of survey answers, strikes, the steal, the round multipliers and Fast Money.
 //
-// The host is the judge: the families answer out loud, and the host taps the matching survey answer
-// (or "not on the board"). Only the face-off buzz and Fast Money answers come from the phones.
+// Two ways to judge. With a host (the default), the families answer out loud and the host taps the matching
+// survey answer (or "not on the board"). With settings.typed on, nobody has to host: the player whose turn it
+// is types the guess on their phone and it is matched against the survey, the buzzers open by themselves, and
+// Fast Money moves on and reveals itself. Either way the face-off winner's team can play or pass from a phone,
+// and the captain (the first player) can start the game and move it along from theirs.
 
 import { GameError, fail, cleanName, int } from '../../lib.js';
 
 export { GameError };
 export const MAX_STRIKES = 3;
 export const FAST_MONEY_QUESTIONS = 5;
+/** How long things wait when nobody is hosting (settings.typed). */
+export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200 };
 const GAME = 'feud';
 const SLOTS = ['p1', 'p2'];
 
@@ -65,7 +70,7 @@ export function matchAnswer(answers, typed) {
 export class FeudGame {
   constructor(room) {
     this.room = room;
-    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45 };   // typing five answers on a phone takes longer than saying them
+    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false };   // typing five answers on a phone takes longer than saying them
     this.setId = null;
     this.set = null;
     this.run = this.#blankRun('lobby');
@@ -76,6 +81,8 @@ export class FeudGame {
     return {
       status, round: 0, step: 'faceoff', revealed: [], strikes: 0, control: null, stealFrom: null, showAll: false,
       faceoff: this.#blankFaceoff(), winner: null, awarded: 0, fm: null,
+      said: null,   // the last typed guess: { unitId, name, text, index } (index -1 when it was not on the board)
+      autoAt: null, // typed mode: when the next automatic step happens (a face-off replay, Fast Money moving on)
     };
   }
   #blankFaceoff() { return { reps: {}, open: false, turn: null, attempts: [], winner: null }; }
@@ -133,19 +140,70 @@ export class FeudGame {
       case 'fmShowPoints': return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
       case 'fmRestartTimer': return this.fmRestartTimer();
       case 'finishGame': return this.finishGame();
+      case 'fmRevealNext': return this.fmRevealNext();
       default: throw new GameError(`Unknown action ${action}`);
     }
   }
+  /** What the captain's phone may do: run the game when nobody is hosting. Judging stays with the host or the survey. */
+  static CAPTAIN_ACTIONS = new Set(['setSettings', 'chooseSet', 'startGame', 'endGame', 'nextRound', 'revealRest', 'endRounds',
+    'openBuzzers', 'replayFaceoff', 'fmTeam', 'fmPlayers', 'fmStart', 'fmNext', 'fmRestartTimer', 'fmRevealNext', 'finishGame']);
+
   onPlayer(player, msg) {
     switch (msg.t) {
       case 'buzz': return { t: 'buzz-result', ...this.buzz(player.id) };
       case 'fm-answers': this.fmAnswersFrom(player.id, msg.answers); return { t: 'ack', what: 'fm-answers' };
+      case 'choose': {
+        const run = this.#inRound('choose');
+        if (player.teamId !== run.faceoff.winner) fail('The team that won the face-off decides');
+        this.choose(!!msg.play);
+        return undefined;
+      }
+      case 'guess': return { t: 'guess-result', ...this.guess(player, msg.text) };
+      case 'cap': {
+        if (this.captain() !== player.id) fail('Only the captain can do that');
+        if (!FeudGame.CAPTAIN_ACTIONS.has(msg.action)) fail('Not allowed');
+        return this.act(msg.action, msg.args ?? {}) ?? undefined;
+      }
       default: return undefined;
     }
   }
 
+  /** The first player who is here (the one who joined first, unless they left). */
+  captain() {
+    const here = this.room.players.find((p) => this.room.connected?.has(p.id));
+    return (here ?? this.room.players[0])?.id ?? null;
+  }
+  typed() { return !!this.settings.typed; }
+
+  /** Whose phone may type a guess right now: the face-off player whose turn it is, or anyone on the team playing or stealing. */
+  canGuess(player) {
+    const run = this.run;
+    if (!this.typed() || run.status !== 'round' || !player) return false;
+    if (run.step === 'faceoff') {
+      const f = run.faceoff;
+      return !!f.turn && f.reps[f.turn] === player.id;
+    }
+    if (run.step === 'play' || run.step === 'steal') return player.teamId === run.control;
+    return false;
+  }
+  /** A typed guess (no host): matched against the survey, then scored as if the host had tapped it. */
+  guess(player, text) {
+    if (!this.typed()) fail('Say your answer out loud to the host');
+    if (!this.canGuess(player)) fail('It is not your turn to answer');
+    const typed = cleanName(text, 40);
+    if (!typed) fail('Type an answer first');
+    const answers = this.#answers();
+    const index = matchAnswer(answers, typed);
+    if (index !== -1 && this.run.revealed.includes(index)) return { ok: false, reason: 'already-up', label: answers[index].text };
+    const unitId = this.run.step === 'faceoff' ? this.run.faceoff.turn : this.run.control;
+    if (index === -1) this.miss(); else this.answer(index);
+    this.run.said = { unitId, name: player.name, text: typed, index };
+    this.#changed();
+    return { ok: true, hit: index !== -1, label: index === -1 ? null : answers[index].text };
+  }
+
   // ---------- setup ----------
-  setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2 }) {
+  setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed }) {
     const inRange = (v, lo, hi, what) => {
       const n = int(v);
       if (!(n >= lo && n <= hi)) fail(`${what} must be ${lo} to ${hi}`);
@@ -154,6 +212,11 @@ export class FeudGame {
     if (targetScore !== undefined) this.settings.targetScore = inRange(targetScore, 50, 5000, 'Winning score');
     if (typeof multipliers === 'boolean') this.settings.multipliers = multipliers;
     if (typeof fastMoney === 'boolean') this.settings.fastMoney = fastMoney;
+    if (typeof typed === 'boolean') {
+      this.settings.typed = typed;
+      const f = this.run.status === 'round' && this.run.step === 'faceoff' ? this.run.faceoff : null;
+      if (typed && f && !f.open && !f.turn && !f.winner && !f.attempts.length) f.open = true;
+    }
     if (fastMoneyGoal !== undefined) this.settings.fastMoneyGoal = inRange(fastMoneyGoal, 10, 1000, 'Fast Money goal');
     if (fastMoneySeconds1 !== undefined) this.settings.fastMoneySeconds1 = inRange(fastMoneySeconds1, 5, 180, 'First player\'s time');
     if (fastMoneySeconds2 !== undefined) this.settings.fastMoneySeconds2 = inRange(fastMoneySeconds2, 5, 180, 'Second player\'s time');
@@ -224,8 +287,9 @@ export class FeudGame {
     const run = this.run;
     run.status = 'round'; run.round = i; run.step = 'faceoff';
     run.revealed = []; run.strikes = 0; run.control = null; run.stealFrom = null; run.showAll = false;
-    run.winner = null; run.awarded = 0;
+    run.winner = null; run.awarded = 0; run.said = null; run.autoAt = null;
     run.faceoff = this.#blankFaceoff();
+    if (this.typed()) run.faceoff.open = true;   // nobody is hosting: the face-off buzzers open at once
     for (const t of this.#teams()) {
       const members = this.#members(t.id);
       run.faceoff.reps[t.id] = members.length ? members[i % members.length].id : null;   // a different player steps up each round
@@ -272,6 +336,7 @@ export class FeudGame {
     this.#changed();
   }
   replayFaceoff() {
+    this.run.autoAt = null;
     const f = this.#inRound('faceoff').faceoff;
     f.open = true; f.turn = null; f.attempts = []; f.winner = null;
     this.#changed();
@@ -358,7 +423,11 @@ export class FeudGame {
       if (first.rank === 0) finish(first.unitId); else f.turn = this.#other(first.unitId).id;
       return;
     }
-    if (first.rank === null && second.rank === null) { f.turn = null; f.open = false; return; }   // both missed: replay or award
+    if (first.rank === null && second.rank === null) {   // both missed: replay or award (with nobody hosting, it replays by itself)
+      f.turn = null; f.open = false;
+      if (this.typed()) run.autoAt = this.room.now() + AUTO.faceoffReplay;
+      return;
+    }
     if (first.rank === null) return finish(second.unitId);
     if (second.rank === null) return finish(first.unitId);
     finish(second.rank < first.rank ? second.unitId : first.unitId);
@@ -445,8 +514,12 @@ export class FeudGame {
     this.#changed();
   }
   fmNext() {
+    this.run.autoAt = null;
     const fm = this.#fm();
-    if (fm.step === 'p1') { fm.step = 'p2'; this.#startTimer(fm, this.settings.fastMoneySeconds2); } else if (fm.step === 'p2') { fm.step = 'reveal'; fm.timer = null; this.#zeroBlanks(); } else fail('Nothing further');
+    if (fm.step === 'p1') { fm.step = 'p2'; this.#startTimer(fm, this.settings.fastMoneySeconds2); } else if (fm.step === 'p2') {
+      fm.step = 'reveal'; fm.timer = null; this.#zeroBlanks();
+      if (this.typed()) this.run.autoAt = this.room.now() + AUTO.fmReveal;
+    } else fail('Nothing further');
     this.#changed();
   }
   /** An answer nobody gave scores 0 without the host having to say so (the host can still change it). */
@@ -528,6 +601,17 @@ export class FeudGame {
   #afterReveal(fm) {
     if (fm.step === 'reveal' && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = 'results';
   }
+  /** The next step of the reveal, in the show's order (player 1's five answers, then player 2's): what was said, then the points the survey gives. */
+  fmRevealNext() {
+    const fm = this.#fmReveal();
+    for (const s of SLOTS) {
+      for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
+        if (fm.shown[s][q] === 0) return this.fmShowAnswer(s, q);
+        if (fm.shown[s][q] === 1) return this.fmShowPoints(s, q);
+      }
+    }
+    fail('Everything is revealed');
+  }
   fmTotals() {
     const fm = this.run.fm;
     const sum = (s) => fm.points[s].reduce((t, v, q) => t + (fm.shown[s][q] === 2 ? v ?? 0 : 0), 0);
@@ -549,14 +633,41 @@ export class FeudGame {
     return tm ? { kind: tm.kind, totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
   }
   tick() {
-    const fm = this.run.status === 'fastmoney' ? this.run.fm : null;
-    if (fm?.timer && !fm.timer.timedOut && this.room.now() >= fm.timer.deadline) { fm.timer.timedOut = true; this.#changed(); }
+    const run = this.run;
+    const now = this.room.now();
+    const fm = run.status === 'fastmoney' ? run.fm : null;
+    if (fm?.timer && !fm.timer.timedOut && now >= fm.timer.deadline) {
+      fm.timer.timedOut = true;
+      if (this.typed()) run.autoAt = now + AUTO.fmGrace;   // a moment for the phone's last answers to arrive
+      this.#changed();
+    }
+    if (!this.typed() || run.autoAt === null || now < run.autoAt) return;
+    run.autoAt = null;
+    try {
+      if (run.status === 'round' && run.step === 'faceoff' && !run.faceoff.open && !run.faceoff.turn && !run.faceoff.winner) this.replayFaceoff();
+      else if (fm && (fm.step === 'p1' || fm.step === 'p2') && fm.timer?.timedOut) this.fmNext();
+      else if (fm && fm.step === 'reveal') {
+        this.fmRevealNext();
+        if (fm.step === 'reveal') run.autoAt = now + AUTO.fmReveal;
+      }
+    } catch { /* the host moved things on first */ }
   }
 
   // ---------- views ----------
   #playerName(id) { return this.room.players.find((p) => p.id === id)?.name ?? null; }
 
   publicView() { return this.#view(false); }
+  /** A phone also learns what it may do now. */
+  playerView(player) {
+    const v = this.#view(false);
+    const run = this.run;
+    v.me = {
+      captain: this.captain() === player.id,
+      canGuess: this.canGuess(player),
+      canChoose: run.status === 'round' && run.step === 'choose' && player.teamId === run.faceoff.winner,
+    };
+    return v;
+  }
   hostView() {
     const v = this.#view(true);
     v.setId = this.setId;
@@ -569,8 +680,10 @@ export class FeudGame {
     const view = {
       game: GAME, scoreFormat: 'points', lobbyTitle: set?.title ?? 'Family Feud', settings: this.settings, status: run.status,
       title: set?.title ?? null, rounds: set?.rounds.length ?? 0, hasFastMoney: !!set?.fastMoney?.length,
-      round: null, fm: null,
+      round: null, fm: null, captainId: this.captain(),
     };
+    if (run.status === 'lobby') view.sets = this.room.listContent(GAME).map((x) => ({ id: x.id, title: x.title })).slice(0, 40);
+    if (run.status === 'lobby') view.setId = this.setId;
     if (run.status === 'round') view.round = this.#roundView(host);
     if (run.status === 'fastmoney') view.fm = this.#fmView(host);
     if (run.status === 'done') view.result = this.#doneView();
@@ -598,6 +711,7 @@ export class FeudGame {
       },
       result: run.step === 'roundEnd' ? { winner: run.winner, awarded: run.awarded } : null,
       target: this.settings.targetScore,
+      said: run.said,
     };
   }
   #fmView(host) {

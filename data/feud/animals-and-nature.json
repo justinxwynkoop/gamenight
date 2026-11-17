@@ -1,0 +1,449 @@
+{
+  "title": "Animals and Nature",
+  "rounds": [
+    {
+      "question": "Name an animal that lives on a farm",
+      "answers": [
+        {
+          "text": "Cow",
+          "points": 32,
+          "aliases": [
+            "cows"
+          ]
+        },
+        {
+          "text": "Pig",
+          "points": 22,
+          "aliases": [
+            "pigs"
+          ]
+        },
+        {
+          "text": "Horse",
+          "points": 16,
+          "aliases": [
+            "horses"
+          ]
+        },
+        {
+          "text": "Chicken",
+          "points": 14,
+          "aliases": [
+            "chickens",
+            "hen"
+          ]
+        },
+        {
+          "text": "Sheep",
+          "points": 10
+        },
+        {
+          "text": "Goat",
+          "points": 6,
+          "aliases": [
+            "goats"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name an animal that swims",
+      "answers": [
+        {
+          "text": "Fish",
+          "points": 34
+        },
+        {
+          "text": "Dolphin",
+          "points": 20,
+          "aliases": [
+            "dolphins"
+          ]
+        },
+        {
+          "text": "Shark",
+          "points": 16,
+          "aliases": [
+            "sharks"
+          ]
+        },
+        {
+          "text": "Whale",
+          "points": 14,
+          "aliases": [
+            "whales"
+          ]
+        },
+        {
+          "text": "Duck",
+          "points": 8,
+          "aliases": [
+            "ducks"
+          ]
+        },
+        {
+          "text": "Frog",
+          "points": 8,
+          "aliases": [
+            "frogs"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something a dog does",
+      "answers": [
+        {
+          "text": "Barks",
+          "points": 38,
+          "aliases": [
+            "bark",
+            "barking"
+          ]
+        },
+        {
+          "text": "Wags its tail",
+          "points": 20,
+          "aliases": [
+            "wag",
+            "wags tail"
+          ]
+        },
+        {
+          "text": "Fetches",
+          "points": 16,
+          "aliases": [
+            "fetch",
+            "plays fetch"
+          ]
+        },
+        {
+          "text": "Sleeps",
+          "points": 12,
+          "aliases": [
+            "sleep"
+          ]
+        },
+        {
+          "text": "Licks",
+          "points": 8,
+          "aliases": [
+            "lick",
+            "licks you"
+          ]
+        },
+        {
+          "text": "Digs",
+          "points": 6,
+          "aliases": [
+            "dig"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a bug",
+      "answers": [
+        {
+          "text": "Ant",
+          "points": 28,
+          "aliases": [
+            "ants"
+          ]
+        },
+        {
+          "text": "Spider",
+          "points": 22,
+          "aliases": [
+            "spiders"
+          ]
+        },
+        {
+          "text": "Fly",
+          "points": 16,
+          "aliases": [
+            "flies"
+          ]
+        },
+        {
+          "text": "Bee",
+          "points": 14,
+          "aliases": [
+            "bees"
+          ]
+        },
+        {
+          "text": "Ladybug",
+          "points": 12,
+          "aliases": [
+            "ladybugs"
+          ]
+        },
+        {
+          "text": "Mosquito",
+          "points": 8,
+          "aliases": [
+            "mosquitoes"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you see in the night sky",
+      "answers": [
+        {
+          "text": "Stars",
+          "points": 46,
+          "aliases": [
+            "star"
+          ]
+        },
+        {
+          "text": "Moon",
+          "points": 34
+        },
+        {
+          "text": "Airplane",
+          "points": 8,
+          "aliases": [
+            "plane",
+            "planes"
+          ]
+        },
+        {
+          "text": "Shooting star",
+          "points": 7,
+          "aliases": [
+            "meteor"
+          ]
+        },
+        {
+          "text": "Clouds",
+          "points": 5,
+          "aliases": [
+            "cloud"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name an animal with stripes",
+      "answers": [
+        {
+          "text": "Zebra",
+          "points": 52,
+          "aliases": [
+            "zebras"
+          ]
+        },
+        {
+          "text": "Tiger",
+          "points": 30,
+          "aliases": [
+            "tigers"
+          ]
+        },
+        {
+          "text": "Skunk",
+          "points": 8,
+          "aliases": [
+            "skunks"
+          ]
+        },
+        {
+          "text": "Bee",
+          "points": 6,
+          "aliases": [
+            "bees"
+          ]
+        },
+        {
+          "text": "Raccoon",
+          "points": 4,
+          "aliases": [
+            "raccoons"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that grows in a garden",
+      "answers": [
+        {
+          "text": "Tomatoes",
+          "points": 32,
+          "aliases": [
+            "tomato"
+          ]
+        },
+        {
+          "text": "Flowers",
+          "points": 24,
+          "aliases": [
+            "flower"
+          ]
+        },
+        {
+          "text": "Carrots",
+          "points": 16,
+          "aliases": [
+            "carrot"
+          ]
+        },
+        {
+          "text": "Weeds",
+          "points": 12,
+          "aliases": [
+            "weed"
+          ]
+        },
+        {
+          "text": "Lettuce",
+          "points": 10
+        },
+        {
+          "text": "Strawberries",
+          "points": 6,
+          "aliases": [
+            "strawberry"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a kind of weather",
+      "answers": [
+        {
+          "text": "Rain",
+          "points": 34,
+          "aliases": [
+            "rainy"
+          ]
+        },
+        {
+          "text": "Snow",
+          "points": 24,
+          "aliases": [
+            "snowy"
+          ]
+        },
+        {
+          "text": "Sunny",
+          "points": 20,
+          "aliases": [
+            "sun",
+            "sunshine"
+          ]
+        },
+        {
+          "text": "Windy",
+          "points": 10,
+          "aliases": [
+            "wind"
+          ]
+        },
+        {
+          "text": "Thunderstorm",
+          "points": 8,
+          "aliases": [
+            "storm",
+            "thunder"
+          ]
+        },
+        {
+          "text": "Fog",
+          "points": 4,
+          "aliases": [
+            "foggy"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name an animal that hops",
+      "answers": [
+        {
+          "text": "Kangaroo",
+          "points": 40,
+          "aliases": [
+            "kangaroos"
+          ]
+        },
+        {
+          "text": "Rabbit",
+          "points": 32,
+          "aliases": [
+            "bunny",
+            "bunnies",
+            "rabbits"
+          ]
+        },
+        {
+          "text": "Frog",
+          "points": 20,
+          "aliases": [
+            "frogs",
+            "toad"
+          ]
+        },
+        {
+          "text": "Grasshopper",
+          "points": 8,
+          "aliases": [
+            "grasshoppers",
+            "cricket"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you find at the beach",
+      "answers": [
+        {
+          "text": "Sand",
+          "points": 36
+        },
+        {
+          "text": "Shells",
+          "points": 24,
+          "aliases": [
+            "seashells",
+            "shell"
+          ]
+        },
+        {
+          "text": "Water",
+          "points": 14,
+          "aliases": [
+            "ocean",
+            "waves"
+          ]
+        },
+        {
+          "text": "Crabs",
+          "points": 12,
+          "aliases": [
+            "crab"
+          ]
+        },
+        {
+          "text": "Seagulls",
+          "points": 8,
+          "aliases": [
+            "seagull",
+            "birds"
+          ]
+        },
+        {
+          "text": "Towels",
+          "points": 6,
+          "aliases": [
+            "towel"
+          ]
+        }
+      ]
+    }
+  ]
+}
