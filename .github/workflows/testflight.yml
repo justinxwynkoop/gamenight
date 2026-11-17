@@ -96,7 +96,24 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           mkdir -p ~/private_keys
-          printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          # Rebuild the .p8 from whatever was pasted into the secret: Windows line endings, the BEGIN/END lines missing,
+          # or everything on one line all still work. Only the shape is checked and reported, never the key itself.
+          python3 - "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" <<'PY'
+          import os, re, sys, textwrap, base64
+          raw = os.environ["ASC_KEY_P8"]
+          body = re.sub(r"-----(BEGIN|END)[A-Z ]*-----", "", raw)
+          body = re.sub(r"\s+", "", body)
+          ok = len(body) > 100 and re.fullmatch(r"[A-Za-z0-9+/=]+", body)
+          if ok:
+              try: base64.b64decode(body, validate=True)
+              except Exception: ok = False
+          if not ok:
+              print(f"::error::ASC_KEY_P8 does not look like a .p8 key ({len(raw)} characters pasted, "
+                    f"{'with' if 'BEGIN' in raw else 'without'} a BEGIN line). Paste the whole AuthKey_<KEY ID>.p8 file, opened in Notepad.")
+              sys.exit(1)
+          with open(sys.argv[1], "w") as f:
+              f.write("-----BEGIN PRIVATE KEY-----\n" + "\n".join(textwrap.wrap(body, 64)) + "\n-----END PRIVATE KEY-----\n")
+          PY
           echo "ASC_KEY_PATH=$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" >> $GITHUB_ENV
       - name: Prepare App Store Connect
         if: env.ready == 'true'
