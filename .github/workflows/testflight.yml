@@ -1,36 +1,42 @@
-# Builds the Apple TV app on a Mac in the cloud, signs it and uploads it to TestFlight. It runs by itself:
-#   - when a change is merged into main here (docs-only changes are skipped),
-#   - when a change is merged into main in the gamenight repo (that repo's "Tell the Apple TV app" workflow sends a
-#     "gamenight-updated" event here; it needs the FAMILYGAMENIGHT_TOKEN secret in gamenight, see docs/TESTFLIGHT.md),
+# Builds the Apple TV app (tv-app/) on a Mac in the cloud, signs it and uploads it to TestFlight. It runs by itself:
+#   - when a change that goes into the app is merged into main (the TV app, the rules, the engine or the shipped sets),
 #   - on the 1st of every other month, so the build on the TVs never reaches Apple's 90-day expiry,
-#   - and by hand: GitHub → Actions → "Send to TestFlight" → Run workflow (the version box is optional).
-# Every run builds the newest game engine and question sets from gamenight's main branch into the app first, and runs
-# the tests, so the TVs always get the latest rules and phone-matching engine.
-# It needs three repository secrets from an App Store Connect API key (see docs/TESTFLIGHT.md):
+#   - and by hand: GitHub -> Actions -> "Send to TestFlight" -> Run workflow (the version box is optional).
+# Every run rebuilds the game engine and question sets from this same commit into the app first and runs the tests.
+# It needs three repository secrets from an App Store Connect API key (see tv-app/docs/TESTFLIGHT.md):
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole contents of the .p8 file).
-# Without them it does nothing but say so. Adapted from the workflow in the Buzzworthy Apple TV app.
+# Without them it does nothing but say so.
 #
-# Version and build: the version is the one typed in, or else the first number in Config/testflight-version.txt; the
-# build number is this workflow's run number, which only ever goes up, so automatic uploads never clash.
+# Version and build: the version is the one typed in, or else the first number in tv-app/Config/testflight-version.txt;
+# the build number is 100 + this workflow's run number (the old familygamenight repo used builds 1 to 4), so it only
+# ever goes up and automatic uploads never clash.
 #
 # A build made here does not contain your own sound files or extra question sets (they are not in the repository).
-# To include them, archive from Xcode on your Mac instead (docs/TESTFLIGHT.md).
+# To include them, archive from Xcode on your Mac instead (tv-app/docs/TESTFLIGHT.md).
 name: Send to TestFlight
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-  repository_dispatch:
-    types: [gamenight-updated]
+    paths:            # only what goes into the app
+      - 'tv-app/**'
+      - '!tv-app/docs/**'
+      - '!tv-app/**.md'
+      - 'games/**'
+      - 'engine/**'
+      - 'room.js'
+      - 'lib.js'
+      - 'data/**'
+      - 'scripts/build-engine.mjs'
+      - 'scripts/bundle-sets.mjs'
+      - 'package-lock.json'
+      - '.github/workflows/testflight.yml'
   schedule:
     - cron: '17 9 1 */2 *'   # 09:17 UTC on the 1st of every other month
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to upload, like 1.2 (optional; empty uses the one in Config/testflight-version.txt)'
+        description: 'Version to upload, like 1.2 (optional; empty uses the one in tv-app/Config/testflight-version.txt)'
         required: false
 
 concurrency:
@@ -44,8 +50,12 @@ env:
 jobs:
   upload:
     runs-on: macos-15
+    defaults:
+      run:
+        working-directory: tv-app
     steps:
       - name: Check the App Store Connect key is set up
+        working-directory: .
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         run: |
@@ -65,14 +75,12 @@ jobs:
           echo "Using $XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
-      - name: Build the newest engine and question sets from gamenight
+      - name: Build the engine and question sets from this commit into the app
         if: env.ready == 'true'
         run: |
-          git clone --depth 1 https://github.com/justinxwynkoop/gamenight.git ../gamenight
-          echo "gamenight at $(git -C ../gamenight log -1 --format='%h %s')"
-          (cd ../gamenight && npm ci --no-audit --no-fund)
-          node ../gamenight/scripts/build-engine.mjs "$PWD/FamilyGameNight/GameNight/Engine/engine.js"
-          node ../gamenight/scripts/bundle-sets.mjs "$PWD/FamilyGameNight/GameNight/Engine/sets.json"
+          (cd .. && npm ci --no-audit --no-fund)
+          node ../scripts/build-engine.mjs "$PWD/FamilyGameNight/GameNight/Engine/engine.js"
+          node ../scripts/bundle-sets.mjs "$PWD/FamilyGameNight/GameNight/Engine/sets.json"
           git diff --stat -- FamilyGameNight/GameNight/Engine || true
       - name: Run the tests with that engine
         if: env.ready == 'true'
@@ -110,7 +118,7 @@ jobs:
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then read -r VERSION _ < Config/testflight-version.txt; fi
           case "$VERSION" in *[!0-9.]*|.*|*.|*..*|"") echo "::error::The version must look like 1.2, not $VERSION"; exit 1 ;; esac
-          BUILD="${{ github.run_number }}"
+          BUILD=$((100 + ${{ github.run_number }}))
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
           xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \
@@ -133,4 +141,5 @@ jobs:
           echo "Uploaded version $VERSION (build $BUILD). It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
       - name: Remove the key file
         if: always()
+        working-directory: .
         run: rm -rf ~/private_keys

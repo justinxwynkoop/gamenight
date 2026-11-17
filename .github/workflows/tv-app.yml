@@ -1,11 +1,35 @@
-# Builds the Apple TV app and runs the tests on a Mac in the cloud, so a change is checked even when nobody
-# has opened Xcode. (Free for a public repository.)
-name: Build and test
+# Builds the Apple TV app (tv-app/) and runs its tests on a Mac in the cloud, so a change is checked even when nobody
+# has opened Xcode. (Free for a public repository.) Runs only when something that goes into the app changes.
+name: Apple TV app
 
 on:
   push:
+    paths:
+      - 'tv-app/**'
+      - '!tv-app/docs/**'
+      - '!tv-app/**.md'
+      - 'games/**'
+      - 'engine/**'
+      - 'room.js'
+      - 'lib.js'
+      - 'data/**'
+      - '.github/workflows/tv-app.yml'
   pull_request:
+    paths:
+      - 'tv-app/**'
+      - '!tv-app/docs/**'
+      - '!tv-app/**.md'
+      - 'games/**'
+      - 'engine/**'
+      - 'room.js'
+      - 'lib.js'
+      - 'data/**'
+      - '.github/workflows/tv-app.yml'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: tv-app
 
 jobs:
   tests:

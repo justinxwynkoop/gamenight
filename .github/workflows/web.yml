@@ -1,0 +1,40 @@
+# The rules, the engine and the website: tests, the generated copies are up to date, the real pages in a browser
+# (phones, host, editor and the browser TV), and a join through the real Supabase project. Vercel deploys web/ from main.
+# Changes that only touch the Apple TV app's Swift code skip this (the "Apple TV app" workflow covers them).
+name: Test
+
+on:
+  push:
+    paths:
+      - '**'
+      - '!tv-app/**'
+      - 'tv-app/FamilyGameNight/GameNight/Engine/**'
+  pull_request:
+    paths:
+      - '**'
+      - '!tv-app/**'
+      - 'tv-app/FamilyGameNight/GameNight/Engine/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: The generated files are up to date (web/ and the Apple TV app's engine and sets)
+        run: |
+          npm run build
+          git diff --exit-code -- web tv-app/FamilyGameNight/GameNight/Engine || (echo "Generated files are out of date: run npm run build and commit" && exit 1)
+      - name: The pages work in a real browser (phones, host, editor, and the TV page hosting a game)
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+          npm run e2e
+      - name: The online relay works against the real Supabase project
+        run: node scripts/relay-live.mjs
