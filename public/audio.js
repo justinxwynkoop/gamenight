@@ -43,13 +43,23 @@ function tone(freq, at, dur, { type = 'sine', gain = 0.6, to = null } = {}) {
   osc.stop(t0 + dur + 0.05);
 }
 
-/** Fetch and decode any files in data/sounds/. They replace the built-in sound of the same name. */
+// Recorded sounds and music that ship with the site (free to use, CC0: see builtin-sounds/<game>/CREDITS.txt), carried
+// over from the Buzzworthy game. A family's own file with the same name wins; a sound with no file is synthesized below.
+const BUILTIN = {
+  jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think', 'lobby'],
+};
+
+/** Fetch and decode the family's files in data/sounds/ (server mode), then the built-in recordings for any name still missing. */
 async function loadCustom() {
   const c = ensure();
   if (!c) return;
-  if (globalThis.GN_RELAY) return;   // online there is no server with sound files: the built-in sounds play
   let list = [];
-  try { list = await (await fetch('/api/sounds')).json(); } catch { return; }
+  // Online there is no server with the family's own files.
+  if (!globalThis.GN_RELAY) { try { list = await (await fetch('/api/sounds')).json(); } catch { list = []; } }
+  const theirs = new Set(list.map(({ name, game: owner }) => (owner ? `${owner}/${name}` : name)));
+  for (const [owner, names] of Object.entries(BUILTIN)) {
+    for (const name of names) if (!theirs.has(`${owner}/${name}`) && !theirs.has(name)) list.push({ name, url: `/builtin-sounds/${owner}/${name}.mp3`, game: owner });
+  }
   await Promise.all(list.map(async ({ name, url, game: owner }) => {
     try {
       const data = await (await fetch(url)).arrayBuffer();

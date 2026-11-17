@@ -106,6 +106,7 @@ const PAGES = { '/': 'play.html', '/play': 'play.html', '/tv': 'tv.html', '/host
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
+  '.mp3': 'audio/mpeg', '.txt': 'text/plain; charset=utf-8',
 };
 const send = (res, code, body, type = 'application/json') => {
   res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' });

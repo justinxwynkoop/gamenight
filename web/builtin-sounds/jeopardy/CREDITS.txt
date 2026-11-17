@@ -1,0 +1,4 @@
+All sounds here are CC0 (public domain dedication), free for any use.
+Effects: SFX Kit by Wyzowl, https://github.com/wyzowl/sfx-kit
+Thinking music: "Beginning 6" by HoliznaCC0 (album Title Screens), via https://github.com/seyedpouramir/alvana-audio, with a clock tick from SFX Kit mixed in.
+Theme music: "Happy Dance" by HoliznaCC0 (album Happy Pop Electronic, CC0), via https://github.com/seyedpouramir/alvana-audio, trimmed to loop.
