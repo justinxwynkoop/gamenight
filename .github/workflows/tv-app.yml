@@ -61,3 +61,46 @@ jobs:
           xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight \
             -configuration Debug -destination 'generic/platform=tvOS' \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tail -n 200
+
+  screenshots:
+    # Pictures of the game picker from the Apple TV simulator, one for each game highlighted. They are uploaded as the
+    # "home-screenshots" artifact and printed in the log (base64 JPEG between SHOT_BEGIN and SHOT_END) so a reviewer
+    # without a Mac can see the menu. Never blocks a merge.
+    name: Game picker screenshots (simulator)
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the Apple TV simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Debug \
+            -destination 'generic/platform=tvOS Simulator' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -n 30
+      - name: Picture the game picker
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = [d for k, v in json.load(sys.stdin)["devices"].items() if "tvOS" in k for d in v]
+          best = [d for d in devs if "4K" in d["name"]] or devs
+          print(best[-1]["udid"])')
+          echo "simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          sleep 75   # a fresh simulator shows its own setup screen for a while after booting
+          APP=$(find build/Build/Products -maxdepth 2 -name 'FamilyGameNight.app' | head -n 1)
+          BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p shots
+          for g in jeopardy feud singo; do
+            xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+            SIMCTL_CHILD_GN_HOME_FOCUS=$g xcrun simctl launch "$UDID" "$BUNDLE"
+            sleep 10
+            xcrun simctl io "$UDID" screenshot "shots/home-$g.png"
+            sips -Z 1280 -s format jpeg -s formatOptions 70 "shots/home-$g.png" --out "shots/home-$g.jpg" > /dev/null
+            echo "SHOT_BEGIN home-$g"; base64 -i "shots/home-$g.jpg" | fold -w 1000; echo "SHOT_END home-$g"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: home-screenshots
+          path: tv-app/shots/*.png

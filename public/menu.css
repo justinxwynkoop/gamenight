@@ -1,0 +1,91 @@
+/* The TV's main menu (public/menu.js), in the look of the Apple TV app's game picker: the night-time stage of the
+   Jeopardy screens, a big card for each game that lifts and glows in its colour, the clock, and the join panel.
+   Sized in vh so it fills any TV the same way. */
+.mn {
+  --bg: #0e0f1a; --panel: #1c1f36; --panel2: #272b4a; --line: rgba(255, 255, 255, .10);
+  --text: #f6f4ee; --muted: #9fa3c2; --ink: #0e0f1a; --sun: #ffd23f; --accent: #3b73ff;
+  --display: 'Unbounded', system-ui, sans-serif;
+  position: fixed; inset: 0; overflow: hidden; display: flex; flex-direction: column; gap: 3vh;
+  padding: 5vh 5vw 3.5vh; font-family: 'Outfit', system-ui, sans-serif; color: var(--text);
+  background:
+    radial-gradient(70vw circle at 0% 110%, rgba(179, 136, 255, .20), transparent 70%),
+    radial-gradient(60vw circle at 100% -10%, rgba(58, 190, 255, .14), transparent 70%),
+    radial-gradient(rgba(255, 255, 255, .05) 1.5px, transparent 1.6px) 0 0 / 44px 44px,
+    var(--bg);
+}
+/* The light behind everything takes the highlighted game's colour, and drifts slowly. */
+.mn-glow { position: absolute; inset: -20%; pointer-events: none; z-index: 0;
+  background: radial-gradient(45vw circle at 40% 45%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%);
+  transition: background .6s ease; animation: mn-drift 14s ease-in-out infinite alternate; }
+@keyframes mn-drift { to { transform: translate(8vw, -6vh); } }
+.mn > * { position: relative; z-index: 1; }
+
+.mn .eyebrow { font-weight: 800; font-size: 2.1vh; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.mn .eyebrow.sun { color: var(--sun); }
+.mn .eyebrow.dim { opacity: .7; }
+
+.mn-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 3vw; }
+.mn-wm { margin: 1.2vh 0 1.4vh; font-size: 7.4vh; line-height: 1; font-weight: 800; letter-spacing: -.01em; }
+.mn-wm b { font-family: var(--display); font-weight: 900; }
+.mn-bar { display: flex; gap: .7vh; }
+.mn-bar i { width: 5vh; height: .9vh; border-radius: 1vh; }
+.mn-clock { text-align: right; }
+.mn-time { font-family: var(--display); font-weight: 700; font-size: 5.6vh; font-variant-numeric: tabular-nums; }
+.mn-date { color: var(--muted); font-weight: 600; font-size: 2.6vh; margin-top: .6vh; }
+
+.mn-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr auto; gap: 4vw; align-items: center; }
+.mn .gamepick { display: flex; gap: 3vw; justify-content: center; align-items: flex-start; }
+
+/* A game's card */
+.mn .gamecard { all: unset; box-sizing: border-box; width: min(29vw, 52vh); display: flex; flex-direction: column; border-radius: 3.2vh; overflow: hidden;
+  background: linear-gradient(var(--panel), #121426); border: .25vh solid var(--line); cursor: pointer;
+  box-shadow: 0 1.2vh 3vh rgba(0, 0, 0, .45); filter: saturate(.7) brightness(.85); transform: scale(.96);
+  transition: transform .3s cubic-bezier(.3, 1.4, .5, 1), box-shadow .3s, filter .3s, border-color .3s; }
+.mn div.gamecard { cursor: default; }
+.mn .gamecard.sel { transform: translateY(-1.2vh) scale(1.06); filter: none; border: .5vh solid var(--accent);
+  box-shadow: 0 2.4vh 6vh color-mix(in srgb, var(--accent) 55%, transparent); }
+.mn .gamecard:focus-visible { outline: none; }
+.mn .gamecard:active { transform: translateY(-1.2vh) scale(1.02); }
+.mn .gamecard .art { aspect-ratio: 5 / 3; overflow: hidden; }
+.mn .gamecard .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mn .gamecard .body { padding: 2.2vh 2.6vh 2.6vh; display: grid; gap: 1.5vh; }
+.mn .gamecard .top { display: flex; align-items: center; justify-content: space-between; gap: 1vw; }
+.mn .gamecard .name { font-family: var(--display); font-weight: 700; font-size: 3.4vh; white-space: nowrap; }
+.mn .gamecard .go { width: 5.4vh; height: 5.4vh; border-radius: 50%; display: inline-grid; place-items: center; font-size: 2.2vh; padding-left: .3vh; box-sizing: border-box;
+  background: var(--panel2); color: var(--muted); transition: background .3s, color .3s; }
+.mn .gamecard.sel .go { background: var(--accent); color: #fff; }
+.mn .gamecard .tags { display: flex; gap: .9vh; flex-wrap: wrap; }
+.mn .gamecard .tag { display: inline-flex; align-items: center; gap: .7vh; font-weight: 600; font-size: 1.95vh; padding: .7vh 1.4vh; border-radius: 3vh;
+  background: var(--panel2); color: var(--text); transition: background .3s, color .3s; }
+.mn .gamecard .tag i { font-style: normal; }
+.mn .gamecard.sel .tag { background: var(--accent); color: var(--ink); }
+.mn .gamecard .blurb { margin: 0; color: var(--muted); font-size: 2.3vh; line-height: 1.3; min-height: 2.6em; }
+
+/* Joining: QR code, room code and who is here */
+.mn-join { width: min(24vw, 42vh); background: rgba(28, 31, 54, .82); border: .2vh solid var(--line); border-radius: 3.2vh; padding: 3vh 2.6vh;
+  display: grid; gap: 1.8vh; justify-items: center; text-align: center; backdrop-filter: blur(8px); }
+.mn-join .qr-big { background: #fff; border-radius: 2vh; padding: 1.4vh; width: 100%; aspect-ratio: 1; box-sizing: border-box; }
+.mn-join .qr-big img { width: 100%; height: 100%; display: block; }
+.mn-join p { margin: 0; font-size: 2.3vh; line-height: 1.5; color: var(--muted); }
+.mn-join p b { color: var(--text); }
+.mn-join .roomcode { display: inline-block; font-family: var(--display); font-weight: 900; color: var(--ink) !important; background: var(--sun);
+  letter-spacing: .18em; padding: .2vh 1vh .2vh 1.2vh; border-radius: 1vh; font-size: 1.25em; }
+.mn-join .who { display: grid; gap: 1vh; justify-items: center; }
+.mn-join .avs { display: flex; flex-wrap: wrap; gap: .8vh; justify-content: center; }
+.mn-join .av { width: 4.6vh; height: 4.6vh; border-radius: 50%; display: inline-grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 2vh;
+}
+.mn-join p.music { font-size: 1.8vh; opacity: .8; }
+.mn-join .av.new { animation: mn-pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+.mn-join .av.off { opacity: .4; }
+@keyframes mn-pop { from { transform: scale(.2); opacity: 0; } }
+
+.mn-hints { display: flex; justify-content: center; gap: 4vw; color: var(--muted); font-size: 2.2vh; font-weight: 600; }
+.mn-hints b { color: var(--sun); font-weight: 800; }
+
+/* Cards slide in when the menu first appears. */
+.mn.enter .gamecard, .mn.enter .mn-join { animation: mn-in .6s cubic-bezier(.2, 1, .3, 1) both; }
+.mn.enter .gamecard:nth-child(2) { animation-delay: .08s; }
+.mn.enter .gamecard:nth-child(3) { animation-delay: .16s; }
+.mn.enter .mn-join { animation-delay: .2s; }
+@keyframes mn-in { from { opacity: 0; transform: translateY(6vh); } }
+@media (prefers-reduced-motion: reduce) { .mn-glow, .mn .gamecard, .mn-join, .mn-join .av { animation: none; } }

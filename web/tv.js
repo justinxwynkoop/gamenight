@@ -5,6 +5,7 @@
 // the Supabase relay.
 import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg } from './common.js';
 import { audio } from './audio.js';
+import { menuScreen } from './menu.js';
 
 const app = document.getElementById('app');
 const conn = document.getElementById('conn');
@@ -117,43 +118,6 @@ function effects(prev, v) {
   if (mod?.onChange && prev.game?.game === v.game.game) mod.onChange(prev, v, sound);
 }
 
-const GAMES = [
-  { id: 'jeopardy', title: 'Jeopardy', kicker: 'Trivia board', blurb: 'Pick a category, buzz in from your phone, and bet it all in Final Jeopardy.' },
-  { id: 'feud', title: 'Family Feud', kicker: 'Survey says', blurb: 'Two teams guess the top answers. Face-off, strikes, steals and Fast Money.' },
-];
-
-/** The main menu: no game chosen yet. On the website the TV picks; with a home server the host picks on their phone. */
-function mainMenu(v) {
-  const join = info.code
-    ? h('p', {}, 'Join at ', h('b', {}, info.site), ' with code ', h('b', { class: 'roomcode' }, info.code))
-    : h('p', {}, 'Join at ', h('b', {}, info.joinUrl.replace(/^https?:\/\//, '')));
-  const cards = GAMES.map((g, i) => h('button', {
-    class: `gamecard gc-${g.id}`, 'aria-label': g.title, style: { animationDelay: `${0.15 + i * 0.1}s` },
-    disabled: hosted ? null : true,
-    onclick: hosted ? () => hosted.chooseGame(g.id) : null,
-    onkeydown: (e) => {
-      const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-      if (step) { e.preventDefault(); e.currentTarget.parentElement.children[(i + step + GAMES.length) % GAMES.length].focus(); }
-    },
-  },
-  h('span', { class: 'gc-art' }, h('span', { class: 'gc-title' }, g.title)),
-  h('span', { class: 'gc-body' },
-    h('span', { class: 'gc-kicker' }, g.kicker),
-    h('span', { class: 'gc-blurb' }, g.blurb),
-    hosted ? h('span', { class: 'gc-play' }, '▶ Play') : null)));
-  const el = h('div', { class: 'mainmenu' },
-    h('div', { class: 'mm-glow a' }), h('div', { class: 'mm-glow b' }),
-    h('header', { class: 'mm-head' }, h('div', { class: 'mm-kicker' }, 'Family'), h('h1', {}, 'Game Night')),
-    h('div', { class: 'gamepick' }, cards),
-    h('p', { class: 'mm-hint' }, hosted ? 'Pick a game with the mouse or the arrow keys, or let the host pick one on their phone.' : 'Waiting for the host to pick a game on their phone.'),
-    h('footer', { class: 'mm-foot' },
-      h('div', { class: 'mm-qr' }, qrImg()),
-      h('div', {}, h('p', {}, 'Scan with your phone camera to join'), join,
-        h('p', { class: 'mm-music' }, audio.enabled ? '♪ Theme music on (the host can mute it)' : 'Sound is off'))));
-  if (hosted) requestAnimationFrame(() => { if (!document.activeElement || document.activeElement === document.body) el.querySelector('.gamecard')?.focus(); });
-  return el;
-}
-
 function lobby(v) {
   const { room, game } = v;
   const chips = room.mode === 'teams'
@@ -183,7 +147,7 @@ async function render(v) {
   const id = v.game?.game ?? null;
   if (shownGame && shownGame !== id) loaded[shownGame]?.leave?.();
   shownGame = id;
-  if (!v.game) el = mainMenu(v);
+  if (!v.game) el = menuScreen(v, { info, qr: qrImg, music: audio.enabled, choose: hosted ? (gameId) => hosted.chooseGame(gameId) : null });
   else {
     try {
       const m = await load(v.game.game);

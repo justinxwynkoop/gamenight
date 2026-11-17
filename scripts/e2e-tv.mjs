@@ -30,7 +30,7 @@ sb.on('connection', (sock) => {
 const relay = { url: `http://127.0.0.1:${sb.address().port}`, key: 'sb_publishable_test' };
 
 // --- the site (web/), with the stand-in's address in config.js ---
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const pages = { '/': 'play.html', '/play': 'play.html', '/host': 'host.html', '/editor': 'editor.html', '/tv': 'tv.html' };
 const site = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -132,6 +132,13 @@ try {
   const tv2 = await ctx2.newPage(); watch(tv2, 'tv2');
   await tv2.goto(`${base}/tv`);
   await until(async () => (await tv2.locator('.gamepick button').count()) === 2, 'the game picker on a fresh TV');
+  await until(async () => (await tv2.locator('.mn-join .roomcode').count()) > 0, 'the room code on the main menu');
+  // A TV remote in a TV's browser sends arrow keys: they move the highlight (Enter opens the game).
+  await until(async () => (await tv2.locator('.gamecard.sel').getAttribute('aria-label')) === 'Jeopardy', 'Jeopardy highlighted first');
+  await tv2.keyboard.press('ArrowRight');
+  await until(async () => (await tv2.locator('.gamecard.sel').getAttribute('aria-label')) === 'Family Feud', 'the right arrow highlighting Family Feud');
+  await shot(tv2, 'main-menu-feud');
+  await tv2.keyboard.press('ArrowLeft');
   await tv2.waitForTimeout(1500);   // let the entrance animation finish
   await shot(tv2, 'main-menu');
   // The theme loops on the main menu too, once a click has let the browser play sound.
