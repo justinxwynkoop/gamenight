@@ -105,7 +105,7 @@ const actBtn = (cls, label, action, args = {}, title = null) => h('button', { ty
 
 // ---------- the frame: header, main, score chips, controls ----------
 function frame(mainKids, { chips = true } = {}) {
-  const tag = g.phase === 'lobby' || g.phase === 'gameover' ? null
+  const tag = g.phase === 'lobby' ? 'Lobby' : g.phase === 'gameover' ? null
     : isFinal() ? 'Final Jeopardy' : g.round === 2 ? 'Round 2 · Double values' : `Round ${g.round}`;
   const join = (ctxInfo.site || ctxInfo.joinUrl || '').replace(/^https?:\/\//, '').replace(/\?.*$/, '').replace(/\/$/, '');
   // A screen is redrawn on every update (a buzz, a reaction); its entrance animations only play the first time.
@@ -198,33 +198,73 @@ function confetti(on) {
 
 // ---------- lobby ----------
 /** The lobby screen: how to join, who is in, and what will be played. The TV page shows this before the game starts. */
+let packsOpen = false;  // the website's TV: the pack chooser is open in place of the players
+
 export function lobby(view, ctx = {}) {
   setup(view, ctx);
   live = null;
   confetti(false);
-  const codeTiles = ctxInfo.code ? h('div', { class: 'codetiles' }, [...ctxInfo.code].map((ch, i) => h('span', { style: { background: COLS[[0, 2, 3, 4][i % 4]] } }, ch))) : null;
   const site = ctxInfo.site || (ctxInfo.joinUrl || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-  return frame(h('div', { class: `bwlobby ${g.draft || (g.packs?.length ?? 0) > 10 ? 'building' : ''}` },
-    h('div', {},
-      h('div', { class: 'wm' }, h('i', {}, 'JEOP'), h('br'), 'ARDY'),
-      h('div', { class: 'tag' }, 'The trivia showdown where your phone is the buzzer.'),
-      h('div', { class: 'steps' },
-        h('div', {}, h('b', {}, '1. '), 'Scan the code with your phone camera'),
-        h('div', {}, h('b', {}, '2. '), 'Type your name and join'),
-        h('div', {}, h('b', {}, '3. '), g.hostJudges
-          ? `A host reads the clues; players answer out loud${g.answerTime ? ` within ${g.answerTime} seconds` : ''}.`
-          : 'Players type their answers. Want a host? Open the host page and turn on “A host judges out loud”.')),
-      h('div', { class: 'roster' }, g.players.length
-        ? g.players.map((p) => h('span', { class: `chip ${p.connected ? '' : 'off'}`, style: { '--c': p.color } }, av(p), p.name, p.id === g.captainId ? ' ★' : ''))
-        : h('div', { class: 'sub' }, 'Waiting for players…')),
-      h('div', { class: 'packs' }, eraRow(), g.draft ? draftRow() : packRow())),
-    h('div', { class: 'joinbox' },
+  const codeTiles = ctxInfo.code ? h('div', { class: 'codetiles' }, [...ctxInfo.code].map((ch, i) => h('span', { style: { background: COLS[[0, 2, 3, 4][i % 4]] } }, ch))) : null;
+  const n = g.players.length;
+  const cap = player(g.captainId);
+  const choosing = !!g.draft || (!!act && packsOpen);
+  const step = (num, col, title, sub) => h('li', {}, h('span', { class: 'num', style: { background: COLS[col] } }, String(num)), h('span', {}, h('b', {}, title), h('small', {}, sub)));
+
+  const seats = g.players.map((p) => h('div', { class: `seat ${p.connected ? '' : 'off'}`, style: { '--c': p.color } }, av(p),
+    h('span', { class: 'who' }, h('b', {}, p.name), h('small', { class: p.id === g.captainId ? 'cap' : '' }, p.id === g.captainId ? '★ Captain' : p.connected ? 'Ready' : 'Reconnecting…'))));
+  for (let i = n; i < 8; i++) seats.push(h('div', { class: 'seat open' }, h('span', { class: 'av' }, '+'), h('span', { class: 'who' }, h('small', {}, 'Open seat'))));
+  const players = h('div', { class: 'lb-panel lb-players' },
+    h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
+      h('span', { class: 'aside' }, cap ? `${cap.name} is captain` : 'The first to join is captain')),
+    h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
+  const packs = h('div', { class: 'lb-panel lb-packs' },
+    h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, g.draft ? 'Board preview' : 'Question packs'),
+      act && !g.draft && h('button', { type: 'button', class: 'ghost done', onclick: () => toggle(false) }, '✓ Done')),
+    h('div', { class: 'packs' }, eraRow(), g.draft ? draftRow() : packRow()));
+
+  const lb = h('div', { class: `bwlobby ${choosing ? 'choosing' : ''}` },
+    h('section', { class: 'lb-left' },
+      h('div', { class: 'lb-hero' }, h('div', { class: 'eyebrow sun' }, 'Tonight’s trivia showdown'),
+        h('h1', {}, 'Grab your phone.', h('br'), h('i', {}, 'It’s your buzzer.'))),
+      h('ol', { class: 'lb-steps' },
+        step(1, 0, 'Scan the code', 'with your phone camera'),
+        step(2, 2, 'Pick a name', 'and your colour'),
+        step(3, 3, 'Buzz in first', g.hostJudges ? 'and say your answer' : 'then type your answer')),
+      players, packs, boardLine()),
+    h('aside', { class: 'joinbox' },
       h('div', { class: 'eyebrow' }, 'Scan to join'),
       h('div', { class: 'qr-big' }, ctx.qr ? ctx.qr() : null),
       ctxInfo.code
-        ? h('div', { class: 'url' }, 'or go to ', h('b', {}, site), ' and enter ', h('b', { class: 'roomcode' }, ctxInfo.code))
+        ? h('div', { class: 'url' }, 'or go to ', h('b', {}, site), h('br'), 'and enter ', h('b', { class: 'roomcode' }, ctxInfo.code))
         : h('div', { class: 'url' }, 'or go to ', h('b', {}, site)),
-      codeTiles)), { chips: false });
+      codeTiles));
+  function toggle(open) {
+    packsOpen = open;
+    lb.classList.toggle('choosing', !!g.draft || open);
+    const btn = lb.querySelector('.lb-board button');
+    if (btn) btn.textContent = open ? '✓ Done' : 'Change packs';
+  }
+  lb.toggle = toggle;
+  return frame([lb, h('div', { class: 'lb-foot' },
+    cap ? [h('b', {}, cap.name), g.hostJudges ? ' or the host starts the game when everyone is in' : ' starts the game from their phone when everyone is in']
+      : 'Waiting for players to scan in')], { chips: false });
+}
+
+/** "Tonight's board": one line saying what will be played, with a button to change it on a TV that may act. */
+function boardLine() {
+  const chosen = (g.packs ?? []).filter((pk) => pk.selected).map((pk) => pk.title);
+  const what = g.asWritten ? 'Your own board, as written' : g.draft ? 'Your board (preview)'
+    : chosen.length ? (chosen.length > 2 ? `${chosen.slice(0, 2).join(' + ')} + ${chosen.length - 2} more` : chosen.join(' + ')) : 'No packs chosen';
+  const n = g.categoryCount ?? 0;
+  const bits = [n ? `${n} categories` : null, g.easyMode ? 'easy mode' : null, g.hasArchive ? (ERA_LABELS[g.era] ?? g.era ?? '').toLowerCase() : null].filter(Boolean);
+  return h('div', { class: 'lb-board' },
+    h('div', { class: 'strip' }, HEX.map((c) => h('i', { style: { background: c } }))),
+    h('div', { class: 'what' }, h('div', { class: 'eyebrow' }, 'Tonight’s board'),
+      h('div', {}, what, bits.length ? h('span', {}, ` · ${bits.join(' · ')}`) : null, !g.asWritten && n < 12 ? h('span', { class: 'warn' }, ' · needs at least 12 categories') : null)),
+    act && !g.draft
+      ? h('button', { type: 'button', class: 'ghost', onclick: (e) => e.currentTarget.closest('.bwlobby')?.toggle(!packsOpen) }, packsOpen ? '✓ Done' : 'Change packs')
+      : h('div', { class: 'aside' }, 'The host picks packs', h('br'), 'on their phone'));
 }
 
 function eraRow() {

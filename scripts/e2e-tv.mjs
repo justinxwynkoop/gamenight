@@ -73,7 +73,7 @@ try {
     await until(async () => (await p.locator('input').count()) > 0, `${name}'s join form`);
     await p.locator('input').first().fill(name);
     await p.getByRole('button', { name: /join|play|enter|ready/i }).first().click();
-    await until(async () => (await tv.locator('.chip', { hasText: name }).count()) > 0, `${name} on the TV lobby`);
+    await until(async () => (await tv.locator('.seat', { hasText: name }).count()) > 0, `${name} on the TV lobby`);
     return p;
   };
   const ann = await join('Ann');
@@ -91,7 +91,9 @@ try {
 
   await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain lobby on the first phone');
   // The TV lobby lists the question packs, and the website's TV can switch one on or off itself.
-  await until(async () => (await tv.locator('.packs button.pack').count()) > 0, 'the question packs on the TV lobby');
+  await tv.getByRole('button', { name: 'Change packs' }).click();
+  await until(async () => (await tv.locator('.lb-packs .packs button.pack').count()) > 0 && await tv.locator('.lb-packs').isVisible(), 'the question packs on the TV lobby');
+  await shot(tv, 'lobby-packs');
   const off = tv.locator('.packs button.pack:not(.on):not(.era)').filter({ hasNotText: /easy|preview/i }).first();
   if (await off.count()) {
     const title = (await off.innerText()).replace(/\s*(\d+|your board)$/, '').trim();
