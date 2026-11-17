@@ -62,6 +62,16 @@ struct FeudRound: Decodable, Equatable {
     var faceoff: FeudFaceoff
     var result: FeudRoundResult?
     var target: Int
+    /// The last guess typed on a phone when nobody is hosting; nil with a host.
+    var said: FeudSaid?
+}
+
+struct FeudSaid: Decodable, Equatable {
+    var unitId: String?
+    var name: String?
+    var text: String
+    /// Which answer it matched (0 is the top one), or -1 when it was not on the board.
+    var index: Int
 }
 
 struct FeudAnswer: Decodable, Equatable {

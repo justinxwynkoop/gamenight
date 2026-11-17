@@ -11,7 +11,7 @@ import { createEngine } from '../core.js';
 import { Realtime } from '../../public/relay/phoenix.js';
 import QRCode from 'qrcode';
 
-const KEYS = { room: 'gn-tv-room', code: 'gn-tv-code', sets: 'gn-tv-sets' };
+const KEYS = { room: 'gn-tv-room', code: 'gn-tv-code', pin: 'gn-tv-pin', sets: 'gn-tv-sets' };
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const put = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 const json = (text) => { try { return text ? JSON.parse(text) : null; } catch { return null; } };
@@ -39,7 +39,9 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
   // A page for one game never resumes a room that was playing another: that room starts fresh.
   if (saved && game) { const was = json(saved)?.gameId; if (was && was !== game) saved = null; }
   const code = /^\d{4}$/.test(get(KEYS.code) ?? '') ? get(KEYS.code) : undefined;
-  const pin = String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
+  // The PIN stays with the room code, so a host page that is signed in keeps working when the TV page reloads.
+  const pin = code && /^\d{4}$/.test(get(KEYS.pin) ?? '') ? get(KEYS.pin) : String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
+  put(KEYS.pin, pin);
 
   let rt = null;
   let saveTimer = null;
@@ -100,7 +102,7 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     /** The TV acts on the game itself (Start, Continue, a clue it was clicked, ...), like the Apple TV's buttons. */
     act(action, args = {}) { engine.receive('tv', { t: 'act', action, args }); },
     chooseGame(id) { try { engine.room.chooseGame(id); } catch { /* under way */ } },
-    newRoom() { put(KEYS.code, null); put(KEYS.room, null); location.reload(); },
+    newRoom() { put(KEYS.code, null); put(KEYS.pin, null); put(KEYS.room, null); location.reload(); },
     /** Forget the game in this room (same code) and show the game picker. */
     changeGame() { put(KEYS.room, null); location.replace(location.pathname); },
   };

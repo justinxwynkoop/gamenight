@@ -486,3 +486,87 @@ test('host actions that make no sense now are refused, not ignored', () => {
   assert.throws(() => g.act('bogus'), /Unknown action/);
   assert.throws(() => g.setSettings({ targetScore: 5 }), /50 to 5000/);
 });
+
+test('with nobody hosting, phones type the guesses and the survey judges them', () => {
+  const ctx = setup(); const { g, room, red, blue } = ctx;
+  g.setSettings({ typed: true });
+  g.startGame();
+  const a = answersOf(g);
+  const f = g.run.faceoff;
+  assert.equal(f.open, true);                                     // the buzzers open by themselves
+  const redRep = room.player(f.reps[red.id]); const blueRep = room.player(f.reps[blue.id]);
+  const redOther = room.players.find((p) => p.teamId === red.id && p.id !== redRep.id);
+  assert.throws(() => g.guess(redRep, 'teeth'), /not your turn/);
+  g.buzz(blueRep.id);
+  assert.equal(g.playerView(blueRep).me.canGuess, true);
+  assert.equal(g.playerView(redRep).me.canGuess, false);
+  const r = g.guess(blueRep, 'dance party');                     // not on the board: red gets a go
+  assert.deepEqual([r.ok, r.hit], [true, false]);
+  assert.equal(g.run.faceoff.turn, red.id);
+  assert.equal(g.publicView().round.said.text, 'dance party');
+  g.guess(redRep, a[2].text);
+  assert.equal(g.run.step, 'choose');
+  assert.equal(g.run.faceoff.winner, red.id);
+  // The winning team plays or passes from a phone; the other team cannot.
+  assert.equal(g.playerView(redOther).me.canChoose, true);
+  assert.throws(() => room.playerMessage(blueRep.id, { t: 'choose', play: true }), /won the face-off/);
+  room.playerMessage(redOther.id, { t: 'choose', play: true });
+  assert.equal(g.run.control, red.id);
+  // Anyone on the playing team types; a repeat of an answer already up is not a strike.
+  assert.equal(g.guess(redOther, a[2].text).reason, 'already-up');
+  assert.equal(g.run.strikes, 0);
+  g.guess(redOther, 'zzz'); g.guess(redRep, 'qqq'); g.guess(redOther, 'xxx');
+  assert.equal(g.run.step, 'steal');
+  g.guess(blueRep, a[0].text);                                     // blue steals the pot
+  assert.equal(g.run.step, 'roundEnd');
+  assert.equal(g.run.winner, blue.id);
+  assert.ok(blue.score > 0);
+});
+
+test('with nobody hosting, a double miss in the face-off replays by itself', () => {
+  const ctx = setup(); const { g, room, red, blue, clock } = ctx;
+  g.setSettings({ typed: true });
+  g.startGame();
+  const f = g.run.faceoff;
+  g.buzz(f.reps[red.id]); g.guess(room.player(f.reps[red.id]), 'zzz'); g.guess(room.player(f.reps[blue.id]), 'qqq');
+  assert.equal(g.run.faceoff.open, false);
+  clock.advance(3000); g.tick();
+  assert.equal(g.run.faceoff.open, true);
+  assert.deepEqual(g.run.faceoff.attempts, []);
+});
+
+test('with nobody hosting, Fast Money moves on when time is up and reveals itself', () => {
+  const ctx = setup(); const { g, clock } = ctx;
+  const fm = toFastMoney(ctx);
+  g.setSettings({ typed: true });
+  g.fmStart();
+  g.fmAnswersFrom(fm.players[0], fm.players[0] && ['brush teeth', '', '', '', '']);
+  clock.advance(41000); g.tick();
+  assert.equal(fm.step, 'p1');                                      // a moment for the last answers to arrive
+  clock.advance(2000); g.tick();
+  assert.equal(fm.step, 'p2');
+  clock.advance(46000); g.tick(); clock.advance(2000); g.tick();
+  assert.equal(fm.step, 'reveal');
+  for (let i = 0; i < 40 && fm.step === 'reveal'; i++) { clock.advance(2500); g.tick(); }
+  assert.equal(fm.step, 'results');
+  assert.ok(fm.shown.p1.every((v) => v === 2) && fm.shown.p2.every((v) => v === 2));
+});
+
+test('the captain runs the game from a phone; guesses are refused while a host judges', () => {
+  const ctx = setup(); const { g, room, ps } = ctx;
+  room.setConnected(ps[0].id, true); room.setConnected(ps[1].id, true);
+  assert.equal(g.captain(), ps[0].id);
+  assert.equal(g.playerView(room.player(ps[0].id)).me.captain, true);
+  assert.throws(() => room.playerMessage(ps[1].id, { t: 'cap', action: 'startGame' }), /captain/);
+  assert.throws(() => room.playerMessage(ps[0].id, { t: 'cap', action: 'answer', args: { index: 0 } }), /Not allowed/);
+  room.playerMessage(ps[0].id, { t: 'cap', action: 'setSettings', args: { typed: true } });
+  room.playerMessage(ps[0].id, { t: 'cap', action: 'setSettings', args: { typed: false } });
+  room.playerMessage(ps[0].id, { t: 'cap', action: 'startGame' });
+  assert.equal(g.run.status, 'round');
+  assert.equal(g.run.faceoff.open, false);                          // a host opens the buzzers after reading the question
+  const rep = room.player(g.run.faceoff.reps[room.teams[0].id]);
+  assert.throws(() => g.guess(rep, 'teeth'), /out loud/);
+  assert.ok(g.publicView().sets === undefined);                     // the set list is only for the lobby
+  room.setConnected(ps[0].id, false);
+  assert.equal(g.captain(), ps[1].id);                               // someone else takes over when the captain leaves
+});

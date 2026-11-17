@@ -106,6 +106,8 @@ function setupView() {
       h('p', { class: 'dim' }, 'Family Feud is always two teams. Players are dealt onto them at random; you can move anyone.'),
       h('div', { class: 'list' }, a && teamCard(a), b && teamCard(b)),
       button({ label: 'Manage players and teams', icon: 'users', onclick: () => C.go('players') })),
+    card(eyebrow('Who checks answers'),
+      toggle({ label: 'Players type answers on their phones', sub: 'The survey checks each one and the game runs itself, so nobody has to host. You can still tap answers here to correct it.', checked: !!s.typed, onchange: (on) => act('setSettings', { typed: on }) })),
     card(eyebrow('Rules'),
       h('div', { class: 'field' }, h('span', {}, 'First team to reach'), seg([200, 300, 400, 500].map((n) => ({ value: n, label: `${n}` })), s.targetScore, (n) => act('setSettings', { targetScore: n }))),
       toggle({ label: 'Bigger rounds at the end', sub: 'Rounds 4 and 5 are worth double and triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) }),
@@ -161,7 +163,8 @@ function roundView() {
     type: 'button', class: `fd-ans ${a.revealed ? 'up' : ''} ${a.late ? 'late' : ''}`, disabled: a.revealed || a.late || !tapOk,
     'aria-label': `${a.text}, ${a.points} points${a.revealed ? ', already up' : ''}`, onclick: () => act('answer', { index: i }),
   }, h('span', { class: 'n' }, String(a.n)), h('span', { class: 't' }, a.text), h('span', { class: 'p' }, String(a.points)), a.revealed && icon('check', 18)))));
-  if (tapOk) body.push(h('div', { class: 'note' }, icon('star', 16), h('span', {}, 'Tap the answer they gave. It flips on the TV.')));
+  if (r.said) body.push(h('div', { class: 'note' }, icon(r.said.index === -1 ? 'x' : 'check', 16), h('span', {}, `${r.said.name} typed “${r.said.text}”${r.said.index === -1 ? ': not on the board' : ''}`)));
+  if (tapOk) body.push(h('div', { class: 'note' }, icon('star', 16), h('span', {}, g.settings.typed ? 'Players type their answers. Tap one here only to correct the survey.' : 'Tap the answer they gave. It flips on the TV.')));
   if (r.step !== 'roundEnd') {
     body.push(button({
       label: 'End the rounds early', kind: 'ghost', size: 'sm', block: true,
@@ -400,6 +403,8 @@ function settingsCards() {
     return seg(options, value, (n) => act('setSettings', { [key]: n }));
   };
   return [
+    card(eyebrow('Answers'),
+      toggle({ label: 'Players type answers on their phones', sub: 'The survey checks them; no host needed', checked: !!s.typed, onchange: (on) => act('setSettings', { typed: on }) })),
     card(eyebrow('Rules'),
       h('div', { class: 'field' }, h('span', {}, 'First team to reach (points)'), presets([200, 300, 400, 500], s.targetScore, 'targetScore')),
       toggle({ label: 'Bigger rounds at the end', sub: 'Round 4 is worth double and round 5 triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) })),

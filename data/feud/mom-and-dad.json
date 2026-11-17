@@ -1,0 +1,403 @@
+{
+  "title": "Mom and Dad",
+  "rounds": [
+    {
+      "question": "Name something parents tell kids every day",
+      "answers": [
+        {
+          "text": "Brush your teeth",
+          "points": 30,
+          "aliases": [
+            "brush teeth"
+          ]
+        },
+        {
+          "text": "Clean your room",
+          "points": 24,
+          "aliases": [
+            "clean up"
+          ]
+        },
+        {
+          "text": "I love you",
+          "points": 18,
+          "aliases": [
+            "love you"
+          ]
+        },
+        {
+          "text": "Do your homework",
+          "points": 16,
+          "aliases": [
+            "homework"
+          ]
+        },
+        {
+          "text": "Go to bed",
+          "points": 12,
+          "aliases": [
+            "bedtime"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something Dad does on the weekend",
+      "answers": [
+        {
+          "text": "Mows the lawn",
+          "points": 30,
+          "aliases": [
+            "mow",
+            "mow the lawn",
+            "yard work"
+          ]
+        },
+        {
+          "text": "Watches sports",
+          "points": 26,
+          "aliases": [
+            "watch tv",
+            "watches football"
+          ]
+        },
+        {
+          "text": "Sleeps in",
+          "points": 16,
+          "aliases": [
+            "naps",
+            "nap",
+            "sleep"
+          ]
+        },
+        {
+          "text": "Grills",
+          "points": 14,
+          "aliases": [
+            "barbecue",
+            "bbq"
+          ]
+        },
+        {
+          "text": "Fixes things",
+          "points": 14,
+          "aliases": [
+            "fix things"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something in Mom's purse",
+      "answers": [
+        {
+          "text": "Wallet",
+          "points": 30
+        },
+        {
+          "text": "Keys",
+          "points": 22
+        },
+        {
+          "text": "Phone",
+          "points": 18,
+          "aliases": [
+            "cell phone"
+          ]
+        },
+        {
+          "text": "Lipstick",
+          "points": 14,
+          "aliases": [
+            "makeup"
+          ]
+        },
+        {
+          "text": "Gum",
+          "points": 10
+        },
+        {
+          "text": "Tissues",
+          "points": 6,
+          "aliases": [
+            "tissue",
+            "kleenex"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something parents worry about",
+      "answers": [
+        {
+          "text": "Money",
+          "points": 34,
+          "aliases": [
+            "bills"
+          ]
+        },
+        {
+          "text": "Kids",
+          "points": 26,
+          "aliases": [
+            "children"
+          ]
+        },
+        {
+          "text": "Grades",
+          "points": 14,
+          "aliases": [
+            "school"
+          ]
+        },
+        {
+          "text": "Health",
+          "points": 14,
+          "aliases": [
+            "sickness"
+          ]
+        },
+        {
+          "text": "Safety",
+          "points": 12
+        }
+      ]
+    },
+    {
+      "question": "Name a reason you'd call home",
+      "answers": [
+        {
+          "text": "Need a ride",
+          "points": 34,
+          "aliases": [
+            "ride",
+            "pick me up"
+          ]
+        },
+        {
+          "text": "Running late",
+          "points": 24,
+          "aliases": [
+            "late"
+          ]
+        },
+        {
+          "text": "Forgot something",
+          "points": 16,
+          "aliases": [
+            "forgot"
+          ]
+        },
+        {
+          "text": "Sick",
+          "points": 14,
+          "aliases": [
+            "feel sick"
+          ]
+        },
+        {
+          "text": "Just to talk",
+          "points": 12,
+          "aliases": [
+            "say hi"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something you do to get ready for bed",
+      "answers": [
+        {
+          "text": "Brush teeth",
+          "points": 38,
+          "aliases": [
+            "brush your teeth"
+          ]
+        },
+        {
+          "text": "Pajamas",
+          "points": 26,
+          "aliases": [
+            "put on pajamas",
+            "pjs"
+          ]
+        },
+        {
+          "text": "Read a book",
+          "points": 14,
+          "aliases": [
+            "read",
+            "bedtime story",
+            "story"
+          ]
+        },
+        {
+          "text": "Take a bath",
+          "points": 12,
+          "aliases": [
+            "bath",
+            "shower"
+          ]
+        },
+        {
+          "text": "Say goodnight",
+          "points": 10,
+          "aliases": [
+            "goodnight",
+            "hugs"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something that gets lost in the house",
+      "answers": [
+        {
+          "text": "Keys",
+          "points": 34
+        },
+        {
+          "text": "Remote",
+          "points": 28,
+          "aliases": [
+            "tv remote"
+          ]
+        },
+        {
+          "text": "Socks",
+          "points": 14,
+          "aliases": [
+            "sock"
+          ]
+        },
+        {
+          "text": "Phone",
+          "points": 14,
+          "aliases": [
+            "cell phone"
+          ]
+        },
+        {
+          "text": "Glasses",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "question": "Name a chore parents do",
+      "answers": [
+        {
+          "text": "Laundry",
+          "points": 32,
+          "aliases": [
+            "wash clothes"
+          ]
+        },
+        {
+          "text": "Dishes",
+          "points": 26,
+          "aliases": [
+            "wash dishes"
+          ]
+        },
+        {
+          "text": "Cooking",
+          "points": 18,
+          "aliases": [
+            "cook",
+            "make dinner"
+          ]
+        },
+        {
+          "text": "Vacuum",
+          "points": 14,
+          "aliases": [
+            "vacuuming"
+          ]
+        },
+        {
+          "text": "Grocery shopping",
+          "points": 10,
+          "aliases": [
+            "shopping",
+            "groceries"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you say when you stub your toe",
+      "answers": [
+        {
+          "text": "Ouch",
+          "points": 46,
+          "aliases": [
+            "ow",
+            "owie"
+          ]
+        },
+        {
+          "text": "Oh no",
+          "points": 16
+        },
+        {
+          "text": "Darn",
+          "points": 14,
+          "aliases": [
+            "dang"
+          ]
+        },
+        {
+          "text": "Ugh",
+          "points": 12
+        },
+        {
+          "text": "Why",
+          "points": 12,
+          "aliases": [
+            "who put that there"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a reason to celebrate",
+      "answers": [
+        {
+          "text": "Birthday",
+          "points": 40,
+          "aliases": [
+            "birthdays"
+          ]
+        },
+        {
+          "text": "Graduation",
+          "points": 20
+        },
+        {
+          "text": "Holiday",
+          "points": 16,
+          "aliases": [
+            "christmas"
+          ]
+        },
+        {
+          "text": "Wedding",
+          "points": 14,
+          "aliases": [
+            "anniversary"
+          ]
+        },
+        {
+          "text": "New job",
+          "points": 10,
+          "aliases": [
+            "promotion"
+          ]
+        }
+      ]
+    }
+  ]
+}
