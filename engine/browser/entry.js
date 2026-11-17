@@ -4,6 +4,7 @@
 //
 //   const tv = await hostTv({ config, game, onState, onStatus });
 //   tv.code, tv.pin, tv.joinUrl, tv.qrSvg       for the screen
+//   tv.act(action, args)                         the TV acts on the game, like the Apple TV's buttons
 //   tv.newRoom()                                 a new room code (reloads the page)
 import { GAMES } from '../../games/index.js';
 import { createEngine } from '../core.js';
@@ -96,6 +97,8 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     pin,
     joinUrl,
     qrSvg,
+    /** The TV acts on the game itself (Start, Continue, a clue it was clicked, ...), like the Apple TV's buttons. */
+    act(action, args = {}) { engine.receive('tv', { t: 'act', action, args }); },
     chooseGame(id) { try { engine.room.chooseGame(id); } catch { /* under way */ } },
     newRoom() { put(KEYS.code, null); put(KEYS.room, null); location.reload(); },
     /** Forget the game in this room (same code) and show the game picker. */

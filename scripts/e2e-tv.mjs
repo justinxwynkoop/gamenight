@@ -90,30 +90,40 @@ try {
   console.log('host page unlocked with the PIN from the TV menu');
 
   await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain lobby on the first phone');
+  // The TV lobby lists the question packs, and the website's TV can switch one on or off itself.
+  await until(async () => (await tv.locator('.packs button.pack').count()) > 0, 'the question packs on the TV lobby');
+  const off = tv.locator('.packs button.pack:not(.on):not(.era)').filter({ hasNotText: /easy|preview/i }).first();
+  if (await off.count()) {
+    const title = (await off.innerText()).replace(/\s*(\d+|your board)$/, '').trim();
+    await off.click();
+    await until(async () => (await tv.locator('.packs button.pack.on', { hasText: title }).count()) > 0, `the TV to switch on the ${title} pack`);
+    console.log(`the TV switched on the ${title} pack`);
+  }
   await ann.getByRole('button', { name: /start game/i }).click();
   await until(async () => (await tv.locator('.board .tile').count()) >= 25, 'the board on the TV');
   await shot(tv, 'board');
+  if (!(await tv.locator('.controls button', { hasText: /end round/i }).count())) fail('the TV has no controls of its own on the board');
   console.log('the TV shows the board');
 
   // Whoever is in control picks the top-left clue on their phone.
   const picker = async () => ((await ann.locator('.jp-mini button').count()) > 0 ? ann : (await bo.locator('.jp-mini button').count()) > 0 ? bo : null);
   await until(async () => !!(await picker()), 'a mini board on the picker\'s phone');
   await (await picker()).locator('.jp-mini button').first().click();
-  await until(async () => (await tv.locator('.stage .cluecat').count()) > 0, 'the clue on the TV');
-  if (await tv.locator('.dd-big').count()) {
+  await until(async () => (await tv.locator('.clue .meta, .ddbox').count()) > 0, 'the clue on the TV');
+  if (await tv.locator('.ddbox').count()) {
     console.log('(that was a Daily Double; skipping the buzzer part)');
   } else {
-    await until(async () => (await tv.locator('.banner.open').count()) > 0, 'the TV to say Buzz in', 15000);
+    await until(async () => (await tv.locator('.clue .go').count()) > 0, 'the TV to say Buzz in', 15000);
     await shot(tv, 'buzz-in');
     await ann.locator('.jp-buzzer').dispatchEvent('pointerdown');
-    await until(async () => (await tv.locator('.banner.who').count()) > 0, 'the TV to show who buzzed');
+    await until(async () => (await tv.locator('.clue .callout').count()) > 0, 'the TV to show who buzzed');
     await shot(tv, 'answering');
     await until(async () => (await ann.locator('input.jp-in').count()) > 0, 'the answer box');
     await ann.locator('input.jp-in').fill('no idea');
     await ann.getByRole('button', { name: /lock it in/i }).click();
     console.log('Ann buzzed and answered; waiting for the reveal');
   }
-  await until(async () => (await tv.locator('.stage .answer').count()) > 0, 'the reveal with the answer on the TV', 30000);
+  await until(async () => (await tv.locator('.clue .ans').count()) > 0, 'the reveal with the answer on the TV', 30000);
   await shot(tv, 'reveal');
   console.log('the TV showed the reveal');
 
