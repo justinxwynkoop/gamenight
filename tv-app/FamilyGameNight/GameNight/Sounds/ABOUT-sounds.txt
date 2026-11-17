@@ -1,1 +1,3 @@
 Your own sound files go here, on your Mac only (they are ignored by git). Run Tools/install-sounds.sh to copy them in.
+The jeopardy__*.m4a files are the exception: Jeopardy's built-in recordings and music, free to use (CC0, see CREDITS.txt).
+A file of your own with the same name replaces one.

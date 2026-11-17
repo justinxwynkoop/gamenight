@@ -11,6 +11,9 @@ __pycache__/
 FamilyGameNight/GameNight/Sounds/*.mp3
 FamilyGameNight/GameNight/Sounds/*.m4a
 FamilyGameNight/GameNight/Sounds/*.wav
+# ...except Jeopardy's built-in recordings, which are CC0 (free to use; see Sounds/CREDITS.txt). A family's own file
+# with the same name simply replaces one on their Mac.
+!FamilyGameNight/GameNight/Sounds/jeopardy__*.m4a
 # Extra question sets copied in on your Mac by Tools/install-sets.sh (some come from public survey data), never committed.
 FamilyGameNight/GameNight/Sets/*.json
 build/
