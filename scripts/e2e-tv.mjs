@@ -132,6 +132,12 @@ try {
   const tv2 = await ctx2.newPage(); watch(tv2, 'tv2');
   await tv2.goto(`${base}/tv`);
   await until(async () => (await tv2.locator('.gamepick button').count()) === 2, 'the game picker on a fresh TV');
+  await tv2.waitForTimeout(1500);   // let the entrance animation finish
+  await shot(tv2, 'main-menu');
+  // The theme loops on the main menu too, once a click has let the browser play sound.
+  await tv2.mouse.click(5, 5);
+  await until(async () => (await tv2.evaluate(async () => (await import('/audio.js')).audio.musicOwner)) === 'lobby:', 'the theme music on the main menu', 15000);
+  console.log('the main menu plays the theme');
   await tv2.getByRole('button', { name: 'Family Feud' }).click();
   await until(async () => (await tv2.locator('.gamepick').count()) === 0 && /team/i.test(await tv2.locator('.lobby').innerText()), 'the Family Feud lobby (pick a team)');
   await shot(tv2, 'feud-lobby');

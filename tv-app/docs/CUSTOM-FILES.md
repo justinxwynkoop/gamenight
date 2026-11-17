@@ -17,7 +17,7 @@ folders are used by that game only (and win over a shared file of the same name)
 Xcode flattens resource folders into one.
 
 **Jeopardy's built-in recordings.** The one exception to "never committed": Jeopardy ships with recorded sounds and
-music carried over from the Buzzworthy game (`Sounds/jeopardy__*.m4a`, free to use under CC0, see `Sounds/CREDITS.txt`),
+music carried over from the Buzzworthy game (`Sounds/jeopardy__*.m4a`, and the theme `Sounds/shared__lobby.m4a`, free to use under CC0, see `Sounds/CREDITS.txt`),
 including the lobby theme ("Happy Dance") and the Final Jeopardy thinking music. They are in every build, TestFlight
 included. To replace one, install your own `jeopardy/<name>.m4a`: it overwrites the file of the same name on your Mac.
 (Use `.m4a` for those names; an `.mp3` of the same name would sit beside ours and lose to it.)
