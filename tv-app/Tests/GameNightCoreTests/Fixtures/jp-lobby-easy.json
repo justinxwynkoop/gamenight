@@ -1,0 +1,206 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": true,
+    "maxPlayers": 8,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Jeopardy",
+    "phase": "lobby",
+    "status": "lobby",
+    "round": 0,
+    "rounds": 2,
+    "captainId": "p1",
+    "hostJudges": false,
+    "controllerId": null,
+    "players": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "score": 0,
+        "color": "#ef4444",
+        "connected": true,
+        "streak": 0
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "score": 0,
+        "color": "#f97316",
+        "connected": true,
+        "streak": 0
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "score": 0,
+        "color": "#eab308",
+        "connected": true,
+        "streak": 0
+      }
+    ],
+    "timer": null,
+    "board": null,
+    "clue": null,
+    "lastResult": null,
+    "answerTime": 10,
+    "answerTimes": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      0
+    ],
+    "hotStreak": 3,
+    "reactions": [],
+    "reactionChoices": [
+      "👏",
+      "😂",
+      "😱",
+      "🔥",
+      "🤯",
+      "🎉"
+    ],
+    "packs": [
+      {
+        "id": "own-family-night",
+        "title": "Family Night Sampler",
+        "description": "One of your boards",
+        "count": 6,
+        "selected": false,
+        "easy": false,
+        "own": true,
+        "archive": false
+      },
+      {
+        "id": "archive-anything-goes",
+        "title": "Anything Goes",
+        "description": "Real Anything Goes boards from season 15 (2005). A new random season every room.",
+        "count": 14,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": true
+      },
+      {
+        "id": "house-easy",
+        "title": "Easy Breezy",
+        "description": "Casual, family-friendly questions anyone can play",
+        "count": 20,
+        "selected": true,
+        "easy": true,
+        "own": false,
+        "archive": false
+      },
+      {
+        "id": "house-classic",
+        "title": "Classic Mix",
+        "description": "The original 18 categories",
+        "count": 18,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false
+      },
+      {
+        "id": "house-general",
+        "title": "General Knowledge",
+        "description": "A big mix of everyday trivia",
+        "count": 34,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false
+      },
+      {
+        "id": "house-movies",
+        "title": "Movie Night",
+        "description": "Films, actors, quotes, and franchises",
+        "count": 14,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false
+      },
+      {
+        "id": "house-nineties",
+        "title": "Totally 90s",
+        "description": "TV, music, toys, and fads from the 1990s",
+        "count": 14,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false
+      },
+      {
+        "id": "house-sports",
+        "title": "Sports Fan",
+        "description": "Teams, legends, and every sport in between",
+        "count": 14,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false
+      }
+    ],
+    "categoryCount": 20,
+    "easyAvailable": true,
+    "easyMode": true,
+    "hasArchive": true,
+    "era": "classic",
+    "eras": [
+      "any",
+      "classic",
+      "2000s",
+      "recent"
+    ],
+    "archiveSeason": 15,
+    "archiveLoading": false,
+    "archiveError": false,
+    "draft": null,
+    "asWritten": false,
+    "asWrittenChoice": null,
+    "maxPlayers": 8
+  }
+}

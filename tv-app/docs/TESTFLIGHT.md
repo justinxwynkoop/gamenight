@@ -1,0 +1,125 @@
+# TestFlight
+
+TestFlight installs the app on the family's Apple TVs without Xcode or a cable, and updates it by itself. This page covers
+two ways to get a build there: **from Xcode on your Mac** (simplest; includes your own sounds and extra sets) or **from
+GitHub** (a button in the Actions tab; no Mac needed, but no sounds or extra sets).
+
+## What you need
+
+- **An Apple Developer Program membership** ($99 a year). The app belongs to whichever team owns the bundle ID
+  `family.singonight.app` (the team picked under Signing & Capabilities in Xcode). Steps that need the account owner or an
+  Admin are marked. If the team is someone else's, they do those steps and give you the *App Manager* role.
+- **The bundle ID registered with MusicKit** for Singo Night: developer.apple.com → Certificates, Identifiers & Profiles →
+  Identifiers → `family.singonight.app` → App Services → **MusicKit** ticked.
+- **Testers.** Anyone who should get the app is an *internal tester*: a person added to the team's App Store Connect
+  users (up to 100 people, any role, no Apple review). Each needs an Apple ID, and a TestFlight app on their Apple TV.
+
+## One-time: create the app in App Store Connect (Admin or App Manager)
+
+1. appstoreconnect.apple.com → **Apps** → **+** → **New App**.
+2. Platform **tvOS**. Name **Family Game Night** (names are unique across the App Store; if it is taken, use something
+   like "Family Game Night TV": it is only the name shown in TestFlight, the app on the TV keeps its own display name).
+3. Primary language, **Bundle ID** `family.singonight.app` (choose it from the list), and any SKU (for example
+   `familygamenight`). Create.
+
+## Way 1: from Xcode on your Mac
+
+1. If you want your own sounds and extra sets in the build, copy them in first (see [CUSTOM-FILES.md](CUSTOM-FILES.md)).
+2. In Xcode: choose the destination **Any tvOS Device (arm64)**, check Signing & Capabilities shows your team, then
+   **Product → Archive**.
+3. The Organizer opens. Select the archive → **Distribute App** → **App Store Connect** → **Distribute** (leave
+   "Manage Version and Build Number" ticked: Xcode raises the build number for you). Wait for "Upload successful".
+4. After Apple finishes processing (usually 5 to 15 minutes; you get an email) the build shows under the app's
+   **TestFlight** tab in App Store Connect.
+
+### Sending an update (one command)
+
+After the first upload, shipping a new version is one command from Terminal (it builds, signs and uploads, as above):
+
+```bash
+cd ~/Documents/familygamenight && Tools/upload-testflight.sh
+```
+
+Versions count up as **X.x**: 1.1, then 1.2, 1.3 and so on, each with build number 1. (After 1.9 comes 1.10, which Apple
+treats as higher.)
+
+| Command | Uploads |
+| --- | --- |
+| `Tools/upload-testflight.sh` | the next version (1.1 after 1.0, 1.2 after 1.1 ...) |
+| `Tools/upload-testflight.sh --major` | the next major version (2.0 after 1.4) |
+| `Tools/upload-testflight.sh --rebuild` | the same version again, with the next build number (for example if Apple refused an upload) |
+| `Tools/upload-testflight.sh --version 1.7` | a version you choose; it must be higher than the last one |
+
+The script remembers the last version in `Config/testflight-version.txt` and prints the `git` command to save the new one:
+run it, so the next upload (from any Mac) carries on from there. It needs Xcode signed in with an Apple ID on the team. Run
+`Tools/install-sounds.sh` and `Tools/install-sets.sh` first if you want your sounds and extra sets in the build. Everyone in
+the TestFlight group gets the update automatically once Apple has processed it (about 5 to 15 minutes).
+
+**Do not archive from Xcode's own menu after this.** Its build number would be lower than the first upload's, and Apple would
+refuse it. Use the script (or the GitHub workflow below).
+
+## Way 2: from GitHub (no Mac)
+
+1. **Make an API key** (Admin): App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API**
+   → **Team Keys** → **+**, name it "GitHub", role **Admin** (the build is signed in the cloud, which needs it). Download
+   the `.p8` file (you can only download it once) and note the **Key ID** and the **Issuer ID** shown at the top of the page.
+2. In this repository on GitHub: **Settings → Secrets and variables → Actions → New repository secret**, and add three:
+   `ASC_KEY_ID` (the Key ID), `ASC_ISSUER_ID` (the Issuer ID), and `ASC_KEY_P8` (open the `.p8` file in a text editor and
+   paste all of it, including the BEGIN and END lines).
+3. That's it: from now on it uploads by itself. **Every merge into `main`** here (except docs-only changes), **every
+   merge into `main` in the gamenight repo** (see step 4), and **the 1st of every other month** (so a build never hits the
+   90-day expiry) build, sign and upload a new TestFlight build. Each run first builds the newest engine and question
+   sets from gamenight into the app and runs the tests, so a broken engine never reaches the TVs. To upload by hand:
+   **Actions → Send to TestFlight → Run workflow** (the version box is optional). It checks the app exists, makes a
+   TestFlight group called **Family** if there is none, then builds, signs and uploads. A warning that the app does not
+   exist yet means step "create the app" above is still to do.
+4. **Merges in gamenight** reach this workflow through a token, once: on GitHub, **your picture → Settings → Developer
+   settings → Personal access tokens → Fine-grained tokens → Generate new token**. Name it "gamenight to TestFlight",
+   pick the longest expiry, Resource owner the account that owns `familygamenight`, **Only select repositories →
+   familygamenight**, and under Repository permissions set **Contents: Read and write** (it only lets gamenight start
+   this workflow). Copy the token, then in the **gamenight** repo: **Settings → Secrets and variables → Actions → New
+   repository secret**, name `FAMILYGAMENIGHT_TOKEN`, paste it. Without it, gamenight merges reach the TVs at the next
+   merge here or the next scheduled build.
+
+Automatic builds use the version in `Config/testflight-version.txt` (the first number) and the workflow's run number as
+the build number, which always goes up, so they never clash: TestFlight shows them as 1.1 (4), 1.1 (5) and so on. To
+start a new version, upload it by hand (or with the script) and commit the new number in that file.
+
+The key is as powerful as an Admin login: never put it in a file in the repository, and delete the key in App Store Connect
+if it ever leaks. The workflow does nothing without the secrets, so it is safe to leave in place. A cloud build does not
+contain your own sound files or extra sets, because they are not in the repository.
+
+## Add the family as testers
+
+1. App Store Connect → **Users and Access** → **+**: add each person's name and Apple ID email. A role such as
+   *Customer Support* or *Marketing* is enough. They accept the emailed invitation.
+2. Open the app → **TestFlight** → **Internal Testing** → the **Family** group (create it with **+** if the GitHub workflow
+   has not): add the people and the build.
+
+## Install on an Apple TV
+
+On the Apple TV: App Store → get **TestFlight** → open it and sign in with the Apple ID that was invited → **Install**
+Family Game Night. New builds arrive on their own (and can be turned off in TestFlight).
+
+## Good to know
+
+- **A build lasts 90 days.** After that it stops opening. The GitHub workflow uploads a fresh one every other month, and
+  on every merge, so this only matters if the secrets are removed.
+- **Version and build.** TestFlight shows the version (1.2) and the build number in brackets, 1.2 (1). Apple only needs a
+  build number to be unique within one version, so each new version starts again at 1. The first version, 1.0, ended up with
+  build 2611120829 because an earlier script used the date; that stays in the history and does not matter.
+- **Export compliance** is already answered in the app (it uses only Apple's own encryption), so TestFlight does not ask
+  each time.
+- Internal testers need no Apple review. A *public link* for people outside the team (an "external" group) does need a
+  short Beta App Review for each new version; internal testing is simpler for a family.
+
+## If something goes wrong
+
+| What you see | What to try |
+| --- | --- |
+| Xcode: "No accounts with App Store Connect access" | Sign in under Xcode → Settings → Apple Accounts with the Apple ID that has the *App Manager* (or Admin) role. |
+| Upload refused about the icon | The app already has the full tvOS icon set (including the 1280×768 App Store icon). Do not delete it from the asset catalog. |
+| "Bundle ID not found" when creating the app | Register `family.singonight.app` first (developer.apple.com → Identifiers), with MusicKit ticked. |
+| The build is missing from TestFlight | It is still processing (5 to 15 minutes); look for Apple's email about a problem. |
+| The GitHub run says there is no app | Create the app in App Store Connect (above), then run it again. |
+| GitHub run fails signing | The API key needs the **Admin** role. |

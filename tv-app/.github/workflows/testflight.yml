@@ -1,0 +1,136 @@
+# Builds the Apple TV app on a Mac in the cloud, signs it and uploads it to TestFlight. It runs by itself:
+#   - when a change is merged into main here (docs-only changes are skipped),
+#   - when a change is merged into main in the gamenight repo (that repo's "Tell the Apple TV app" workflow sends a
+#     "gamenight-updated" event here; it needs the FAMILYGAMENIGHT_TOKEN secret in gamenight, see docs/TESTFLIGHT.md),
+#   - on the 1st of every other month, so the build on the TVs never reaches Apple's 90-day expiry,
+#   - and by hand: GitHub → Actions → "Send to TestFlight" → Run workflow (the version box is optional).
+# Every run builds the newest game engine and question sets from gamenight's main branch into the app first, and runs
+# the tests, so the TVs always get the latest rules and phone-matching engine.
+# It needs three repository secrets from an App Store Connect API key (see docs/TESTFLIGHT.md):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole contents of the .p8 file).
+# Without them it does nothing but say so. Adapted from the workflow in the Buzzworthy Apple TV app.
+#
+# Version and build: the version is the one typed in, or else the first number in Config/testflight-version.txt; the
+# build number is this workflow's run number, which only ever goes up, so automatic uploads never clash.
+#
+# A build made here does not contain your own sound files or extra question sets (they are not in the repository).
+# To include them, archive from Xcode on your Mac instead (docs/TESTFLIGHT.md).
+name: Send to TestFlight
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  repository_dispatch:
+    types: [gamenight-updated]
+  schedule:
+    - cron: '17 9 1 */2 *'   # 09:17 UTC on the 1st of every other month
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to upload, like 1.2 (optional; empty uses the one in Config/testflight-version.txt)'
+        required: false
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+env:
+  BUNDLE_ID: family.singonight.app
+  APP_NAME: Family Game Night
+
+jobs:
+  upload:
+    runs-on: macos-15
+    steps:
+      - name: Check the App Store Connect key is set up
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          if [ -z "$ASC_KEY_ID" ]; then
+            echo "::warning::The App Store Connect key secrets are not added yet (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8). Skipping the TestFlight upload."
+            echo "ready=false" >> $GITHUB_ENV
+          else
+            echo "ready=true" >> $GITHUB_ENV
+          fi
+      - uses: actions/checkout@v4
+        if: env.ready == 'true'
+      - name: Use Xcode 26 (Apple only accepts apps built with the tvOS 26 SDK or later)
+        if: env.ready == 'true'
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$XCODE" ]; then echo "::error::No Xcode 26 on this runner"; ls -d /Applications/Xcode*; exit 1; fi
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+      - name: Build the newest engine and question sets from gamenight
+        if: env.ready == 'true'
+        run: |
+          git clone --depth 1 https://github.com/justinxwynkoop/gamenight.git ../gamenight
+          echo "gamenight at $(git -C ../gamenight log -1 --format='%h %s')"
+          (cd ../gamenight && npm ci --no-audit --no-fund)
+          node ../gamenight/scripts/build-engine.mjs "$PWD/FamilyGameNight/GameNight/Engine/engine.js"
+          node ../gamenight/scripts/bundle-sets.mjs "$PWD/FamilyGameNight/GameNight/Engine/sets.json"
+          git diff --stat -- FamilyGameNight/GameNight/Engine || true
+      - name: Run the tests with that engine
+        if: env.ready == 'true'
+        run: |
+          swift test > test.log 2>&1 && status=0 || status=$?
+          grep -E "error:|failed \(" test.log || true
+          grep -E "Executed [0-9]+ tests" test.log | tail -n 3
+          exit $status
+      - name: Write the key file
+        if: env.ready == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          echo "ASC_KEY_PATH=$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" >> $GITHUB_ENV
+      - name: Prepare App Store Connect
+        if: env.ready == 'true'
+        id: asc
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
+          python3 Tools/asc.py prepare "$BUNDLE_ID" "$APP_NAME"
+      - name: Build, sign and upload to TestFlight
+        if: env.ready == 'true' && steps.asc.outputs.app_exists == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM_ID: ${{ steps.asc.outputs.team_id }}
+        run: |
+          set -o pipefail
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then read -r VERSION _ < Config/testflight-version.txt; fi
+          case "$VERSION" in *[!0-9.]*|.*|*.|*..*|"") echo "::error::The version must look like 1.2, not $VERSION"; exit 1 ;; esac
+          BUILD="${{ github.run_number }}"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          mkdir -p build
+          xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \
+            -destination 'generic/platform=tvOS' -archivePath build/FamilyGameNight.xcarchive \
+            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$BUILD \
+            $AUTH archive | tail -n 40
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/FamilyGameNight.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH | tail -n 40
+          echo "Uploaded version $VERSION (build $BUILD). It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
+      - name: Remove the key file
+        if: always()
+        run: rm -rf ~/private_keys

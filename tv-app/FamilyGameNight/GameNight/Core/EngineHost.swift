@@ -1,0 +1,161 @@
+import Foundation
+import JavaScriptCore
+
+/// Runs the game engine (room, Jeopardy, Family Feud: the same JavaScript the Game Night server runs) inside
+/// JavaScriptCore, so the Apple TV can host the game itself.
+///
+/// The engine knows nothing about networks. It has "clients" (the TV display, the host, each phone), each with an
+/// id; messages go in with `receive`, and everything it wants to say comes out through `onSend(clientId, json)`.
+/// `onSave` hands over the room as text whenever it changes, so a restart can pick up where it left off.
+///
+/// JavaScriptCore is not thread safe: use one `EngineHost` from one thread (the app uses the main actor).
+public final class EngineHost {
+    public enum EngineError: Error, LocalizedError {
+        case scriptFailed(String)
+        public var errorDescription: String? {
+            switch self { case .scriptFailed(let text): return "The game engine could not start: \(text)" }
+        }
+    }
+
+    public struct Game: Decodable, Equatable {
+        public let id: String
+        public let name: String
+        public let description: String
+    }
+
+    /// The engine asks for a season of real-show clues (the lobby's "era" buttons): download season `season` of the
+    /// public clue archive and give it back with `archiveLoaded`, or call `archiveFailed`. `id` pairs the answer with the request.
+    public struct ArchiveRequest: Decodable, Equatable {
+        public let id: Int
+        public let era: String
+        public let season: Int
+    }
+
+    private final class Problems { var list: [String] = [] }
+
+    private let context: JSContext
+    private let engine: JSValue
+    private let problems: Problems
+    /// Anything the engine logged as an error (or JavaScript threw), newest last. Tests and diagnostics read it.
+    public var errors: [String] { problems.list }
+
+    /// - Parameters:
+    ///   - script: the contents of engine.js
+    ///   - pin: the host PIN (a host screen must say it to take control)
+    ///   - saved: the text `onSave` last gave, or nil
+    ///   - content: question sets as JSON text, `[gameId: [setId: json]]`
+    ///   - userSets: the family's own changes to the question sets, as the last `onSets` gave them: `{game: {id: set | null}}`
+    ///   - onSets: the family saved, imported or deleted a set (from the online editor): keep this text
+    ///   - game: the game the TV's tile is for ("jeopardy" or "feud"). A saved room that was playing another game is not resumed.
+    ///   - code: the room code phones type (four letters); the engine makes one if this is nil
+    ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
+    public init(
+        script: String,
+        pin: String,
+        saved: String? = nil,
+        content: [String: [String: String]] = [:],
+        code: String? = nil,
+        game: String? = nil,
+        userSets: String? = nil,
+        onSend: @escaping (_ clientId: String, _ json: String) -> Void,
+        onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
+        onSave: @escaping (_ json: String) -> Void = { _ in },
+        onSets: @escaping (_ json: String) -> Void = { _ in },
+        onArchive: @escaping (_ request: ArchiveRequest) -> Void = { _ in }
+    ) throws {
+        guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
+        let problems = Problems()
+        context.exceptionHandler = { _, exception in
+            problems.list.append(exception?.toString() ?? "unknown JavaScript error")
+        }
+
+        let native = JSValue(newObjectIn: context)!
+        let send: @convention(block) (String, String) -> Void = { onSend($0, $1) }
+        let broadcast: @convention(block) (String, String, String) -> Void = { onBroadcast($0, $1, $2) }
+        let save: @convention(block) (String) -> Void = { onSave($0) }
+        let now: @convention(block) () -> Double = { ProcessInfo.processInfo.systemUptime * 1000 }
+        let random: @convention(block) () -> Double = { Double.random(in: 0..<1) }   // the system's secure generator
+        let log: @convention(block) (String, String) -> Void = { level, text in
+            if level == "error" { problems.list.append(text) }
+        }
+        func set(_ name: String, _ block: AnyObject) { native.setObject(block, forKeyedSubscript: name as NSString) }
+        set("send", unsafeBitCast(send, to: AnyObject.self))
+        set("broadcast", unsafeBitCast(broadcast, to: AnyObject.self))
+        let saveSets: @convention(block) (String) -> Void = { onSets($0) }
+        set("saveSets", unsafeBitCast(saveSets, to: AnyObject.self))
+        let loadArchive: @convention(block) (String) -> Void = { json in
+            if let request = try? JSONDecoder().decode(ArchiveRequest.self, from: Data(json.utf8)) { onArchive(request) }
+        }
+        set("loadArchive", unsafeBitCast(loadArchive, to: AnyObject.self))
+        set("save", unsafeBitCast(save, to: AnyObject.self))
+        set("now", unsafeBitCast(now, to: AnyObject.self))
+        set("random", unsafeBitCast(random, to: AnyObject.self))
+        set("log", unsafeBitCast(log, to: AnyObject.self))
+        context.setObject(native, forKeyedSubscript: "__native" as NSString)
+
+        context.evaluateScript(script)
+        if let first = problems.list.first { throw EngineError.scriptFailed(first) }
+        guard let engine = context.objectForKeyedSubscript("Engine"), !engine.isUndefined else {
+            throw EngineError.scriptFailed("the script did not define Engine")
+        }
+        self.context = context
+        self.engine = engine
+        self.problems = problems
+
+        var options: [String: Any] = ["pin": pin, "content": content.mapValues { $0.compactMapValues { Self.object($0) } }]
+        if let saved { options["saved"] = saved }
+        if let code { options["code"] = code }
+        if let game { options["game"] = game }
+        if let userSets, let object = Self.object(userSets) { options["userSets"] = object }
+        engine.invokeMethod("start", withArguments: [Self.json(options)])
+        if let first = problems.list.first { throw EngineError.scriptFailed(first) }
+    }
+
+    /// The games the engine can run.
+    public func games() -> [Game] {
+        guard let text = engine.invokeMethod("games", withArguments: [])?.toString(),
+              let games = try? JSONDecoder().decode([Game].self, from: Data(text.utf8)) else { return [] }
+        return games
+    }
+
+    /// The room code phones type to find this room.
+    public var roomCode: String { engine.invokeMethod("roomCode", withArguments: [])?.toString() ?? "" }
+    /// The relay channel the TV must listen on.
+    public var relayTopic: String { engine.invokeMethod("relayTopic", withArguments: [])?.toString() ?? "" }
+    /// A message arrived from the relay (a phone talking to the room).
+    public func deliver(topic: String, event: String, json: String) {
+        engine.invokeMethod("onBroadcast", withArguments: [topic, event, json])
+    }
+
+    /// Pick the game from the TV (its home-screen tile). Ignored once a game is under way.
+    public func chooseGame(_ id: String) { engine.invokeMethod("chooseGame", withArguments: [id]) }
+
+    /// A screen or phone connected.
+    public func open(_ clientId: String) { engine.invokeMethod("open", withArguments: [clientId]) }
+    /// It went away.
+    public func close(_ clientId: String) { engine.invokeMethod("close", withArguments: [clientId]) }
+    /// A message from a client, as JSON text (for instance `{"t":"hello","role":"tv"}`).
+    public func receive(_ clientId: String, _ json: String) { engine.invokeMethod("receive", withArguments: [clientId, json]) }
+    /// A season of clues arrived (raw text) for the request with this id.
+    public func archiveLoaded(id: Int, season: Int, tsv: String) { engine.invokeMethod("archiveLoaded", withArguments: [id, season, tsv]) }
+    /// The season could not be downloaded.
+    public func archiveFailed(id: Int) { engine.invokeMethod("archiveFailed", withArguments: [id]) }
+    /// Call about four times a second: it ends answer timers.
+    public func tick() { engine.invokeMethod("tick", withArguments: []) }
+
+    public func putSet(game: String, id: String, json: String) { engine.invokeMethod("putSet", withArguments: [game, id, json]) }
+    public func removeSet(game: String, id: String) { engine.invokeMethod("removeSet", withArguments: [game, id]) }
+
+    // MARK: - JSON helpers
+
+    static func json(_ value: Any) -> String {
+        guard JSONSerialization.isValidJSONObject(value),
+              let data = try? JSONSerialization.data(withJSONObject: value),
+              let text = String(data: data, encoding: .utf8) else { return "{}" }
+        return text
+    }
+
+    static func object(_ json: String) -> Any? {
+        try? JSONSerialization.jsonObject(with: Data(json.utf8))
+    }
+}

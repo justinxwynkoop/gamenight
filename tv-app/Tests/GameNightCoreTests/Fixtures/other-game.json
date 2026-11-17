@@ -1,0 +1,20 @@
+{
+  "room": {
+    "mode": "players",
+    "teams": [],
+    "units": [],
+    "gameId": "bingo",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "bingo",
+    "lobbyTitle": "Bingo",
+    "status": "lobby",
+    "rounds": []
+  }
+}
