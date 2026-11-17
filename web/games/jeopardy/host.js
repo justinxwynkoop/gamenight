@@ -182,7 +182,10 @@ function doneView() {
     dock: [button({ label: 'Play again', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('playAgain') })],
   };
 }
-const f_final = () => (v.final ? card(eyebrow('Final Jeopardy'), h('p', { class: 'dim' }, `${v.final.category}: ${v.final.answer ?? ''}`)) : null);
+/** Final Jeopardy's answers stay on the host page after the game ends, so a ruling can still be flipped. */
+const f_final = () => (v.final ? card(eyebrow('Final Jeopardy'), h('p', { class: 'dim' }, `${v.final.category}: ${v.final.answer ?? ''}`),
+  v.final.reveals.length ? h('div', { class: 'list' }, v.final.reveals.map((r) => h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, nameOf(r.id)), h('div', { class: 's' }, `“${r.answer}” · bet ${money(r.wager)}`)),
+    pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), button({ label: 'Flip', size: 'sm', onclick: () => act('finalOverride', { pid: r.id }) })))) : null) : null);
 
 // ---------- Settings tab cards, and the danger zone ----------
 function settingsCards() {

@@ -271,7 +271,7 @@ export function mount(container, { send, flash }) {
     if (ph === 'lobby') items.push(['Start game', () => cap('start'), '']);
     if (['reading', 'open', 'answering', 'dd-wager', 'dd-answer'].includes(ph)) items.push(['Skip clue', () => cap('skip'), 'ghost']);
     if (v.lastResult && ['reveal', 'open', 'board'].includes(ph) && !v.hostJudges) items.push(['Flip last ruling', () => cap('override'), 'ghost']);
-    if (['reveal', 'round-end', 'final-wager', 'final-answer'].includes(ph)) items.push(['Continue', () => cap('advance'), '']);
+    if (['reveal', 'round-end', 'final-wager', 'final-answer', 'final-reveal'].includes(ph)) items.push(['Continue', () => cap('advance'), '']);
     if (ph === 'board') items.push(['End round early', () => { if (confirm('End this round now?')) cap('endRound'); }, 'ghost']);
     if (ph === 'gameover') items.push(['Play again', () => cap('playAgain'), '']);
     if (ph !== 'lobby' && v.players.length) items.push(['Fix scores', () => { sheet = true; renderSheet(); }, 'ghost']);

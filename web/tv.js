@@ -139,12 +139,22 @@ function lobby(v) {
     h('div', { class: 'qr-big' }, qrImg()))));
 }
 
+let shownGame = null;
 async function render(v) {
   const mine = ++seq;
   let el;
-  if (!v.game || !v.room.inProgress) el = lobby(v);
+  // A game may draw its own lobby (Jeopardy shows its packs, era and board preview there).
+  // ctx.act lets the TV act on the game itself, only when this page runs the game (the website's TV page).
+  const ctx = { info, sound, qr: qrImg, act: hosted ? (action, args) => hosted.act(action, args) : null };
+  const id = v.game?.game ?? null;
+  if (shownGame && shownGame !== id) loaded[shownGame]?.leave?.();
+  shownGame = id;
+  if (!v.game) el = lobby(v);
   else {
-    try { const m = await load(v.game.game); el = m.render(v, { info, sound }); } catch (e) {
+    try {
+      const m = await load(v.game.game);
+      el = !v.room.inProgress ? (m.lobby ? m.lobby(v, ctx) : lobby(v)) : m.render(v, ctx);
+    } catch (e) {
       console.error(e);
       el = h('div', { class: 'lobby' }, h('h1', {}, 'Could not load this game'));
     }
