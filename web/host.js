@@ -1,8 +1,10 @@
 // The host page: sign-in, the app frame (top bar, tabs, pinned action bar, slide-up sheets) and the screens
 // every game shares: Players, Scores and Settings. What the Game tab shows, and the game's own settings,
 // come from the active game's module (/games/<id>/host.js).
-import { h, money, scoreText, connect, store, unitById, apiFetch } from './common.js';
+import { h, money, scoreText, connect, store, unitById, apiFetch, keepAwake } from './common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow } from './ui.js';
+
+keepAwake();
 
 const app = document.getElementById('app');
 const offline = document.getElementById('offline');

@@ -19,9 +19,16 @@ export function norm(s) {
   // Drop question phrasing like "what is", "who are", "whats".
   s = s.replace(/^(what|who|where|when|which|whats|whos|wheres)( (is|are|was|were|s))?\s+/, '');
   s = s.replace(/^(a|an|the)\s+/, '');
-  s = s.split(' ').map((w) => (w in NUM_WORDS ? String(NUM_WORDS[w]) : w)).join(' ');
+  s = s.split(' ').map((w) => (w in NUM_WORDS ? String(NUM_WORDS[w]) : ABBREV[w] ?? w)).join(' ');
   return s.trim();
 }
+
+// Short forms people type on a phone, read the same as the long form on both sides ("mt everest", "st louis").
+const ABBREV = { mt: 'mount', mtn: 'mountain', st: 'saint', ste: 'sainte', ft: 'fort', dr: 'doctor', jr: 'junior', sr: 'senior', mr: 'mister', mrs: 'missus', pt: 'point', pres: 'president', gen: 'general', capt: 'captain', usa: 'united states', us: 'united states', uk: 'united kingdom', nyc: 'new york city' };
+
+// Words a place name can do without: "the Pacific" for the Pacific Ocean, "Everest" for Mount Everest.
+const PLACE_WORDS = new Set(['ocean', 'sea', 'river', 'lake', 'mount', 'mountain', 'mountains', 'island', 'islands', 'desert', 'bay', 'gulf', 'canal', 'falls', 'peninsula', 'strait', 'city', 'state', 'county', 'national', 'park']);
+const withoutPlaceWords = (s) => s.split(' ').filter((w) => !PLACE_WORDS.has(w)).join(' ');
 
 function lev(a, b) {
   if (a === b) return 0;
@@ -39,7 +46,8 @@ function lev(a, b) {
 }
 
 function tolerance(len) {
-  if (len <= 4) return 0;
+  // Short words must be spelled right: one letter off is usually a different word ("Plato" is not "Pluto").
+  if (len <= 5) return 0;
   if (len <= 7) return 1;
   if (len <= 11) return 2;
   return Math.floor(len / 5);
@@ -56,12 +64,35 @@ function matchOne(g, ans) {
   if (lev(gs, ns) <= tolerance(ns.length)) return true;
   // Extra words around the right answer ("the planet mars").
   if ((' ' + g + ' ').includes(' ' + n + ' ') && g.length <= n.length + 14) return true;
+  // A place without "Ocean", "Mount", "River"... ("pacific", "everest"), but never the generic word alone.
+  const gp = withoutPlaceWords(g).replace(/ /g, ''), np = withoutPlaceWords(n).replace(/ /g, '');
+  if (gp && np && np !== ns && gp.length >= 4 && (gp === np || lev(gp, np) <= tolerance(np.length))) return true;
   return false;
 }
 
-/** Is what the player typed (`given`) one of the accepted answers? */
-export function judge(given, answers) {
+/** A person's last name on its own ("Lincoln" for Abraham Lincoln), as the show allows. */
+function surname(g, ans) {
+  const words = norm(ans).split(' ').filter((w) => !['junior', 'senior', 'ii', 'iii', 'iv'].includes(w));
+  if (words.length < 2 || words.length > 4) return false;
+  const last = words.at(-1);
+  if (last.length < 4 || /^\d+$/.test(last)) return false;
+  const gs = g.replace(/ /g, '');
+  return gs === last || lev(gs, last) <= tolerance(last.length);
+}
+
+/** Does the clue ask for a person ("this president", "He wrote...")? Then a last name alone is enough. */
+export function asksForPerson(clue) {
+  return /\b(he|she|his|her|him|who)\b/i.test(String(clue || ''))
+    || /\bth(is|ese)\s+(\w+\s+)?(man|woman|person|people|author|writer|novelist|poet|playwright|president|first lady|actor|actress|singer|rapper|artist|painter|sculptor|composer|scientist|physicist|chemist|inventor|explorer|astronaut|king|queen|emperor|empress|pharaoh|general|leader|director|athlete|player|pitcher|quarterback|coach|chef|comedian|host|philosopher|saint|pope|prophet|founder|aviator|naturalist|mathematician|economist|senator|governor|mayor|dictator|prime minister)s?\b/i.test(String(clue || ''));
+}
+
+/**
+ * Is what the player typed (`given`) one of the accepted answers?
+ * opts.person  the clue asks for a person, so a last name alone counts (see asksForPerson)
+ */
+export function judge(given, answers, opts = {}) {
   const g = norm(given);
   if (!g) return false;
-  return answers.filter(Boolean).some((a) => matchOne(g, a));
+  const list = answers.filter(Boolean);
+  return list.some((a) => matchOne(g, a)) || (!!opts.person && list.some((a) => surname(g, a)));
 }

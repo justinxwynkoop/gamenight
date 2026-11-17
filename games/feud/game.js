@@ -584,7 +584,9 @@ export class FeudGame {
     const mult = this.multiplier();
     return {
       number: run.round + 1, multiplier: mult, question: q.question, step: run.step,
-      strikes: run.strikes, maxStrikes: MAX_STRIKES, pot: this.pot(), control: run.control, stealFrom: run.stealFrom,
+      strikes: run.strikes, maxStrikes: MAX_STRIKES, pot: this.pot(),
+      // Once the round is over the team that won the points is the one lit up (after a failed steal that is not the stealer).
+      control: run.step === 'roundEnd' ? run.winner : run.control, stealFrom: run.stealFrom,
       answers: answers.map((a, i) => {
         const up = run.revealed.includes(i);
         const shown = up || run.showAll;

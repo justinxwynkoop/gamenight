@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
 import { GameError } from '../lib.js';
-import { validateSet, T, readingTime } from '../games/jeopardy/game.js';
-import { judge } from '../games/jeopardy/judge.js';
+import { validateSet, T, readingTime, FINAL_FLOOR } from '../games/jeopardy/game.js';
+import { judge, asksForPerson } from '../games/jeopardy/judge.js';
 import { createHub } from '../engine/hub.js';
 
 const own = JSON.parse(readFileSync(new URL('../data/jeopardy/family-night.json', import.meta.url)));
@@ -48,6 +48,19 @@ test('judge is lenient about case, articles, punctuation and small typos', () =>
   assert.ok(!judge('', ['Paris']));
 });
 
+test('judge reads short forms, lets a place drop "Ocean" or "Mount", takes a last name for a person, and is strict on short words', () => {
+  assert.ok(judge('mt everst', ['Mount Everest']));
+  assert.ok(judge('st louis', ['Saint Louis']) && judge('saint louis', ['St. Louis']));
+  assert.ok(judge('pacific', ['Pacific Ocean']) && judge('superior', ['Lake Superior']));
+  assert.ok(!judge('ocean', ['Pacific Ocean']) && !judge('red', ['Red Sea']));
+  assert.ok(judge('lincoln', ['Abraham Lincoln'], { person: true }));
+  assert.ok(!judge('lincoln', ['Abraham Lincoln']), 'not when the clue is not about a person');
+  assert.ok(!judge('way', ['Milky Way'], { person: true }), 'too short to stand alone');
+  assert.ok(!judge('plato', ['Pluto']) && !judge('pairs', ['Paris']));
+  assert.ok(asksForPerson('This president freed the slaves.') && asksForPerson('He wrote Hamlet.'));
+  assert.ok(!asksForPerson('The largest planet in our solar system.'));
+});
+
 test('own boards: validateSet accepts the sample sets and an optional "alt"', () => {
   assert.ok(validateSet(own));
   const withAlt = structuredClone(own); withAlt.categories[0].clues[0].alt = ['Other'];
@@ -58,13 +71,13 @@ test('own boards: validateSet accepts the sample sets and an optional "alt"', ()
   assert.throws(() => validateSet(bad), /answer/);
 });
 
-test('Jeopardy is individuals only and tops out at eight players', () => {
+test('Jeopardy is individuals only and tops out at ten players', () => {
   const { room } = setup({ players: ['A', 'B', 'C', 'D', 'E', 'F'] });
   assert.equal(room.mode, 'players');           // six would be teams in Family Feud's auto mode
   assert.throws(() => room.setMode('teams'), /individuals/);
-  room.join({ name: 'G' }); room.join({ name: 'H' });
-  assert.throws(() => room.join({ name: 'I' }), /full/);
-  assert.equal(room.publicView().room.maxPlayers, 8);
+  for (const name of ['G', 'H', 'I', 'J']) room.join({ name });
+  assert.throws(() => room.join({ name: 'K' }), /full/);
+  assert.equal(room.publicView().room.maxPlayers, 10);
 });
 
 test('the lobby lists packs: house packs, your own boards, and the real-show archive request', () => {
@@ -349,8 +362,9 @@ function playRound(g, ps, clock) {
   }
 }
 
-test('a full game: two rounds, then Final Jeopardy with wagers, answers and a reveal', () => {
+test('a full game: two rounds, then Final Jeopardy with wagers, answers and a reveal (show rules: only players with money)', () => {
   const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  g.setFinalForAll(false);
   begin(g);
   playRound(g, ps, clock);
   assert.equal(g.phase, 'round-end');
@@ -378,6 +392,21 @@ test('a full game: two rounds, then Final Jeopardy with wagers, answers and a re
   g.playAgain();
   assert.equal(g.phase, 'lobby');
   assert.equal(ps[0].score, 0);
+});
+
+test('by default everyone plays Final Jeopardy, and a player with no money may bet up to $1,000', () => {
+  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance();
+  playRound(g, ps, clock); g.advance();
+  assert.equal(g.phase, 'final-wager');
+  assert.deepEqual(g.final.eligible.slice().sort(), [ps[0].id, ps[1].id].sort(), 'Bo plays too');
+  assert.ok(ps[1].score <= 0);
+  assert.equal(g.playerView(ps[1]).me.maxFinal, FINAL_FLOOR);
+  g.finalWager(ps[1].id, 999999);
+  assert.equal(g.final.wagers[ps[1].id], FINAL_FLOOR);
+  assert.equal(g.playerView(ps[0]).me.maxFinal, Math.max(ps[0].score, FINAL_FLOOR));
+  assert.throws(() => g.setFinalForAll(false), /started/);
 });
 
 test('the same categories are not dealt again right after a game', () => {

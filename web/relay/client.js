@@ -22,7 +22,8 @@ export function connectRelay({
   let lastHeard = 0; let connected = false; let ready = false; let closed = false; let timer = null;
 
   const setConnected = (value) => { if (connected !== value) { connected = value; onStatus(value); } };
-  const say = (msg) => rt.send(toTv, 'm', { c: clientId, m: msg });
+  let lastSaid = null;   // the last tap, said again if the TV turns out to have forgotten us
+  const say = (msg) => { if (msg.t !== 'ping' && msg.t !== 'hello') lastSaid = { msg, at: now() }; rt.send(toTv, 'm', { c: clientId, m: msg }); };
   const sayHello = () => say(typeof hello === 'function' ? hello() : hello);
 
   const rt = new Realtime({
@@ -35,6 +36,11 @@ export function connectRelay({
       setConnected(true);
       if (payload.t === 'rpc-reply') { const q = asking.get(payload.id); if (q) { asking.delete(payload.id); q(payload); } }
       else if (payload.t === 'state') onState(payload.view);
+      else if (payload.t === 'who') {
+        // The TV restarted and forgot us: introduce ourselves again, then repeat a tap it just dropped.
+        sayHello();
+        if (lastSaid && now() - lastSaid.at < 3000) { const again = lastSaid.msg; lastSaid = null; say(again); }
+      }
       else if (payload.t !== 'pong') onMessage(payload);
     },
   });

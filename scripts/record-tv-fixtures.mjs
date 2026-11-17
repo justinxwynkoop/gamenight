@@ -98,6 +98,8 @@ save('round-end');
 g.advance();
 save('board-round-2');
 playOut();
+// The Apple TV tests expect the show's rule here (only players with money play); everyone-plays is tested in Node.
+g.setFinalForAll(false);
 g.advance();
 save('final-wager');
 const eligible = g.final.eligible;
@@ -108,7 +110,7 @@ advance(2000);
 save('final-reveal-first');
 advance(T.finalStep + 10);
 save('final-reveal-more');
-advance(T.finalStep * 3);
+for (let i = 0; i < 20 && g.phase !== 'gameover'; i++) advance(T.finalStep + 10);
 save('gameover');
 g.playAgain();
 

@@ -30,7 +30,7 @@ export function easyControl(v, run) {
 
 export function eraControl(v, run) {
   if (!v.hasArchive) return null;
-  const note = v.archiveLoading ? 'Loading clues…' : v.archiveError ? 'Could not load that era. Try again.' : seasonLabel(v.archiveSeason);
+  const note = v.archiveLoading ? 'Loading clues…' : v.archiveError ? 'Real-show clues did not load. Tap an era to retry.' : seasonLabel(v.archiveSeason);
   return h('div', { class: 'jp-stack', style: { maxWidth: 'none' } },
     h('div', { class: 'jp-muted' }, `Clues from the real show: ${note || 'Loading…'}`),
     h('div', { class: 'jp-quick' }, v.eras.map((e) => h('button', { type: 'button', class: `jp-btn ${v.era === e ? '' : 'ghost'}`, style: { flex: '1 1 45%' }, onclick: () => run('setEra', { era: e }) }, ERA_LABELS[e] ?? e))));
@@ -52,7 +52,7 @@ export function packControls(v, run) {
     h('div', { class: 'jp-muted' }, v.asWritten
       ? 'Playing your own board just as you wrote it.'
       : `Question packs (${v.categoryCount} categories${v.categoryCount < 12 ? ', need 12+' : ''})`),
-    v.packs.map((pk) => btn([pk.selected ? '✓ ' : '', pk.title, ' ', h('small', { style: { display: 'inline', opacity: '.7' } }, pk.own ? 'your board' : `${pk.count} categories`)], () => run('togglePack', { pack: pk.id }), `${pk.selected ? '' : 'ghost'} left`)),
+    v.packs.map((pk) => btn([pk.selected ? '✓ ' : '', pk.title, ' ', h('small', { style: { display: 'inline', opacity: '.7' } }, pk.own ? 'full board' : `${pk.count} categories`)], () => run('togglePack', { pack: pk.id }), `${pk.selected ? '' : 'ghost'} left`)),
     v.asWritten && v.asWrittenChoice !== false && btn('Shuffle my board in with the others instead', () => run('setAsWritten', { on: false }), 'ghost left'),
     !v.asWritten && v.asWrittenChoice === false && btn('Play my board as written', () => run('setAsWritten', { on: null }), 'ghost left'),
     !v.asWritten && v.categoryCount >= 12 && btn('Preview and swap categories', () => run('previewBoard'), 'ring'));
@@ -61,6 +61,11 @@ export function packControls(v, run) {
 export function judgeControl(v, run) {
   return btn([v.hostJudges ? '✓ ' : '', '🎤 A host judges out loud'], () => run('setHostJudges', { on: !v.hostJudges }), `${v.hostJudges ? '' : 'ghost'} left`,
     v.hostJudges ? 'On: players say their answers aloud and the host rules on the host page.' : 'Off: players type their answers and the game checks them.');
+}
+
+export function finalControl(v, run) {
+  return btn([v.finalForAll ? '✓ ' : '', '🏁 Everyone plays Final Jeopardy'], () => run('setFinalForAll', { on: !v.finalForAll }), `${v.finalForAll ? '' : 'ghost'} left`,
+    v.finalForAll ? 'On: players at $0 or below play too, and can bet up to $1,000.' : 'Off: only players with money play, as on the show.');
 }
 
 export function answerTimeControl(v, run) {
@@ -74,6 +79,7 @@ export function lobbyControls(v, run) {
   return h('div', { class: 'jp-stack', style: { maxWidth: 'none' } },
     judgeControl(v, run),
     v.hostJudges && answerTimeControl(v, run),
+    finalControl(v, run),
     eraControl(v, run),
     packControls(v, run));
 }

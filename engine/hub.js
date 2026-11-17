@@ -3,11 +3,11 @@
 // send(clientId, message) to reply. The Node server wires it to WebSockets, the Apple TV app wires it to a hosted
 // message relay (Supabase Realtime), and tests wire it to plain functions.
 //
-// Messages from a client:  { t: 'hello', role: 'tv' | 'host' | 'player', pin?, token? }, { t: 'join', name, color, teamId, kind },
+// Messages from a client:  { t: 'hello', role: 'tv' | 'host' | 'player', pin?, token? }, { t: 'join', name, color, teamId, kind } or { t: 'join', reclaim: playerId } (an away player's seat),
 //                          { t: 'act', action, args } (host), { t: 'rpc', id, op, args } (host), { t: 'ping' }, and anything else from a joined player
 //                          (a buzz, a wager...) goes to the active game.
 // Messages to a client:    { t: 'state', view }, { t: 'bad-pin' }, { t: 'need-join' }, { t: 'joined', token },
-//                          { t: 'pong' }, { t: 'rpc-reply', id, ok, data | error }, { t: 'error', message }, and whatever reply the game gives a player.
+//                          { t: 'pong' }, { t: 'who' } (say hello again: the room does not know you, e.g. the TV restarted), { t: 'rpc-reply', id, ok, data | error }, { t: 'error', message }, and whatever reply the game gives a player.
 import { GameError } from '../lib.js';
 
 /**
@@ -44,6 +44,9 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
   }
 
   function handle(id, client, msg) {
+    // A client the room has never heard say hello (the TV page reloaded, or the Apple TV app restarted, and forgot it)
+    // is asked to introduce itself again, instead of its taps being dropped without a word.
+    if (msg.t !== 'hello' && !client.role) { send(id, { t: 'who' }); return; }
     switch (msg.t) {
       case 'hello': {
         if (msg.role === 'tv') client.role = 'tv';
@@ -61,7 +64,9 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
       }
       case 'join': {
         if (client.role !== 'player') return;
-        const p = room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === 'buzzer' ? 'buzzer' : 'phone' });
+        const p = msg.reclaim
+          ? room.reclaim(String(msg.reclaim))
+          : room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === 'buzzer' ? 'buzzer' : 'phone' });
         attachPlayer(client, p);
         send(id, { t: 'joined', token: p.token });
         return;

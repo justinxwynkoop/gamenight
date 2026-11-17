@@ -60,7 +60,9 @@ export function connect({ hello, onState, onMessage = () => {}, onStatus = () =>
     ws.onopen = () => { retry = 500; onStatus(true); ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello)); };
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.t === 'state') onState(msg.view); else onMessage(msg);
+      if (msg.t === 'state') onState(msg.view);
+      else if (msg.t === 'who') ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello));
+      else onMessage(msg);
     };
     ws.onclose = () => { onStatus(false); if (!closed) setTimeout(open, retry = Math.min(retry * 1.6, 3000)); };
     ws.onerror = () => ws.close();
@@ -88,7 +90,7 @@ function askForRoom(problem) {
     input.addEventListener('input', () => { input.value = cleanCode(input.value); if (input.value.length === 4) go(); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
     const overlay = h('div', { style: { position: 'fixed', inset: 0, zIndex: 99, background: 'rgba(8,12,40,.96)', color: '#fff', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '24px' } },
-      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four-digit room code shown on the TV.'), input, h('p', {}, h('button', { onclick: go }, 'Join'))));
+      h('div', {}, h('h1', {}, 'Game Night'), h('p', {}, problem ?? 'Type the four-digit room code shown on the TV.'), input, h('p', {}, h('button', { onclick: go, style: { font: 'inherit', fontSize: '22px', fontWeight: '800', padding: '14px 48px', marginTop: '18px', border: '0', borderRadius: '14px', background: '#ffd23f', color: '#0e0f1a', cursor: 'pointer' } }, 'Join'))));
     document.body.append(overlay);
     input.focus();
   });
@@ -205,3 +207,21 @@ export const qrImg = () => h('img', {
   src: qrSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}` : `/api/qr.svg?for=${encodeURIComponent(qrKey)}`,
   alt: 'Join QR code',
 });
+
+/**
+ * Keeps the screen on while the page is open (phones dim and lock between clues otherwise, and a laptop on the TV
+ * goes to sleep). Uses the Screen Wake Lock API where the browser has it (iPhone Safari 16.4+, Chrome, Edge); the
+ * lock is dropped by the browser whenever the page is hidden, so it is asked for again when the page comes back.
+ */
+export function keepAwake() {
+  if (!('wakeLock' in navigator)) return;
+  let lock = null;
+  const ask = async () => {
+    if (document.visibilityState !== 'visible' || lock) return;
+    try { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } catch { /* not allowed right now (battery saver, no tap yet) */ }
+  };
+  ask();
+  document.addEventListener('visibilitychange', ask);
+  // Some browsers only grant it after the person has touched the page.
+  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, ask, { passive: true });
+}

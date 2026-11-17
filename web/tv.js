@@ -3,9 +3,11 @@
 // On a home server it connects to the server like any other screen. On the website (online mode) there is no server:
 // the page runs the game engine itself (/tvhost.js, the same engine as the Apple TV app) and phones reach it through
 // the Supabase relay.
-import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg } from './common.js';
+import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg, keepAwake } from './common.js';
 import { audio } from './audio.js';
 import { menuScreen } from './menu.js';
+
+keepAwake();
 
 const app = document.getElementById('app');
 const conn = document.getElementById('conn');
@@ -77,6 +79,12 @@ async function startOnline() {
   if (last) render(last);
 }
 
+/** Full screen on and off (a laptop or a smart TV's browser on the TV). */
+function fullScreen() {
+  if (document.fullscreenElement) document.exitFullscreen?.();
+  else document.documentElement.requestFullscreen?.().catch(() => {});
+}
+
 /** Online: the corner menu with the host PIN (kept off the main screen, like the Apple TV's Play/Pause menu). */
 function menu() {
   const panel = h('div', { class: 'tvmenu-panel hidden' },
@@ -85,9 +93,18 @@ function menu() {
     h('p', {}, 'Host page: ', h('b', {}, `${location.host}/host`)),
     h('button', { onclick: () => hosted.newRoom() }, 'New room code'),
     h('button', { onclick: () => hosted.changeGame() }, 'Change game'),
+    h('button', { onclick: fullScreen }, 'Full screen (F)'),
   );
   const toggle = () => panel.classList.toggle('hidden');
-  addEventListener('keydown', (e) => { if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') toggle(); });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') toggle();
+    if ((e.key === 'f' || e.key === 'F') && !e.target.closest?.('input, textarea')) fullScreen();
+  });
+  // The button fades away when nobody is using the mouse or keyboard, so it never sits on a score during play.
+  let idle = null;
+  const wake = () => { document.body.classList.remove('tv-idle'); clearTimeout(idle); idle = setTimeout(() => document.body.classList.add('tv-idle'), 4000); };
+  for (const ev of ['mousemove', 'mousedown', 'keydown', 'touchstart']) addEventListener(ev, wake, { passive: true });
+  wake();
   return h('div', { class: 'tvmenu' }, h('button', { class: 'tvmenu-btn', onclick: toggle }, 'Menu (M)'), panel);
 }
 

@@ -9,7 +9,7 @@
 // Fairness: buzz() is called in the order messages arrive at the room and stamps the press with the room clock. Device
 // clocks are never consulted. A press that loses by a hair is still timed, so everyone can see the buzz order.
 import { GameError, fail, cleanName, int } from '../../lib.js';
-import { judge } from './judge.js';
+import { judge, asksForPerson } from './judge.js';
 import { parseArchive, pickSeason, ERAS } from './archive.js';
 import { HOUSE_PACKS } from './packs/index.js';
 
@@ -41,7 +41,8 @@ const REACT_GAP = 1200;    // ms between reactions from one player
 const REACT_LIFE = 4000;   // ms a reaction stays in the view
 export const STREAK_HOT = 3;      // correct answers in a row to be "on fire"
 const MAX_ADJUST = 1000000;
-export const MAX_PLAYERS = 8;
+export const MAX_PLAYERS = 10;
+export const FINAL_FLOOR = 1000;   // the most a player with little or no money may bet in Final Jeopardy when everyone plays
 
 export const readingTime = (text) => Math.max(2500, Math.min(7000, 1200 + String(text).length * 45));
 
@@ -95,7 +96,7 @@ export class JeopardyGame {
     this.ownPacks = [];
     this.packs = [];
     this.selected = new Set();
-    this.settings = { answerTime: 10, hostJudges: false, asWritten: null };
+    this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true };
     this.era = 'any';
     this.archiveSeason = null;
     this.archiveRequest = null;     // { id, era } while a new season is wanted; the app downloads it
@@ -196,7 +197,7 @@ export class JeopardyGame {
       if (!set) continue;
       try { validateSet(set); } catch { continue; }
       own.push(normalizePack(`own-${id}`, {
-        title: set.title, description: 'One of your boards', selected: false, own: true,
+        title: set.title, description: 'A full board from the question editor (Questions on the host page)', selected: false, own: true,
         categories: set.categories.map((c) => ({
           name: c.name,
           clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble })),
@@ -270,6 +271,12 @@ export class JeopardyGame {
     this.#changed();
   }
   setHostJudges(on) { this.#lobbyOnly(); this.settings.hostJudges = !!on; this.#changed(); }
+  /** Everyone plays Final Jeopardy (on), or only players with money (the show's rule). Any time before the final. */
+  setFinalForAll(on) {
+    if (this.phase.startsWith('final') || this.phase === 'gameover') fail('Final Jeopardy has started');
+    this.settings.finalForAll = !!on;
+    this.#changed();
+  }
   setAsWritten(on) { this.#lobbyOnly(); this.settings.asWritten = on === null ? null : !!on; this.draft = null; this.#changed(); }
   setAnswerTime(sec) {
     sec = Number(sec);
@@ -535,7 +542,7 @@ export class JeopardyGame {
   submitAnswer(pid, text, timedOut, verdict) {
     const spoken = text === null;
     text = spoken ? null : String(text || '').slice(0, 80);
-    const decide = () => (verdict !== undefined ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt]));
+    const decide = () => (verdict !== undefined ? verdict : !timedOut && judge(text, [this.clue.a, ...this.clue.alt], { person: asksForPerson(this.clue.q) }));
     const shown = () => (spoken ? null : text || '(no answer)');
     if (this.phase === 'answering' && this.clue.buzzedId === pid) {
       const correct = decide();
@@ -583,6 +590,11 @@ export class JeopardyGame {
     this.phase = 'dd-answer';
     this.#setTimer(readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.submitAnswer(pid, '', true), 'answer');
     this.#changed();
+  }
+  /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
+  maxFinalWager(pid) {
+    const score = Math.max(0, this.#player(pid)?.score ?? 0);
+    return this.settings.finalForAll ? Math.max(score, FINAL_FLOOR) : score;
   }
   maxDDWager(pid) { return Math.max(this.#player(pid)?.score ?? 0, 1000 * this.round); }
 
@@ -669,7 +681,8 @@ export class JeopardyGame {
   // ---------- the final round ----------
   #startFinal() {
     this.round = this.rounds.length + 1;
-    const eligible = this.#order().filter((id) => (this.#player(id)?.score ?? 0) > 0);
+    // On the show only players with money play the final. At home everyone does by default, so nobody just watches.
+    const eligible = this.#order().filter((id) => this.settings.finalForAll ? !!this.#player(id) : (this.#player(id)?.score ?? 0) > 0);
     if (!this.finalClue || eligible.length === 0) {
       this.phase = 'gameover';
       this.#clearTimer();
@@ -686,7 +699,7 @@ export class JeopardyGame {
     const p = this.#player(pid);
     let w = Math.round(Number(amount));
     if (!Number.isFinite(w)) fail('Enter a number');
-    w = clamp(w, 0, p.score);
+    w = clamp(w, 0, this.maxFinalWager(pid));
     this.final.wagers[pid] = w;
     this.#changed();
     if (!this.final.eligible.some((id) => this.#connected(id) && !(id in this.final.wagers))) this.#beginFinalClue();
@@ -713,7 +726,7 @@ export class JeopardyGame {
     const f = this.final;
     for (const id of f.eligible) {
       const ans = f.answers[id] || '';
-      f.results[id] = { answer: ans || '(no answer)', correct: judge(ans, [f.a, ...f.alt]), shown: false, applied: false };
+      f.results[id] = { answer: ans || '(no answer)', correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
     }
     f.revealOrder = f.eligible.slice().sort((a, b) => this.#player(a).score - this.#player(b).score);
     f.revealIndex = -1;
@@ -760,6 +773,8 @@ export class JeopardyGame {
     this.#resetStats();
     this.#resetRun();
     this.#refreshPacks();
+    // A room brought back after the TV restarted has no real-show topics yet: fetch them again for the next game.
+    if (!this.archivePacks.length && !this.archiveLoading) this.#requestArchive(this.era);
     this.#changed();
   }
   /** End a game that is under way, back to the lobby (the host's "end game"). */
@@ -768,6 +783,8 @@ export class JeopardyGame {
     this.#resetStats();
     this.#resetRun();
     this.#refreshPacks();
+    // A room brought back after the TV restarted has no real-show topics yet: fetch them again for the next game.
+    if (!this.archivePacks.length && !this.archiveLoading) this.#requestArchive(this.era);
     this.#changed();
   }
 
@@ -825,6 +842,7 @@ export class JeopardyGame {
       case 'adjustScore': return this.room.adjustScore(String(a.id ?? a.targetPid ?? ''), { delta: a.delta, set: a.set });
       case 'toggleEasy': return this.toggleEasy();
       case 'setAnswerTime': return this.setAnswerTime(a.seconds);
+      case 'setFinalForAll': return this.setFinalForAll(a.on);
       case 'setEra': return this.setEra(String(a.era ?? ''));
       case 'setHostJudges': return this.setHostJudges(a.on);
       case 'setAsWritten': return this.setAsWritten(a.on === null ? null : a.on);
@@ -835,7 +853,7 @@ export class JeopardyGame {
     }
   }
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  static CAPTAIN_ACTIONS = new Set(['kick', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten']);
+  static CAPTAIN_ACTIONS = new Set(['kick', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -903,6 +921,7 @@ export class JeopardyGame {
       },
       lastResult: this.lastResult,
       answerTime: this.settings.answerTime,
+      finalForAll: !!this.settings.finalForAll,
       answerTimes: ANSWER_TIMES,
       hotStreak: STREAK_HOT,
       reactions: this.reactions.filter((r) => now - r.at < REACT_LIFE).map((r) => ({ id: r.id, pid: r.pid, e: r.e })),
@@ -951,6 +970,7 @@ export class JeopardyGame {
       id: p.id, score: p.score, isCaptain: this.captain() === p.id,
       maxDD: this.phase === 'dd-wager' ? this.maxDDWager(p.id) : null,
       finalWager: this.final ? this.final.wagers[p.id] : undefined,
+      maxFinal: this.phase === 'final-wager' ? this.maxFinalWager(p.id) : null,
       finalAnswer: this.final ? this.final.answers[p.id] : undefined,
     } : null;
     return v;

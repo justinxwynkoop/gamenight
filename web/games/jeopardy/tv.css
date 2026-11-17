@@ -28,6 +28,12 @@
 .bw .joininfo b { font-family: var(--display); font-weight: 900; color: var(--ink); background: var(--sun); font-size: 2.4vh; letter-spacing: .15em; padding: .4vh .9vw; border-radius: 1vh; }
 .bw main { flex: 1; position: relative; z-index: 1; padding: 0 2vw; min-height: 0; display: flex; flex-direction: column; }
 .bw footer { display: flex; gap: 1vw; padding: 2vh 2vw; justify-content: center; flex-wrap: wrap; }
+/* Nine or ten players: smaller chips so they still fit on one row */
+.bw footer.many { gap: .5vw; }
+.bw footer.many .chip { min-width: 0; padding: .7vh .9vw .7vh .7vh; gap: .5vw; }
+.bw footer.many .av { width: 3.6vh; height: 3.6vh; font-size: 1.6vh; }
+.bw footer.many .chip .n { font-size: 1.6vh; max-width: 8vw; }
+.bw footer.many .chip .s { font-size: 2.1vh; }
 
 /* Score chips */
 .bw .chip { min-width: 12vw; background: var(--panel); border-radius: 2vh; padding: 1vh 1.4vw 1vh 1vh; border: 1px solid var(--line); display: flex; align-items: center; gap: .8vw; position: relative; transition: transform .25s, box-shadow .25s, background .25s; color: var(--text); }
@@ -140,7 +146,10 @@
 .bw:not(.can-act) .packs button { pointer-events: none; }
 
 /* The TV's own controls (only where the TV may act: the website's TV page) */
-.bw .controls { position: fixed; right: 1.5vw; bottom: 16vh; display: flex; flex-direction: column; gap: .8vh; opacity: .25; transition: opacity .2s; z-index: 5; }
+.bw .bottombar { display: flex; align-items: center; gap: 1vw; padding-right: 2vw; }
+.bw .bottombar footer { flex: 1; }
+.bw .bottombar:not(:has(footer)) { padding: 1.4vh 2vw; }
+.bw .controls { margin-left: auto; display: flex; flex-direction: row; gap: .8vw; opacity: .45; transition: opacity .2s; z-index: 5; }
 .bw .controls:hover, .bw .controls:focus-within { opacity: 1; }
 .bw .controls button { font-size: 1.8vh; padding: .8vh 1.2vw; }
 

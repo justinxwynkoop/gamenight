@@ -140,7 +140,7 @@ export function mount(container, { send, flash }) {
           v.timer && timerEl(true), h('div', { class: 'jp-muted' }, 'The host will decide if you’re right.'))] };
       }
       return { key: `ans-${id}`, nodes: answerForm('No need to phrase it as a question. Small typos are fine.', 'answer', 'Your answer',
-        [h('div', { class: 'jp-big jp-ok', style: { textAlign: 'center' } }, 'YOU GOT IT!'), h('div', { style: { textAlign: 'center' } }, myTime(c)), head]) };
+        [h('div', { class: 'jp-big jp-ok', style: { textAlign: 'center' } }, 'YOU BUZZED FIRST!'), h('div', { style: { textAlign: 'center' } }, myTime(c)), head]) };
     }
     let cls = 'idle'; let label = 'WAIT'; let sub = 'The buzzers unlock after the clue is read. Buzzing early locks you out for a moment.';
     if (ph === 'open') { cls = 'live'; label = 'BUZZ!'; sub = 'Go go go!'; }
@@ -201,9 +201,9 @@ export function mount(container, { send, flash }) {
 
   function finalWagerScreen() {
     const f = v.final;
-    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-msg' }, 'You need a positive score to play Final Jeopardy.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
+    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-msg' }, 'Only players with money play Final Jeopardy tonight.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
     if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, 'Waiting for everyone else…')) };
-    return { key: 'fw', nodes: wagerForm('final-wager', 0, me().score,
+    return { key: 'fw', nodes: wagerForm('final-wager', 0, me().maxFinal ?? me().score,
       [h('div', { class: 'jp-big jp-sun', style: { textAlign: 'center' } }, 'FINAL JEOPARDY'), h('div', { class: 'jp-cat', style: { textAlign: 'center', fontSize: '18px' } }, f.category)]) };
   }
 
@@ -342,7 +342,7 @@ export function mount(container, { send, flash }) {
         if (m.result === 'won') navigator.vibrate?.(60);
         else if (m.result === 'early') { navigator.vibrate?.([40, 40, 40]); say('Too early! Wait for the red button.', 900); }
         else if (m.result === 'late') say(`Beaten to it! Your time: ${secs(m.ms)}s`, 2500);
-      } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer sent');
+      } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer locked in', 'ok');
     },
     destroy() { clearInterval(ticker); clearTimeout(noteTimer); },
   };

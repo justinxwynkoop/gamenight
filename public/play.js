@@ -1,6 +1,8 @@
 // The phone page. It owns joining and the header (name, score), and hands the
 // rest of the screen to the active game's module (/games/<id>/player.js).
-import { h, scoreText, ink, COLORS, connect, store, unitById, onlineRoom, changeRoom } from './common.js';
+import { h, scoreText, ink, COLORS, connect, store, unitById, onlineRoom, changeRoom, keepAwake } from './common.js';
+
+keepAwake();
 
 const screen = document.getElementById('screen');
 const you = document.getElementById('you');
@@ -55,8 +57,8 @@ setTimeout(() => {
       h('a', { class: 'btn primary', href: '/check', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, 'Test my connection')));
 }, 6000);
 
-function flash(text) {
-  const t = h('div', { class: 'toast' }, text);
+function flash(text, kind = '') {
+  const t = h('div', { class: `toast ${kind}` }, text);
   document.body.append(t);
   setTimeout(() => t.remove(), 2500);
 }
@@ -70,7 +72,14 @@ function joinScreen() {
   }));
   return h('div', { class: 'card' },
     h('h2', {}, view.game?.lobbyTitle ?? 'Join the game'),
-    h('label', {}, 'Name'), nameIn,
+    view.room.away?.length ? [
+      h('label', {}, 'Already playing? Tap your name to get your seat and score back'),
+      h('div', { class: 'rejoin' }, view.room.away.map((p) => h('button', {
+        type: 'button', style: { background: p.color, color: ink(p.color) },
+        onclick: () => { joinError = ''; net.send({ t: 'join', reclaim: p.id }); },
+      }, p.name))),
+    ] : null,
+    h('label', {}, view.room.away?.length ? 'New player? Your name' : 'Name'), nameIn,
     !teams && [h('label', {}, 'Colour'), h('div', { class: 'colors' }, colorBtns)],
     teams && h('p', { class: 'tag' }, 'You’ll be put on a team. Your team’s colour lights up on this screen.'),
     joinError && h('div', { class: 'err' }, joinError),

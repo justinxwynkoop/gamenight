@@ -112,3 +112,33 @@ test('a buzz from a player reaches the game and its reply comes back', async () 
   assert.equal(to(id).at(-1).t, 'buzz-result');
   assert.equal(to(id).at(-1).ok, true);
 });
+
+test('a TV that restarted asks a phone it does not know to say hello again, instead of ignoring it', () => {
+  const { hub, to } = setup();
+  hub.receive('p1', { t: 'ping' });
+  assert.deepEqual(to('p1'), [{ t: 'who' }], 'a ping from a stranger gets "who are you?", not a pong');
+  hub.receive('p2', { t: 'act', action: 'start', args: {} });
+  assert.deepEqual(to('p2'), [{ t: 'who' }]);
+  hub.receive('p1', { t: 'hello', role: 'player' });
+  assert.ok(to('p1').some((m) => m.t === 'need-join'));
+  hub.receive('p1', { t: 'ping' });
+  assert.deepEqual(to('p1').at(-1), { t: 'pong' }, 'once it has said hello, pings are answered as usual');
+});
+
+test('a player on a new phone takes their own seat back, but never one still in use', async () => {
+  const { hub, room, last, to, tick } = setup();
+  hub.receive('p1', { t: 'hello', role: 'player' });
+  hub.receive('p1', { t: 'join', name: 'Ann' });
+  const ann = room.players[0];
+  hub.receive('p2', { t: 'hello', role: 'player' });
+  hub.receive('p2', { t: 'join', reclaim: ann.id });
+  assert.match(last('p2', 'error').message, /still playing/);
+  hub.close('p1');   // Ann's old phone is gone
+  hub.receive('p3', { t: 'hello', role: 'player' });
+  await tick();
+  assert.deepEqual(to('p3').filter((m) => m.t === 'state').at(-1).view.room.away.map((p) => p.name), ['Ann'], 'a new phone sees who is away');
+  hub.receive('p3', { t: 'join', reclaim: ann.id });
+  assert.ok(last('p3', 'joined').token);
+  assert.equal(room.connected.has(ann.id), true);
+  assert.equal(room.players.length, 1, 'no second Ann');
+});

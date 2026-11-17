@@ -5,7 +5,7 @@
     "teamCount": 0,
     "fixedTeams": 0,
     "individualsOnly": true,
-    "maxPlayers": 8,
+    "maxPlayers": 10,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [],
@@ -40,6 +40,7 @@
     "settings": {
       "sound": true,
       "volume": 70,
+      "lateJoin": false,
       "ping": 0
     }
   },
@@ -84,6 +85,7 @@
     "clue": null,
     "lastResult": null,
     "answerTime": 10,
+    "finalForAll": true,
     "answerTimes": [
       5,
       10,
@@ -106,7 +108,7 @@
       {
         "id": "own-family-night",
         "title": "Family Night Sampler",
-        "description": "One of your boards",
+        "description": "A full board from the question editor (Questions on the host page)",
         "count": 6,
         "selected": false,
         "easy": false,
@@ -201,6 +203,6 @@
     "draft": null,
     "asWritten": false,
     "asWrittenChoice": null,
-    "maxPlayers": 8
+    "maxPlayers": 10
   }
 }

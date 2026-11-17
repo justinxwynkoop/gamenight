@@ -5,7 +5,7 @@ This is what the host and players do in each game. Setup and running are in the 
 
 ## Jeopardy
 
-Jeopardy is played by **individuals, up to eight**, with every phone as a buzzer. It runs on the Apple TV, and the
+Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. It runs on the Apple TV, and the
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
 touching the host page. The first player to join is the **captain**.
 
@@ -98,7 +98,7 @@ repo; their survey numbers are made up, not real survey results.
 
 ## Players and teams
 
-- **Jeopardy** is always individuals, up to eight players.
+- **Jeopardy** is always individuals, up to ten players.
 - **Family Feud** is always two teams, Red and Blue. Players are dealt onto them at random and the host can move anyone,
   rename a team, or **Shuffle teams** in the lobby. Rearranging only happens in the lobby; once a game starts nothing
   moves, and anyone who joins late is put on the smaller team.

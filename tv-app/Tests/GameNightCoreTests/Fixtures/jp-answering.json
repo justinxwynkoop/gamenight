@@ -5,7 +5,7 @@
     "teamCount": 0,
     "fixedTeams": 0,
     "individualsOnly": true,
-    "maxPlayers": 8,
+    "maxPlayers": 10,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [],
@@ -40,6 +40,7 @@
     "settings": {
       "sound": true,
       "volume": 70,
+      "lateJoin": false,
       "ping": 0
     }
   },
@@ -263,6 +264,7 @@
     },
     "lastResult": null,
     "answerTime": 10,
+    "finalForAll": true,
     "answerTimes": [
       5,
       10,
