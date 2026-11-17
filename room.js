@@ -42,7 +42,7 @@ export class Room {
     this.teams = []; // {id, key, name, color, score}
     this.gameId = null;
     this.game = null;
-    this.settings = { sound: true, volume: 70 }; // sound plays on the TV
+    this.settings = { sound: true, volume: 70, lateJoin: false }; // sound plays on the TV; lateJoin lets new players in mid-game
     this.soundPing = 0; // bumped by the host's "test sound" so the TV can play one
     this.connected = new Set(); // runtime only: player ids with a live socket
   }
@@ -68,7 +68,7 @@ export class Room {
     this.teamCount = data.teamCount === 4 ? 4 : 2;
     this.players = data.players ?? [];
     this.teams = (data.teams ?? []).map((t, i) => ({ key: TEAM_DEFS[i]?.key ?? `team${i + 1}`, ...t }));
-    this.settings = { sound: true, volume: 70, ...data.settings };
+    this.settings = { sound: true, volume: 70, lateJoin: false, ...data.settings };
     this.gameId = null; this.game = null;
     if (data.gameId && this.games[data.gameId]) {
       this.gameId = data.gameId;
@@ -102,6 +102,8 @@ export class Room {
     name = cleanName(name);
     if (!name) fail('Enter a name');
     if (this.players.length >= this.#maxPlayers()) fail('The game is full');
+    // The room code is short and the site is public, so a game under way only takes new players if the host says so.
+    if (this.inProgress() && !this.settings.lateJoin) fail('The game has started. Ask the host to let new players in (Settings).');
     if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail('That name is taken');
     color = COLORS.includes(color) ? color : this.#freeColor();
     const player = {
@@ -269,8 +271,9 @@ export class Room {
     this.changed();
   }
   resetScores() { this.units().forEach((u) => { u.score = 0; }); }
-  setRoomSettings({ sound, volume }) {
+  setRoomSettings({ sound, volume, lateJoin }) {
     if (typeof sound === 'boolean') this.settings.sound = sound;
+    if (typeof lateJoin === 'boolean') this.settings.lateJoin = lateJoin;
     if (volume !== undefined) {
       const v = int(volume);
       if (!(v >= 0 && v <= 100)) fail('Volume must be 0 to 100');

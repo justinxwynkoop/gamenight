@@ -342,6 +342,8 @@ function settingsTab(game) {
     toggle({ label: 'Sound effects', sub: 'Buzzers, right and wrong answers, countdown ticks', checked: settings.sound, onchange: (on) => act('setRoomSettings', { sound: on }) }),
     h('label', { class: 'field' }, h('span', {}, `Volume ${settings.volume}%`), vol),
     button({ label: 'Play a test sound on the TV', icon: 'volume', onclick: () => act('testSound') })));
+  cards.push(card(eyebrow('Players'),
+    toggle({ label: 'Let new players join during a game', sub: 'Off: once a game starts, only the players already in can come back', checked: !!settings.lateJoin, onchange: (on) => act('setRoomSettings', { lateJoin: on }) })));
   cards.push(card(eyebrow('Questions'), h('p', { class: 'dim' }, 'Write your own boards, or edit the ones that came with the game.'),
     h('a', { class: 'b b-block', href: `/editor${room.gameId ? `?game=${room.gameId}` : ''}`, style: { textDecoration: 'none' } }, icon('edit', 20), h('span', {}, 'Open the question editor'))));
   if (lobby && room.games.length > 1) cards.push(card(eyebrow('Game'), gamePicker()));
