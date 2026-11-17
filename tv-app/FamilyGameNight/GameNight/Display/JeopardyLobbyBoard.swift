@@ -99,11 +99,12 @@ struct JeoScoreBar: View {
     let game: JeopardyState
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: game.players.count > 8 ? 8 : 14) {
             ForEach(game.players) { player in
                 JeoScoreChip(
                     player: player,
                     compact: game.players.count > 5,
+                    tiny: game.players.count > 8,
                     picking: game.phase == .board && player.id == game.controllerId,
                     buzzed: game.phase == .answering && game.clue?.buzzedId == player.id,
                     hot: (player.streak ?? 0) >= (game.hotStreak ?? 3)
@@ -117,23 +118,24 @@ struct JeoScoreBar: View {
 struct JeoScoreChip: View {
     let player: JeoPlayer
     let compact: Bool
+    var tiny = false   // nine or ten players: smaller still, so ten chips fit across the screen
     let picking: Bool
     let buzzed: Bool
     var hot = false
 
     var body: some View {
         let color = Color(playerHex: player.color)
-        HStack(spacing: 14) {
-            BWAvatar(name: player.name, color: color, size: compact ? 44 : 54)
+        HStack(spacing: tiny ? 8 : 14) {
+            BWAvatar(name: player.name, color: color, size: tiny ? 34 : compact ? 44 : 54)
             VStack(alignment: .leading, spacing: 0) {
-                Text(player.name).font(BW.body(compact ? 20 : 22, .semibold)).foregroundColor(BW.muted).lineLimit(1)
+                Text(player.name).font(BW.body(tiny ? 16 : compact ? 20 : 22, .semibold)).foregroundColor(BW.muted).lineLimit(1)
                 Text(BW.money(player.score))
-                    .font(BW.display(compact ? 24 : 30))
+                    .font(BW.display(tiny ? 19 : compact ? 24 : 30))
                     .foregroundColor(player.score < 0 ? BW.bad : BW.text)
                     .lineLimit(1)
             }
         }
-        .padding(.leading, 14).padding(.trailing, compact ? 20 : 28).padding(.vertical, 12)
+        .padding(.leading, tiny ? 8 : 14).padding(.trailing, tiny ? 12 : compact ? 20 : 28).padding(.vertical, tiny ? 8 : 12)
         .background(RoundedRectangle(cornerRadius: 22).fill(buzzed ? color.opacity(0.28) : BW.surface))
         .overlay(RoundedRectangle(cornerRadius: 22).stroke(picking || buzzed ? color : BW.line, lineWidth: picking || buzzed ? 4 : 1))
         .overlay(alignment: .top) {

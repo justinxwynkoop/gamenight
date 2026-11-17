@@ -126,7 +126,7 @@ function frame(mainKids, { chips = true } = {}) {
 function footer() {
   if (['lobby', 'round-end', 'gameover'].includes(g.phase)) return null;
   const buzzed = g.phase === 'answering' ? g.clue?.buzzedId : null;
-  return h('footer', {}, g.players.map((p) => h('div', {
+  return h('footer', { class: g.players.length > 8 ? 'many' : '' }, g.players.map((p) => h('div', {
     class: `chip ${p.connected ? '' : 'off'} ${g.phase === 'board' && p.id === g.controllerId ? 'ctrl' : ''} ${buzzed === p.id ? 'buzzed' : ''}`,
     style: { '--c': p.color },
   }, av(p),

@@ -201,9 +201,9 @@ export function mount(container, { send, flash }) {
 
   function finalWagerScreen() {
     const f = v.final;
-    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-msg' }, 'You need a positive score to play Final Jeopardy.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
+    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-msg' }, 'Only players with money play Final Jeopardy tonight.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
     if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, 'Waiting for everyone else…')) };
-    return { key: 'fw', nodes: wagerForm('final-wager', 0, me().score,
+    return { key: 'fw', nodes: wagerForm('final-wager', 0, me().maxFinal ?? me().score,
       [h('div', { class: 'jp-big jp-sun', style: { textAlign: 'center' } }, 'FINAL JEOPARDY'), h('div', { class: 'jp-cat', style: { textAlign: 'center', fontSize: '18px' } }, f.category)]) };
   }
 

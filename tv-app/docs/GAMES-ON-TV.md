@@ -22,7 +22,7 @@ bundled in `GameNight/Fonts`): the lobby with eight seats, the question packs, a
 preview you can swap categories in; the board, with the player who picks marked; the clue, with a countdown ring, a big
 **BUZZ IN!** and who buzzed and how fast; the answer with everyone's buzz times; Daily Double; round end; Final Jeopardy
 (wagers locked in, clue and timer, answers revealed one by one); and the winner with awards. Scores run along the
-bottom, with 🔥 for streaks, and emoji reactions from phones float up the screen. It is always individuals, up to eight.
+bottom, with 🔥 for streaks, and emoji reactions from phones float up the screen. It is always individuals, up to ten.
 The code is `GameNight/Display/BuzzTheme.swift`, `JeopardyLobbyBoard.swift` and `JeopardyClueFinal.swift`.
 
 The lobby fetches one season of the public clue archive for each room (`GameNightClient.loadArchive`) and keeps nothing.

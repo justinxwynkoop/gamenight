@@ -340,7 +340,8 @@
   var REACT_GAP = 1200;
   var REACT_LIFE = 4e3;
   var STREAK_HOT = 3;
-  var MAX_PLAYERS2 = 8;
+  var MAX_PLAYERS2 = 10;
+  var FINAL_FLOOR = 1e3;
   var readingTime = (text) => Math.max(2500, Math.min(7e3, 1200 + String(text).length * 45));
   function validateSet(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
@@ -389,7 +390,7 @@
       this.ownPacks = [];
       this.packs = [];
       this.selected = /* @__PURE__ */ new Set();
-      this.settings = { answerTime: 10, hostJudges: false, asWritten: null };
+      this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true };
       this.era = "any";
       this.archiveSeason = null;
       this.archiveRequest = null;
@@ -492,6 +493,12 @@
     setHostJudges(on) {
       __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
       this.settings.hostJudges = !!on;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** Everyone plays Final Jeopardy (on), or only players with money (the show's rule). Any time before the final. */
+    setFinalForAll(on) {
+      if (this.phase.startsWith("final") || this.phase === "gameover") fail("Final Jeopardy has started");
+      this.settings.finalForAll = !!on;
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     setAsWritten(on) {
@@ -719,6 +726,11 @@
       __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.submitAnswer(pid, "", true), "answer");
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
+    /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
+    maxFinalWager(pid) {
+      const score = Math.max(0, __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid)?.score ?? 0);
+      return this.settings.finalForAll ? Math.max(score, FINAL_FLOOR) : score;
+    }
     maxDDWager(pid) {
       return Math.max(__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid)?.score ?? 0, 1e3 * this.round);
     }
@@ -785,7 +797,7 @@
       const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid);
       let w = Math.round(Number(amount));
       if (!Number.isFinite(w)) fail("Enter a number");
-      w = clamp(w, 0, p.score);
+      w = clamp(w, 0, this.maxFinalWager(pid));
       this.final.wagers[pid] = w;
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       if (!this.final.eligible.some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !(id in this.final.wagers))) __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this);
@@ -899,6 +911,8 @@
           return this.toggleEasy();
         case "setAnswerTime":
           return this.setAnswerTime(a.seconds);
+        case "setFinalForAll":
+          return this.setFinalForAll(a.on);
         case "setEra":
           return this.setEra(String(a.era ?? ""));
         case "setHostJudges":
@@ -987,6 +1001,7 @@
         },
         lastResult: this.lastResult,
         answerTime: this.settings.answerTime,
+        finalForAll: !!this.settings.finalForAll,
         answerTimes: ANSWER_TIMES,
         hotStreak: STREAK_HOT,
         reactions: this.reactions.filter((r) => now - r.at < REACT_LIFE).map((r) => ({ id: r.id, pid: r.pid, e: r.e })),
@@ -1037,6 +1052,7 @@
         isCaptain: this.captain() === p.id,
         maxDD: this.phase === "dd-wager" ? this.maxDDWager(p.id) : null,
         finalWager: this.final ? this.final.wagers[p.id] : void 0,
+        maxFinal: this.phase === "final-wager" ? this.maxFinalWager(p.id) : null,
         finalAnswer: this.final ? this.final.answers[p.id] : void 0
       } : null;
       return v;
@@ -1380,7 +1396,7 @@
   // ---------- the final round ----------
   startFinal_fn = function() {
     this.round = this.rounds.length + 1;
-    const eligible = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => (__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.score ?? 0) > 0);
+    const eligible = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => this.settings.finalForAll ? !!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id) : (__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.score ?? 0) > 0);
     if (!this.finalClue || eligible.length === 0) {
       this.phase = "gameover";
       __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
@@ -1443,7 +1459,7 @@
     return this.room.players.map((p) => ({ id: p.id, name: p.name, score: p.score, color: p.color, connected: __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, p.id), streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.id).streak }));
   };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js
@@ -2363,6 +2379,17 @@
       this.changed();
       return player;
     }
+    /**
+     * Someone whose phone lost its place (a new phone, a different browser, cleared data) takes their own seat back:
+     * only a player who is away, never one who is still playing on another phone.
+     */
+    reclaim(playerId) {
+      const p = this.players.find((x) => x.id === playerId) ?? fail("That player has left the game");
+      if (this.connected.has(p.id)) fail(`${p.name} is still playing on another phone`);
+      p.token = newToken();
+      this.changed();
+      return p;
+    }
     setConnected(playerId, on) {
       on ? this.connected.add(playerId) : this.connected.delete(playerId);
       this.changed();
@@ -2533,7 +2560,8 @@
       const p = this.players.find((x) => x.id === playerId);
       const me = p ? { id: p.id, name: p.name, color: p.color, unitId: this.unitOf(p)?.id ?? null } : null;
       const game = p && this.game?.playerView ? this.game.playerView(p) : base.game;
-      return { ...base, game, room: { ...base.room, me } };
+      const away = p ? void 0 : this.players.filter((x) => !this.connected.has(x.id)).map((x) => ({ id: x.id, name: x.name, color: x.color }));
+      return { ...base, game, room: { ...base.room, me, ...away ? { away } : {} } };
     }
   };
   _Room_instances = new WeakSet();
@@ -2715,7 +2743,7 @@
         }
         case "join": {
           if (client.role !== "player") return;
-          const p = room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === "buzzer" ? "buzzer" : "phone" });
+          const p = msg.reclaim ? room.reclaim(String(msg.reclaim)) : room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === "buzzer" ? "buzzer" : "phone" });
           attachPlayer(client, p);
           send(id, { t: "joined", token: p.token });
           return;

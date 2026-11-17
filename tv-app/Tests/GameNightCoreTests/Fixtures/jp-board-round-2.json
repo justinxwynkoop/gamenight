@@ -5,7 +5,7 @@
     "teamCount": 0,
     "fixedTeams": 0,
     "individualsOnly": true,
-    "maxPlayers": 8,
+    "maxPlayers": 10,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [],
@@ -243,6 +243,7 @@
       "streak": 27
     },
     "answerTime": 10,
+    "finalForAll": true,
     "answerTimes": [
       5,
       10,

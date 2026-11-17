@@ -116,6 +116,17 @@ export class Room {
     this.changed();
     return player;
   }
+  /**
+   * Someone whose phone lost its place (a new phone, a different browser, cleared data) takes their own seat back:
+   * only a player who is away, never one who is still playing on another phone.
+   */
+  reclaim(playerId) {
+    const p = this.players.find((x) => x.id === playerId) ?? fail('That player has left the game');
+    if (this.connected.has(p.id)) fail(`${p.name} is still playing on another phone`);
+    p.token = newToken();   // the old phone, if it ever wakes up, no longer speaks for this player
+    this.changed();
+    return p;
+  }
   setConnected(playerId, on) {
     on ? this.connected.add(playerId) : this.connected.delete(playerId);
     this.changed();
@@ -360,6 +371,8 @@ export class Room {
     const p = this.players.find((x) => x.id === playerId);
     const me = p ? { id: p.id, name: p.name, color: p.color, unitId: this.unitOf(p)?.id ?? null } : null;
     const game = p && this.game?.playerView ? this.game.playerView(p) : base.game;
-    return { ...base, game, room: { ...base.room, me } };
+    // A phone that has not joined sees who is away, so someone on a new phone can take their own seat back.
+    const away = p ? undefined : this.players.filter((x) => !this.connected.has(x.id)).map((x) => ({ id: x.id, name: x.name, color: x.color }));
+    return { ...base, game, room: { ...base.room, me, ...(away ? { away } : {}) } };
   }
 }

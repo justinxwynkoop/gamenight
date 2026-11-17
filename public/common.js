@@ -207,3 +207,21 @@ export const qrImg = () => h('img', {
   src: qrSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}` : `/api/qr.svg?for=${encodeURIComponent(qrKey)}`,
   alt: 'Join QR code',
 });
+
+/**
+ * Keeps the screen on while the page is open (phones dim and lock between clues otherwise, and a laptop on the TV
+ * goes to sleep). Uses the Screen Wake Lock API where the browser has it (iPhone Safari 16.4+, Chrome, Edge); the
+ * lock is dropped by the browser whenever the page is hidden, so it is asked for again when the page comes back.
+ */
+export function keepAwake() {
+  if (!('wakeLock' in navigator)) return;
+  let lock = null;
+  const ask = async () => {
+    if (document.visibilityState !== 'visible' || lock) return;
+    try { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } catch { /* not allowed right now (battery saver, no tap yet) */ }
+  };
+  ask();
+  document.addEventListener('visibilitychange', ask);
+  // Some browsers only grant it after the person has touched the page.
+  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, ask, { passive: true });
+}

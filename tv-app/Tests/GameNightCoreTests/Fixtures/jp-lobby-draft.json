@@ -5,7 +5,7 @@
     "teamCount": 0,
     "fixedTeams": 0,
     "individualsOnly": true,
-    "maxPlayers": 8,
+    "maxPlayers": 10,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [],
@@ -85,6 +85,7 @@
     "clue": null,
     "lastResult": null,
     "answerTime": 10,
+    "finalForAll": true,
     "answerTimes": [
       5,
       10,
@@ -219,6 +220,6 @@
     ],
     "asWritten": false,
     "asWrittenChoice": null,
-    "maxPlayers": 8
+    "maxPlayers": 10
   }
 }

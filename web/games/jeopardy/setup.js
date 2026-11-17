@@ -63,6 +63,11 @@ export function judgeControl(v, run) {
     v.hostJudges ? 'On: players say their answers aloud and the host rules on the host page.' : 'Off: players type their answers and the game checks them.');
 }
 
+export function finalControl(v, run) {
+  return btn([v.finalForAll ? '✓ ' : '', '🏁 Everyone plays Final Jeopardy'], () => run('setFinalForAll', { on: !v.finalForAll }), `${v.finalForAll ? '' : 'ghost'} left`,
+    v.finalForAll ? 'On: players at $0 or below play too, and can bet up to $1,000.' : 'Off: only players with money play, as on the show.');
+}
+
 export function answerTimeControl(v, run) {
   return h('div', { class: 'jp-stack', style: { maxWidth: 'none' } },
     h('div', { class: 'jp-muted' }, 'Answer clock (a host judging out loud)'),
@@ -74,6 +79,7 @@ export function lobbyControls(v, run) {
   return h('div', { class: 'jp-stack', style: { maxWidth: 'none' } },
     judgeControl(v, run),
     v.hostJudges && answerTimeControl(v, run),
+    finalControl(v, run),
     eraControl(v, run),
     packControls(v, run));
 }

@@ -5,7 +5,7 @@
     "teamCount": 0,
     "fixedTeams": 0,
     "individualsOnly": true,
-    "maxPlayers": 8,
+    "maxPlayers": 10,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [],
@@ -259,6 +259,7 @@
     },
     "lastResult": null,
     "answerTime": 10,
+    "finalForAll": false,
     "answerTimes": [
       5,
       10,
