@@ -87,7 +87,7 @@ final class StateDecodingTests: XCTestCase {
         let game = try XCTUnwrap(state.jeopardy)
         XCTAssertEqual(game.phase, .lobby)
         XCTAssertEqual(game.lobbyTitle, "Jeopardy")
-        XCTAssertEqual(game.maxPlayers, 8)
+        XCTAssertEqual(game.maxPlayers, 10, "rooms hold up to ten players")
         XCTAssertEqual(game.captainId, "p1", "the first to join is the captain")
         XCTAssertEqual(game.players.map(\.name), ["Leo", "Maya", "Dad"])
         XCTAssertFalse(game.hostJudges)
