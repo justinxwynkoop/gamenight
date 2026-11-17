@@ -1,0 +1,3 @@
+lobby.mp3 is CC0 (public domain dedication), free for any use.
+Theme music: "Happy Dance" by HoliznaCC0 (album Happy Pop Electronic, CC0), via https://github.com/seyedpouramir/alvana-audio, trimmed to loop.
+It loops on the TV's main menu and in every game's lobby.

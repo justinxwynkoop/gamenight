@@ -45,8 +45,10 @@ function tone(freq, at, dur, { type = 'sine', gain = 0.6, to = null } = {}) {
 
 // Recorded sounds and music that ship with the site (free to use, CC0: see builtin-sounds/<game>/CREDITS.txt), carried
 // over from the Buzzworthy game. A family's own file with the same name wins; a sound with no file is synthesized below.
+// "shared" files serve every game (and the main menu): the theme loops in every lobby.
 const BUILTIN = {
-  jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think', 'lobby'],
+  jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think'],
+  shared: ['lobby'],
 };
 
 /** Fetch and decode the family's files in data/sounds/ (server mode), then the built-in recordings for any name still missing. */
@@ -58,7 +60,11 @@ async function loadCustom() {
   if (!globalThis.GN_RELAY) { try { list = await (await fetch('/api/sounds')).json(); } catch { list = []; } }
   const theirs = new Set(list.map(({ name, game: owner }) => (owner ? `${owner}/${name}` : name)));
   for (const [owner, names] of Object.entries(BUILTIN)) {
-    for (const name of names) if (!theirs.has(`${owner}/${name}`) && !theirs.has(name)) list.push({ name, url: `/builtin-sounds/${owner}/${name}.mp3`, game: owner });
+    for (const name of names) {
+      const shared = owner === 'shared';
+      if (theirs.has(name) || (!shared && theirs.has(`${owner}/${name}`))) continue;
+      list.push({ name, url: `/builtin-sounds/${owner}/${name}.mp3`, game: shared ? null : owner });
+    }
   }
   await Promise.all(list.map(async ({ name, url, game: owner }) => {
     try {

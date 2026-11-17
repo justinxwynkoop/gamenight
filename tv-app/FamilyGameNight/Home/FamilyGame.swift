@@ -28,6 +28,15 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Who plays and what you need, shown under the blurb.
+    var players: String {
+        switch self {
+        case .singo: return "Bingo with songs, for the whole room"
+        case .jeopardy: return "Players or teams buzz in from their phones"
+        case .feud: return "Two teams, phones as buzzers"
+        }
+    }
+
     /// Name of the tile image in Assets.xcassets (it is the game's logo).
     var tileImage: String {
         switch self {

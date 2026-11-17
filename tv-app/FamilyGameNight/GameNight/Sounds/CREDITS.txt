@@ -5,4 +5,5 @@ Theme music: "Happy Dance" by HoliznaCC0 (album Happy Pop Electronic, CC0), via 
 
 jeopardy__*.m4a are these recordings, named for the app's sound cues:
 open, buzz, correct, wrong, dd, fanfare as named; timeup and reveal = "timeout"; final = "dd";
-roundstart = "board" fanfare; think = thinking music; lobby = the "Happy Dance" theme.
+roundstart = "board" fanfare; think = thinking music.
+shared__lobby.m4a is the "Happy Dance" theme: it loops on the main menu and in every game's lobby.
