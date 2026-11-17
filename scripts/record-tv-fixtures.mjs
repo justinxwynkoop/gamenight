@@ -122,3 +122,22 @@ g.pick(spot.ci, spot.ri);
 save('host-reading');
 g.openNow(); advance(200); g.buzz(ps[0].id);
 save('host-answering');
+
+// Singo Night's phone cards: what the Apple TV reads (singo-*.json).
+{
+  const sroom = new Room({ games: GAMES, now: () => t, random });
+  sroom.chooseGame('singo');
+  const sg = sroom.game;
+  const [leo, maya] = ['Leo', 'Maya'].map((n) => sroom.join({ name: n }));
+  sroom.setConnected(leo.id, true);
+  const songs = Array.from({ length: 30 }, (_, i) => ({ id: `song${i}`, title: `Song ${i}`, artist: `Band ${i % 5}` }));
+  const saveSingo = (name) => { writeFileSync(path.join(out, `singo-${name}.json`), JSON.stringify(sroom.publicView(), null, 2)); console.log('recorded singo', name); };
+  saveSingo('waiting');
+  sg.deal(songs, 'Road Trip');
+  const card = sroom.playerView(leo.id).game.card;
+  sroom.playerMessage(maya.id, { t: 'mark', i: 0 });
+  sroom.playerMessage(maya.id, { t: 'singo' });
+  for (const i of [0, 1, 2, 3, 4]) { sroom.playerMessage(leo.id, { t: 'mark', i }); sg.call(card[i].id); }
+  sroom.playerMessage(leo.id, { t: 'singo' });
+  saveSingo('claim');
+}

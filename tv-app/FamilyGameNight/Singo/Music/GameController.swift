@@ -38,6 +38,10 @@ final class GameController: Identifiable {
     private var pauseHolds = 0
     private var wasPausedBeforeHold = false
 
+    /// Bingo cards on the phones, when Singo's phone room is running. Told about the round's songs and each song
+    /// that plays; it checks the phones' "SINGO!" calls.
+    var phones: SingoPhones?
+
     /// Shown in the corner of the game screen.
     let playlistName: String
     let playlistArtwork: Artwork?
@@ -73,6 +77,7 @@ final class GameController: Identifiable {
         guard !hasBegun else { return }
         hasBegun = true
         UIApplication.shared.isIdleTimerDisabled = true
+        phones?.deal(engine.songs, playlist: playlistName)
         Task { await checkSubscription() }
         countdownTask = Task {
             for n in stride(from: 5, through: 1, by: -1) {
@@ -101,6 +106,7 @@ final class GameController: Identifiable {
         playGeneration += 1
         player.stop()
         UIApplication.shared.isIdleTimerDisabled = false
+        phones?.endRound()
     }
 
     // MARK: - Host controls
@@ -180,8 +186,8 @@ final class GameController: Identifiable {
             switch event {
             case .play(let song, let startTime):
                 startPlayback(of: song, at: startTime)
-            case .revealed:
-                break
+            case .revealed(let called):
+                phones?.called(called.song)
             case .finished:
                 playGeneration += 1
                 isBuffering = false
@@ -207,6 +213,7 @@ final class GameController: Identifiable {
                 failuresInARow = 0
                 // The music is playing, so the song now counts as called.
                 engine.markCurrentCalled()
+                if let song = engine.currentSong { phones?.called(song) }
                 if engine.isPaused { player.pause() }
             } catch {
                 guard generation == playGeneration else { return }

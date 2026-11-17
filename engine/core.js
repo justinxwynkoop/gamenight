@@ -64,7 +64,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
         if (!set) throw new GameError('No such set');
         return set;
       }
-      case 'games': return Object.values(games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+      case 'games': return Object.values(games).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description }));
       case 'putSet': {
         const game = games[args.game] ?? (() => { throw new GameError('No such game'); })();
         if (!SET_ID.test(String(args.id))) throw new GameError('Set id must be lowercase letters, numbers and dashes');

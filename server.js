@@ -188,7 +188,7 @@ async function handleApi(req, res, url) {
     if (!wifiString) return send(res, 404, { error: 'Wi-Fi QR not configured (set WIFI_SSID)' });
     return send(res, 200, await QRCode.toString(wifiString, { type: 'svg', margin: 1 }), 'image/svg+xml');
   }
-  if (url.pathname === '/api/games') return send(res, 200, Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description })));
+  if (url.pathname === '/api/games') return send(res, 200, Object.values(GAMES).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description })));
   // Everything below exposes answers: host PIN required.
   if (!pinOk(req.headers['x-host-pin'])) return send(res, 401, { error: 'Wrong or missing host PIN' });
   const rb = url.pathname.match(/^\/api\/games\/([a-z0-9-]+)\/random$/);

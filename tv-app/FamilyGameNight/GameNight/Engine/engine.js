@@ -208,14 +208,14 @@
     return { a, alt: [...alt].filter(Boolean).slice(0, 6) };
   }
   function parseArchive(tsv, season, rng = Math.random) {
-    const lines = tsv.split("\n");
-    const head = lines.shift().split("	");
+    const lines2 = tsv.split("\n");
+    const head = lines2.shift().split("	");
     const col = (n) => head.indexOf(n);
     const iR = col("round"), iV = col("clue_value"), iC = col("category"), iM = col("comments");
     const iQ = col("answer"), iA = col("question"), iD = col("air_date");
     const groups = /* @__PURE__ */ new Map();
     const finals = [];
-    for (const line of lines) {
+    for (const line of lines2) {
       if (!line) continue;
       const f = line.split("	");
       const round = f[iR], clue = clean(f[iQ]), resp = f[iA], cat = clean(f[iC]);
@@ -250,7 +250,7 @@
       if (!finalsBy.has(t)) finalsBy.set(t, []);
       finalsBy.get(t).push({ category: f.category, q: f.q, a: f.a, alt: f.alt });
     }
-    const year = lines.length ? `${lines[0].split("	")[iD] || ""}`.slice(0, 4) : "";
+    const year = lines2.length ? `${lines2[0].split("	")[iD] || ""}`.slice(0, 4) : "";
     const packs = [];
     for (const [t, cats] of byTopic) {
       if (cats.length < 12) continue;
@@ -2393,8 +2393,224 @@
     randomBoards: (dataDir) => createRandomSurvey({ dataDir })
   };
 
+  // games/singo/game.js
+  var GAME3 = "singo";
+  var FREE = "free";
+  function cardSize(songCount) {
+    if (songCount >= 24) return 5;
+    if (songCount >= 16) return 4;
+    if (songCount >= 9) return 3;
+    return 0;
+  }
+  function lines(size) {
+    const out = [];
+    for (let r = 0; r < size; r++) out.push(Array.from({ length: size }, (_, c) => r * size + c));
+    for (let c = 0; c < size; c++) out.push(Array.from({ length: size }, (_, r) => r * size + c));
+    out.push(Array.from({ length: size }, (_, i) => i * size + i));
+    out.push(Array.from({ length: size }, (_, i) => i * size + (size - 1 - i)));
+    return out;
+  }
+  var _SingoGame_instances, changed_fn3, card_fn, roundView_fn2;
+  var SingoGame = class {
+    constructor(room) {
+      __privateAdd(this, _SingoGame_instances);
+      this.room = room;
+      this.round = null;
+      this.cards = {};
+      this.claims = [];
+      this.nextClaim = 1;
+    }
+    init() {
+    }
+    /** Players come and go during a round (they get a card when they join), so the room never locks. */
+    inProgress() {
+      return false;
+    }
+    usesContent() {
+      return false;
+    }
+    toJSON() {
+      return { round: this.round, cards: this.cards, claims: this.claims, nextClaim: this.nextClaim };
+    }
+    restore(data) {
+      this.round = data.round ?? null;
+      this.cards = data.cards ?? {};
+      this.claims = data.claims ?? [];
+      this.nextClaim = data.nextClaim ?? 1;
+    }
+    act(action, a = {}) {
+      switch (action) {
+        case "deal":
+          return this.deal(a.songs, a.playlist);
+        case "call":
+          return this.call(a.id);
+        case "endRound":
+          return this.endRound();
+        default:
+          throw new GameError(`Unknown action ${action}`);
+      }
+    }
+    onPlayer(player, msg) {
+      switch (msg.t) {
+        case "mark":
+          this.mark(player.id, Number(msg.i));
+          return void 0;
+        case "singo":
+          return { t: "singo-result", ...this.claim(player.id) };
+        default:
+          return void 0;
+      }
+    }
+    // ---------- the round (driven by the Apple TV) ----------
+    deal(songs, playlist) {
+      if (!Array.isArray(songs)) fail("Send the songs to deal from");
+      const seen = /* @__PURE__ */ new Set();
+      const list = [];
+      for (const s of songs) {
+        const id = String(s?.id ?? "").slice(0, 80);
+        const title = cleanName(s?.title, 80);
+        if (!id || !title || seen.has(id)) continue;
+        seen.add(id);
+        list.push({ id, title, artist: cleanName(s?.artist, 60) || null });
+        if (list.length >= 500) break;
+      }
+      const size = cardSize(list.length);
+      if (!size) fail("Singo cards need a playlist of at least 9 songs");
+      this.round = {
+        n: (this.round?.n ?? 0) + 1,
+        size,
+        playlist: cleanName(playlist, 80) || null,
+        songs: Object.fromEntries(list.map((s) => [s.id, { title: s.title, artist: s.artist }])),
+        order: list.map((s) => s.id),
+        called: [],
+        status: "playing"
+      };
+      this.cards = {};
+      this.claims = [];
+      for (const p of this.room.players) __privateMethod(this, _SingoGame_instances, card_fn).call(this, p.id);
+      __privateMethod(this, _SingoGame_instances, changed_fn3).call(this);
+    }
+    call(id) {
+      const r = this.round ?? fail("No Singo round is being played");
+      const key = String(id ?? "");
+      if (!r.songs[key]) fail("That song is not in this round");
+      if (r.called.includes(key)) return;
+      r.called.push(key);
+      __privateMethod(this, _SingoGame_instances, changed_fn3).call(this);
+    }
+    endRound() {
+      if (!this.round) return;
+      this.round.status = "over";
+      __privateMethod(this, _SingoGame_instances, changed_fn3).call(this);
+    }
+    mark(playerId, i) {
+      const r = this.round ?? fail("Wait for the TV to start a round");
+      if (r.status !== "playing") fail("This round is over");
+      const card = __privateMethod(this, _SingoGame_instances, card_fn).call(this, playerId);
+      if (!(i >= 0 && i < card.squares.length)) fail("No such square");
+      if (card.squares[i] === FREE) return;
+      card.marked[i] = !card.marked[i];
+      __privateMethod(this, _SingoGame_instances, changed_fn3).call(this);
+    }
+    /** A "SINGO!": good when a whole line is marked and every song in it has played. */
+    claim(playerId) {
+      const r = this.round ?? fail("Wait for the TV to start a round");
+      if (r.status !== "playing") fail("This round is over");
+      const player = this.room.player(playerId);
+      const card = __privateMethod(this, _SingoGame_instances, card_fn).call(this, playerId);
+      const already = this.claims.find((c) => c.playerId === playerId && c.ok);
+      if (already) return { ok: true, line: already.line, missing: [], again: true };
+      const called = new Set(r.called);
+      const ok = (i) => card.squares[i] === FREE || card.marked[i] && called.has(card.squares[i]);
+      const title = (i) => card.squares[i] === FREE ? "Free" : r.songs[card.squares[i]]?.title ?? "?";
+      const all = lines(r.size);
+      const win = all.find((line) => line.every(ok));
+      let missing = [];
+      if (!win) {
+        const marked = all.filter((line) => line.every((i) => card.marked[i]));
+        const best = (marked.length ? marked : all).map((line) => line.filter((i) => !ok(i))).sort((a, b) => a.length - b.length)[0] ?? [];
+        missing = best.map(title);
+      }
+      const entry = { n: this.nextClaim++, playerId, name: player.name, color: player.color, ok: !!win, line: win ? win.map(title) : [], squares: win ?? [], missing, at: this.room.now() };
+      this.claims.push(entry);
+      if (this.claims.length > 30) this.claims.shift();
+      if (win) player.score += 1;
+      __privateMethod(this, _SingoGame_instances, changed_fn3).call(this);
+      return { ok: entry.ok, line: entry.line, missing: entry.missing, marked: !!card.marked.some((m, i) => m && card.squares[i] !== FREE) };
+    }
+    publicView() {
+      const winners = this.claims.filter((c) => c.ok);
+      return {
+        game: GAME3,
+        scoreFormat: "points",
+        lobbyTitle: "Singo Night",
+        status: this.round ? this.round.status : "waiting",
+        round: __privateMethod(this, _SingoGame_instances, roundView_fn2).call(this),
+        // The newest claims, for the TV's banner: { n, playerId, name, color, ok, line, missing }.
+        claims: this.claims.slice(-6).map(({ at, squares, ...c }) => c),
+        winners: winners.map((c) => ({ playerId: c.playerId, name: c.name, color: c.color }))
+      };
+    }
+    hostView() {
+      return this.publicView();
+    }
+    playerView(player) {
+      const v = this.publicView();
+      const r = this.round;
+      const card = r ? __privateMethod(this, _SingoGame_instances, card_fn).call(this, player.id) : null;
+      if (card) {
+        v.card = card.squares.map((id, i) => id === FREE ? { free: true, marked: true } : { id, title: r.songs[id]?.title ?? "?", artist: r.songs[id]?.artist ?? null, marked: card.marked[i] });
+        v.called = [...r.called].reverse().slice(0, 60).map((id) => ({ id, title: r.songs[id]?.title ?? "?", artist: r.songs[id]?.artist ?? null }));
+        const mine = this.claims.filter((c) => c.playerId === player.id && c.ok);
+        v.won = mine.length > 0;
+        v.winLine = mine.length ? this.claims.filter((c) => c.playerId === player.id && c.ok).at(-1).squares ?? [] : [];
+      }
+      return v;
+    }
+  };
+  _SingoGame_instances = new WeakSet();
+  changed_fn3 = function() {
+    this.room.changed();
+  };
+  /** A player's card for this round, dealt the first time it is needed (so late joiners get one too). */
+  card_fn = function(playerId) {
+    const r = this.round;
+    if (!r) return null;
+    const have = this.cards[playerId];
+    if (have && have.round === r.n) return have;
+    const need = r.size * r.size - (r.size === 5 ? 1 : 0);
+    const pool = [...r.order];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor((this.room.rng ?? Math.random)() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picked = pool.slice(0, need);
+    const squares = r.size === 5 ? [...picked.slice(0, 12), FREE, ...picked.slice(12)] : picked;
+    const card = { round: r.n, squares, marked: squares.map((s) => s === FREE) };
+    this.cards[playerId] = card;
+    return card;
+  };
+  // ---------- views ----------
+  roundView_fn2 = function() {
+    const r = this.round;
+    if (!r) return null;
+    return { n: r.n, size: r.size, playlist: r.playlist, status: r.status, songs: r.order.length, calledCount: r.called.length };
+  };
+
+  // games/singo/index.js
+  var singo_default = {
+    id: "singo",
+    name: "Singo Night",
+    description: "Bingo with songs. The Apple TV plays clips from an Apple Music playlist; everyone marks song titles on a card on their phone.",
+    // Played by individuals. The music comes from Apple Music on the Apple TV, so only the Apple TV app starts it.
+    needs: { individuals: true },
+    appOnly: true,
+    validateContent: () => fail("Singo Night has no question sets: its songs come from Apple Music"),
+    create: (room) => new SingoGame(room)
+  };
+
   // games/index.js
-  var GAMES = Object.fromEntries([jeopardy_default, feud_default].map((g) => [g.id, g]));
+  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default].map((g) => [g.id, g]));
 
   // room.js
   var VERSION = 2;
@@ -2630,6 +2846,7 @@
     act(action, args = {}) {
       switch (action) {
         case "chooseGame":
+          if (this.games[args.id]?.appOnly) fail(`Start ${this.games[args.id].name} from the Apple TV`);
           return this.chooseGame(args.id);
         case "setMode":
           return this.setMode(args.mode);
@@ -2672,7 +2889,7 @@
     /** The host also sees answers, the roster and the list of games. */
     hostView() {
       const room = __privateMethod(this, _Room_instances, roomView_fn).call(this);
-      room.games = Object.values(this.games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+      room.games = Object.values(this.games).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description }));
       room.players = this.players.map((p) => ({
         id: p.id,
         name: p.name,
@@ -3040,7 +3257,7 @@
           return set;
         }
         case "games":
-          return Object.values(games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+          return Object.values(games).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description }));
         case "putSet": {
           const game = games[args.game] ?? (() => {
             throw new GameError("No such game");
@@ -3115,7 +3332,7 @@
   var parse = (json) => typeof json === "string" ? JSON.parse(json) : json;
   globalThis.Engine = {
     /** The games this engine can run, for the host's menus. */
-    games: () => JSON.stringify(Object.values(GAMES).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
+    games: () => JSON.stringify(Object.values(GAMES).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
     /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } } }. The room code is the relay's. */
     start(optionsJson) {
       const o = parse(optionsJson);

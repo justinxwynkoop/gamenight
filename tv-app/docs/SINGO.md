@@ -140,8 +140,32 @@ can't skip a song.
   after that.
 
 
+## Bingo cards on phones
+
+While Singo Night is open, the Apple TV also opens a Game Night room (the same
+engine and online relay as Jeopardy and Family Feud). The Round Setup screen
+shows a QR code and the room code; phones scan it or open the Game Night site
+and type the code, then enter a name. Nobody has to sign in.
+
+- **Start Round** deals every phone its own card from the playlist: 5×5 with a
+  free middle square (4×4 for 16 to 23 songs, 3×3 for 9 to 15). Someone who
+  joins mid-round gets a card too.
+- A song counts as **played** once its music starts. Players tap the titles
+  they hear; the phone also lists the songs played so far.
+- **SINGO!** on a phone is checked against the songs that have actually
+  played: a full row, column or diagonal of marked squares. A good one pauses
+  the music and puts the winner and their line on the TV; press **Play** to
+  carry on. One called too early shows "Not yet!" for a few seconds and tells
+  that phone which songs have not played.
+- Each player can win once a round; the room keeps count of wins.
+- The small card in the top-left corner during a round shows the room code for
+  latecomers.
+
+Paper cards still work: the Called songs list is there as before.
+
 ## Singo: not built yet
 
-Singo check by game type, printable bingo cards, saving a game if the Apple TV
-sleeps, a sound cue at the reveal, and editing individual hint times.
+Singo check by game type (only lines for now), printable bingo cards, saving a
+game if the Apple TV sleeps, a sound cue at the reveal, and editing individual
+hint times.
 

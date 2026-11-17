@@ -299,7 +299,10 @@ export class Room {
   /** A host action: roster actions are handled here, anything else goes to the active game. */
   act(action, args = {}) {
     switch (action) {
-      case 'chooseGame': return this.chooseGame(args.id);
+      case 'chooseGame':
+        // Singo Night needs the Apple TV's music, so only the Apple TV app starts it (not the host page).
+        if (this.games[args.id]?.appOnly) fail(`Start ${this.games[args.id].name} from the Apple TV`);
+        return this.chooseGame(args.id);
       case 'setMode': return this.setMode(args.mode);
       case 'setTeamCount': return this.setTeamCount(args.count);
       case 'shuffleTeams': return this.shuffleTeams();
@@ -361,7 +364,7 @@ export class Room {
   /** The host also sees answers, the roster and the list of games. */
   hostView() {
     const room = this.#roomView();
-    room.games = Object.values(this.games).map((g) => ({ id: g.id, name: g.name, description: g.description }));
+    room.games = Object.values(this.games).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description }));
     room.players = this.players.map((p) => ({
       id: p.id, name: p.name, color: p.color, teamId: p.teamId, kind: p.kind, connected: this.connected.has(p.id),
     }));
