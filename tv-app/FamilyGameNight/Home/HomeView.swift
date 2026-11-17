@@ -74,7 +74,7 @@ struct HomeView: View {
             .padding(.horizontal, 80)
         }
         .onAppear {
-            focused = lastOpened ?? FamilyGame.allCases.first
+            focused = Self.focusForScreenshots ?? lastOpened ?? FamilyGame.allCases.first
             withAnimation(.easeOut(duration: 0.7)) { appeared = true }
             if musicOn { MenuMusic.shared.start() }
         }
@@ -110,6 +110,10 @@ struct HomeView: View {
         .foregroundStyle(.white.opacity(0.45))
     }
 
+    /// The CI screenshot job launches the app with GN_HOME_FOCUS=<game> to picture each card highlighted.
+    private static let focusForScreenshots: FamilyGame? =
+        ProcessInfo.processInfo.environment["GN_HOME_FOCUS"].flatMap(FamilyGame.init(rawValue:))
+
     private func open(_ game: FamilyGame) {
         MenuMusic.shared.stop()
         lastOpened = game
@@ -122,7 +126,7 @@ struct HomeView: View {
     }
 }
 
-/// One game on the menu: its logo art with the game's name on a band beneath.
+/// One game on the menu: its logo art, with the game's name and two quick facts on a band beneath.
 private struct GameCard: View {
     let game: FamilyGame
     @Environment(\.isFocused) private var isFocused
@@ -134,17 +138,31 @@ private struct GameCard: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 480, height: 288)
                 .clipped()
-            HStack {
-                Text(game.title)
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundStyle(.white)
-                Spacer()
-                Image(systemName: "play.fill")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white.opacity(isFocused ? 1 : 0))
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(game.title)
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(.white.opacity(isFocused ? 1 : 0))
+                }
+                HStack(spacing: 10) {
+                    ForEach(game.tags, id: \.self) { tag in
+                        HStack(spacing: 8) {
+                            Image(systemName: tag.icon).font(.system(size: 17, weight: .bold))
+                            Text(tag.text).font(.system(size: 20, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(.black.opacity(isFocused ? 0.28 : 0.35)))
+                    }
+                }
             }
             .padding(.horizontal, 26)
-            .frame(width: 480, height: 78)
+            .frame(width: 480, height: 128, alignment: .leading)
             .background(game.accent.opacity(isFocused ? 0.95 : 0.55))
         }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
