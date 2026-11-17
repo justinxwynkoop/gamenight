@@ -90,6 +90,9 @@ try {
   const ctl = phones[g.controllerId];
   await until(async () => (await ctl.locator('.jp-mini button').count()) === 30, 'the mini board on the picker\'s phone');
   await shotJ(ctl, 'board');
+  // each tile takes its column colour from an inline --col; if that is dropped the values vanish into the background
+  const tileBg = await ctl.locator('.jp-mini button').first().evaluate((b) => getComputedStyle(b).backgroundColor);
+  if (/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(tileBg)) throw new Error(`mini board tiles have no colour (${tileBg}), so the dollar values can't be read`);
   const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
   await ctl.locator('.jp-mini button').nth(first.ri * 6 + first.ci).click();
   await until(() => ['reading', 'open'].includes(g.phase), 'the pick to reach the game');
