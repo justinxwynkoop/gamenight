@@ -3,7 +3,7 @@
 //
 // Use: copy this file into a checkout of github.com/justinxwynkoop/gamenight (next to server.js), run
 // `npm install`, then
-//     node record-feud-fixtures.mjs /path/to/familygamenight/Tests/GameNightCoreTests/Fixtures
+//     node record-feud-fixtures.mjs tv-app/Tests/GameNightCoreTests/Fixtures
 // It uses a throwaway data folder (data-feud-run/) and port 3115. Four players join and are dealt onto
 // Red and Blue by the server.
 import { spawn } from 'node:child_process';

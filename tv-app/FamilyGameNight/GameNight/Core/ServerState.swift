@@ -1,7 +1,7 @@
 import Foundation
 
 // What the Game Night server pushes to a TV: `{ "room": …, "game": … }` on every
-// change (see `publicView()` in the gamenight repo's room.js and games/jeopardy/game.js).
+// change (see `publicView()` in the repository's room.js and games/jeopardy/game.js).
 // Only the fields the TV draws are decoded; anything else the server adds is ignored.
 // Unknown enum values decode to `.unknown` so a newer server never blanks the screen.
 
@@ -142,7 +142,7 @@ enum JeoPhase: String, Decodable, Equatable {
     }
 }
 
-/// What the TV receives for Jeopardy (see `publicView()` in the gamenight repo's games/jeopardy/game.js).
+/// What the TV receives for Jeopardy (see `publicView()` in the repository's games/jeopardy/game.js).
 /// Players play as individuals, up to eight, and answer by typing on their phones.
 struct JeopardyState: Decodable, Equatable {
     var game: String

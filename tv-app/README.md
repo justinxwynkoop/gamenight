@@ -9,8 +9,8 @@ A private Apple TV app for family game nights. Open it and pick a game:
 | **Singo Night** | Bingo with songs: a short clip of each song plays from an Apple Music playlist, hints fade in, then the answer is revealed. |
 
 **Jeopardy and Family Feud run inside the app.** Phones open a web page and connect to the TV through a free online
-relay, so all you need is internet: no server or computer on your network. The game rules and the phone pages live in the
-[`gamenight`](https://github.com/justinxwynkoop/gamenight) repo; this repo is the Apple TV app.
+relay, so all you need is internet: no server or computer on your network. The game rules and the phone pages are at
+the [top of this repository](../README.md); this folder is the Apple TV app.
 
 Family only: installed from Xcode onto your own Apple TV, or through [TestFlight](docs/TESTFLIGHT.md).
 
@@ -19,7 +19,7 @@ Family only: installed from Xcode onto your own Apple TV, or through [TestFlight
 1. **MusicKit** (only for Singo Night). In the Apple Developer portal (Certificates, Identifiers & Profiles →
    Identifiers), register the bundle ID `family.singonight.app` (or your own, see step 3) and tick **MusicKit** under
    App Services.
-2. Open **`FamilyGameNight.xcodeproj`** in Xcode 16 or later.
+2. Open **`tv-app/FamilyGameNight.xcodeproj`** in Xcode 16 or later.
 3. **Signing.** Select the FamilyGameNight target → Signing & Capabilities → pick your team. If you change the bundle
    ID, use the same one in step 1.
 4. **Pair the Apple TV.** On the Apple TV: Settings → Remotes and Devices → Remote App and Devices. In Xcode:
@@ -56,9 +56,9 @@ The phone site is `https://gamenight-one.vercel.app`. To change it, or the onlin
 | [docs/DEVELOPING.md](docs/DEVELOPING.md) | Code layout, tests, the cloud build, adding a game, art |
 | [docs/SERVER-MODE.md](docs/SERVER-MODE.md) | Optional: use a Game Night server instead of hosting on the Apple TV |
 
-In the `gamenight` repo: [how the online mode works and is set up](https://github.com/justinxwynkoop/gamenight/blob/main/docs/ONLINE.md),
-[how the games are played](https://github.com/justinxwynkoop/gamenight/blob/main/docs/PLAYING.md) and
-[writing, importing and dragging in question sets](https://github.com/justinxwynkoop/gamenight/blob/main/docs/QUESTION-SETS.md).
+At the top of the repository: [how the online mode works and is set up](../docs/ONLINE.md),
+[how the games are played](../docs/PLAYING.md) and
+[writing, importing and dragging in question sets](../docs/QUESTION-SETS.md).
 
 ## Tests
 
@@ -72,5 +72,5 @@ built and tested on GitHub's macOS machines; see [docs/DEVELOPING.md](docs/DEVEL
 ## Roadmap
 
 Done: the home screen, Singo Night, Jeopardy and Family Feud on the TV, sound, hosting the game on the Apple TV with an
-online question editor, importing, and your own sounds and sets. **Next:** TestFlight, the "Random board" buttons online,
-and the Singo items in [docs/SINGO.md](docs/SINGO.md).
+online question editor, importing, your own sounds and sets, and automatic TestFlight uploads. **Next:** the "Random
+board" buttons online, and the Singo items in [docs/SINGO.md](docs/SINGO.md).

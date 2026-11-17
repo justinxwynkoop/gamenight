@@ -4,7 +4,7 @@
 //
 // Use: copy this file into a checkout of github.com/justinxwynkoop/gamenight (next to
 // server.js), run `npm install`, then
-//     node record-fixtures.mjs /path/to/familygamenight/Tests/GameNightCoreTests/Fixtures
+//     node record-fixtures.mjs tv-app/Tests/GameNightCoreTests/Fixtures
 // It uses a throwaway data folder (data-fixture-run/) and port 3111, and copies the
 // sample question set from data/jeopardy/. Three fixtures are hand-made and not
 // produced here: no-game-chosen, other-game, lobby-teams (and the server picks

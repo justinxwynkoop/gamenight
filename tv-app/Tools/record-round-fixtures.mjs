@@ -3,7 +3,7 @@
 //
 // Use: copy this file into a checkout of github.com/justinxwynkoop/gamenight (next to server.js), run
 // `npm install`, then
-//     node record-round-fixtures.mjs /path/to/familygamenight/Tests/GameNightCoreTests/Fixtures
+//     node record-round-fixtures.mjs tv-app/Tests/GameNightCoreTests/Fixtures
 // It uses a throwaway data folder (data-round-run/) and port 3114.
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, copyFileSync } from 'node:fs';

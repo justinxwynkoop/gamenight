@@ -2,7 +2,7 @@
 # Copies question sets (a folder with jeopardy/ and feud/ folders of .json files) into the app, on your Mac. They are not
 # committed to git: sets built from public survey data stay out of the repository.
 #   Tools/install-sets.sh <folder with jeopardy/ and feud/>
-# Each of those folders holds one .json file per set (the gamenight repo's data/ folder is laid out like that).
+# Each of those folders holds one .json file per set (the repository's data/ folder is laid out like that).
 # Sets that already ship with the app are skipped. Files end up in FamilyGameNight/GameNight/Sets/ as <game>__<id>.json.
 set -eu
 src="${1:?Give the folder with jeopardy/ and feud/ in it, for example ~/Desktop/my-sets}"

@@ -1,15 +1,15 @@
-# Online mode: the Apple TV hosts the game
+# Online mode: the TV hosts the game
 
-Game Night's online mode needs **no computer or server on your network**: the game runs inside the Apple TV app and
-phones connect over the internet. (There is also an optional [server mode](SERVER-MODE.md) that runs everything on your
+Game Night's online mode needs **no computer or server on your network**: the game runs inside the Apple TV app, or in
+the website's TV page (`<site>/tv`) on any screen with a browser, and phones connect over the internet. (There is also an optional [server mode](SERVER-MODE.md) that runs everything on your
 own network instead; both use the same rules and the same phone pages.)
 
 ## How it fits together
 
 ```
  phone browser ──────┐                                     ┌────── Apple TV app
- (gamenight-one.     │      Supabase Realtime (broadcast)  │       (familygamenight repo)
-  vercel.app, the    ├────── channels  gn:<CODE>  ─────────┤        ┌───────────────────────┐
+ (gamenight-one.     │      Supabase Realtime (broadcast)  │       (tv-app/, or <site>/tv
+  vercel.app, the    ├────── channels  gn:<CODE>  ─────────┤        ┌──in a browser)────────┐
   web/ folder)       │               gn:<CODE>:<id>        │        │ JavaScriptCore runs   │
  host phone ─────────┘                                     └────────┤ engine.js: the room,  │
                                                                     │ Jeopardy, Family Feud │
@@ -53,12 +53,15 @@ own network instead; both use the same rules and the same phone pages.)
 2. **Vercel** (free): import this repo as a project, set **Root Directory** to `web`, **Framework Preset** to *Other*,
    and leave every command empty. Every push to `main` redeploys. Note the project's address
    (for example `https://gamenight-one.vercel.app`).
-3. **The Apple TV app** (the `familygamenight` repo): set the Supabase URL and key and the Vercel address in
-   `FamilyGameNight/GameNight/RelayConfig.swift`, then build it from Xcode onto the Apple TV.
+3. **The Apple TV app** (`tv-app/`): set the Supabase URL and key and the Vercel address in
+   `tv-app/FamilyGameNight/GameNight/RelayConfig.swift`. TestFlight builds it for you (`tv-app/docs/TESTFLIGHT.md`).
 4. On the Apple TV: open Jeopardy or Family Feud, and on the address screen choose **Run on this Apple TV**. The app
    remembers this choice.
 
 ## Day to day
+
+**No Apple TV?** Open `<site>/tv` on a laptop plugged into the TV (or a smart TV's browser), pick a game, and go full
+screen. Everything below works the same, except the menu is the **Menu (M)** button in the corner (or the M key).
 
 1. Open a game tile on the Apple TV. It shows a QR code, the join address and the room code.
 2. Players scan the QR code (or open the site and type the code). The host opens `<site>/host` on a phone, types the
@@ -69,13 +72,11 @@ own network instead; both use the same rules and the same phone pages.)
 
 ## Changing the engine or the pages
 
-- Rules or game logic (`room.js`, `games/`, `engine/`): change them, run `npm test`, then rebuild the engine for the app:
-  `node scripts/build-engine.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/engine.js`, and commit that file
-  in the app repo. The app only changes when you rebuild and run it.
-- Phone pages (`public/`): run `node scripts/build-web.mjs` and commit `web/`. Vercel redeploys by itself; phones
-  get the change on reload. Server mode serves `public/` directly, so it sees the change too.
-- The question sets that ship inside the app come from `data/<game>/*.json`:
-  `node scripts/bundle-sets.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/sets.json`.
+After changing anything in `room.js`, `games/`, `engine/`, `public/` or `data/`, run **`npm run build`** and commit
+what it writes: `web/` (the site, including the TV page's engine `web/tvhost.js`) and the Apple TV app's copies of the
+engine and question sets (`tv-app/FamilyGameNight/GameNight/Engine/`). CI fails if they are out of date. When it is
+merged into `main`, Vercel redeploys the site and the TestFlight workflow uploads a new Apple TV build by itself.
+Server mode serves `public/` directly.
 
 ## Tests
 
@@ -87,11 +88,13 @@ own network instead; both use the same rules and the same phone pages.)
   reconnects, clients that go quiet, junk messages and saving sets.
 - `test/importer.test.js`: importing sets from files, links and the plain-text format.
 
-Two checks need more than Node and run in GitHub Actions (`.github/workflows/ci.yml`):
+Three checks need more than Node and run in GitHub Actions (`.github/workflows/web.yml`; `npm run e2e` runs the first two):
 
 - `scripts/e2e-phone.mjs` drives the real phone, host and editor pages in Chromium against the stand-in relay.
   It exists because a bug once slipped through only in browsers (`setTimeout` called as a method of another object
   throws "Illegal invocation" there, but not in Node). Run it locally with Playwright installed.
+- `scripts/e2e-tv.mjs` opens the website's TV page, which runs the engine itself, joins two phones and a host to it,
+  and plays a Jeopardy clue through to the reveal. `SHOT_DIR=<folder>` saves screenshots of the TV.
 - `scripts/relay-live.mjs` plays a join through the **real** Supabase project. (A cloud sandbox may not allow
   WebSockets, which is why this runs in CI.)
 
@@ -104,7 +107,7 @@ Two checks need more than Node and run in GitHub Actions (`.github/workflows/ci.
 | TV menu says "Phones: not connected (…)" | The TV cannot reach Supabase; the reason is in the brackets. Check the TV's internet. |
 | Vercel site shows "This page is unavailable" | Root Directory is not `web`. |
 | Vercel site asks to log in | Turn off Deployment Protection for production in the Vercel project's settings. |
-| Menu goes to the Apple TV's home screen | The display lost the remote's focus; see the app's [HOSTING.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/HOSTING.md). |
+| Menu goes to the Apple TV's home screen | The display lost the remote's focus; see the app's [HOSTING.md](../tv-app/docs/HOSTING.md). |
 | The TV opens another game's lobby | A game was in progress. Opening a tile for a different game starts a fresh room. |
 
 ## Limits

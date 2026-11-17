@@ -1,5 +1,5 @@
 // The phone's side of the online relay: the same connection the pages get from common.js connect(), but carried by
-// Supabase Realtime instead of a WebSocket to the Pi (see engine/relay.js for the channels).
+// Supabase Realtime instead of a WebSocket to a home server (see engine/relay.js for the channels).
 import { Realtime } from './phoenix.js';
 
 export const ROOM_CODE = /^[A-Z0-9]{4}$/;

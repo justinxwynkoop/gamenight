@@ -53,7 +53,7 @@ struct ToneSpec: Equatable {
 }
 
 /// Builds the built-in sounds from simple tones, the same recipes the web TV
-/// uses (public/audio.js in the gamenight repo), so both displays sound alike and
+/// uses (public/audio.js at the top of this repository), so both displays sound alike and
 /// there are no audio files to ship or license.
 enum SoundSynth {
     static let sampleRate = 44100

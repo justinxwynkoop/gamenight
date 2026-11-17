@@ -3,7 +3,7 @@
 //
 // Use: copy this file into a checkout of github.com/justinxwynkoop/gamenight (next to
 // server.js), run `npm install`, then
-//     node record-team-fixtures.mjs /path/to/familygamenight/Tests/GameNightCoreTests/Fixtures
+//     node record-team-fixtures.mjs tv-app/Tests/GameNightCoreTests/Fixtures
 // Six players join, so the server splits them into Red and Blue by itself. It uses a
 // throwaway data folder (data-team-run/) and port 3113.
 import { spawn } from 'node:child_process';

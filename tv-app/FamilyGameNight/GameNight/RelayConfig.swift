@@ -5,7 +5,7 @@ import Foundation
 enum RelayConfig {
     static let supabaseURL = "https://ipmdmdaroyyafzgxnzrt.supabase.co"
     static let supabaseKey = "sb_publishable__m7Q6bD9OG-ElaUFnLGDnA_PeEndrOr"
-    /// The address of the phone pages (the `web` folder of the gamenight repo, deployed on Vercel).
+    /// The address of the phone pages (the `web` folder at the top of this repository, deployed on Vercel).
     static let webBase = "https://gamenight-one.vercel.app"
 
     /// What phones open to join room `code`.

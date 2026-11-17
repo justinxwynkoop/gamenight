@@ -109,10 +109,10 @@ export function createRandomSurvey({ dataDir, keepMs = 10 * 60 * 1000, rng = Mat
   const touch = () => { clearTimeout(timer); timer = setTimeout(() => { loaded = null; }, keepMs); timer.unref?.(); };
   return {
     available: () => surveyFiles(dataDir).length > 0,
-    status: () => ({ available: surveyFiles(dataDir).length > 0, loaded: !!loaded, help: 'Run ./scripts/get-feud-sets.sh on the Pi to download the survey data (it stays on the Pi).' }),
+    status: () => ({ available: surveyFiles(dataDir).length > 0, loaded: !!loaded, help: 'Run ./scripts/get-feud-sets.sh on the server computer to download the survey data (it stays there).' }),
     async make(options = {}) {
       const files = surveyFiles(dataDir);
-      if (!files.length) throw Object.assign(new Error('The survey data is not installed on this Pi yet'), { code: 'no-dataset' });
+      if (!files.length) throw Object.assign(new Error('The survey data is not installed on this server yet'), { code: 'no-dataset' });
       loaded ??= Promise.all(files.map((f) => readFile(f, 'utf8'))).then((texts) => texts.flatMap((t) => t.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean)))
         .catch((e) => { loaded = null; throw e; });
       const lines = await loaded;

@@ -5,7 +5,7 @@ import Foundation
 // that ticks. The cues themselves are cases of `SoundCue` (an enum can't be extended with new cases).
 
 extension SoundPlanner {
-    /// Family Feud: a port of `onChange()` in the gamenight repo's public/games/feud/tv.js.
+    /// Family Feud: a port of `onChange()` in the repository's public/games/feud/tv.js.
     static func feudPlan(from before: FeudState, to after: FeudState, into plan: inout SoundPlan) {
         if let round = after.round {
             if let was = before.round, was.number == round.number {

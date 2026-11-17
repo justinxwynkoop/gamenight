@@ -1,6 +1,6 @@
 // Bundles the game engine (room, hub, Jeopardy, Family Feud) into one plain script that JavaScriptCore can run:
 //   node scripts/build-engine.mjs [outfile]      (default dist/engine.js)
-// The parts that read files from the Pi (random boards from the clue and survey data) are swapped for stubs: the Apple
+// The parts that read files on a home server (random boards from the clue and survey data) are swapped for stubs: the Apple
 // TV engine never touches a disk, and none of that data belongs in the app.
 import { build } from 'esbuild';
 import { readFileSync, mkdirSync } from 'node:fs';

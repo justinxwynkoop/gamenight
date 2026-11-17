@@ -55,7 +55,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
   // The TV's own display is client "tv" and is served directly; clients that arrived over the relay are answered through it.
   const clock = now ?? (() => room.now());
   let relay = null;
-  // What the host page asks for besides room actions (the Pi answers these over HTTP; here they go through the hub).
+  // What the host page asks for besides room actions (a home server answers these over HTTP; here they go through the hub).
   const rpc = (op, args) => {
     switch (op) {
       case 'listSets': return games[args.game] ? room.listContent(args.game) : [];

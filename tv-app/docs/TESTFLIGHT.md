@@ -20,7 +20,7 @@ GitHub** (a button in the Actions tab; no Mac needed, but no sounds or extra set
 2. Platform **tvOS**. Name **Family Game Night** (names are unique across the App Store; if it is taken, use something
    like "Family Game Night TV": it is only the name shown in TestFlight, the app on the TV keeps its own display name).
 3. Primary language, **Bundle ID** `family.singonight.app` (choose it from the list), and any SKU (for example
-   `familygamenight`). Create.
+   `gamenight`). Create.
 
 ## Way 1: from Xcode on your Mac
 
@@ -37,7 +37,7 @@ GitHub** (a button in the Actions tab; no Mac needed, but no sounds or extra set
 After the first upload, shipping a new version is one command from Terminal (it builds, signs and uploads, as above):
 
 ```bash
-cd ~/Documents/familygamenight && Tools/upload-testflight.sh
+cd ~/Documents/gamenight/tv-app && Tools/upload-testflight.sh
 ```
 
 Versions count up as **X.x**: 1.1, then 1.2, 1.3 and so on, each with build number 1. (After 1.9 comes 1.10, which Apple
@@ -66,23 +66,17 @@ refuse it. Use the script (or the GitHub workflow below).
 2. In this repository on GitHub: **Settings → Secrets and variables → Actions → New repository secret**, and add three:
    `ASC_KEY_ID` (the Key ID), `ASC_ISSUER_ID` (the Issuer ID), and `ASC_KEY_P8` (open the `.p8` file in a text editor and
    paste all of it, including the BEGIN and END lines).
-3. That's it: from now on it uploads by itself. **Every merge into `main`** here (except docs-only changes), **every
-   merge into `main` in the gamenight repo** (see step 4), and **the 1st of every other month** (so a build never hits the
-   90-day expiry) build, sign and upload a new TestFlight build. Each run first builds the newest engine and question
-   sets from gamenight into the app and runs the tests, so a broken engine never reaches the TVs. To upload by hand:
+3. That's it: from now on it uploads by itself. **Every merge into `main`** that changes the app, the rules, the
+   engine or the shipped question sets, and **the 1st of every other month** (so a build never hits the 90-day expiry),
+   build, sign and upload a new TestFlight build. Each run first rebuilds the engine and question sets from the same
+   commit into the app and runs the tests, so a broken engine never reaches the TVs. To upload by hand:
    **Actions → Send to TestFlight → Run workflow** (the version box is optional). It checks the app exists, makes a
    TestFlight group called **Family** if there is none, then builds, signs and uploads. A warning that the app does not
    exist yet means step "create the app" above is still to do.
-4. **Merges in gamenight** reach this workflow through a token, once: on GitHub, **your picture → Settings → Developer
-   settings → Personal access tokens → Fine-grained tokens → Generate new token**. Name it "gamenight to TestFlight",
-   pick the longest expiry, Resource owner the account that owns `familygamenight`, **Only select repositories →
-   familygamenight**, and under Repository permissions set **Contents: Read and write** (it only lets gamenight start
-   this workflow). Copy the token, then in the **gamenight** repo: **Settings → Secrets and variables → Actions → New
-   repository secret**, name `FAMILYGAMENIGHT_TOKEN`, paste it. Without it, gamenight merges reach the TVs at the next
-   merge here or the next scheduled build.
 
-Automatic builds use the version in `Config/testflight-version.txt` (the first number) and the workflow's run number as
-the build number, which always goes up, so they never clash: TestFlight shows them as 1.1 (4), 1.1 (5) and so on. To
+Automatic builds use the version in `tv-app/Config/testflight-version.txt` (the first number) and 100 plus the workflow's
+run number as the build number (the app's old repository used builds 1 to 4), which always goes up, so they never clash:
+TestFlight shows them as 1.1 (101), 1.1 (102) and so on. To
 start a new version, upload it by hand (or with the script) and commit the new number in that file.
 
 The key is as powerful as an Admin login: never put it in a file in the repository, and delete the key in App Store Connect

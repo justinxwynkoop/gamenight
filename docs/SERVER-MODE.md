@@ -1,17 +1,23 @@
-# Server mode: run the game on a Raspberry Pi (or any computer)
+# Server mode: run the game on your own computer (no internet needed)
 
-The original way to run Game Night, and still fully supported. A small Node.js server does the work: it serves the TV
-page, the phone pages and the game over your own Wi-Fi. Nothing here needs the internet. For the newer way, where the
-Apple TV app runs the game and phones connect over the internet, see [ONLINE.md](ONLINE.md).
+The offline backup. A small Node.js server on any Windows, Mac or Linux computer serves the TV page, the phone pages and
+the game over your own Wi-Fi, so nothing here needs the internet. Normally you don't need this: the Apple TV app, or the
+website's TV page (`/tv` on the site, in any browser), runs the game, and phones connect over the internet (see
+[ONLINE.md](ONLINE.md)).
 
 | Page | Who | Address |
 | --- | --- | --- |
-| TV | the TV (a kiosk browser) | `/tv` |
+| TV | the TV (any browser, full screen) | `/tv` |
 | Player | everyone's phone (what the QR code opens) | `/` |
 | Host | the host's phone or tablet, answers visible | `/host` (PIN) |
 | Editor | whoever writes the questions | `/editor` (PIN; `?game=<id>` picks the game) |
 
-## Try it on any computer
+## Start it
+
+**Windows:** install [Node.js](https://nodejs.org) (the LTS version) once, then double-click **`Start Game Night.bat`**
+in this folder. It installs what it needs the first time and prints the addresses.
+
+**Mac or Linux:**
 
 ```bash
 npm install
@@ -48,12 +54,10 @@ The PIN is a guard against curious players on the same Wi-Fi, not real security;
 don't reuse a password.
 
 
-## Jeopardy in server mode
+## Jeopardy and Family Feud in server mode
 
-Jeopardy now runs on the Apple TV (its board, clue and Final screens are drawn by the app, and real-show clues are
-fetched by the app for each room). A Raspberry Pi server still **runs the rooms** and its host page can drive a Jeopardy
-game, but the TV browser page shows only "Jeopardy is on the Apple TV". Family Feud is unchanged in server mode,
-including its random boards (below).
+Both games run here, with the same TV screens as the website's TV page. Jeopardy's real-show clue seasons are
+downloaded when a room starts, so with no internet you play the question sets that ship with the game and your own.
 
 ## More Family Feud questions
 
@@ -80,13 +84,13 @@ Undo and the editor freely. Use the data for your own family nights; don't publi
 **Random board button.** Once the survey data is installed, the host's setup screen has a **Random board**
 card for Family Feud: **Build a random board** makes a fresh set (5 rounds and 5 Fast Money questions)
 at once and picks it, with a switch for the family-friendly filter. (Without the data it says "Not set up
-on this Pi yet" and shows the command.) The newest 12 random boards are kept.
+on this server yet" and shows the command.) The newest 12 random boards are kept.
 
 
 ## Your own sounds
 
 
-To use your own audio, put files on the Pi in `data/sounds/`. Files go in one folder per game, so
+To use your own audio, put files on the server in `data/sounds/`. Files go in one folder per game, so
 each game keeps its own sounds:
 
 ```
@@ -112,113 +116,20 @@ the same name, and a sound with no file anywhere falls back to the built-in one.
 Music only plays if you provide a file. Files are read when the TV page loads, so reload it after
 adding some. Anything with a different name is ignored.
 
-**Getting a file onto the Pi.** From your computer, with the Pi on the same network (Windows 10 and
-later, macOS and Linux all have `scp`):
+**Getting a file onto the server.** Copy it into the server's `data/sounds/<game>/` folder (a USB stick works), then reload the TV page.
 
-```bash
-scp think.mp3 YOURUSERNAME@gamenight.local:~/gamenight/data/sounds/jeopardy/think.mp3
-```
-
-Or copy it with a USB stick into `~/gamenight/data/sounds/` on the Pi.
 
 `data/sounds/` is git-ignored on purpose: this repository is public, so audio you didn't create
 (a TV show's music, for instance) can't be accidentally published from here. Whether using such
 audio at a private family game night suits you is your call; the app just plays what you put there.
 
 
-## Setting up the Raspberry Pi
+## Network
 
-*Written from the plan; not yet tried on real hardware. Check each step.*
-
-### Which Pi
-
-A **Pi 4** is the target. This is a small Node server plus a simple page in a
-kiosk browser, so a Pi 4 of any RAM size runs it comfortably. A Pi 5 also works
-but isn't needed. A Pi 3 / 3B+ works too, just slower to boot and load pages
-(and 1 GB of RAM is tight for heavier games later); keep one as a spare.
-
-What to buy or gather for a Pi 4:
-
-- Official 5 V 3 A USB-C power supply. A weak phone charger causes random reboots.
-- Micro-HDMI to HDMI cable (Pi 4 has micro-HDMI; a Pi 3 uses full-size HDMI).
-- microSD card, 32 GB, A1 or better, from a reputable seller (fakes are common).
-  Keep a spare card cloned from the first one.
-- A case with a small heatsink. An active fan isn't needed for this workload.
-
-### Software: the easy way (one command, then desktop icons)
-
-On the Pi's desktop, open a terminal **once** and paste this. It installs what's needed, asks you to
-choose a host PIN, and puts icons on the desktop:
-
-```bash
-git clone https://github.com/justinxwynkoop/gamenight.git ~/gamenight && ~/gamenight/deploy/setup-pi.sh
-```
-
-(If you already cloned it: `cd ~/gamenight && git pull && deploy/setup-pi.sh`. It is safe to run
-again.) It needs the Pi online and asks for the Pi's password once, to install Node.js.
-
-After that you never need the terminal. The desktop has four icons (the first time you
-double-click one, the Pi may ask whether to run it; choose **Execute**):
-
-| Icon | What it does |
-| --- | --- |
-| **Game Night** | Starts the game server if it isn't running, then shows the board full screen. Press **Alt+F4** to leave the full-screen board; the server and any game in progress keep running. |
-| **Game Night Host Info** | Shows the host page address, a QR code for it and the PIN. Scan it with the host's phone. Close it before guests arrive. Only a browser on the Pi itself can open this page. |
-| **Game Night Stop** | Stops the server. |
-| **Game Night Update** | Downloads the newest version (the Pi must be online). Then Stop and start it again. |
-
-Everything the server prints is saved in `data/server.log` if something doesn't start.
-
-If the board opens as a **white screen**, Chromium is waiting on a hidden "choose password for new
-keyring" prompt. The icons already start Chromium with `--password-store=basic` to avoid it. In an
-ordinary Chromium window you can stop the prompt by choosing a blank password once and continuing. The icons
-call `deploy/gamenight.sh`, which you can also run by hand (`tv`, `info`, `start`, `stop`, `update`).
-These scripts were tested on a laptop, not yet on a real Pi.
-
-### Software: by hand
-
-The steps below do the same thing without the setup script, and add running the server as a
-background service that starts at boot.
-
-1. Flash Raspberry Pi OS with desktop (64-bit) with Raspberry Pi Imager and
-   connect the Pi to the Game Night network. Give it a DHCP reservation so its
-   address never changes.
-2. Install Node 20 or newer (the OS package may be older):
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-   sudo apt install -y nodejs git
-   ```
-3. Get the code and install:
-   ```bash
-   git clone https://github.com/justinxwynkoop/gamenight.git ~/gamenight
-   cd ~/gamenight && npm install
-   ```
-4. Run it as a service: edit `deploy/gamenight.service` (user, path, `HOST_PIN`),
-   copy it to `/etc/systemd/system/`, then
-   `sudo systemctl daemon-reload && sudo systemctl enable --now gamenight`.
-5. Boot the TV straight into the board. On the current desktop (labwc), add this
-   line to `~/.config/labwc/autostart`:
-   ```bash
-   chromium --kiosk --noerrdialogs --disable-infobars --password-store=basic --autoplay-policy=no-user-gesture-required http://localhost/tv &
-   ```
-   (The binary is `chromium-browser` on older images. Use `:3000` in the URL if
-   you didn't set `PORT=80`.)
-
-### Network
-
-The server needs the Pi, the phones and (later) the buzzers on one network with
-**client isolation off**; the host home's Wi-Fi and internet are optional.
-Follow the Game Night SSID steps in the project plan, including the offline test
-(Teleport off, no uplink) before the first real game. Phones may show "No
-internet"; that's expected.
-
-The QR code points at the Pi's current address and **follows it**: if the Pi joins a
-different network (a new house, a different Wi-Fi), the TV notices within a few seconds
-and redraws the code, and the server logs the new addresses. You don't need to restart
-anything. Each house's router hands the Pi a different address, so the DHCP
-reservation above only helps on your own network. Set `PUBLIC_URL` to pin the address
-(for example if the Pi has several network connections and the wrong one is picked);
-that turns the automatic update off.
+The computer and the phones must be on the same Wi-Fi, with **client isolation off** (guest networks usually have it
+on). The QR code points at the computer's current address and follows it if the computer joins another network. Set
+`PUBLIC_URL` to pin the address (for example if the computer has several network connections and the wrong one is
+picked); that turns the automatic update off.
 
 Set `WIFI_SSID` and `WIFI_PASSWORD` to also serve a Wi-Fi join QR at `/api/wifi-qr.svg` (for a printed table sign).
 
@@ -236,7 +147,7 @@ Set `WIFI_SSID` and `WIFI_PASSWORD` to also serve a Wi-Fi join QR at `/api/wifi-
 
 ## Buzzers (Phase 3)
 
-A physical buzzer is just another player. Over the same WebSocket (`ws://<pi>/ws`),
+A physical buzzer is just another player. Over the same WebSocket (`ws://<server>/ws`),
 JSON text messages:
 
 ```text

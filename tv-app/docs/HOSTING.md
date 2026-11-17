@@ -3,7 +3,7 @@
 **No server or computer is needed.** The game rules (the same JavaScript the Game Night server runs) are
 inside the app, running in JavaScriptCore. Phones open a web page on Vercel and talk to the TV through a free Supabase
 Realtime relay, so everyone just needs internet. How it works, and how to set up Supabase and Vercel from scratch, is
-in the `gamenight` repo's **[docs/ONLINE.md](https://github.com/justinxwynkoop/gamenight/blob/main/docs/ONLINE.md)**.
+in **[docs/ONLINE.md](../../docs/ONLINE.md)** at the top of the repository.
 This repo holds the Apple TV side.
 
 **Using it**
@@ -24,20 +24,15 @@ This repo holds the Apple TV side.
 | File | What it holds |
 | --- | --- |
 | `RelayConfig.swift` | The Supabase project URL, its *publishable* key (public by design; never put a secret key here) and the Vercel site address. |
-| `Engine/engine.js` | The game engine, **generated** from the `gamenight` repo (see below). |
+| `Engine/engine.js` | The game engine, **generated** from the rules at the top of this repository (see below). |
 | `Engine/sets.json` | The 16 question sets that ship with the app, generated the same way. |
 | `Core/EngineHost.swift` | Loads `engine.js` into JavaScriptCore and passes JSON messages in and out. |
 | `Core/RealtimeClient.swift` | A small Supabase Realtime (Phoenix channels) client, adapted from the one in the Buzzworthy Apple TV app. |
 | `GameNightClient.swift` | Starts the engine (`startLocal`), links it to the relay and the display, keeps the room between launches. |
 
-**Updating the game engine inside the app.** The rules live in the `gamenight` repo. After changing them there:
-
-```bash
-cd ../gamenight && node scripts/build-engine.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/engine.js
-node scripts/bundle-sets.mjs ../familygamenight/FamilyGameNight/GameNight/Engine/sets.json   # only if the shipped sets changed
-```
-
-Commit the changed files here. Nothing updates on its own: the app only changes when you rebuild and run it.
+**Updating the game engine inside the app.** The rules live at the top of this repository (`room.js`, `games/`,
+`engine/`, `data/`). After changing them, run `npm run build` at the top and commit what it writes (CI fails if you
+forget). TestFlight builds rebuild the engine themselves, so a merge into `main` reaches the TVs on its own.
 
 **The Apple TV remembers** the room between launches (players, scores, the game in progress) and the room code,
 and any question sets you saved from the editor. Delete the app to forget them.

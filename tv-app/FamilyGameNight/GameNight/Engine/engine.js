@@ -2254,7 +2254,7 @@
       this.teams = [];
       this.gameId = null;
       this.game = null;
-      this.settings = { sound: true, volume: 70 };
+      this.settings = { sound: true, volume: 70, lateJoin: false };
       this.soundPing = 0;
       this.connected = /* @__PURE__ */ new Set();
     }
@@ -2288,7 +2288,7 @@
       this.teamCount = data.teamCount === 4 ? 4 : 2;
       this.players = data.players ?? [];
       this.teams = (data.teams ?? []).map((t, i) => ({ key: TEAM_DEFS[i]?.key ?? `team${i + 1}`, ...t }));
-      this.settings = { sound: true, volume: 70, ...data.settings };
+      this.settings = { sound: true, volume: 70, lateJoin: false, ...data.settings };
       this.gameId = null;
       this.game = null;
       if (data.gameId && this.games[data.gameId]) {
@@ -2325,6 +2325,7 @@
       name = cleanName(name);
       if (!name) fail("Enter a name");
       if (this.players.length >= __privateMethod(this, _Room_instances, maxPlayers_fn).call(this)) fail("The game is full");
+      if (this.inProgress() && !this.settings.lateJoin) fail("The game has started. Ask the host to let new players in (Settings).");
       if (this.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) fail("That name is taken");
       color = COLORS.includes(color) ? color : __privateMethod(this, _Room_instances, freeColor_fn).call(this);
       const player = {
@@ -2433,8 +2434,9 @@
         u.score = 0;
       });
     }
-    setRoomSettings({ sound, volume }) {
+    setRoomSettings({ sound, volume, lateJoin }) {
       if (typeof sound === "boolean") this.settings.sound = sound;
+      if (typeof lateJoin === "boolean") this.settings.lateJoin = lateJoin;
       if (volume !== void 0) {
         const v = int(volume);
         if (!(v >= 0 && v <= 100)) fail("Volume must be 0 to 100");

@@ -1,7 +1,7 @@
 import SwiftUI
 
 // Family Feud on the TV: the face-off, the survey board with strikes and the steal, Fast Money,
-// and the winner. These follow the web TV (public/games/feud/tv.js in the gamenight repo).
+// and the winner. These follow the web TV (public/games/feud/tv.js at the top of this repository).
 
 /// The Family Feud screen for the current state. The TV display hands every Feud screen to this.
 struct FeudContent: View {
