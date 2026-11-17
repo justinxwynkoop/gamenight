@@ -36,11 +36,11 @@ function subtitle() {
   }
 }
 
-// ---------- a random board (built on the Pi from the survey data; see games/feud/survey.js) ----------
+// ---------- a random board (built on a home server from the survey data; see games/feud/survey.js) ----------
 const rand = { family: true, busy: false, error: '', info: undefined };
 const api = (method, body) => apiFetch('/api/games/feud/random', { method, headers: { 'x-host-pin': C.pin(), 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
 
-/** Whether the survey data is installed on the Pi (asked once, and again on "Check again"). */
+/** Whether the survey data is installed on the server (asked once, and again on "Check again"). */
 function loadRandomInfo(force = false) {
   if (!force && rand.info !== undefined) return;
   rand.info = null;
@@ -66,9 +66,9 @@ function randomCard() {
   loadRandomInfo();
   if (rand.info === undefined || rand.info === null) return card(eyebrow('Random board'), h('p', { class: 'dim' }, 'Checking…'));
   if (!rand.info.available) {
-    return card(eyebrow('Random board'), h('div', { class: 'card-title' }, 'Not set up on this Pi yet'),
-      h('p', { class: 'dim' }, 'Download the public survey questions once, on the Pi, and the host screen can build a fresh board whenever you like. It also makes 20 ready-to-pick sets. The data stays on the Pi.'),
-      h('div', { class: 'answer' }, h('small', {}, 'On the Pi, in the gamenight folder'), h('b', {}, './scripts/get-feud-sets.sh')),
+    return card(eyebrow('Random board'), h('div', { class: 'card-title' }, 'Not set up on this server yet'),
+      h('p', { class: 'dim' }, 'Download the public survey questions once, on the server computer, and the host screen can build a fresh board whenever you like. It also makes 20 ready-to-pick sets. The data stays on that computer.'),
+      h('div', { class: 'answer' }, h('small', {}, 'On the server computer, in the gamenight folder'), h('b', {}, './scripts/get-feud-sets.sh')),
       button({ label: 'Check again', icon: 'refresh', onclick: () => loadRandomInfo(true) }));
   }
   return card(eyebrow('Random board'), h('div', { class: 'card-title' }, 'Build a fresh board'),

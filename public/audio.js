@@ -1,7 +1,7 @@
 // Sound effects for the TV, synthesized with WebAudio, so there are no audio
 // files to ship or license. Browsers keep audio locked until the page has had
 // a click or key press; the kiosk launch flag in the README (autoplay-policy)
-// removes that on the Pi, and elsewhere the first click or key unlocks it.
+// removes that on a kiosk, and elsewhere the first click or key unlocks it.
 
 let ctx = null;
 let master = null;
@@ -47,7 +47,9 @@ function tone(freq, at, dur, { type = 'sine', gain = 0.6, to = null } = {}) {
 async function loadCustom() {
   const c = ensure();
   if (!c) return;
-  const list = await (await fetch('/api/sounds')).json();
+  if (globalThis.GN_RELAY) return;   // online there is no server with sound files: the built-in sounds play
+  let list = [];
+  try { list = await (await fetch('/api/sounds')).json(); } catch { return; }
   await Promise.all(list.map(async ({ name, url, game: owner }) => {
     try {
       const data = await (await fetch(url)).arrayBuffer();

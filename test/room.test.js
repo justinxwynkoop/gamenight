@@ -59,6 +59,22 @@ test('choosing a game creates it; roster is locked while it is in progress', () 
   assert.throws(() => room.chooseGame('nope'), /No such game/);
 });
 
+test('once a game starts, new players are kept out unless the host lets them in', () => {
+  const room = mk();
+  const ann = room.join({ name: 'Ann' });
+  room.chooseGame('fake');
+  room.act('start');
+  assert.throws(() => room.join({ name: 'Stranger' }), /has started/);
+  assert.ok(room.players.some((p) => p.id === ann.id));     // the players already in are untouched
+  room.act('setRoomSettings', { lateJoin: true });
+  room.join({ name: 'Late Larry' });
+  assert.equal(room.players.length, 2);
+  room.act('setRoomSettings', { lateJoin: false });
+  room.act('stop');
+  room.join({ name: 'Back in the lobby' });                 // the lobby is always open
+  assert.equal(room.players.length, 3);
+});
+
 test('re-choosing the same game keeps it (does not wipe its state)', () => {
   const room = mk();
   room.chooseGame('fake');
@@ -130,6 +146,7 @@ test('save and restore brings back the roster and the active game', () => {
   assert.equal(copy.players[0].score, 10);
   assert.equal(copy.connected.size, 0);
   // ids keep counting up, so a new player never reuses an old id
+  copy.act('setRoomSettings', { lateJoin: true });
   assert.notEqual(copy.join({ name: 'Bo' }).id, p.id);
 });
 
@@ -268,6 +285,7 @@ test('a renamed team keeps its name when teams are redealt', () => {
 test('once a game has started nothing is rearranged, and a late joiner still gets a team', () => {
   const room = crowd(6);
   room.act('start');
+  room.act('setRoomSettings', { lateJoin: true });   // the host lets latecomers in
   const before = room.players.map((p) => p.teamId);
   const late = room.join({ name: 'Late' });
   assert.equal(room.mode, 'teams');
@@ -277,6 +295,7 @@ test('once a game has started nothing is rearranged, and a late joiner still get
   assert.throws(() => room.shuffleTeams(), /before the game starts/);
   const solo = crowd(3);
   solo.act('start');
+  solo.act('setRoomSettings', { lateJoin: true });
   solo.join({ name: 'Late' });
   assert.equal(solo.mode, 'players');                  // individuals stay individuals mid-game
 });

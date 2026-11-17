@@ -1,0 +1,126 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": true,
+    "maxPlayers": 8,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 49210,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": -200,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "score": 500,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Jeopardy",
+    "phase": "final-wager",
+    "status": "final-wager",
+    "round": 3,
+    "rounds": 2,
+    "captainId": "p1",
+    "hostJudges": false,
+    "controllerId": "p1",
+    "players": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "score": 49210,
+        "color": "#ef4444",
+        "connected": true,
+        "streak": 57
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "score": -200,
+        "color": "#f97316",
+        "connected": true,
+        "streak": 0
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "score": 500,
+        "color": "#eab308",
+        "connected": true,
+        "streak": 2
+      }
+    ],
+    "timer": null,
+    "board": null,
+    "clue": null,
+    "lastResult": {
+      "pid": "p1",
+      "answer": "Crawley",
+      "correct": true,
+      "delta": 2000,
+      "overridden": false,
+      "streak": 57
+    },
+    "answerTime": 10,
+    "answerTimes": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      0
+    ],
+    "hotStreak": 3,
+    "reactions": [],
+    "reactionChoices": [
+      "👏",
+      "😂",
+      "😱",
+      "🔥",
+      "🤯",
+      "🎉"
+    ],
+    "final": {
+      "category": "Planets",
+      "q": null,
+      "answer": null,
+      "eligible": [
+        "p1",
+        "p3"
+      ],
+      "wagered": [],
+      "answered": [],
+      "revealIndex": -1,
+      "reveals": []
+    }
+  }
+}

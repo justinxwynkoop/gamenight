@@ -1,13 +1,15 @@
 {
   "name": "gamenight",
   "version": "0.1.0",
-  "description": "Jeopardy-style trivia with phone and physical buzzers, served from a Raspberry Pi",
+  "description": "Family game night: Jeopardy and Family Feud on the TV (Apple TV app or any browser), played from phones",
   "private": true,
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "build": "node scripts/build-web.mjs && node scripts/build-engine.mjs tv-app/FamilyGameNight/GameNight/Engine/engine.js && node scripts/bundle-sets.mjs tv-app/FamilyGameNight/GameNight/Engine/sets.json",
+    "e2e": "node scripts/e2e-phone.mjs && node scripts/e2e-tv.mjs"
   },
   "engines": {
     "node": ">=20"

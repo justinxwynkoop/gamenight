@@ -1,5 +1,5 @@
 // Game Night server: one Node process serves the web pages, the WebSocket
-// game connection, and the question-set editor API. Runs on a Raspberry Pi.
+// game connection, and the question-set editor API. Runs on any computer on your network (the offline backup).
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
@@ -44,7 +44,7 @@ const pinOk = (given) => {
 
 // ---------- the join address that goes in the QR code ----------
 // The address in the QR code. Worked out on every request (not once at startup) so that when the
-// Pi joins a different network, the QR code follows it. PUBLIC_URL pins it and turns that off.
+// computer joins a different network, the QR code follows it. PUBLIC_URL pins it and turns that off.
 const currentJoinUrl = () => (process.env.PUBLIC_URL ?? `http://${pickAddress(os.networkInterfaces())}${PORT === 80 ? '' : `:${PORT}`}`).replace(/\/?$/, '/');
 const wifiString = process.env.WIFI_SSID
   ? `WIFI:T:${process.env.WIFI_PASSWORD ? 'WPA' : 'nopass'};S:${process.env.WIFI_SSID};${process.env.WIFI_PASSWORD ? `P:${process.env.WIFI_PASSWORD};` : ''};`
@@ -118,9 +118,9 @@ const readBody = (req, limit = 1_000_000) => new Promise((resolve, reject) => {
   req.on('error', reject);
 });
 
-// ---------- host info: only for a browser on the Pi itself ----------
+// ---------- host info: only for a browser on the server computer itself ----------
 // Shows the host page address, a QR code for it, and the PIN, so the host never needs a terminal to
-// find them. Anyone on the network is refused: the PIN is for the person at the Pi's screen.
+// find them. Anyone on the network is refused: the PIN is for the person at the server's screen.
 const isLocalRequest = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
 const escapeHtml = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 async function hostInfoPage() {
@@ -291,7 +291,7 @@ function printAddresses(joinUrl) {
 server.listen(PORT, () => {
   console.log('\nGame Night is running.');
   printAddresses(currentJoinUrl());
-  // If the network changes (the Pi joins another Wi-Fi), say so in the log. The QR code updates itself.
+  // If the network changes (the computer joins another Wi-Fi), say so in the log. The QR code updates itself.
   let shown = currentJoinUrl();
   setInterval(() => {
     const now = currentJoinUrl();

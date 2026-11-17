@@ -11,7 +11,7 @@ JSON document with a **title** and a **file name** (the id, lowercase letters, n
 | **Sets that come with the app** | `data/<game>/*.json` in this repo (11 Jeopardy and 5 Family Feud). They are packed into the Apple TV app. |
 | **The editor** | `<site>/editor`. On the host page, the **Questions** tab opens it. |
 | **Import** | In the editor, the **Import sets** card (see below). |
-| **Extra sets copied into the app on your Mac** | `Tools/install-sets.sh` in the `familygamenight` repo (for sets that must stay out of GitHub). |
+| **Extra sets copied into the app on your Mac** | `tv-app/Tools/install-sets.sh` (for sets that must stay out of GitHub). |
 | **Write the JSON by hand** | Any text editor; see the formats below. |
 
 Where they live: **online**, the Apple TV keeps sets you save or import (they survive restarts, but not deleting the app),
@@ -166,4 +166,4 @@ Six categories of five clues each. The exact rules are `validateSet` in `games/j
 (Jeopardy's real-show clues are not built into sets at all: the Apple TV fetches one season of the public archive for each
 room and uses it from memory.) These data files and the sets built from them (`data/feud/protoqa-*.json`,
 `data/feud/random-*.json`, `data/surveys/`) are listed in `.gitignore` and must never be committed. To use such sets on the Apple TV,
-copy them into the app on your Mac with `Tools/install-sets.sh` (see the app's [CUSTOM-FILES.md](https://github.com/justinxwynkoop/familygamenight/blob/main/docs/CUSTOM-FILES.md)).
+copy them into the app on your Mac with `Tools/install-sets.sh` (see the app's [CUSTOM-FILES.md](../tv-app/docs/CUSTOM-FILES.md)).

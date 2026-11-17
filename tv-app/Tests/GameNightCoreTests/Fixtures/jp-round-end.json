@@ -1,0 +1,264 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": true,
+    "maxPlayers": 8,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 16800,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": -200,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "score": 500,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "jeopardy",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "jeopardy",
+    "lobbyTitle": "Jeopardy",
+    "phase": "round-end",
+    "status": "round-end",
+    "round": 1,
+    "rounds": 2,
+    "captainId": "p1",
+    "hostJudges": false,
+    "controllerId": "p1",
+    "players": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "score": 16800,
+        "color": "#ef4444",
+        "connected": true,
+        "streak": 27
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "score": -200,
+        "color": "#f97316",
+        "connected": true,
+        "streak": 0
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "score": 500,
+        "color": "#eab308",
+        "connected": true,
+        "streak": 2
+      }
+    ],
+    "timer": null,
+    "board": [
+      {
+        "name": "Famous Scientists",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      },
+      {
+        "name": "Space Odyssey",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      },
+      {
+        "name": "Dinosaurs",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      },
+      {
+        "name": "Board Games",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      },
+      {
+        "name": "Coffee Shop",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      },
+      {
+        "name": "For the Birds",
+        "clues": [
+          {
+            "value": 200,
+            "used": true
+          },
+          {
+            "value": 400,
+            "used": true
+          },
+          {
+            "value": 600,
+            "used": true
+          },
+          {
+            "value": 800,
+            "used": true
+          },
+          {
+            "value": 1000,
+            "used": true
+          }
+        ]
+      }
+    ],
+    "clue": null,
+    "lastResult": {
+      "pid": "p1",
+      "answer": "Shrimp",
+      "correct": true,
+      "delta": 1000,
+      "overridden": false,
+      "streak": 27
+    },
+    "answerTime": 10,
+    "answerTimes": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      0
+    ],
+    "hotStreak": 3,
+    "reactions": [],
+    "reactionChoices": [
+      "👏",
+      "😂",
+      "😱",
+      "🔥",
+      "🤯",
+      "🎉"
+    ]
+  }
+}

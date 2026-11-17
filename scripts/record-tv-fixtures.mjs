@@ -1,6 +1,6 @@
 // Plays a scripted Jeopardy game on the real engine and saves what the TV receives at each step, as JSON, for the
-// Apple TV app's tests (Tests/GameNightCoreTests/Fixtures/jp-*.json in the familygamenight repo).
-//   node scripts/record-tv-fixtures.mjs <output directory>
+// Apple TV app's tests (tv-app/Tests/GameNightCoreTests/Fixtures/jp-*.json).
+//   node scripts/record-tv-fixtures.mjs tv-app/Tests/GameNightCoreTests/Fixtures
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
