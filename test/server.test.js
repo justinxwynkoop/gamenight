@@ -140,6 +140,8 @@ test('server end to end', async (t) => {
   await bo.until((c) => c.msgs.find((m) => m.t === 'joined'));
   host.act('chooseGame', { id: 'jeopardy' });     // with two games installed the host picks one
   host.act('start');
+  await tv.until((c) => c.view?.game?.phase === 'round-intro', 'round intro');
+  host.act('advance');                            // skip the opening titles
   await tv.until((c) => c.view?.game?.phase === 'board', 'board');
   // A clue that is not a Daily Double (the host sees where those are).
   const spot = (() => { const dd = host.view.game.secret.dd; for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) if (!dd[c][r]) return [c, r]; })();
@@ -175,7 +177,8 @@ test('server end to end', async (t) => {
     await new Promise((r) => setTimeout(r, 100));
     assert.equal(tv.view.game.phase, 'answering');
     winner.send({ t: 'answer', text: host.view.game.secret.answer });       // typed, judged by the server
-    await tv.until((c) => c.view?.game?.phase === 'reveal');
+    await tv.until((c) => c.view?.game?.phase === 'ruling', 'ruling');
+    await tv.until((c) => c.view?.game?.phase === 'reveal', 'reveal', 4000);
     assert.equal(tv.view.game.lastResult.correct, true);
     assert.equal(tv.view.game.clue.answer, host.view.game.secret.answer);
     assert.equal(tv.view.room.units.reduce((s, u) => s + u.score, 0), valueOf(spot));

@@ -25,7 +25,10 @@ function setup({ players = ['Ann', 'Bo', 'Cy'] } = {}) {
   ps.forEach((p) => room.setConnected(p.id, true));
   return { room, g: room.game, ps, clock };
 }
-const begin = (g) => { g.start(); return g; };
+/** Start, and skip the round's opening titles. */
+const begin = (g) => { g.start(); assert.equal(g.phase, 'round-intro'); g.advance(); return g; };
+/** Wait out the moment the ruling is shown, before the clue moves on. */
+const rule = (clock) => clock.advance(T.ruling + 10);
 /** Pick the first unused clue that is not a Daily Double, and wait out the reading time. */
 function openClue(g, clock, { dd = false } = {}) {
   const b = g.board();
@@ -195,6 +198,9 @@ test('a right typed answer scores, takes control and reveals', () => {
   const cl = openClue(g, clock);
   g.onPlayer(ps[2], { t: 'buzz' });
   g.onPlayer(ps[2], { t: 'answer', text: cl.a });
+  assert.equal(g.phase, 'ruling');                        // their answer and the ruling, on screen for a moment
+  assert.equal(ps[2].score, cl.value);
+  rule(clock);
   assert.equal(g.phase, 'reveal');
   assert.equal(ps[2].score, cl.value);
   assert.equal(g.controllerId, ps[2].id);
@@ -209,12 +215,14 @@ test('a wrong answer costs points and reopens the buzzers for everyone else; the
   g.buzz(ps[0].id);
   g.answer(ps[0].id, 'zzzzzzzz');
   assert.equal(ps[0].score, -cl.value);
+  rule(clock);
   assert.equal(g.phase, 'open');
   assert.equal(g.publicView().timer.totalMs, T.rebuzzWindow);
   assert.equal(g.buzz(ps[0].id).result, 'tried');
   g.buzz(ps[1].id);
   g.answer(ps[1].id, cl.a);
   assert.equal(ps[1].score, cl.value);
+  rule(clock);
   assert.equal(g.phase, 'reveal');
 });
 
@@ -224,9 +232,11 @@ test('everyone missing ends the clue; running out of answer time counts as a mis
   openClue(g, clock);
   g.buzz(ps[0].id);
   clock.advance(T.answer + 10);                   // Ann never typed anything
+  rule(clock);
   assert.equal(g.phase, 'open');
   g.buzz(ps[1].id);
   g.answer(ps[1].id, 'nope');
+  rule(clock);
   assert.equal(g.phase, 'reveal');
   assert.ok(ps[0].score < 0 && ps[1].score < 0);
 });
@@ -265,6 +275,7 @@ test('Daily Double: only the player in control wagers, bounded by their score or
   assert.equal(g.phase, 'dd-answer');
   g.answer(ctl.id, cl.a);
   assert.equal(ctl.score, 1000);
+  rule(clock);
   assert.equal(g.phase, 'reveal');
 });
 
@@ -282,7 +293,7 @@ test('override flips the last ruling', () => {
   const { g, ps, clock } = setup();
   begin(g);
   const cl = openClue(g, clock);
-  g.buzz(ps[0].id); g.answer(ps[0].id, 'banana');
+  g.buzz(ps[0].id); g.answer(ps[0].id, 'banana'); rule(clock);
   g.buzz(ps[1].id); g.answer(ps[1].id, 'apple');          // two misses
   g.override();                                           // the host decides Bo was right after all
   assert.equal(ps[1].score, cl.value);
@@ -305,6 +316,7 @@ test('host judges mode: players say the answer out loud and the host rules', () 
   assert.equal(g.publicView().timer.totalMs, 10000);
   assert.throws(() => g.answer(ps[0].id, 'typed'), /host/);
   g.act('judge', { correct: true });
+  rule(clock);
   assert.equal(g.phase, 'reveal');
   assert.ok(ps[0].score > 0);
   assert.throws(() => g.onPlayer(ps[0], { t: 'pick', ci: 0, ri: 1 }), /host/);
@@ -320,6 +332,7 @@ test('host mode answer clock runs out, then the host still has a few seconds to 
   assert.equal(g.publicView().timer.leftMs, 0);
   assert.equal(g.phase, 'answering');                      // still ruling
   g.act('judge', { correct: true });
+  rule(clock);
   assert.equal(g.phase, 'reveal');
 });
 
@@ -328,6 +341,8 @@ test('the captain can drive; other players cannot', () => {
   assert.equal(g.captain(), ps[0].id);
   assert.throws(() => g.onPlayer(ps[1], { t: 'cap', action: 'start' }), /captain/);
   g.onPlayer(ps[0], { t: 'cap', action: 'start' });
+  assert.equal(g.phase, 'round-intro');
+  g.onPlayer(ps[0], { t: 'cap', action: 'advance' });     // skip the opening titles
   assert.equal(g.phase, 'board');
   assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'judge' }), /Not allowed/);
 });
@@ -356,6 +371,7 @@ function playRound(g, ps, clock) {
         clock.advance(readingTime(cl.q) + 10);
         g.buzz(ps[0].id); g.answer(ps[0].id, cl.a);
       }
+      clock.advance(T.ruling + 10);
       clock.advance(T.reveal + 10);
       done = true;
     }
@@ -369,6 +385,9 @@ test('a full game: two rounds, then Final Jeopardy with wagers, answers and a re
   playRound(g, ps, clock);
   assert.equal(g.phase, 'round-end');
   g.advance();
+  assert.equal(g.phase, 'round-intro');
+  clock.advance(T.roundIntro + 10);
+  assert.equal(g.phase, 'board');
   assert.equal(g.round, 2);
   assert.equal(g.controllerId, ps[1].id);                // lowest score picks first
   playRound(g, ps, clock);
@@ -384,7 +403,24 @@ test('a full game: two rounds, then Final Jeopardy with wagers, answers and a re
   g.finalAnswer(ps[0].id, g.finalClue.a);
   clock.advance(2000);
   assert.equal(g.phase, 'final-reveal');
+  // One player at a time: first what they wrote, with right or wrong still hidden, and no correct answer yet.
+  let fv = g.publicView().final;
+  assert.equal(fv.stage, 'answer');
+  assert.equal(fv.answer, null);
+  assert.deepEqual(fv.reveals.map((r) => [r.id, r.pending, r.wager]), [[ps[0].id, true, 0]]);
+  assert.equal(ps[0].score, before);
+  clock.advance(T.finalBeat + 10);
+  fv = g.publicView().final;
+  assert.equal(fv.stage, 'verdict');
+  assert.equal(fv.reveals[0].correct, true);
+  assert.equal(fv.reveals[0].wager, before);
+  assert.equal(ps[0].score, before * 2);
+  assert.equal(fv.answer, null);
   clock.advance(T.finalStep + 10);
+  fv = g.publicView().final;                              // the correct answer comes last
+  assert.equal(fv.stage, 'done');
+  assert.equal(fv.answer, g.finalClue.a);
+  clock.advance(T.finalAnswerShow + 10);
   assert.equal(g.phase, 'gameover');
   assert.equal(ps[0].score, before * 2);
   const awards = g.publicView().awards;
@@ -397,7 +433,7 @@ test('a full game: two rounds, then Final Jeopardy with wagers, answers and a re
 test('by default everyone plays Final Jeopardy, and a player with no money may bet up to $1,000', () => {
   const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
   begin(g);
-  playRound(g, ps, clock); g.advance();
+  playRound(g, ps, clock); g.advance(); g.advance();
   playRound(g, ps, clock); g.advance();
   assert.equal(g.phase, 'final-wager');
   assert.deepEqual(g.final.eligible.slice().sort(), [ps[0].id, ps[1].id].sort(), 'Bo plays too');
@@ -453,7 +489,7 @@ test('"also accept" answers on your own clues count', () => {
   g.contentChanged();
   for (const p of g.publicView().packs) if (p.selected) g.togglePack(p.id);
   g.togglePack('own-family-night');
-  g.start();
+  begin(g);
   g.pick(0, 0);
   if (g.phase === 'dd-wager') { g.ddWager(g.controllerId, 5); g.answer(g.controllerId, 'zebra crossing'); assert.equal(g.lastResult.correct, true); } else {
     clock.advance(readingTime(g.clue.q) + 10);
@@ -520,7 +556,7 @@ test('hub: the TV itself may act; a browser claiming to be the TV may not', () =
   hub.receive('imposter', { t: 'act', action: 'start' });
   assert.equal(room.game.phase, 'lobby');
   hub.receive('tv', { t: 'act', action: 'start' });
-  assert.equal(room.game.phase, 'board');
+  assert.equal(room.game.phase, 'round-intro');
 });
 
 test('hub: a phone gets its own view with "me" and the buzz result comes back to it', () => {
@@ -534,4 +570,79 @@ test('hub: a phone gets its own view with "me" and the buzz result comes back to
   begin(g); openClue(g, clock);
   hub.receive('ph', { t: 'buzz' });
   assert.equal(sent.filter(([, m]) => m.t === 'buzz-result').at(-1)[1].result, 'won');
+});
+
+test('show beats: each round opens with its titles, and a ruling stays up a moment before play moves on', () => {
+  const { g, ps, clock } = setup();
+  g.start();
+  assert.equal(g.phase, 'round-intro');
+  assert.equal(g.publicView().timer.kind, 'intro');
+  clock.advance(T.roundIntro + 10);
+  assert.equal(g.phase, 'board');
+  const cl = openClue(g, clock);
+  g.buzz(ps[0].id); g.answer(ps[0].id, 'zzzzzzzz');
+  assert.equal(g.phase, 'ruling');
+  assert.equal(g.publicView().lastResult.answer, 'zzzzzzzz');
+  assert.equal(g.publicView().clue.answer, null, 'the answer stays hidden: others may still buzz');
+  rule(clock);
+  assert.equal(g.phase, 'open');
+  assert.equal(g.publicView().clue.open, 2);
+  assert.ok(cl);
+});
+
+test('a press meant for the first opening never wins the second one, and does not count as Fastest Finger', () => {
+  const { g, ps, clock } = setup();
+  begin(g); openClue(g, clock);
+  clock.advance(300);
+  g.buzz(ps[0].id, 1);
+  assert.equal(g.buzz(ps[1].id, 1).result, 'late');      // Bo pressed a moment after Ann
+  g.answer(ps[0].id, 'zzzzzzzz'); rule(clock);
+  assert.equal(g.phase, 'open');
+  assert.equal(g.buzz(ps[2].id, 1).result, 'early');     // Cy's press was sent before the buzzers reopened
+  clock.advance(T.earlyPenalty + 10);
+  const r = g.buzz(ps[2].id, 2);
+  assert.equal(r.result, 'won');
+  const fast = g.publicView().clue.buzzes;
+  assert.deepEqual(fast.map((b) => b.open), [1, 1, 2]);
+});
+
+test('skipping a clue never charges the player who was answering', () => {
+  const { g, ps, clock } = setup();
+  begin(g); openClue(g, clock);
+  g.buzz(ps[0].id);
+  g.skipClue();
+  assert.equal(ps[0].score, 0);
+  assert.equal(g.phase, 'reveal');
+});
+
+test('an answer typed but not sent when the clock runs out still counts', () => {
+  const { g, ps, clock } = setup();
+  begin(g);
+  const cl = openClue(g, clock);
+  g.buzz(ps[0].id);
+  g.onPlayer(ps[0], { t: 'draft', text: cl.a });
+  clock.advance(T.answer + 10);
+  assert.equal(g.lastResult.correct, true);
+  assert.equal(ps[0].score, cl.value);
+});
+
+test('removing a player during Final Jeopardy does not leave the game waiting for them', () => {
+  const { room, g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  assert.equal(g.phase, 'final-wager');
+  g.finalWager(ps[0].id, 5);
+  assert.equal(g.phase, 'final-wager');                  // still waiting for Bo
+  room.removePlayer(ps[1].id);
+  assert.equal(g.phase, 'final-answer');
+});
+
+test('judge reads number words and will not take a list of guesses', () => {
+  assert.ok(judge('twenty one', ['21']));
+  assert.ok(judge('nineteen eighty four', ['1984']));
+  assert.ok(judge('one hundred', ['100']));
+  assert.ok(judge('the planet mars', ['Mars']));
+  assert.ok(!judge('paris or london', ['Paris']));
+  assert.ok(!judge('not mars', ['Mars']));
 });

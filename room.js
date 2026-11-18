@@ -26,6 +26,7 @@ import { GameError, fail, cleanName, int, COLORS, MAX_PLAYERS, INDIVIDUAL_MAX, T
 
 const VERSION = 2;
 
+const MAX_SCORE = 10000000;
 export class Room {
   constructor({ games = {}, now = () => performance.now(), onChange = () => {}, loadContent = () => null, listContent = () => [], random = Math.random } = {}) {
     this.rng = random; // for dealing players onto teams; tests pass a fixed one
@@ -263,6 +264,7 @@ export class Room {
     this.players = this.players.filter((p) => p.id !== id);
     this.connected.delete(id);
     this.#reconcile();
+    this.game?.playerRemoved?.(id);
     this.changed();
   }
   /** Lobby only: forget every player and team (a new party). */
@@ -279,6 +281,8 @@ export class Room {
     } else {
       const n = int(delta); if (Number.isNaN(n)) fail('Adjustment must be a number'); u.score += n;
     }
+    // A slip of the thumb should not put a score past what any screen can show.
+    u.score = Math.max(-MAX_SCORE, Math.min(MAX_SCORE, u.score));
     this.changed();
   }
   resetScores() { this.units().forEach((u) => { u.score = 0; }); }
