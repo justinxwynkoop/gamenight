@@ -29,8 +29,8 @@ enum DisplayScreen: Equatable {
             case .roundEnd: return .roundEnd
             case .finalWager, .finalAnswer, .finalReveal: return game.finalRound != nil ? .finalRound : .board
             case .ddWager: return game.clue != nil ? .dailyDouble : .board
-            case .reading, .open, .answering, .reveal, .ddAnswer: return game.clue != nil ? .clue : .board
-            case .board, .unknown: return .board
+            case .reading, .open, .answering, .ruling, .reveal, .ddAnswer: return game.clue != nil ? .clue : .board
+            case .board, .roundIntro, .unknown: return .board
             }
         }
     }

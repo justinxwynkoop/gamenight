@@ -80,7 +80,11 @@
         "streak": 0
       }
     ],
-    "timer": null,
+    "timer": {
+      "kind": "reading",
+      "totalMs": 4000,
+      "leftMs": 4000
+    },
     "board": [
       {
         "name": "Famous Scientists",
@@ -245,6 +249,7 @@
       "buzzedId": null,
       "buzzMs": null,
       "buzzes": [],
+      "open": 0,
       "tried": []
     },
     "lastResult": null,

@@ -80,7 +80,11 @@
         "streak": 2
       }
     ],
-    "timer": null,
+    "timer": {
+      "kind": "wager",
+      "totalMs": 60000,
+      "leftMs": 60000
+    },
     "board": null,
     "clue": null,
     "lastResult": {
@@ -89,7 +93,9 @@
       "correct": true,
       "delta": 2000,
       "overridden": false,
-      "streak": 57
+      "streak": 57,
+      "timedOut": false,
+      "prevController": "p1"
     },
     "answerTime": 10,
     "finalForAll": false,
@@ -122,6 +128,9 @@
       "wagered": [],
       "answered": [],
       "revealIndex": -1,
+      "stage": null,
+      "answerShown": false,
+      "order": [],
       "reveals": []
     }
   }

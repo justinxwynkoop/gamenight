@@ -252,14 +252,17 @@
         {
           "pid": "p2",
           "ms": 300,
-          "won": true
+          "won": true,
+          "open": 1
         },
         {
           "pid": "p1",
           "ms": 380,
-          "won": false
+          "won": false,
+          "open": 1
         }
       ],
+      "open": 1,
       "tried": []
     },
     "lastResult": null,

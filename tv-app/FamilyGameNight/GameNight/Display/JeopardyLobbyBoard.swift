@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Everything Jeopardy puts on the TV, in one container: a header, the screen for the current phase, the TV's own
-/// controls (the Siri Remote can start the game, pick a clue, continue) and everyone's scores along the bottom.
+/// Everything Jeopardy puts on the TV, laid out like the website's TV (public/games/jeopardy/tv.js) on the same
+/// 1920 x 1080 stage: a header (the wordmark, the round, the TV's own buttons and how to join), the screen for the
+/// current step of the show, and a podium for each player along the bottom. The Siri Remote can use the buttons
+/// (start, pick a clue, continue).
 struct JeopardyContent: View {
     let game: JeopardyState
     let joinURL: URL?
@@ -10,70 +12,143 @@ struct JeopardyContent: View {
     let act: JeoAct
     var onNewRoom: (() -> Void)?
 
-    private var showScores: Bool { game.phase != .lobby && game.phase != .roundEnd && game.phase != .gameover }
+    /// The opening titles, the Daily Double, the end of a round and the champion fill the screen without podiums.
+    private var showPodiums: Bool {
+        ![.lobby, .roundIntro, .ddWager, .roundEnd, .gameover].contains(game.phase)
+    }
 
     var body: some View {
-        VStack(spacing: 16) {
-            if game.phase != .lobby { JeoHeader(game: game, joinURL: joinURL, roomCode: roomCode) }
-            Group {
-                switch game.phase {
-                case .lobby: JeoLobby(game: game, joinURL: joinURL, roomCode: roomCode)
-                case .board, .unknown: JeoBoard(game: game)
-                case .reading, .open, .answering, .reveal, .ddAnswer: JeoClueScreen(game: game)
-                case .ddWager: JeoDailyDouble(game: game)
-                case .roundEnd: JeoRoundEnd(game: game)
-                case .finalWager: JeoFinalWager(game: game)
-                case .finalAnswer: JeoFinalAnswer(game: game)
-                case .finalReveal: JeoFinalReveal(game: game)
-                case .gameover: JeoGameOver(game: game)
+        ZStack {
+            backdrop
+            if game.phase == .lobby {
+                VStack(spacing: 16) {
+                    JeoLobby(game: game, joinURL: joinURL, roomCode: roomCode)
+                    JeoControlBar(game: game, onNewRoom: onNewRoom)
                 }
+                .padding(.horizontal, 60)
+                .padding(.vertical, 40)
+            } else {
+                VStack(spacing: 24) {
+                    JeoHeader(game: game, joinURL: joinURL, roomCode: roomCode)
+                    screen
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    if showPodiums { JeoPodiums(game: game).frame(height: 132) }
+                }
+                .padding(.horizontal, 80)
+                .padding(.top, 40)
+                .padding(.bottom, 36)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            JeoControlBar(game: game, onNewRoom: onNewRoom)
-            if showScores { JeoScoreBar(game: game) }
+            if game.phase == .ddAnswer, let clue = game.clue {
+                // The bet, full screen, for a moment before the clue.
+                JeoDDOverlay(game: game, clue: clue).id("dd-\(game.round)-\(clue.ci)-\(clue.ri)")
+            }
         }
-        .padding(.horizontal, 60)
-        .padding(.vertical, 40)
         .overlay { JeoReactionLayer(game: game) }
         .foregroundColor(BW.text)
         .environment(\.jeoAct, act)
         .environment(\.jeoReceivedAt, receivedAt)
     }
+
+    @ViewBuilder private var backdrop: some View {
+        if game.phase == .ddWager {
+            BWRays().transition(.opacity)
+        } else if game.phase == .gameover {
+            ZStack {
+                RadialGradient(colors: [BW.gold.opacity(0.22), .clear], center: UnitPoint(x: 0.5, y: 0.2), startRadius: 0, endRadius: 760)
+                JeoConfetti(champion: game.players.max(by: { $0.score < $1.score }).map { Color(playerHex: $0.color) })
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    @ViewBuilder private var screen: some View {
+        switch game.phase {
+        case .lobby: EmptyView()
+        case .roundIntro: JeoRoundIntro(game: game)
+        case .board, .unknown: JeoBoard(game: game)
+        case .reading, .open, .answering, .ruling, .reveal, .ddAnswer: JeoClueScreen(game: game)
+        case .ddWager: JeoDailyDouble(game: game)
+        case .roundEnd: JeoRoundEnd(game: game)
+        case .finalWager: JeoFinalWager(game: game)
+        case .finalAnswer: JeoFinalAnswer(game: game)
+        case .finalReveal: JeoFinalReveal(game: game)
+        case .gameover: JeoGameOver(game: game)
+        }
+    }
 }
 
-// MARK: - Header and scores
+// MARK: - Header and podiums
 
+/// JEOPARDY, the round in gold, the TV's own buttons, and how to join (or what is going on) on the right.
 struct JeoHeader: View {
     let game: JeopardyState
     let joinURL: URL?
     let roomCode: String?
 
+    private var tag: String? {
+        switch game.phase {
+        case .roundIntro, .gameover, .lobby: return nil
+        case .finalWager, .finalAnswer: return "Final Jeopardy"
+        case .finalReveal: return "Final Jeopardy \u{00B7} \(game.finalRound?.category ?? "")"
+        default: return game.round == 2 ? "Round 2 \u{00B7} Double values" : "Round \(game.round)"
+        }
+    }
+
     var body: some View {
         HStack(spacing: 24) {
-            JeoWordmark(size: 30)
-            if let label = game.roundLabel {
-                BWEyebrow(text: label, color: BW.text, size: 18)
-                    .padding(.horizontal, 18).padding(.vertical, 8)
-                    .background(Capsule().fill(BW.surface2))
+            JeoWordmark(size: 34)
+            if let tag {
+                Text(tag.uppercased())
+                    .font(BW.body(24, .heavy))
+                    .kerning(3.8)
+                    .foregroundColor(BW.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
-            Spacer()
-            if let joinURL {
-                Text("Join at \(JoinAddress.display(joinURL.absoluteString.components(separatedBy: "?").first ?? joinURL.absoluteString))")
-                    .font(BW.body(24)).foregroundColor(BW.muted)
-            }
-            if let roomCode {
-                Text(roomCode)
-                    .font(BW.display(26))
-                    .kerning(4)
-                    .foregroundColor(BW.ink)
-                    .padding(.horizontal, 18).padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(BW.yellow))
+            Spacer(minLength: 16)
+            JeoControlBar(game: game, compact: true)
+            Spacer(minLength: 16)
+            aside
+        }
+        .frame(height: 64)
+    }
+
+    @ViewBuilder private var aside: some View {
+        switch game.phase {
+        case .roundIntro:
+            EmptyView()
+        case .board:
+            let left = (game.board ?? []).flatMap { category in category.clues }.filter { tile in !tile.used }.count
+            (Text("\(left)").font(BW.title(26)).foregroundColor(BW.text) + Text(left == 1 ? " clue left" : " clues left"))
+                .font(BW.body(26, .semibold)).foregroundColor(BW.muted)
+        case .gameover:
+            Text("The \(game.hostJudges ? "host" : "captain") can start a new game").font(BW.body(26, .semibold)).foregroundColor(BW.muted)
+        case .finalReveal where game.finalRound?.stage != "done" && !(game.finalRound?.order ?? []).isEmpty:
+            let final = game.finalRound
+            Text("Player \((final?.revealIndex ?? 0) + 1) of \(final?.order?.count ?? 0) \u{00B7} lowest score first")
+                .font(BW.body(26, .semibold)).foregroundColor(BW.muted)
+        default:
+            HStack(spacing: 14) {
+                if let joinURL {
+                    (Text("Join at ").foregroundColor(BW.muted)
+                     + Text(JoinAddress.display(joinURL.absoluteString.components(separatedBy: "?").first ?? joinURL.absoluteString)).foregroundColor(BW.text))
+                        .font(BW.body(26, .semibold))
+                        .lineLimit(1)
+                }
+                if let roomCode {
+                    Text(roomCode)
+                        .font(BW.title(24))
+                        .kerning(3.6)
+                        .foregroundColor(BW.ink)
+                        .padding(.horizontal, 14).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(BW.gold))
+                }
             }
         }
     }
 }
 
-/// JEOPARDY, with a yellow first half.
+/// JEOPARDY, with a gold first half.
 struct JeoWordmark: View {
     var size: CGFloat = 30
     var stacked = false
@@ -82,83 +157,210 @@ struct JeoWordmark: View {
         if stacked {
             VStack(alignment: .leading, spacing: -size * 0.18) {
                 Text("FAMILY").foregroundColor(BW.text)
-                Text("JEOPARDY").foregroundColor(BW.yellow)
+                Text("JEOPARDY").foregroundColor(BW.gold)
             }
             .font(BW.display(size))
         } else {
             HStack(spacing: 0) {
-                Text("JEO").foregroundColor(BW.yellow)
-                Text("PARDY").foregroundColor(BW.text)
+                Text("JEOP").foregroundColor(BW.gold)
+                Text("ARDY").foregroundColor(BW.text)
             }
             .font(BW.display(size))
         }
     }
 }
 
-struct JeoScoreBar: View {
+/// One podium per player along the bottom: their colour on top, name and score, and what they are doing now.
+struct JeoPodiums: View {
     let game: JeopardyState
 
+    enum Size { case full, mid, many }
+
+    struct Look {
+        var lit = false          // buzzed in, or their Final response is up
+        var out = false          // already tried this clue, or not in the Final
+        var dim = false          // their Final verdict is done
+        var picking = false
+        var tag: String?
+        var mark: String?
+        var markColor: Color = BW.muted
+        var lock = false
+    }
+
     var body: some View {
-        HStack(spacing: game.players.count > 8 ? 8 : 14) {
-            ForEach(game.players) { player in
-                JeoScoreChip(
-                    player: player,
-                    compact: game.players.count > 5,
-                    tiny: game.players.count > 8,
-                    picking: game.phase == .board && player.id == game.controllerId,
-                    buzzed: game.phase == .answering && game.clue?.buzzedId == player.id,
-                    hot: (player.streak ?? 0) >= (game.hotStreak ?? 3)
-                )
+        let n = game.players.count
+        let size: Size = n > 6 ? .many : n > 4 ? .mid : .full
+        let gap: CGFloat = size == .many ? 10 : size == .mid ? 14 : 20
+        GeometryReader { geo in
+            let columns = CGFloat(max(n, 4))
+            let width = max(0, (geo.size.width - gap * (columns - 1)) / columns)
+            HStack(spacing: gap) {
+                ForEach(game.players) { player in
+                    JeoPodium(player: player, look: look(for: player), size: size, hot: (player.streak ?? 0) >= (game.hotStreak ?? 3))
+                        .frame(width: width, height: geo.size.height)
+                }
+                Spacer(minLength: 0)
             }
         }
-        .padding(.top, 12)
+    }
+
+    private func look(for player: JeoPlayer) -> Look {
+        var look = Look()
+        let phase = game.phase
+        let final = game.finalRound
+        let buzzed: String? = [JeoPhase.answering, .ruling].contains(phase) ? game.clue?.buzzedId : phase == .ddAnswer ? game.controllerId : nil
+        let tried: [String] = [JeoPhase.open, .answering, .ruling].contains(phase) ? (game.clue?.tried ?? []) : []
+        if phase == .board && player.id == game.controllerId { look.tag = "PICKING"; look.picking = true }
+        if buzzed == player.id { look.lit = true } else if tried.contains(player.id) { look.out = true }
+        if let final, phase == .finalWager || phase == .finalAnswer {
+            if !final.eligible.contains(player.id) {
+                look.out = true
+            } else if (phase == .finalWager ? final.wagered : final.answered).contains(player.id) {
+                look.mark = "LOCKED"; look.markColor = BW.good; look.lock = true
+            } else {
+                look.mark = phase == .finalWager ? "BETTING\u{2026}" : "WRITING\u{2026}"
+            }
+        }
+        if let final, phase == .finalReveal {
+            let order = final.order ?? []
+            let current = final.stage != "done" && final.revealIndex >= 0 && final.revealIndex < order.count ? order[final.revealIndex] : nil
+            if player.id == current {
+                look.lit = true
+            } else if let reveal = final.reveals.first(where: { $0.id == player.id }), reveal.pending != true {
+                look.dim = final.stage != "done"
+                look.mark = reveal.wager == 0 ? "KEPT IT" : BW.signed(reveal.correct ? reveal.wager : -reveal.wager)
+                look.markColor = reveal.correct ? BW.good : BW.bad
+            } else if !final.eligible.contains(player.id) {
+                look.out = true
+            }
+        }
+        return look
     }
 }
 
-struct JeoScoreChip: View {
+struct JeoPodium: View {
     let player: JeoPlayer
-    let compact: Bool
-    var tiny = false   // nine or ten players: smaller still, so ten chips fit across the screen
-    let picking: Bool
-    let buzzed: Bool
-    var hot = false
+    let look: JeoPodiums.Look
+    let size: JeoPodiums.Size
+    let hot: Bool
+    @State private var delta: Int?
+    @State private var deltaKey = 0
 
     var body: some View {
         let color = Color(playerHex: player.color)
-        HStack(spacing: tiny ? 8 : 14) {
-            BWAvatar(name: player.name, color: color, size: tiny ? 34 : compact ? 44 : 54)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(player.name).font(BW.body(tiny ? 16 : compact ? 20 : 22, .semibold)).foregroundColor(BW.muted).lineLimit(1)
-                Text(BW.money(player.score))
-                    .font(BW.display(tiny ? 19 : compact ? 24 : 30))
-                    .foregroundColor(player.score < 0 ? BW.bad : BW.text)
-                    .lineLimit(1)
+        content(color)
+            .padding(.horizontal, size == .many ? 12 : size == .mid ? 18 : 28)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: size == .many ? .center : .leading)
+            .background(
+                ZStack {
+                    BW.surface
+                    color.opacity(look.lit ? 0.26 : 0)
+                    VStack { color.frame(height: 6); Spacer(minLength: 0) }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .strokeBorder(look.lit ? color : look.picking ? BW.gold : Color.white.opacity(0.08), lineWidth: look.lit || look.picking ? 4 : 1)
+            )
+            .shadow(color: look.lit ? color.opacity(0.55) : look.picking ? BW.gold.opacity(0.25) : .clear, radius: 23)
+            .overlay(alignment: size == .many ? .top : .topLeading) {
+                if let tag = look.tag {
+                    Text(tag)
+                        .font(BW.body(size == .many ? 20 : 24, .heavy))
+                        .kerning(2.8)
+                        .foregroundColor(BW.ink)
+                        .padding(.horizontal, 14).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(BW.gold))
+                        .offset(x: size == .many ? 0 : 28, y: -20)
+                }
+            }
+            .overlay(alignment: size == .many ? .top : .topTrailing) {
+                if let mark = look.mark {
+                    HStack(spacing: 6) {
+                        if look.lock { Image(systemName: "lock.fill").font(.system(size: size == .many ? 16 : 20, weight: .bold)) }
+                        Text(mark).font(BW.body(size == .many ? 18 : 22, .heavy)).kerning(1.8).lineLimit(1)
+                    }
+                    .foregroundColor(look.markColor)
+                    .padding(.horizontal, 14).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(BW.surface2))
+                    .shadow(color: .black.opacity(0.35), radius: 8, y: 6)
+                    .offset(x: size == .many ? 0 : -22, y: -20)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if let delta {
+                    JeoDelta(amount: delta).id(deltaKey).offset(x: -24, y: -10)
+                }
+            }
+            .opacity(look.out || !player.connected ? 0.45 : look.dim ? 0.6 : 1)
+            .offset(y: look.lit ? -14 : 0)
+            .animation(.easeOut(duration: 0.3), value: look.lit)
+            .onChange(of: player.score) { old, new in
+                guard new != old else { return }
+                delta = new - old
+                deltaKey += 1
+                let key = deltaKey
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.3) { if deltaKey == key { delta = nil } }
+            }
+    }
+
+    @ViewBuilder private func content(_ color: Color) -> some View {
+        let score = Text(BW.money(player.score))
+            .font(BW.display(size == .many ? 28 : size == .mid ? 36 : 44))
+            .foregroundColor(player.score < 0 ? BW.bad : BW.text)
+        let name = Text(player.name).font(BW.body(size == .many ? 24 : 28, .semibold))
+        if size == .many {
+            VStack(spacing: 4) {
+                name.lineLimit(1).minimumScaleFactor(0.6)
+                score.lineLimit(1).minimumScaleFactor(0.5)
+            }
+        } else {
+            HStack(spacing: size == .mid ? 12 : 18) {
+                BWAvatar(name: player.name, color: color, size: size == .mid ? 48 : 60)
+                VStack(alignment: .leading, spacing: 0) {
+                    name.lineLimit(1).minimumScaleFactor(0.6)
+                    score.lineLimit(1).minimumScaleFactor(0.5)
+                }
+                Spacer(minLength: 0)
+                if hot && look.mark == nil { JeoFlame(streak: player.streak ?? 0) }
             }
         }
-        .padding(.leading, tiny ? 8 : 14).padding(.trailing, tiny ? 12 : compact ? 20 : 28).padding(.vertical, tiny ? 8 : 12)
-        .background(RoundedRectangle(cornerRadius: 22).fill(buzzed ? color.opacity(0.28) : BW.surface))
-        .overlay(RoundedRectangle(cornerRadius: 22).stroke(picking || buzzed ? color : BW.line, lineWidth: picking || buzzed ? 4 : 1))
-        .overlay(alignment: .top) {
-            if picking {
-                BWEyebrow(text: "Picking", color: BW.ink, size: 13)
-                    .padding(.horizontal, 12).padding(.vertical, 4)
-                    .background(Capsule().fill(color))
-                    .offset(y: -13)
+    }
+}
+
+/// "+$1,000" floating up from a podium when a score changes.
+struct JeoDelta: View {
+    let amount: Int
+    @State private var up = false
+    @State private var gone = false
+
+    var body: some View {
+        Text(BW.signed(amount))
+            .font(BW.display(36))
+            .foregroundColor(amount > 0 ? BW.good : BW.bad)
+            .shadow(color: .black.opacity(0.5), radius: 0, y: 3)
+            .offset(y: gone ? -60 : up ? -30 : 20)
+            .opacity(gone ? 0 : up ? 1 : 0)
+            .onAppear {
+                withAnimation(.easeOut(duration: 0.35)) { up = true }
+                withAnimation(.easeIn(duration: 0.5).delay(1.65)) { gone = true }
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            if hot {
-                Text("\u{1F525}\(player.streak ?? 0)")
-                    .font(BW.body(22, .heavy))
-                    .padding(.horizontal, 10).padding(.vertical, 2)
-                    .background(Capsule().fill(BW.surface2))
-                    .offset(x: 10, y: -16)
-            }
-        }
-        .opacity(player.connected ? 1 : 0.4)
-        .scaleEffect(buzzed ? 1.1 : 1)
-        .offset(y: buzzed ? -10 : 0)
-        .animation(.spring(response: 0.3), value: buzzed)
+            .allowsHitTesting(false)
+    }
+}
+
+/// A player on a streak.
+struct JeoFlame: View {
+    let streak: Int
+    @State private var tilt = false
+
+    var body: some View {
+        Text("\u{1F525}\(streak)")
+            .font(BW.body(28, .heavy))
+            .rotationEffect(.degrees(tilt ? 6 : -6))
+            .scaleEffect(tilt ? 1.08 : 1)
+            .onAppear { withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { tilt = true } }
     }
 }
 
@@ -168,6 +370,8 @@ struct JeoControlBar: View {
     @Environment(\.jeoAct) private var act
     let game: JeopardyState
     var onNewRoom: (() -> Void)?
+    /// In the header during the game: smaller buttons.
+    var compact = false
 
     private struct Item: Identifiable {
         let id: String
@@ -177,6 +381,7 @@ struct JeoControlBar: View {
         var primary = false
     }
 
+    /// The same buttons the website's TV has (controlItems() in public/games/jeopardy/tv.js).
     private var items: [Item] {
         var list: [Item] = []
         let phase = game.phase
@@ -186,23 +391,27 @@ struct JeoControlBar: View {
             list.append(Item(id: "right", title: "Correct", action: "judge", args: ["correct": true]))
             list.append(Item(id: "wrong", title: "Wrong", action: "judge", args: ["correct": false]))
         }
-        if [.reading, .open, .answering, .ddWager, .ddAnswer].contains(phase) { list.append(Item(id: "skip", title: "Skip clue", action: "skip")) }
-        if game.lastResult != nil && [.reveal, .open, .board].contains(phase) && !game.hostJudges { list.append(Item(id: "flip", title: "Flip last ruling", action: "override")) }
-        if [.reveal, .roundEnd, .finalWager, .finalAnswer, .finalReveal].contains(phase) { list.append(Item(id: "next", title: "Continue", action: "advance")) }
+        if [.reading, .open, .answering, .ruling, .ddWager, .ddAnswer].contains(phase) { list.append(Item(id: "skip", title: "Skip clue", action: "skip")) }
+        if game.lastResult != nil && [.ruling, .reveal, .open, .board].contains(phase) { list.append(Item(id: "flip", title: "Flip last ruling", action: "override")) }
+        if phase == .finalReveal, let final = game.finalRound, final.stage == "verdict", let reveal = final.reveals.last {
+            list.append(Item(id: "fflip", title: "Flip \(game.name(reveal.id))\u{2019}s ruling", action: "finalOverride", args: ["pid": reveal.id]))
+        }
+        if [.roundIntro, .reveal, .roundEnd, .finalWager, .finalAnswer, .finalReveal].contains(phase) { list.append(Item(id: "next", title: "Continue", action: "advance")) }
         if phase == .board { list.append(Item(id: "end", title: "End round early", action: "endRound")) }
         if phase == .gameover { list.append(Item(id: "again", title: "Play again", action: "playAgain", primary: true)) }
         return list
     }
 
     var body: some View {
-        HStack(spacing: 18) {
+        HStack(spacing: compact ? 12 : 18) {
             ForEach(items) { item in
                 Button { act(item.action, item.args) } label: {
                     Text(item.title)
-                        .font(BW.body(item.primary ? 28 : 22, item.primary ? .heavy : .semibold))
-                        .padding(.horizontal, item.primary ? 34 : 24).padding(.vertical, item.primary ? 14 : 11)
+                        .font(BW.body(compact ? 22 : item.primary ? 28 : 22, item.primary ? .heavy : .semibold))
+                        .lineLimit(1)
+                        .padding(.horizontal, compact ? 20 : item.primary ? 34 : 24).padding(.vertical, compact ? 9 : item.primary ? 14 : 11)
                 }
-                .buttonStyle(BWButtonStyle(fill: item.primary ? BW.yellow : BW.surface2, text: item.primary ? BW.ink : BW.text))
+                .buttonStyle(BWButtonStyle(fill: item.primary ? BW.gold : BW.surface2, text: item.primary ? BW.ink : BW.text, corner: compact ? 14 : 18))
             }
             if game.phase == .lobby, let onNewRoom {
                 Button(action: onNewRoom) {
@@ -210,9 +419,9 @@ struct JeoControlBar: View {
                 }
                 .buttonStyle(BWButtonStyle())
             }
-            Spacer()
+            if !compact { Spacer() }
         }
-        .frame(minHeight: 64)
+        .frame(minHeight: compact ? 0 : 64)
     }
 }
 
@@ -363,34 +572,27 @@ struct JeoLobby: View {
     }
 }
 
-/// JEOPARDY, a LOBBY pill and the six column colours; the remote's Play/Pause hint on the right.
+/// JEOPARDY and LOBBY in gold; the remote's Play/Pause hint on the right.
 struct JeoLobbyHeader: View {
     var body: some View {
         HStack(spacing: 26) {
             JeoWordmark(size: 40)
-            BWEyebrow(text: "Lobby", color: BW.text, size: 18)
-                .padding(.horizontal, 20).padding(.vertical, 9)
-                .background(Capsule().fill(BW.surface2))
-            HStack(spacing: 8) {
-                ForEach(0..<BW.columns.count, id: \.self) { i in
-                    Capsule().fill(BW.column(i)).frame(width: 40, height: 8)
-                }
-            }
+            BWEyebrow(text: "Lobby", color: BW.gold, size: 22)
             Spacer()
             Text("Play/Pause for the host PIN").font(BW.body(22, .semibold)).foregroundColor(BW.muted)
         }
     }
 }
 
-/// Scan, name, buzz: the three steps as cards with coloured numbers.
+/// Scan, name, buzz: the three steps as cards with gold numbers.
 struct JeoLobbySteps: View {
     let hostJudges: Bool
 
     var body: some View {
         HStack(spacing: 18) {
-            step(1, BW.column(0), "Scan the code", "with your phone camera")
-            step(2, BW.column(2), "Pick a name", "and your colour")
-            step(3, BW.column(3), "Buzz in first", hostJudges ? "and say your answer" : "then type your answer")
+            step(1, BW.gold, "Scan the code", "with your phone camera")
+            step(2, BW.gold, "Pick a name", "and your colour")
+            step(3, BW.gold, "Buzz in first", hostJudges ? "and say your answer" : "then type your answer")
         }
     }
 
@@ -440,9 +642,13 @@ struct JeoBoardLine: View {
 
     var body: some View {
         HStack(spacing: 24) {
-            HStack(spacing: 6) {
-                ForEach(0..<BW.columns.count, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 5).fill(BW.column(i)).frame(width: 16, height: 42)
+            HStack(spacing: 5) {
+                ForEach(0..<6, id: \.self) { _ in
+                    Text("$")
+                        .font(BW.display(18))
+                        .foregroundColor(BW.gold)
+                        .frame(width: 34, height: 42)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(BW.tileFill))
                 }
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -636,7 +842,7 @@ struct JeoPackPicker: View {
                         .padding(.horizontal, many ? 14 : 18).padding(.vertical, many ? 9 : 11)
                         .frame(width: width)
                     }
-                    .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.mint : BW.surface, text: pack.selected ? BW.ink : BW.muted, corner: 30))
+                    .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.blue : BW.surface, text: pack.selected ? BW.text : BW.muted, corner: 30))
                 }
             }
         }
@@ -662,7 +868,7 @@ struct JeoEraPicker: View {
                     }
                     .padding(.horizontal, 16).padding(.vertical, 8)
                 }
-                .buttonStyle(BWButtonStyle(fill: on ? BW.mint : BW.surface, text: on ? BW.ink : BW.muted, corner: 30))
+                .buttonStyle(BWButtonStyle(fill: on ? BW.blue : BW.surface, text: on ? BW.text : BW.muted, corner: 30))
             }
             Group {
                 if game.archiveLoading == true {
@@ -707,7 +913,7 @@ struct JeoBoardBuilder: View {
                                 .padding(.horizontal, 14).padding(.vertical, 9)
                                 .frame(width: 298)
                             }
-                            .buttonStyle(BWButtonStyle(fill: BW.mint, text: BW.ink, corner: 24))
+                            .buttonStyle(BWButtonStyle(fill: BW.blue, text: BW.text, corner: 24))
                         }
                     }
                 }
@@ -729,40 +935,60 @@ struct JeoBoardBuilder: View {
 
 // MARK: - Board
 
+/// Remembers which board has been dealt onto the screen, so the tiles only fly in for a new board.
+enum JeoShown {
+    static var board = ""
+    static var intro = ""
+}
+
+/// The blue board: categories across the top, gold money below, empty squares where clues were played.
 struct JeoBoard: View {
     @Environment(\.jeoAct) private var act
     let game: JeopardyState
+    /// The tiles fly in, once for each new board.
+    @State private var deal: Bool
+
+    init(game: JeopardyState) {
+        self.game = game
+        _deal = State(initialValue: JeoBoard.key(game) != JeoShown.board)
+    }
+
+    static func key(_ game: JeopardyState) -> String {
+        "\(game.round):" + (game.board ?? []).map(\.name).joined(separator: "|")
+    }
 
     var body: some View {
         VStack(spacing: 14) {
-            if let board = game.board {
+            if let board = game.board, !board.isEmpty {
                 GeometryReader { geo in
-                    let gap: CGFloat = 10
-                    let columns = CGFloat(max(1, board.count))
+                    let gap: CGFloat = 12
+                    let columns = CGFloat(board.count)
+                    let rows = board.map(\.clues.count).max() ?? 5
                     let width = (geo.size.width - gap * (columns - 1)) / columns
-                    let height = (geo.size.height - gap * 5) / 6.1
+                    let height = (geo.size.height - gap * CGFloat(rows)) / (CGFloat(rows) + 1.3)
                     VStack(spacing: gap) {
                         HStack(spacing: gap) {
                             ForEach(board.indices, id: \.self) { column in
                                 Text(board[column].name.uppercased())
-                                    .font(BW.body(26, .heavy))
+                                    .font(BW.body(32, .heavy))
                                     .kerning(1)
                                     .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.6)
-                                    .padding(.horizontal, 12)
-                                    .frame(width: width, height: height * 1.1)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 16).fill(BW.surface)
-                                            .overlay(alignment: .bottom) { Rectangle().fill(BW.column(column)).frame(height: 7) }
-                                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    )
+                                    .lineLimit(3)
+                                    .minimumScaleFactor(0.5)
+                                    .padding(.horizontal, 18).padding(.vertical, 8)
+                                    .frame(width: width, height: height * 1.3)
+                                    .background(LinearGradient(colors: [BW.blueMid, BW.blueDeep], startPoint: .top, endPoint: .bottom))
+                                    .overlay(alignment: .bottom) { Rectangle().fill(BW.gold).frame(height: 3) }
+                                    .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.12)).frame(height: 1) }
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                         }
-                        ForEach(0..<5, id: \.self) { row in
+                        ForEach(0..<rows, id: \.self) { row in
                             HStack(spacing: gap) {
                                 ForEach(board.indices, id: \.self) { column in
-                                    JeoTileView(tile: board[column].clues[row], color: BW.column(column), width: width, height: height) {
+                                    let clues = board[column].clues
+                                    JeoTileView(tile: row < clues.count ? clues[row] : nil, width: width, height: height,
+                                                delay: deal ? Double(row * 6 + column) * 0.028 : nil) {
                                         act("pick", ["ci": column, "ri": row])
                                     }
                                 }
@@ -771,40 +997,49 @@ struct JeoBoard: View {
                     }
                 }
             }
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 if let player = game.player(game.controllerId) {
-                    BWAvatar(name: player.name, color: Color(playerHex: player.color), size: 36)
-                    Text("\(player.name), it’s your pick.").font(BW.body(26, .heavy))
+                    BWAvatar(name: player.name, color: Color(playerHex: player.color), size: 48)
+                    (Text(player.name).font(BW.body(32, .heavy)).foregroundColor(Color(playerHex: player.color))
+                     + Text(game.hostJudges ? ", it\u{2019}s your pick. Tell the host a category and an amount." : ", it\u{2019}s your pick. Choose a clue on your phone."))
+                        .font(BW.body(32, .semibold))
+                        .foregroundColor(BW.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
-                Text(game.hostJudges ? "Tell the host a category and an amount." : "Choose on your phone, or here with the remote.")
-                    .font(BW.body(24)).foregroundColor(BW.muted)
             }
+            .padding(.top, 14)
         }
+        .onAppear { JeoShown.board = JeoBoard.key(game) }
     }
 }
 
 struct JeoTileView: View {
-    let tile: JeoTile
-    let color: Color
+    let tile: JeoTile?
     let width: CGFloat
     let height: CGFloat
+    /// When set, the tile flies in after this many seconds.
+    var delay: Double?
     let pick: () -> Void
 
     var body: some View {
-        if tile.used {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(BW.line, lineWidth: 2)
-                .frame(width: width, height: height)
-        } else {
+        if let tile, !tile.used {
             Button(action: pick) {
                 Text(BW.money(tile.value))
-                    .font(BW.display(42))
+                    .font(BW.display(60))
+                    .shadow(color: .black.opacity(0.45), radius: 0, y: 4)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.5)
                     .padding(.horizontal, 10)
                     .frame(width: width, height: height)
             }
-            .buttonStyle(BWTileStyle(color: color))
+            .buttonStyle(BWTileStyle())
+            .modifier(BWEnter(delay: delay ?? 0, scale: 0.4, bounce: false, active: delay != nil))
+        } else {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(BW.recess)
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.black.opacity(0.35), lineWidth: 2))
+                .frame(width: width, height: height)
         }
     }
 }

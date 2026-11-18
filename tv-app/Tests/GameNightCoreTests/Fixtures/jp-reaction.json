@@ -246,21 +246,25 @@
       "buzzMs": 250,
       "buzzes": [
         {
-          "pid": "p3",
-          "ms": 250,
-          "won": true
-        },
-        {
           "pid": "p2",
           "ms": 300,
-          "won": true
+          "won": true,
+          "open": 1
         },
         {
           "pid": "p1",
           "ms": 380,
-          "won": false
+          "won": false,
+          "open": 1
+        },
+        {
+          "pid": "p3",
+          "ms": 250,
+          "won": true,
+          "open": 2
         }
       ],
+      "open": 2,
       "tried": [
         "p2",
         "p3"
@@ -272,7 +276,9 @@
       "correct": true,
       "delta": 200,
       "overridden": false,
-      "streak": 1
+      "streak": 1,
+      "timedOut": false,
+      "prevController": "p2"
     },
     "answerTime": 10,
     "finalForAll": true,

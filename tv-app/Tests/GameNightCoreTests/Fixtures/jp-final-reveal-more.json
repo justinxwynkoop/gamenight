@@ -89,7 +89,9 @@
       "correct": true,
       "delta": 2000,
       "overridden": false,
-      "streak": 57
+      "streak": 57,
+      "timedOut": false,
+      "prevController": "p1"
     },
     "answerTime": 10,
     "finalForAll": false,
@@ -114,7 +116,7 @@
     "final": {
       "category": "Planets",
       "q": "Tilted about 98 degrees, this planet basically rolls around the Sun on its side.",
-      "answer": "Uranus",
+      "answer": null,
       "eligible": [
         "p1",
         "p3"
@@ -128,22 +130,28 @@
         "p3"
       ],
       "revealIndex": 1,
+      "stage": "verdict",
+      "answerShown": false,
+      "order": [
+        "p3",
+        "p1"
+      ],
       "reveals": [
         {
           "id": "p3",
           "answer": "no idea",
           "correct": false,
-          "shown": true,
-          "applied": true,
-          "wager": 100
+          "overridden": false,
+          "wager": 100,
+          "pending": false
         },
         {
           "id": "p1",
           "answer": "Uranus",
           "correct": true,
-          "shown": true,
-          "applied": true,
-          "wager": 100
+          "overridden": false,
+          "wager": 100,
+          "pending": false
         }
       ]
     }

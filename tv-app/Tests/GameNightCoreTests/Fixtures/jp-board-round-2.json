@@ -234,14 +234,7 @@
       }
     ],
     "clue": null,
-    "lastResult": {
-      "pid": "p1",
-      "answer": "Shrimp",
-      "correct": true,
-      "delta": 1000,
-      "overridden": false,
-      "streak": 27
-    },
+    "lastResult": null,
     "answerTime": 10,
     "finalForAll": true,
     "answerTimes": [

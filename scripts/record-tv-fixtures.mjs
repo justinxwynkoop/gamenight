@@ -46,6 +46,8 @@ for (const p of g.publicView().packs) if (p.selected) g.togglePack(p.id);
 g.togglePack('house-classic'); g.togglePack('house-general');
 
 g.start();
+save('round-intro');
+advance(T.roundIntro + 10);
 save('board');
 const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
 g.pick(first.ci, first.ri);
@@ -55,9 +57,13 @@ save('open');
 advance(300); g.buzz(ps[1].id); advance(80); g.buzz(ps[0].id);
 save('answering');
 g.answer(ps[1].id, 'definitely wrong');
+save('ruling-wrong');
+advance(T.ruling + 10);
 save('open-after-wrong');
 advance(250); g.buzz(ps[2].id);
 g.answer(ps[2].id, first.cl.a);
+save('ruling-right');
+advance(T.ruling + 10);
 save('reveal-correct');
 g.react(ps[0].id, 3);
 save('reaction');
@@ -78,6 +84,7 @@ save('dd-wager');
 g.ddWager(g.controllerId, 300);
 save('dd-answer');
 g.answer(g.controllerId, dd.cl.a);
+advance(T.ruling + 10);
 save('dd-reveal');
 advance(T.reveal + 10);
 
@@ -90,12 +97,15 @@ const playOut = () => {
       advance(readingTime(spot.cl.q) + 10);
       g.buzz(ps[0].id); g.answer(ps[0].id, spot.cl.a);
     }
+    advance(T.ruling + 10);
     advance(T.reveal + 10);
   }
 };
 playOut();
 save('round-end');
 g.advance();
+save('round-intro-2');
+advance(T.roundIntro + 10);
 save('board-round-2');
 playOut();
 // The Apple TV tests expect the show's rule here (only players with money play); everyone-plays is tested in Node.
@@ -106,17 +116,24 @@ const eligible = g.final.eligible;
 for (const id of eligible) g.finalWager(id, 100);
 save('final-answer');
 for (const id of eligible) g.finalAnswer(id, id === eligible[0] ? g.finalClue.a : 'no idea');
-advance(2000);
+// One player at a time: their response, then right or wrong with the wager. The correct answer comes last.
+advance(1600);
+save('final-reveal-answer');
+advance(T.finalBeat + 10);
 save('final-reveal-first');
 advance(T.finalStep + 10);
+advance(T.finalBeat + 10);
 save('final-reveal-more');
-for (let i = 0; i < 20 && g.phase !== 'gameover'; i++) advance(T.finalStep + 10);
+advance(T.finalStep + 10);
+save('final-reveal-done');
+for (let i = 0; i < 20 && g.phase !== 'gameover'; i++) advance(T.finalAnswerShow + 10);
 save('gameover');
 g.playAgain();
 
 // Host judging out loud, with the answer clock.
 g.setHostJudges(true); g.setAnswerTime(10);
 g.start();
+advance(T.roundIntro + 10);
 const spot = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
 g.pick(spot.ci, spot.ri);
 save('host-reading');

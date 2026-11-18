@@ -80,7 +80,11 @@
         "streak": 1
       }
     ],
-    "timer": null,
+    "timer": {
+      "kind": "wager",
+      "totalMs": 45000,
+      "leftMs": 45000
+    },
     "board": [
       {
         "name": "Famous Scientists",
@@ -245,6 +249,7 @@
       "buzzedId": null,
       "buzzMs": null,
       "buzzes": [],
+      "open": 0,
       "tried": []
     },
     "lastResult": null,
