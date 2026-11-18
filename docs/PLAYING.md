@@ -41,6 +41,10 @@ Also: streaks (**on fire** after three right in a row), emoji reactions that flo
 **captain controls** on the captain's phone: choose packs, start, skip a clue, flip the last ruling, continue, end the
 round, fix any score, remove a player (before the game), play again. If the captain stays away, someone else takes over.
 
+**End game** (on the TV's buttons, the Apple TV's Play/Pause menu, the captain's phone and the host page) stops a game
+part way: scores reset and the TV and every phone go back to the lobby, with the players still in. **New room code**
+(in the lobby, and in the TV's menu) starts an empty room: nobody from the old room comes along.
+
 If a clue is judged wrongly, **Flip the ruling** reverses it, including the score.
 
 

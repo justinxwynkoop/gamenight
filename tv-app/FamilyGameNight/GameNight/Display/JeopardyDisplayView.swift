@@ -51,6 +51,8 @@ struct JeopardyDisplayView: View {
                     phonesNote: client.isLocal ? (client.relayUp ? "Phones: connected" : "Phones: not connected\(client.relayIssue.map { " (\($0))" } ?? "")") : nil,
                     joinURL: client.joinURL,
                     onNewRoom: client.isLocal ? { showMenu = false; client.newRoom() } : nil,
+                    onEndGame: client.isLocal && (client.state?.jeopardy.map { $0.phase != .lobby } ?? false)
+                        ? { showMenu = false; client.act("endGame") } : nil,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
                     onClose: { showMenu = false }
@@ -159,11 +161,13 @@ private struct DisplayMenu: View {
     let joinURL: URL?
     /// Starts a new room with a new random code (only when the game runs on this Apple TV).
     var onNewRoom: (() -> Void)? = nil
+    /// Ends the game under way and brings everyone back to the lobby (only when the game runs on this Apple TV).
+    var onEndGame: (() -> Void)? = nil
     let onChangeServer: () -> Void
     let onExit: () -> Void
     let onClose: () -> Void
 
-    private enum Choice { case close, newRoom, change, exit }
+    private enum Choice { case close, endGame, newRoom, change, exit }
     /// The board behind this panel holds the remote's focus until we ask for it, so the buttons could not be reached.
     @FocusState private var focus: Choice?
 
@@ -201,6 +205,7 @@ private struct DisplayMenu: View {
                     .frame(maxWidth: 820)
                 HStack(spacing: 30) {
                     Button("Close", action: onClose).focused($focus, equals: .close)
+                    if let onEndGame { Button("End game", action: onEndGame).focused($focus, equals: .endGame) }
                     if let onNewRoom { Button("New room code", action: onNewRoom).focused($focus, equals: .newRoom) }
                     Button("Change server", action: onChangeServer).focused($focus, equals: .change)
                     Button("Back to games", action: onExit).focused($focus, equals: .exit)

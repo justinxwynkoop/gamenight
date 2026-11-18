@@ -373,7 +373,7 @@
     // how long the correct answer stays up
     revealNobody: 3800,
     // ...when nobody got it
-    ruling: 1800,
+    ruling: 2400,
     // the ruling on an answer: their words and right or wrong, before anything else happens
     roundIntro: 7e3,
     // the round's title and categories before the first pick
@@ -1674,7 +1674,7 @@
     return this.room.players.map((p) => ({ id: p.id, name: p.name, score: p.score, color: p.color, connected: __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, p.id), streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.id).streak }));
   };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js

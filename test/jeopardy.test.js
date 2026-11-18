@@ -347,6 +347,22 @@ test('the captain can drive; other players cannot', () => {
   assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'judge' }), /Not allowed/);
 });
 
+test('the captain can end the game part way: back to the lobby, players kept, scores reset', () => {
+  const { room, g, ps, clock } = setup();
+  begin(g);
+  openClue(g, clock);
+  g.buzz(ps[1].id); g.answer(ps[1].id, 'nope');
+  assert.notEqual(ps[1].score, 0);
+  assert.throws(() => g.onPlayer(ps[1], { t: 'cap', action: 'endGame' }), /captain/);
+  g.onPlayer(ps[0], { t: 'cap', action: 'endGame' });
+  assert.equal(g.phase, 'lobby');
+  assert.equal(room.inProgress(), false);
+  assert.equal(room.players.length, 3);
+  assert.ok(room.players.every((p) => p.score === 0));
+  begin(g);   // and a new game can start straight away
+  assert.equal(g.phase, 'board');
+});
+
 test('reactions are rate limited and fade away', () => {
   const { g, ps, clock } = setup();
   g.react(ps[0].id, 0); g.react(ps[0].id, 1);
