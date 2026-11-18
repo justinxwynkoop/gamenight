@@ -240,7 +240,9 @@
       "correct": true,
       "delta": 1000,
       "overridden": false,
-      "streak": 27
+      "streak": 27,
+      "timedOut": false,
+      "prevController": "p1"
     },
     "answerTime": 10,
     "finalForAll": true,

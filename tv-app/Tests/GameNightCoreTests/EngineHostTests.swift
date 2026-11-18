@@ -143,6 +143,9 @@ final class EngineHostTests: XCTestCase {
 
         // The TV's own remote can.
         say(host, "tv", #"{"t":"act","action":"start","args":{}}"#)
+        // The round opens with its titles; the remote's Continue goes on to the board.
+        XCTAssertEqual(try state().phase, .roundIntro)
+        say(host, "tv", #"{"t":"act","action":"advance","args":{}}"#)
         let playing = try state()
         XCTAssertEqual(playing.phase, .board)
         XCTAssertEqual(playing.board?.count, 6)

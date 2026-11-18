@@ -120,6 +120,10 @@ enum JeoPhase: String, Decodable, Equatable {
     case finalWager = "final-wager"
     case finalAnswer = "final-answer"
     case finalReveal = "final-reveal"
+    /// The round's opening titles: its number and categories, before the first pick.
+    case roundIntro = "round-intro"
+    /// A moment for the ruling: the answer someone gave, stamped right or wrong.
+    case ruling
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
@@ -129,7 +133,7 @@ enum JeoPhase: String, Decodable, Equatable {
     /// Phases with a clue on screen.
     var isClue: Bool {
         switch self {
-        case .reading, .open, .answering, .reveal, .ddWager, .ddAnswer: return true
+        case .reading, .open, .answering, .ruling, .reveal, .ddWager, .ddAnswer: return true
         default: return false
         }
     }
@@ -246,8 +250,10 @@ struct JeoClue: Decodable, Equatable {
     var buzzedId: String?
     /// How fast the winner buzzed, in ms.
     var buzzMs: Double?
-    /// Everyone who buzzed on this clue, fastest first.
+    /// Everyone who buzzed on this clue, by opening and then fastest first.
     var buzzes: [JeoBuzz]?
+    /// How many times the buzzers have opened on this clue (they open again after a wrong answer).
+    var open: Int?
     /// Players who already took a shot at this clue.
     var tried: [String]
 }
@@ -256,7 +262,9 @@ struct JeoBuzz: Decodable, Equatable, Identifiable {
     var pid: String
     var ms: Double
     var won: Bool?
-    var id: String { pid }
+    /// Which opening of the buzzers this was (1 is the first).
+    var open: Int?
+    var id: String { "\(pid)-\(open ?? 1)" }
 }
 
 struct JeoResult: Decodable, Equatable {
@@ -267,6 +275,8 @@ struct JeoResult: Decodable, Equatable {
     var overridden: Bool?
     var streak: Int?
     var dd: Bool?
+    /// The answer clock ran out (nothing was said or typed in time).
+    var timedOut: Bool?
 }
 
 struct JeoReaction: Decodable, Equatable, Identifiable {
@@ -303,6 +313,12 @@ struct JeoFinal: Decodable, Equatable {
     var wagered: [String]
     var answered: [String]
     var revealIndex: Int
+    /// During the reveal: "answer" (a player's response is up), "verdict" (right or wrong, and the wager) or "done"
+    /// (the correct answer, after everyone).
+    var stage: String?
+    var answerShown: Bool?
+    /// Everyone who plays the final, in reveal order (lowest score first).
+    var order: [String]?
     var reveals: [JeoReveal]
 }
 
@@ -312,6 +328,8 @@ struct JeoReveal: Decodable, Equatable, Identifiable {
     var correct: Bool
     var overridden: Bool?
     var wager: Int
+    /// Their response is up but right or wrong is not shown yet.
+    var pending: Bool?
 }
 
 /// A countdown the engine is running: how long it started with and how long is left when the view was made.

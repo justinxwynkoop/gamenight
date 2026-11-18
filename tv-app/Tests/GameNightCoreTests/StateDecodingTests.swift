@@ -155,7 +155,8 @@ final class StateDecodingTests: XCTestCase {
     func testClueSteps() throws {
         let reading = try Fixture.jeopardy("jp-reading")
         XCTAssertEqual(reading.phase, .reading)
-        XCTAssertNil(reading.timer)
+        XCTAssertEqual(reading.timer?.kind, "reading", "the bar that fills while the clue is read")
+        XCTAssertEqual(reading.clue?.open, 0, "the buzzers have not opened yet")
         XCTAssertEqual(reading.clue?.q, "He came up with the theory of relativity.")
         XCTAssertNil(reading.clue?.answer, "the answer is never sent before the reveal")
 
@@ -173,12 +174,26 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(buzzes.map(\.pid), ["p2", "p1"], "everyone's buzz is timed, fastest first")
         XCTAssertEqual(buzzes.map(\.ms), [300, 380])
 
+        let wrong = try Fixture.jeopardy("jp-ruling-wrong")
+        XCTAssertEqual(wrong.phase, .ruling)
+        XCTAssertTrue(wrong.phase.isClue)
+        XCTAssertEqual(wrong.lastResult?.answer, "definitely wrong")
+        XCTAssertEqual(wrong.lastResult?.correct, false)
+        XCTAssertEqual(wrong.lastResult?.timedOut, false)
+        XCTAssertNil(wrong.clue?.answer, "the ruling comes before the answer")
+
         let afterWrong = try Fixture.jeopardy("jp-open-after-wrong")
+        XCTAssertEqual(afterWrong.clue?.open, 2, "the buzzers open a second time")
+        XCTAssertEqual(afterWrong.clue?.buzzes?.map(\.open), [1, 1])
         XCTAssertEqual(afterWrong.phase, .open)
         XCTAssertEqual(afterWrong.clue?.tried, ["p2"])
         XCTAssertEqual(afterWrong.lastResult?.correct, false)
         XCTAssertEqual(afterWrong.lastResult?.answer, "definitely wrong")
         XCTAssertEqual(afterWrong.timer?.totalMs, 6000)
+
+        let right = try Fixture.jeopardy("jp-ruling-right")
+        XCTAssertEqual(right.phase, .ruling)
+        XCTAssertEqual(right.lastResult?.correct, true)
 
         let correct = try Fixture.jeopardy("jp-reveal-correct")
         XCTAssertEqual(correct.phase, .reveal)
@@ -191,6 +206,17 @@ final class StateDecodingTests: XCTestCase {
         let nobody = try Fixture.jeopardy("jp-reveal-nobody")
         XCTAssertNil(nobody.lastResult)
         XCTAssertEqual(nobody.clue?.answer, "Isaac Newton")
+    }
+
+    func testRoundIntro() throws {
+        let intro = try Fixture.jeopardy("jp-round-intro")
+        XCTAssertEqual(intro.phase, .roundIntro)
+        XCTAssertEqual(intro.round, 1)
+        XCTAssertEqual(intro.timer?.kind, "intro")
+        XCTAssertEqual(intro.board?.count, 6, "the categories are shown before the first pick")
+        let second = try Fixture.jeopardy("jp-round-intro-2")
+        XCTAssertEqual(second.phase, .roundIntro)
+        XCTAssertEqual(second.round, 2)
     }
 
     func testHostJudging() throws {
@@ -248,15 +274,30 @@ final class StateDecodingTests: XCTestCase {
     }
 
     func testFinalAnswersAreShownOneByOne() throws {
+        let response = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-answer").finalRound)
+        XCTAssertEqual(response.stage, "answer")
+        XCTAssertEqual(response.order, ["p3", "p1"], "lowest score first")
+        XCTAssertEqual(response.reveals.count, 1)
+        XCTAssertEqual(response.reveals[0].answer, "no idea")
+        XCTAssertEqual(response.reveals[0].pending, true, "right or wrong is not shown with the response")
+        XCTAssertEqual(response.reveals[0].wager, 0)
+        XCTAssertNil(response.answer)
+
         let first = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-first").finalRound)
+        XCTAssertEqual(first.stage, "verdict")
         XCTAssertEqual(first.reveals.count, 1)
-        XCTAssertEqual(first.reveals[0].id, "p3", "lowest score first")
+        XCTAssertEqual(first.reveals[0].id, "p3")
         XCTAssertFalse(first.reveals[0].correct)
+        XCTAssertEqual(first.reveals[0].pending, false)
         XCTAssertEqual(first.reveals[0].wager, 100)
         let more = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-more").finalRound)
         XCTAssertEqual(more.reveals.map(\.id), ["p3", "p1"])
         XCTAssertEqual(more.reveals.map(\.correct), [false, true])
-        XCTAssertEqual(more.answer, "Uranus")
+        XCTAssertNil(more.answer, "the correct answer comes after everyone")
+        let done = try XCTUnwrap(try Fixture.jeopardy("jp-final-reveal-done").finalRound)
+        XCTAssertEqual(done.stage, "done")
+        XCTAssertEqual(done.answerShown, true)
+        XCTAssertEqual(done.answer, "Uranus")
     }
 
     func testGameOver() throws {

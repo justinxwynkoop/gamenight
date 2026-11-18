@@ -82,8 +82,8 @@
     ],
     "timer": {
       "kind": "answer",
-      "totalMs": 23675,
-      "leftMs": 23675
+      "totalMs": 26725,
+      "leftMs": 26725
     },
     "board": [
       {
@@ -249,6 +249,7 @@
       "buzzedId": null,
       "buzzMs": null,
       "buzzes": [],
+      "open": 0,
       "tried": []
     },
     "lastResult": null,

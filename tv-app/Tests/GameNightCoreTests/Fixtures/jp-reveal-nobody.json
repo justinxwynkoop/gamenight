@@ -245,6 +245,7 @@
       "buzzedId": null,
       "buzzMs": null,
       "buzzes": [],
+      "open": 1,
       "tried": []
     },
     "lastResult": null,

@@ -242,9 +242,10 @@
       "wager": 300,
       "q": "This dinosaur had plates on its back and a spiked tail.",
       "answer": "Stegosaurus",
-      "buzzedId": null,
+      "buzzedId": "p3",
       "buzzMs": null,
       "buzzes": [],
+      "open": 0,
       "tried": []
     },
     "lastResult": {
@@ -254,7 +255,9 @@
       "delta": 300,
       "overridden": false,
       "dd": true,
-      "streak": 2
+      "streak": 2,
+      "timedOut": false,
+      "prevController": "p3"
     },
     "answerTime": 10,
     "finalForAll": true,

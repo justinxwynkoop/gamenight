@@ -142,18 +142,34 @@ final class SoundPlannerTests: XCTestCase {
     }
 
     func testFinalMusicStopsWhenTheCountdownEnds() throws {
-        let result = try plan("jp-final-answer", "jp-final-reveal-first")
+        let result = try plan("jp-final-answer", "jp-final-reveal-answer")
         XCTAssertTrue(result.stopFinalMusic)
         XCTAssertFalse(result.startFinalMusic)
-        XCTAssertEqual(result.cues, [.timeup, .wrong])
+        XCTAssertEqual(result.cues, [.reveal], "the first response goes up")
     }
 
     func testFinalAnswersAreRevealedOneByOne() throws {
+        XCTAssertEqual(try plan("jp-final-reveal-answer", "jp-final-reveal-first").cues, [.wrong])
+        XCTAssertEqual(try plan("jp-final-reveal-first", "jp-final-reveal-first").cues, [], "nothing new, nothing plays")
         XCTAssertEqual(try plan("jp-final-reveal-first", "jp-final-reveal-more").cues, [.correct])
+        XCTAssertEqual(try plan("jp-final-reveal-more", "jp-final-reveal-done").cues, [.reveal], "the correct answer")
     }
 
     func testWinner() throws {
-        XCTAssertEqual(try plan("jp-final-reveal-more", "jp-gameover").cues, [.fanfare])
+        XCTAssertEqual(try plan("jp-final-reveal-done", "jp-gameover").cues, [.fanfare])
+    }
+
+    func testRoundIntro() throws {
+        XCTAssertEqual(try plan("jp-lobby", "jp-round-intro").cues, [.roundstart])
+        XCTAssertEqual(try plan("jp-round-end", "jp-round-intro-2").cues, [.roundstart])
+        XCTAssertEqual(try plan("jp-round-intro", "jp-board").cues, [])
+    }
+
+    func testTheRulingSoundsOnceAndTheNextStepIsQuiet() throws {
+        XCTAssertEqual(try plan("jp-answering", "jp-ruling-wrong").cues, [.wrong])
+        XCTAssertEqual(try plan("jp-ruling-wrong", "jp-open-after-wrong").cues, [])
+        XCTAssertEqual(try plan("jp-open-after-wrong", "jp-ruling-right").cues, [.correct])
+        XCTAssertEqual(try plan("jp-ruling-right", "jp-reveal-correct").cues, [])
     }
 
     func testHostTestSoundButton() throws {
@@ -187,7 +203,7 @@ final class SoundPlannerTests: XCTestCase {
         XCTAssertEqual(SoundPlanner.activeTimer(in: try Fixture.state("jp-answering"))?.kind, "answer")
         XCTAssertEqual(SoundPlanner.activeTimer(in: try Fixture.state("jp-dd-answer"))?.kind, "answer")
         XCTAssertEqual(SoundPlanner.activeTimer(in: try Fixture.state("jp-final-answer"))?.kind, "final")
-        for name in ["jp-board", "jp-reading", "jp-reveal-correct", "jp-dd-wager", "jp-final-wager", "jp-final-reveal-first", "jp-gameover", "jp-lobby"] {
+        for name in ["jp-board", "jp-reading", "jp-round-intro", "jp-ruling-wrong", "jp-reveal-correct", "jp-dd-wager", "jp-final-wager", "jp-final-reveal-first", "jp-gameover", "jp-lobby"] {
             XCTAssertNil(SoundPlanner.activeTimer(in: try Fixture.state(name)), name)
         }
     }

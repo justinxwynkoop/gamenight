@@ -14,26 +14,51 @@ extension Color {
     }
 }
 
-/// The look of the Jeopardy display: a night-time game stage. Ink background, six bright colour blocks (one for
-/// each board column), chunky wide type for names and money, a friendly rounded face for clues and labels.
-/// Family Feud keeps its own look (`JP`); this is only for Jeopardy.
+/// The look of the Jeopardy display: a game show set. A dark stage under blue spotlights, the blue board with gold
+/// money, clues on a big blue card, and a podium for each player. Gold is the show's own voice (values, "buzz in now",
+/// the champion); a player's colour only ever means that player; green and red only ever mean right and wrong.
+/// The website's TV uses the same colours and sizes (public/games/jeopardy/tv.css). Family Feud keeps its own look (`JP`).
 enum BW {
-    static let ink = Color(hexText: "#0E0F1A")
-    static let stage = Color(hexText: "#151729")
-    static let surface = Color(hexText: "#1C1F36")
-    static let surface2 = Color(hexText: "#272B4A")
+    static let ink = Color(hexText: "#0A0C1C")
+    static let stage = ink
+    static let surface = Color(hexText: "#161A36")
+    static let surface2 = Color(hexText: "#20254A")
     static let line = Color.white.opacity(0.10)
     static let text = Color(hexText: "#F6F4EE")
-    static let muted = Color(hexText: "#9FA3C2")
-    static let yellow = Color(hexText: "#FFD23F")
-    static let coral = Color(hexText: "#FF5A5F")
-    static let mint = Color(hexText: "#3DDC97")
-    static let good = mint
-    static let bad = coral
+    static let muted = Color(hexText: "#AEB3D6")
+    static let soft = Color(hexText: "#D6DCFF")
+    static let gold = Color(hexText: "#FFC940")
+    static let goldHi = Color(hexText: "#FFE08A")
+    static let goldDeep = Color(hexText: "#D99A0B")
+    static let goldShadow = Color(hexText: "#8A5A00")
+    static let blue = Color(hexText: "#1B36B8")
+    static let blueHi = Color(hexText: "#2A4BD8")
+    static let blueLo = Color(hexText: "#10227F")
+    static let blueMid = Color(hexText: "#13288F")
+    static let blueDeep = Color(hexText: "#0E1F78")
+    /// An empty board square.
+    static let recess = Color(hexText: "#0B1450")
+    static let good = Color(hexText: "#34D399")
+    static let bad = Color(hexText: "#FF5A5F")
+    // Older names, used by the lobby.
+    static let yellow = gold
+    static let coral = bad
+    static let mint = good
 
-    /// One colour for each board column.
-    static let columns: [Color] = ["#FF5A5F", "#FF9F1C", "#FFD23F", "#3DDC97", "#3ABEFF", "#B388FF"].map { Color(hexText: $0) }
-    static func column(_ index: Int) -> Color { columns[((index % columns.count) + columns.count) % columns.count] }
+    /// Falling paper on the champion screen.
+    static let confetti: [Color] = ["#FFC940", "#F6F4EE", "#2A4BD8", "#FFE08A", "#34D399", "#FF5A5F"].map { Color(hexText: $0) }
+
+    /// A board tile and the round's category cards: light blue at the top, deeper at the foot.
+    static let tileFill = LinearGradient(
+        stops: [.init(color: blueHi, location: 0), .init(color: blue, location: 0.55), .init(color: blueMid, location: 1)],
+        startPoint: .top, endPoint: .bottom)
+
+    /// The big clue card: lit from just above the middle.
+    static func cardFill(_ radius: CGFloat = 1100) -> RadialGradient {
+        RadialGradient(
+            stops: [.init(color: blueHi, location: 0), .init(color: blue, location: 0.45), .init(color: blueLo, location: 1)],
+            center: UnitPoint(x: 0.5, y: 0.4), startRadius: 0, endRadius: radius)
+    }
 
     /// The fonts ship inside the app (Unbounded and Outfit, both open source). If they are missing the system fonts stand in.
     private static let fontsLoaded: Bool = {
@@ -72,31 +97,105 @@ enum BW {
     /// "$1,200" or "−$400".
     static func money(_ amount: Int) -> String { Money.format(amount) }
 
+    /// "+$1,000" or "−$400".
+    static func signed(_ amount: Int) -> String { (amount >= 0 ? "+" : "\u{2212}") + Money.format(abs(amount)) }
+
     /// "0.31s"
     static func seconds(_ ms: Double) -> String { String(format: "%.2fs", ms / 1000) }
 }
 
-/// The stage behind every Jeopardy screen: ink, two soft coloured lights, a faint dot grid.
+/// The stage behind every Jeopardy screen: near black, a blue spotlight from above and a softer one from below.
 struct BWStage: View {
     var body: some View {
         ZStack {
             BW.ink
-            RadialGradient(colors: [BW.column(5).opacity(0.22), .clear], center: UnitPoint(x: 0.05, y: 0), startRadius: 0, endRadius: 900)
-            RadialGradient(colors: [BW.column(4).opacity(0.16), .clear], center: UnitPoint(x: 1, y: 1), startRadius: 0, endRadius: 900)
-            Canvas { context, size in
-                let step: CGFloat = 44
-                var y: CGFloat = step / 2
-                while y < size.height {
-                    var x: CGFloat = step / 2
-                    while x < size.width {
-                        context.fill(Path(ellipseIn: CGRect(x: x - 1.5, y: y - 1.5, width: 3, height: 3)), with: .color(.white.opacity(0.05)))
-                        x += step
-                    }
-                    y += step
-                }
-            }
+            EllipticalGradient(colors: [BW.blueHi.opacity(0.38), .clear], center: UnitPoint(x: 0.5, y: -0.12), startRadiusFraction: 0, endRadiusFraction: 0.62)
+                .scaleEffect(x: 1.25, y: 1)
+            EllipticalGradient(colors: [BW.blueHi.opacity(0.22), .clear], center: UnitPoint(x: 0.5, y: 1.15), startRadiusFraction: 0, endRadiusFraction: 0.55)
         }
         .ignoresSafeArea()
+    }
+}
+
+/// The Daily Double: the board's blue in rays, with a gold glow in the middle.
+struct BWRays: View {
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(x: size.width / 2, y: size.height * 0.46)
+            let radius = hypot(size.width, size.height)
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(BW.blueMid))
+            for index in stride(from: 0, to: 40, by: 2) {
+                let start = Double(index) * .pi / 20 - .pi / 2
+                let end = start + .pi / 20
+                var path = Path()
+                path.move(to: center)
+                path.addLine(to: CGPoint(x: center.x + cos(start) * radius, y: center.y + sin(start) * radius))
+                path.addLine(to: CGPoint(x: center.x + cos(end) * radius, y: center.y + sin(end) * radius))
+                path.closeSubpath()
+                context.fill(path, with: .color(BW.blue))
+            }
+        }
+        .overlay(RadialGradient(colors: [BW.gold.opacity(0.18), .clear], center: UnitPoint(x: 0.5, y: 0.46), startRadius: 0, endRadius: 700))
+        .ignoresSafeArea()
+    }
+}
+
+/// Fades and grows a view in when it first appears (once: a redraw of the same view does not replay it).
+struct BWEnter: ViewModifier {
+    var delay: Double = 0
+    var scale: CGFloat = 0.6
+    var y: CGFloat = 0
+    var bounce = true
+    /// Off: shown as it is, with no entrance.
+    var active = true
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        let on = shown || !active
+        content
+            .scaleEffect(on ? 1 : scale)
+            .offset(y: on ? 0 : y)
+            .opacity(on ? 1 : 0)
+            .onAppear {
+                guard active else { return }
+                withAnimation(bounce ? .spring(response: 0.5, dampingFraction: 0.68).delay(delay) : .easeOut(duration: 0.4).delay(delay)) { shown = true }
+            }
+    }
+}
+
+extension View {
+    func bwEnter(_ delay: Double = 0, scale: CGFloat = 0.6, y: CGFloat = 0, bounce: Bool = true) -> some View {
+        modifier(BWEnter(delay: delay, scale: scale, y: y, bounce: bounce))
+    }
+
+    /// Rises a little into place.
+    func bwRise(_ delay: Double = 0) -> some View {
+        modifier(BWEnter(delay: delay, scale: 1, y: 20, bounce: false))
+    }
+}
+
+/// RIGHT or NOT QUITE, stamped on: green or red, slightly turned.
+struct BWStamp: View {
+    let ok: Bool
+    let text: String
+    var size: CGFloat = 44
+    var angle: Double = -3
+    var delay: Double = 0.35
+    @State private var shown = false
+
+    var body: some View {
+        HStack(spacing: size * 0.4) {
+            Image(systemName: ok ? "checkmark" : "xmark").font(.system(size: size * 0.95, weight: .black))
+            Text(text).font(BW.display(size)).lineLimit(1)
+        }
+        .foregroundColor(BW.ink)
+        .padding(.leading, 24).padding(.trailing, 40).padding(.vertical, 14)
+        .background(Capsule().fill(ok ? BW.good : BW.bad))
+        .shadow(color: .black.opacity(0.4), radius: 20, y: 16)
+        .rotationEffect(.degrees(shown ? angle : -12))
+        .scaleEffect(shown ? 1 : 2.4)
+        .opacity(shown ? 1 : 0)
+        .onAppear { withAnimation(.spring(response: 0.4, dampingFraction: 0.55).delay(delay)) { shown = true } }
     }
 }
 
@@ -132,19 +231,22 @@ struct BWAvatar: View {
     }
 }
 
-/// The room code as four colour blocks.
+/// The room code on four blue board tiles.
 struct BWCodeTiles: View {
     let code: String
     var size: CGFloat = 96
 
     var body: some View {
-        HStack(spacing: size * 0.12) {
-            ForEach(Array(code.enumerated()), id: \.offset) { index, character in
+        HStack(spacing: size * 0.1) {
+            ForEach(Array(code.enumerated()), id: \.offset) { _, character in
                 Text(String(character))
                     .font(BW.display(size * 0.56))
-                    .foregroundColor(BW.ink)
+                    .foregroundColor(BW.gold)
+                    .shadow(color: .black.opacity(0.45), radius: 0, y: size * 0.04)
                     .frame(width: size, height: size)
-                    .background(RoundedRectangle(cornerRadius: size * 0.2).fill(BW.column([0, 2, 3, 4][index % 4])))
+                    .background(RoundedRectangle(cornerRadius: size * 0.14).fill(BW.tileFill))
+                    .overlay(alignment: .bottom) { Rectangle().fill(Color.black.opacity(0.28)).frame(height: size * 0.05) }
+                    .clipShape(RoundedRectangle(cornerRadius: size * 0.14))
             }
         }
     }
@@ -181,33 +283,30 @@ struct BWButtonStyle: ButtonStyle {
     }
 }
 
-/// A board tile: the column's colour, a white outline when the remote is on it.
+/// A board tile: blue, with the value in gold; a white outline and a little lift when the remote is on it.
 struct BWTileStyle: ButtonStyle {
-    let color: Color
-
     func makeBody(configuration: Configuration) -> some View {
-        Inner(configuration: configuration, color: color)
+        Inner(configuration: configuration)
     }
 
     private struct Inner: View {
         let configuration: ButtonStyle.Configuration
-        let color: Color
         @Environment(\.isFocused) private var focused
 
         var body: some View {
             configuration.label
-                .foregroundColor(BW.ink)
+                .foregroundColor(BW.gold)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(color)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(BW.tileFill)
+                        .overlay(alignment: .bottom) { Rectangle().fill(Color.black.opacity(0.28)).frame(height: 5) }
+                        .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.22)).frame(height: 1) }
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .brightness(focused ? 0.08 : 0)
                         .shadow(color: .black.opacity(focused ? 0.55 : 0), radius: 18, y: 12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(LinearGradient(colors: [.white.opacity(0.22), .clear, .black.opacity(0.14)], startPoint: .top, endPoint: .bottom))
-                        )
                 )
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white, lineWidth: focused ? 6 : 0))
-                .scaleEffect(configuration.isPressed ? 1.0 : (focused ? 1.1 : 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white, lineWidth: focused ? 5 : 0))
+                .scaleEffect(configuration.isPressed ? 1.0 : (focused ? 1.08 : 1))
                 .zIndex(focused ? 1 : 0)
                 .animation(.easeOut(duration: 0.12), value: focused)
         }

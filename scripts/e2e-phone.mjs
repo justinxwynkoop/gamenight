@@ -83,7 +83,9 @@ try {
   const shotJ = (page, name) => (process.env.SHOT_DIR ? page.screenshot({ path: `${process.env.SHOT_DIR}/jeopardy-${name}.png` }) : null);
   await shotJ(player, 'lobby');
   await player.getByRole('button', { name: /start game/i }).click();
-  await until(() => engine.room.game.phase === 'board', 'the captain to start the game from the phone');
+  await until(() => engine.room.game.phase === 'round-intro', 'the captain to start the game from the phone');
+  await player.getByRole('button', { name: /skip intro/i }).click();   // the round's titles, skipped from the captain's phone
+  await until(() => engine.room.game.phase === 'board', 'the board after the round\'s titles');
   console.log('captain started Jeopardy from the phone; Ann and Bo are the players');
   const g = engine.room.game;
   const phones = { [engine.room.players.find((p) => p.name === 'Ann').id]: player, [engine.room.players.find((p) => p.name === 'Bo').id]: bo };

@@ -24,10 +24,18 @@ export const T = {
   rebuzzWindow: 6000,   // time to buzz after someone misses
   answer: 15000,        // time to type an answer after buzzing
   ddAnswer: 20000,      // Daily Double answer time (after reading)
-  reveal: 4500,         // how long the correct answer stays up
-  earlyPenalty: 400,    // lockout for buzzing before the clue unlocks
+  reveal: 5000,         // how long the correct answer stays up
+  revealNobody: 3800,   // ...when nobody got it
+  ruling: 1800,         // the ruling on an answer: their words and right or wrong, before anything else happens
+  roundIntro: 7000,     // the round's title and categories before the first pick
+  earlyPenalty: 400,    // lockout for buzzing before the clue unlocks (or while it is not open)
+  ddWager: 45000,       // a Daily Double wager not placed by then is the minimum
+  ddSplash: 2200,       // "Maya bets $1,000" on the TV before the clock starts counting
+  finalWager: 60000,    // Final Jeopardy wagers not placed by then are $0
   finalAnswer: 35000,
-  finalStep: 6500,
+  finalBeat: 2800,      // final reveal: a player's response, before right or wrong
+  finalStep: 5000,      // final reveal: right or wrong and the wager, before the next player
+  finalAnswerShow: 5000, // final reveal: the correct answer, after everyone
   hostRead: 30000,      // host mode: fallback if the host forgets to open buzzers
   hostAnswer: 30000,    // host mode: Daily Double fallback for the host to judge a spoken answer
   hostGrace: 3000,      // host mode: after the answer clock hits zero, the host still has this long to rule
@@ -44,7 +52,8 @@ const MAX_ADJUST = 1000000;
 export const MAX_PLAYERS = 10;
 export const FINAL_FLOOR = 1000;   // the most a player with little or no money may bet in Final Jeopardy when everyone plays
 
-export const readingTime = (text) => Math.max(2500, Math.min(7000, 1200 + String(text).length * 45));
+// Long enough for a child or a grandparent to read the clue to the end.
+export const readingTime = (text) => Math.max(4000, Math.min(10000, 1500 + String(text).length * 55));
 
 /** Checks one of our own boards (what the editor saves). A clue may list other words to accept in `alt`. */
 export function validateSet(set) {
@@ -60,7 +69,7 @@ export function validateSet(set) {
     cat.clues.forEach((cl, r) => {
       if (!String(cl?.clue ?? '').trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its clue text`);
       if (!String(cl?.answer ?? '').trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its answer`);
-      if (!(int(cl.value) > 0)) fail(`Category ${c + 1}, clue ${r + 1} needs a positive value`);
+      if (!(int(cl.value) > 0) || !Number.isInteger(Number(cl.value))) fail(`Category ${c + 1}, clue ${r + 1} needs a positive whole-dollar value`);
       altOk(cl.alt, `Category ${c + 1}, clue ${r + 1}`);
     });
   });
@@ -175,6 +184,8 @@ export class JeopardyGame {
         if (next) { this.captainId = next; this.captainGoneAt = null; this.#changed(); }
       }
     } else this.captainGoneAt = null;
+    // Someone who had not wagered or answered went away: carry on with everyone who is here.
+    if (this.phase === 'final-wager' || (this.phase === 'final-answer' && this.timer?.kind !== 'final-wait')) this.#checkFinalReady();
     // Old reactions fade out of the view.
     if (this.reactions.length && now - this.reactions[0].at > REACT_LIFE) {
       this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
@@ -374,7 +385,7 @@ export class JeopardyGame {
       name: c.name,
       clues: c.clues.slice(0, 5).map((cl, i) => ({
         // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
-        value: Number(cl.v) > 0 ? Number(cl.v) : (i + 1) * 200 * r,
+        value: Number(cl.v) > 0 ? Math.round(Number(cl.v)) : (i + 1) * 200 * r,
         q: cl.q, a: cl.a, alt: cl.alt || [], used: false, dd: !!cl.dd,
       })),
     }));
@@ -432,7 +443,13 @@ export class JeopardyGame {
     const order = this.#order();
     this.controllerId = order[Math.floor(this.#rng() * order.length)];
     this.captainId ??= order[0];
-    this.phase = 'board';
+    this.#roundIntro();
+  }
+  /** The round's title and its categories on the TV, then the first pick. */
+  #roundIntro() {
+    this.lastResult = null;
+    this.phase = 'round-intro';
+    this.#setTimer(T.roundIntro, () => { if (this.phase === 'round-intro') { this.phase = 'board'; this.#changed(); } }, 'intro');
     this.#changed();
   }
 
@@ -459,10 +476,12 @@ export class JeopardyGame {
     if (!cl || cl.used) return;
     cl.used = true;
     this.lastResult = null;
-    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null };
+    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
-      this.#clearTimer();
+      // A wager nobody places (a phone that went to sleep) is the minimum, so the game never stalls.
+      const who = this.controllerId;
+      this.#setTimer(T.ddWager, () => this.ddWager(who, 5), 'wager');
     } else {
       this.phase = 'reading';
       // With a host judging, the buzzers open when the host finishes reading aloud.
@@ -474,39 +493,52 @@ export class JeopardyGame {
   #openBuzzers(window) {
     this.phase = 'open';
     this.clue.buzzedId = null;
+    // Each opening has a number: a press the phone sent for an earlier one (mashing through someone's answer) is too early.
+    this.clue.open = (this.clue.open ?? 0) + 1;
     this.openedAt = this.#now();
     this.#setTimer(window, () => this.#endClue(), 'buzz');
     this.#changed();
   }
 
-  /** A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }. */
-  buzz(pid) {
+  /**
+   * A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }.
+   * `seq` is the opening the phone saw (clue.open); a press for an earlier one arrives too early for this one.
+   */
+  buzz(pid, seq) {
     const st = this.#stat(pid);
     if (!this.#player(pid) || !this.clue) return { result: 'ignored' };
     const now = this.#now();
-    if (this.phase === 'reading') { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
+    const tried = this.clue.tried.includes(pid);
+    if (this.phase === 'reading' || (this.phase === 'ruling' && !tried)) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
     // Someone beat them to it: still time it, so everyone sees the buzz order.
     if (this.phase === 'answering' && this.openedAt) {
-      if (this.clue.tried.includes(pid) || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid)) return { result: 'ignored' };
+      const opening = this.clue.open;
+      if (tried || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid && b.open === opening)) return { result: 'ignored' };
+      if (seq != null && Number(seq) < opening) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
       const late = Math.max(0, now - this.openedAt);
-      this.clue.buzzes.push({ pid, ms: late });
-      if (st.fastest == null || late < st.fastest) st.fastest = late;
+      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
+      this.clue.buzzes.push({ pid, ms: late, open: opening });
+      // Pressing on through someone's answer earns a short lockout, so mashing can't win the next opening.
+      st.lockUntil = now + T.earlyPenalty;
+      if (opening === 1 && (st.fastest == null || late < st.fastest)) st.fastest = late;
       this.#changed();
       return { result: 'late', ms: late };
     }
     if (this.phase !== 'open') return { result: 'ignored' };
-    if (this.clue.tried.includes(pid)) return { result: 'tried' };
+    if (tried) return { result: 'tried' };
+    if (seq != null && Number(seq) < this.clue.open) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
     if (now < st.lockUntil) return { result: 'early' };
     this.clue.buzzedId = pid;
     const ms = Math.max(0, now - this.openedAt);
     this.clue.buzzMs = ms;
-    if (st.fastest == null || ms < st.fastest) st.fastest = ms;
+    // Fastest Finger counts the first opening only: after a miss everyone is already poised over the button.
+    if (this.clue.open === 1 && (st.fastest == null || ms < st.fastest)) st.fastest = ms;
     // One time per player per clue (a second chance after a miss counts as a new buzz).
     this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
-    this.clue.buzzes.push({ pid, ms, won: true });
+    this.clue.buzzes.push({ pid, ms, won: true, open: this.clue.open });
     this.phase = 'answering';
     if (this.hostJudges()) this.#startAnswerClock(pid);
-    else this.#setTimer(T.answer, () => this.submitAnswer(pid, '', true), 'answer');
+    else this.#setTimer(T.answer, () => this.#timeUp(pid), 'answer');
     this.#changed();
     return { result: 'won', ms };
   }
@@ -516,9 +548,22 @@ export class JeopardyGame {
     const sec = this.settings.answerTime;
     if (!sec) { this.#clearTimer(); return; }
     const ms = sec * 1000;
-    this.#setTimer(ms + T.hostGrace, () => this.submitAnswer(pid, '', true), 'answer');
+    this.#setTimer(ms + T.hostGrace, () => this.#timeUp(pid), 'answer');
     this.timer.totalMs = ms;
     this.timer.shownEnd = this.#now() + ms;
+  }
+  /** The answer clock ran out: whatever they had typed (and not sent) is their answer. */
+  #timeUp(pid) {
+    const typed = this.clue?.drafts?.[pid];
+    if (typed && String(typed).trim() && !this.hostJudges()) this.submitAnswer(pid, typed, false);
+    else this.submitAnswer(pid, '', true);
+  }
+  /** What a player has typed so far (sent as they type), kept in case the clock runs out before they send it. */
+  typing(pid, text) {
+    text = String(text ?? '').slice(0, 80);
+    if (this.phase === 'answering' && this.clue?.buzzedId === pid) this.clue.drafts[pid] = text;
+    else if (this.phase === 'dd-answer' && this.controllerId === pid) this.clue.drafts[pid] = text;
+    else if (this.phase === 'final-answer' && this.final?.eligible.includes(pid) && !(pid in this.final.answers)) this.final.drafts[pid] = text;
   }
   /** The host's ruling on a spoken answer. */
   judgeNow(correct) {
@@ -551,16 +596,9 @@ export class JeopardyGame {
       if (p) p.score += correct ? v : -v;
       this.#tally(pid, correct, 0);
       this.clue.tried.push(pid);
-      this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, streak: this.#stat(pid).streak };
-      if (correct) {
-        this.controllerId = pid;
-        this.#revealClue();
-      } else {
-        const remaining = this.#order().filter((id) => this.#connected(id) && !this.clue.tried.includes(id));
-        if (remaining.length === 0) this.#revealClue();
-        else this.#openBuzzers(T.rebuzzWindow);
-      }
-      this.#changed();
+      this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, streak: this.#stat(pid).streak, timedOut: !!timedOut, prevController: this.clue.prevController };
+      if (correct) this.controllerId = pid;
+      this.#ruling();
       return;
     }
     if (this.phase === 'dd-answer' && this.controllerId === pid) {
@@ -569,14 +607,29 @@ export class JeopardyGame {
       const v = this.clue.wager;
       if (p) p.score += correct ? v : -v;
       this.#tally(pid, correct, v);
-      this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, dd: true, streak: this.#stat(pid).streak };
-      this.#revealClue();
-      this.#changed();
+      this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, dd: true, streak: this.#stat(pid).streak, timedOut: !!timedOut, prevController: this.clue.prevController };
+      this.#ruling();
     }
+  }
+  /** A short beat for the ruling (their answer, then right or wrong) before the buzzers reopen or the answer shows. */
+  #ruling() {
+    this.phase = 'ruling';
+    this.clue.buzzedId = this.lastResult.pid;
+    this.#setTimer(T.ruling, () => this.#afterRuling(), 'ruling');
+    this.#changed();
+  }
+  #afterRuling() {
+    if (this.phase !== 'ruling') return;
+    const r = this.lastResult;
+    if (!r || r.dd || r.correct) { this.#revealClue(); return; }
+    const remaining = this.#order().filter((id) => this.#connected(id) && !this.clue.tried.includes(id));
+    if (remaining.length === 0) this.#revealClue();
+    else this.#openBuzzers(T.rebuzzWindow);
   }
   /** What a player typed for their answer (phones). */
   answer(pid, text) {
     if (this.hostJudges()) fail('The host judges answers out loud.');
+    if (!String(text ?? '').trim()) return;   // an empty send is a slip of the thumb, not an answer
     this.submitAnswer(pid, text, false);
   }
 
@@ -588,7 +641,7 @@ export class JeopardyGame {
     w = clamp(w, 5, max);
     this.clue.wager = w;
     this.phase = 'dd-answer';
-    this.#setTimer(readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.submitAnswer(pid, '', true), 'answer');
+    this.#setTimer(T.ddSplash + readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');
     this.#changed();
   }
   /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
@@ -600,12 +653,12 @@ export class JeopardyGame {
 
   #endClue() {
     if (!this.clue) return;
-    if (this.phase === 'answering') { this.submitAnswer(this.clue.buzzedId, '', true); return; }
+    if (this.phase === 'answering') { this.#timeUp(this.clue.buzzedId); return; }
     this.#revealClue();
   }
   #revealClue() {
     this.phase = 'reveal';
-    this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal');
+    this.#setTimer(this.lastResult ? T.reveal : T.revealNobody, () => this.#afterReveal(), 'reveal');
     this.#changed();
   }
   #afterReveal() {
@@ -616,7 +669,7 @@ export class JeopardyGame {
     else {
       this.phase = 'board';
       // If whoever is in control left, give control to someone who is here.
-      if (!this.#connected(this.controllerId)) {
+      if (!this.#connected(this.controllerId) || !this.#player(this.controllerId)) {
         const here = this.#order().filter((id) => this.#connected(id));
         if (here.length) this.controllerId = here[0];
       }
@@ -629,25 +682,28 @@ export class JeopardyGame {
     if (this.phase === 'round-end') {
       if (this.round < this.rounds.length) {
         this.round += 1;
-        // Lowest score picks first in the next round.
-        const sorted = this.room.players.slice().sort((a, b) => a.score - b.score);
-        this.controllerId = sorted[0].id;
-        this.phase = 'board';
-        this.#changed();
+        // Lowest score picks first in the next round (someone who is here).
+        const here = this.room.players.filter((p) => this.#connected(p.id));
+        const sorted = (here.length ? here : this.room.players).slice().sort((a, b) => a.score - b.score);
+        if (sorted.length) this.controllerId = sorted[0].id;
+        this.#roundIntro();
       } else this.#startFinal();
-    } else if (this.phase === 'reveal') { this.#clearTimer(); this.#afterReveal(); }
+    } else if (this.phase === 'round-intro') { this.#clearTimer(); this.phase = 'board'; this.#changed(); }
+    else if (this.phase === 'ruling') { this.#clearTimer(); this.#afterRuling(); }
+    else if (this.phase === 'reveal') { this.#clearTimer(); this.#afterReveal(); }
     else if (this.phase === 'final-wager') this.#beginFinalClue();
     else if (this.phase === 'final-answer') { this.#clearTimer(); this.#beginFinalReveal(); }
     else if (this.phase === 'final-reveal') this.#finalStep();
   }
+  /** Skip a clue (a broken or unfair one): show the answer, and nobody wins or loses anything for it. */
   skipClue() {
-    if (['reading', 'open', 'answering'].includes(this.phase)) {
-      if (this.phase === 'answering') {
-        this.submitAnswer(this.clue.buzzedId, '', true);
-        if (this.phase !== 'reveal') this.#revealClue();
-      } else this.#revealClue();
+    if (['reading', 'open', 'answering', 'ruling'].includes(this.phase)) {
+      if (this.phase !== 'ruling') this.lastResult = null;
+      this.#clearTimer();
+      this.#revealClue();
     } else if (this.phase === 'dd-wager' || this.phase === 'dd-answer') {
       if (this.phase === 'dd-wager') this.clue.wager = 0;
+      this.lastResult = null;
       this.#revealClue();
     }
   }
@@ -673,7 +729,10 @@ export class JeopardyGame {
     r.streak = this.#stat(r.pid).streak;
     if (r.correct) {
       this.controllerId = r.pid;
-      if (['open', 'reading', 'answering'].includes(this.phase)) this.#revealClue();
+      if (['open', 'reading', 'answering', 'ruling'].includes(this.phase)) this.#revealClue();
+    } else if (!r.dd && this.controllerId === r.pid && r.prevController && this.#player(r.prevController)) {
+      // Taking back a right answer also takes back the control it won.
+      this.controllerId = r.prevController;
     }
     this.#changed();
   }
@@ -689,9 +748,10 @@ export class JeopardyGame {
       this.#changed();
       return;
     }
-    this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, results: {}, revealOrder: [], revealIndex: -1 };
+    this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, drafts: {}, results: {}, revealOrder: [], revealIndex: -1, stage: null, answerShown: false };
     this.phase = 'final-wager';
-    this.#clearTimer();
+    // Wagers have a clock too, so one sleeping phone can't hold up the final.
+    this.#setTimer(T.finalWager, () => this.#beginFinalClue(), 'wager');
     this.#changed();
   }
   finalWager(pid, amount) {
@@ -702,7 +762,18 @@ export class JeopardyGame {
     w = clamp(w, 0, this.maxFinalWager(pid));
     this.final.wagers[pid] = w;
     this.#changed();
-    if (!this.final.eligible.some((id) => this.#connected(id) && !(id in this.final.wagers))) this.#beginFinalClue();
+    this.#checkFinalReady();
+  }
+  /** Everyone who is here has wagered (or answered): go on without waiting for the clock. */
+  #checkFinalReady() {
+    const f = this.final;
+    if (!f) return;
+    const here = f.eligible.filter((id) => this.#connected(id));
+    if (this.phase === 'final-wager' && here.length && here.every((id) => id in f.wagers)) this.#beginFinalClue();
+    else if (this.phase === 'final-answer' && here.length && here.every((id) => id in f.answers) && this.timer?.kind !== 'final-wait') {
+      // A short pause so the last player sees "locked in" before the reveal.
+      this.#setTimer(1500, () => this.#beginFinalReveal(), 'final-wait');
+    }
   }
   #beginFinalClue() {
     if (this.phase !== 'final-wager') return;
@@ -716,43 +787,87 @@ export class JeopardyGame {
     if (pid in this.final.answers) return; // locked in already
     this.final.answers[pid] = String(text || '').slice(0, 80);
     this.#changed();
-    if (!this.final.eligible.some((id) => this.#connected(id) && !(id in this.final.answers))) {
-      // A short pause so the last player sees "locked in" before the reveal.
-      this.#setTimer(1500, () => this.#beginFinalReveal(), 'final-wait');
-    }
+    this.#checkFinalReady();
   }
   #beginFinalReveal() {
     if (this.phase !== 'final-answer') return;
     const f = this.final;
+    f.drafts ??= {};
     for (const id of f.eligible) {
-      const ans = f.answers[id] || '';
-      f.results[id] = { answer: ans || '(no answer)', correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
+      // Typed but not locked in when the clock ran out still counts.
+      const ans = f.answers[id] || f.drafts[id] || '';
+      f.results[id] = { answer: ans.trim() ? ans : '(no answer)', correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
     }
-    f.revealOrder = f.eligible.slice().sort((a, b) => this.#player(a).score - this.#player(b).score);
+    // Lowest score first, so the leader's wager is the last thing revealed.
+    const score = (id) => this.#player(id)?.score ?? 0;
+    f.revealOrder = f.eligible.filter((id) => this.#player(id)).sort((a, b) => score(a) - score(b));
     f.revealIndex = -1;
+    f.stage = null;
+    f.answerShown = false;
     this.phase = 'final-reveal';
     this.#finalStep();
   }
+  /**
+   * One beat of the final reveal. Each player: their response ('answer'), then right or wrong with the wager
+   * ('verdict'). After everyone: the correct answer, then the champion.
+   */
   #finalStep() {
     const f = this.final;
+    if (f.stage === 'answer' && f.revealIndex >= 0 && f.revealIndex < f.revealOrder.length) {
+      const id = f.revealOrder[f.revealIndex];
+      const r = f.results[id];
+      const p = this.#player(id);
+      if (p && !r.applied) {
+        p.score += r.correct ? f.wagers[id] : -f.wagers[id];
+        this.#tally(id, r.correct, f.wagers[id]);
+        r.applied = true;
+      }
+      f.stage = 'verdict';
+      this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
+      this.#changed();
+      return;
+    }
     f.revealIndex++;
     if (f.revealIndex >= f.revealOrder.length) {
+      f.revealIndex = f.revealOrder.length - 1;
+      if (!f.answerShown) {
+        f.answerShown = true;
+        f.stage = 'done';
+        this.#setTimer(T.finalAnswerShow, () => this.#finalStep(), 'final-step');
+        this.#changed();
+        return;
+      }
       this.phase = 'gameover';
       this.#clearTimer();
       this.#changed();
       return;
     }
-    const id = f.revealOrder[f.revealIndex];
-    const r = f.results[id];
-    const p = this.#player(id);
-    r.shown = true;
-    if (p && !r.applied) {
-      p.score += r.correct ? f.wagers[id] : -f.wagers[id];
-      this.#tally(id, r.correct, f.wagers[id]);
-      r.applied = true;
-    }
-    this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
+    f.results[f.revealOrder[f.revealIndex]].shown = true;
+    f.stage = 'answer';
+    this.#setTimer(T.finalBeat, () => this.#finalStep(), 'final-step');
     this.#changed();
+  }
+  /** A player left (the host removed them): forget them everywhere, so nothing waits for them. */
+  playerRemoved(id) {
+    const f = this.final;
+    if (f) {
+      f.eligible = f.eligible.filter((x) => x !== id);
+      delete f.wagers[id]; delete f.answers[id]; if (f.drafts) delete f.drafts[id];
+      const at = f.revealOrder.indexOf(id);
+      if (at >= 0) {
+        f.revealOrder.splice(at, 1);
+        if (at <= f.revealIndex) { f.revealIndex -= 1; if (at === f.revealIndex + 1 && f.stage === 'answer') f.stage = 'verdict'; }
+      }
+      if (this.phase === 'final-wager' || this.phase === 'final-answer') {
+        if (!f.eligible.length) { this.phase = 'gameover'; this.#clearTimer(); } else this.#checkFinalReady();
+      }
+    }
+    if (this.clue && this.clue.buzzedId === id && this.phase === 'answering') { this.lastResult = null; this.#clearTimer(); this.#revealClue(); }
+    if (this.controllerId === id) {
+      const here = this.#order().filter((x) => this.#connected(x));
+      this.controllerId = here[0] ?? this.#order()[0] ?? null;
+      if (this.phase === 'dd-wager' || this.phase === 'dd-answer') { this.lastResult = null; this.#clearTimer(); this.#revealClue(); }
+    }
   }
   /** Flip a final-round ruling for one player. */
   finalOverride(pid) {
@@ -859,7 +974,8 @@ export class JeopardyGame {
   onPlayer(player, msg) {
     const pid = player.id;
     switch (msg.t) {
-      case 'buzz': return { t: 'buzz-result', ...this.buzz(pid) };
+      case 'buzz': return { t: 'buzz-result', ...this.buzz(pid, msg.seq) };
+      case 'draft': this.typing(pid, msg.text); return undefined;
       case 'answer': this.answer(pid, msg.text); return { t: 'ack', what: 'answer' };
       case 'pick': {
         // The player in control picks. With a host judging, the player says their pick aloud and the host taps it.
@@ -885,7 +1001,8 @@ export class JeopardyGame {
   // ---------- views ----------
   #timerView() {
     const t = this.timer;
-    if (!t || !['buzz', 'answer', 'final'].includes(t.kind)) return null;
+    if (!t || !['buzz', 'answer', 'final', 'wager', 'reading', 'intro'].includes(t.kind)) return null;
+    if (t.kind === 'reading' && this.hostJudges()) return null;   // the host reads aloud at their own pace
     const left = Math.max(0, Math.round(t.shownEnd - this.#now()));
     return { kind: t.kind, totalMs: t.totalMs, leftMs: left };
   }
@@ -916,7 +1033,9 @@ export class JeopardyGame {
         buzzedId: this.clue.buzzedId,
         buzzMs: this.clue.buzzMs,
         // Everyone who buzzed on this clue, fastest first, with their time in ms.
-        buzzes: this.clue.buzzes.slice().sort((x, y) => x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won })),
+        // Earlier openings first (after a wrong answer the buzzers open again), then fastest.
+        buzzes: this.clue.buzzes.slice().sort((x, y) => (x.open ?? 1) - (y.open ?? 1) || x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won, open: x.open ?? 1 })),
+        open: this.clue.open ?? 0,
         tried: this.clue.tried,
       },
       lastResult: this.lastResult,
@@ -952,12 +1071,22 @@ export class JeopardyGame {
       v.final = {
         category: f.category,
         q: showQ ? f.q : null,
-        answer: done && (this.phase === 'gameover' || f.revealIndex >= 0) ? f.a : null,
+        // The correct answer comes last, after every player's response.
+        answer: this.phase === 'gameover' || (this.phase === 'final-reveal' && f.answerShown) ? f.a : null,
         eligible: f.eligible,
         wagered: Object.keys(f.wagers),
         answered: Object.keys(f.answers),
         revealIndex: f.revealIndex,
-        reveals: done ? f.revealOrder.slice(0, f.revealIndex + 1).map((id) => ({ id, ...f.results[id], wager: f.wagers[id] })) : [],
+        // 'answer' (their response is up), 'verdict' (right or wrong, and the wager), 'done' (the correct answer).
+        stage: this.phase === 'final-reveal' ? (f.stage ?? null) : null,
+        answerShown: this.phase === 'gameover' || !!f.answerShown,
+        order: done ? (f.revealOrder ?? []).slice() : [],
+        reveals: done ? (f.revealOrder ?? []).slice(0, f.revealIndex + 1).map((id, i) => {
+          const r = f.results[id] ?? {};
+          // While a response is up, right or wrong and the wager stay hidden.
+          const pending = this.phase === 'final-reveal' && i === f.revealIndex && f.stage === 'answer';
+          return { id, answer: r.answer, correct: pending ? false : !!r.correct, overridden: !!r.overridden, wager: pending ? 0 : (f.wagers[id] ?? 0), pending };
+        }) : [],
       };
     }
     return v;
@@ -1021,8 +1150,10 @@ export class JeopardyGame {
     for (const id of this.selected) if (!this.packs.some((p) => p.id === id)) this.selected.delete(id);
     if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
     // A clue that was under way is settled, and the answer shown.
-    if (this.clue && ['reading', 'open', 'answering', 'dd-wager', 'dd-answer'].includes(this.phase)) { this.phase = 'reveal'; this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal'); }
+    if (this.clue && ['reading', 'open', 'answering', 'ruling', 'dd-wager', 'dd-answer'].includes(this.phase)) { this.phase = 'reveal'; this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal'); }
     else if (this.phase === 'reveal') this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal');
+    else if (this.phase === 'round-intro') this.phase = 'board';
+    else if (this.phase === 'final-wager') this.#setTimer(T.finalWager, () => this.#beginFinalClue(), 'wager');
     else if (this.phase === 'final-answer') this.#beginFinalReveal();
     else if (this.phase === 'final-reveal') this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
     if (this.phase === 'lobby' && !this.archivePacks.length) this.#requestArchive(this.era);

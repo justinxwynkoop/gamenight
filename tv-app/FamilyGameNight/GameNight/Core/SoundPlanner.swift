@@ -31,14 +31,18 @@ enum SoundPlanner {
 
     /// Jeopardy: what the change between two views means in sound. The names are the same ones the family's own
     /// files use ("open", "buzz", "correct", "wrong", "timeup", "dd", "final", "fanfare", "think", "lobby").
+    /// It follows the web TV (public/games/jeopardy/tv.js, onChange).
     private static func jeopardyPlan(from before: JeopardyState, to after: JeopardyState, into plan: inout SoundPlan) {
-        // A ruling just came in: right or wrong.
+        // A ruling just came in: right or wrong. (Going on from the ruling to the answer or the reopened buzzers keeps
+        // the same result, so it stays quiet; flipping the ruling changes it, so that sounds too.)
         if let result = after.lastResult, result != before.lastResult {
             plan.cues.append(result.correct ? .correct : .wrong)
         }
 
         if after.phase != before.phase {
             switch after.phase {
+            case .roundIntro:
+                plan.cues.append(.roundstart)
             case .ddWager:
                 plan.cues.append(.dd)
             case .open:
@@ -48,13 +52,11 @@ enum SoundPlanner {
                 plan.cues.append(.buzz)
             case .reveal:
                 // Nothing right or wrong was just ruled on: the clue ran out of time, or was skipped.
-                if after.lastResult == before.lastResult || after.lastResult == nil {
+                if before.phase != .ruling && (after.lastResult == before.lastResult || after.lastResult == nil) {
                     plan.cues.append(before.phase == .open ? .timeup : .reveal)
                 }
             case .finalWager:
                 plan.cues.append(.finalSting)
-            case .finalReveal:
-                if before.phase == .finalAnswer { plan.cues.append(.timeup) }
             case .gameover:
                 plan.cues.append(.fanfare)
             default:
@@ -62,10 +64,21 @@ enum SoundPlanner {
             }
         }
 
-        // Final Jeopardy's answers are shown one by one, each with a right or wrong sound.
-        if let round = after.finalRound, let earlier = before.finalRound, round.reveals.count > earlier.reveals.count {
-            for reveal in round.reveals[earlier.reveals.count...] {
-                plan.cues.append(reveal.correct ? .correct : .wrong)
+        // Final Jeopardy is revealed one player at a time: their response, then right or wrong. The correct answer is last.
+        if after.phase == .finalReveal, let round = after.finalRound {
+            let earlier = before.phase == .finalReveal ? before.finalRound : nil
+            let moved = earlier?.revealIndex != round.revealIndex
+            switch round.stage ?? "" {
+            case "answer":
+                if moved || earlier?.stage != "answer" { plan.cues.append(.reveal) }
+            case "verdict":
+                if moved || earlier?.stage != "verdict", let reveal = round.reveals.last {
+                    plan.cues.append(reveal.correct ? .correct : .wrong)
+                }
+            case "done":
+                if earlier?.stage != "done" { plan.cues.append(.reveal) }
+            default:
+                break
             }
         }
 

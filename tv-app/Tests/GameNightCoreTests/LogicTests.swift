@@ -16,10 +16,11 @@ final class DisplayScreenTests: XCTestCase {
     func testBoard() throws {
         XCTAssertEqual(try screen("jp-board"), .board)
         XCTAssertEqual(try screen("jp-board-round-2"), .board)
+        XCTAssertEqual(try screen("jp-round-intro"), .board)
     }
 
     func testEveryClueStepShowsTheClueScreen() throws {
-        for name in ["jp-reading", "jp-open", "jp-answering", "jp-open-after-wrong", "jp-reveal-correct", "jp-reveal-nobody",
+        for name in ["jp-reading", "jp-open", "jp-answering", "jp-ruling-wrong", "jp-open-after-wrong", "jp-ruling-right", "jp-reveal-correct", "jp-reveal-nobody",
                      "jp-dd-answer", "jp-dd-reveal", "jp-reaction", "jp-host-reading", "jp-host-answering"] {
             XCTAssertEqual(try screen(name), .clue, name)
         }
@@ -34,7 +35,7 @@ final class DisplayScreenTests: XCTestCase {
     }
 
     func testFinalJeopardy() throws {
-        for name in ["jp-final-wager", "jp-final-answer", "jp-final-reveal-first", "jp-final-reveal-more"] {
+        for name in ["jp-final-wager", "jp-final-answer", "jp-final-reveal-answer", "jp-final-reveal-first", "jp-final-reveal-more", "jp-final-reveal-done"] {
             XCTAssertEqual(try screen(name), .finalRound, name)
         }
     }

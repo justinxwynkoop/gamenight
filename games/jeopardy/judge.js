@@ -4,8 +4,33 @@
 const NUM_WORDS = {
   zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
   eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
-  eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, hundred: 100,
+  eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
 };
+const SCALES = { hundred: 100, thousand: 1000, million: 1000000 };
+
+/** "twenty one" is 21, "one hundred" is 100, "nineteen eighty four" is 1984: runs of number words become one number. */
+function numberWords(words) {
+  const out = [];
+  let total = 0; let cur = 0; let inRun = false;
+  const flush = () => { if (inRun) out.push(String(total + cur)); total = 0; cur = 0; inRun = false; };
+  for (const w of words) {
+    if (w in NUM_WORDS) {
+      const n = NUM_WORDS[w];
+      // A tens word after a teen or tens ("nineteen eighty", "twenty twenty") reads like a year.
+      if (inRun && n >= 10 && cur >= 10 && cur < 100) cur = cur * 100 + n;
+      else if (inRun && n < 10 && cur % 10 !== 0 && cur < 100) { flush(); cur = n; inRun = true; }
+      else cur += n;
+      inRun = true;
+    } else if (w in SCALES && inRun) {
+      if (SCALES[w] === 100) cur = (cur || 1) * 100;
+      else { total += (cur || 1) * SCALES[w]; cur = 0; }
+    } else if (w === 'and' && inRun) {
+      // "one hundred and five"
+    } else { flush(); out.push(w); }
+  }
+  flush();
+  return out;
+}
 
 export function norm(s) {
   s = String(s || '')
@@ -19,7 +44,7 @@ export function norm(s) {
   // Drop question phrasing like "what is", "who are", "whats".
   s = s.replace(/^(what|who|where|when|which|whats|whos|wheres)( (is|are|was|were|s))?\s+/, '');
   s = s.replace(/^(a|an|the)\s+/, '');
-  s = s.split(' ').map((w) => (w in NUM_WORDS ? String(NUM_WORDS[w]) : ABBREV[w] ?? w)).join(' ');
+  s = numberWords(s.split(' ')).map((w) => ABBREV[w] ?? w).join(' ');
   return s.trim();
 }
 
@@ -27,7 +52,19 @@ export function norm(s) {
 const ABBREV = { mt: 'mount', mtn: 'mountain', st: 'saint', ste: 'sainte', ft: 'fort', dr: 'doctor', jr: 'junior', sr: 'senior', mr: 'mister', mrs: 'missus', pt: 'point', pres: 'president', gen: 'general', capt: 'captain', usa: 'united states', us: 'united states', uk: 'united kingdom', nyc: 'new york city' };
 
 // Words a place name can do without: "the Pacific" for the Pacific Ocean, "Everest" for Mount Everest.
-const PLACE_WORDS = new Set(['ocean', 'sea', 'river', 'lake', 'mount', 'mountain', 'mountains', 'island', 'islands', 'desert', 'bay', 'gulf', 'canal', 'falls', 'peninsula', 'strait', 'city', 'state', 'county', 'national', 'park']);
+const PLACE_WORDS = new Set(['ocean', 'sea', 'river', 'lake', 'mount', 'mountain', 'mountains', 'island', 'islands', 'desert', 'bay', 'gulf', 'falls', 'peninsula', 'strait', 'national', 'park']);
+// Words that may sit around a right answer ("the planet Mars", "it's Paris").
+const FILLER = new Set(['the', 'a', 'an', 'of', 'is', 'its', 'it', 's', 'planet', 'river', 'mount', 'lake', 'ocean', 'sea', 'island', 'islands', 'mountain', 'mountains', 'desert', 'city', 'state', 'country', 'saint', 'sir', 'doctor', 'king', 'queen', 'president', 'captain', 'general', 'lord', 'lady', 'mister', 'missus', 'miss', 'answer', 'my', 'i', 'think', 'say', 'guess']);
+// Words that turn one answer into several, or into its opposite: "Paris or London", "not Mars".
+const HEDGES = new Set(['or', 'and', 'not', 'no', 'nor', 'either', 'maybe', 'neither']);
+/** Extra words around a right answer are fine, but not a list of guesses. */
+function fairExtras(g, n) {
+  const at = (' ' + g + ' ').indexOf(' ' + n + ' ');
+  const extra = ((' ' + g + ' ').slice(0, at) + ' ' + (' ' + g + ' ').slice(at + n.length + 2)).split(' ').filter(Boolean);
+  if (extra.some((w) => HEDGES.has(w))) return false;
+  const odd = extra.filter((w) => !FILLER.has(w));
+  return odd.length <= 1 && g.length <= n.length + 14;
+}
 const withoutPlaceWords = (s) => s.split(' ').filter((w) => !PLACE_WORDS.has(w)).join(' ');
 
 function lev(a, b) {
@@ -63,7 +100,7 @@ function matchOne(g, ans) {
   if (/^\d+$/.test(ns) || /^\d+$/.test(gs)) return gs === ns;
   if (lev(gs, ns) <= tolerance(ns.length)) return true;
   // Extra words around the right answer ("the planet mars").
-  if ((' ' + g + ' ').includes(' ' + n + ' ') && g.length <= n.length + 14) return true;
+  if ((' ' + g + ' ').includes(' ' + n + ' ') && fairExtras(g, n)) return true;
   // A place without "Ocean", "Mount", "River"... ("pacific", "everest"), but never the generic word alone.
   const gp = withoutPlaceWords(g).replace(/ /g, ''), np = withoutPlaceWords(n).replace(/ /g, '');
   if (gp && np && np !== ns && gp.length >= 4 && (gp === np || lev(gp, np) <= tolerance(np.length))) return true;
