@@ -3,12 +3,13 @@
 // settings. Players answer by typing and the game checks them, so the host mostly watches; with "a host judges out loud"
 // switched on the host opens the buzzers, taps the picks and rules on each answer.
 import { h, money } from '../../common.js';
-import { icon, button, card, eyebrow, pill } from '../../ui.js';
+import { icon, button, card, eyebrow, pill, timerPill } from '../../ui.js';
 import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl } from './setup.js';
 
 let v = null;          // the game's view (with the host's secrets)
 let C = null;          // helpers from the page: act, openSheet, confirm, go, ...
 let act = () => {};
+let lastAct = { key: '', at: 0 };
 
 const nameOf = (id) => v.players.find((p) => p.id === id)?.name ?? '?';
 const dockRow = (...kids) => h('div', { class: 'dock-row' }, kids.flat().filter(Boolean));
@@ -20,8 +21,14 @@ export function render(raw, ctx) {
   loadStyles();
   v = raw.game;
   C = ctx;
-  act = ctx.act;
-  const screen = { lobby: lobbyView, board: boardView, reading: clueView, open: clueView, answering: clueView, 'dd-wager': clueView, 'dd-answer': clueView, reveal: clueView, 'round-end': roundEndView, 'final-wager': finalView, 'final-answer': finalView, 'final-reveal': finalView, gameover: doneView }[v.phase];
+  // A double tap on the action bar must not do the same thing twice (and skip the next clue with it).
+  act = (action, args = {}) => {
+    const key = `${action}:${JSON.stringify(args)}:${v.phase}`;
+    if (key === lastAct.key && performance.now() - lastAct.at < 900) return;
+    lastAct = { key, at: performance.now() };
+    ctx.act(action, args);
+  };
+  const screen = { lobby: lobbyView, 'round-intro': introView, board: boardView, reading: clueView, open: clueView, answering: clueView, ruling: clueView, 'dd-wager': clueView, 'dd-answer': clueView, reveal: clueView, 'round-end': roundEndView, 'final-wager': finalView, 'final-answer': finalView, 'final-reveal': finalView, gameover: doneView }[v.phase];
   const main = screen ? screen() : { body: [], dock: null };
   return { title: 'Jeopardy!', sub: subtitle(), body: main.body, dock: main.dock, settings: settingsCards(), danger: dangerButtons() };
 }
@@ -31,7 +38,8 @@ function subtitle() {
   switch (v.phase) {
     case 'lobby': return `Setting up · ${n} ${n === 1 ? 'player' : 'players'}`;
     case 'board': return `Round ${v.round}${v.controllerId ? ` · ${nameOf(v.controllerId)} picks` : ''}`;
-    case 'reading': case 'open': case 'answering': case 'reveal': case 'dd-wager': case 'dd-answer':
+    case 'round-intro': return `Round ${v.round} is starting`;
+    case 'reading': case 'open': case 'answering': case 'ruling': case 'reveal': case 'dd-wager': case 'dd-answer':
       return `${v.clue.cat} · ${v.clue.dd ? 'Daily Double' : money(v.clue.value)}`;
     case 'round-end': return `Round ${v.round} finished`;
     case 'gameover': return 'Finished';
@@ -51,12 +59,8 @@ function clueCard() {
     answerBox(s.answer, s.alt));
 }
 
-function clockPill() {
-  const t = v.timer;
-  if (!t) return null;
-  const left = Math.ceil(t.leftMs / 1000);
-  return pill(t.leftMs <= 0 ? 'Time’s up' : `${left}s`, t.leftMs <= 0 ? 'bad' : 'live');
-}
+/** The clock, counting down by itself between updates. */
+const clockPill = () => (v.timer ? timerPill({ ...v.timer, timedOut: v.timer.leftMs <= 0 }) : null);
 
 function miniBoard({ pickable }) {
   const dd = v.secret?.dd ?? [];
@@ -107,6 +111,15 @@ function boardView() {
   return { body, dock };
 }
 
+// ---------- the round's opening titles ----------
+function introView() {
+  return {
+    body: [card(eyebrow(`Round ${v.round}`), h('div', { class: 'card-title' }, 'The TV is showing tonight’s categories'),
+      h('p', { class: 'dim' }, `${nameOf(v.controllerId)} picks first. The board comes up by itself in a few seconds.`))],
+    dock: [button({ label: 'Skip to the board', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') })],
+  };
+}
+
 // ---------- a clue ----------
 function clueView() {
   const ph = v.phase; const c = v.clue;
@@ -126,6 +139,11 @@ function clueView() {
       h('p', { class: 'dim' }, v.hostJudges ? 'Listen to the answer, then rule on it below.' : 'They type their answer and the game checks it. Use “Flip the ruling” afterwards if it got one wrong.')));
     if (v.hostJudges) dock.push(dockRow(button({ label: 'Correct', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('judge', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('judge', { correct: false }) })));
     dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
+  } else if (ph === 'ruling') {
+    const r = v.lastResult;
+    body.push(card(eyebrow('Ruling'), h('div', { class: 'card-title' }, r ? `${nameOf(r.pid)} said “${r.answer || '…'}”` : '…'),
+      r && pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), h('p', { class: 'dim' }, 'Shown on the TV for a moment. Flip it if the game got it wrong.')));
+    dock.push(dockRow(button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }), button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'dd-wager') {
     body.push(card(eyebrow('Daily Double'), h('p', { class: 'dim' }, `${nameOf(v.controllerId)} is choosing a wager on their phone. Don’t read the clue until they lock it in.`)));
     dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
@@ -165,8 +183,10 @@ function finalView() {
         pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), button({ label: 'Flip', size: 'sm', onclick: () => act('finalOverride', { pid: r.id }) }))))));
   }
   const dock = [];
-  if (ph === 'final-wager') dock.push(button({ label: 'Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, onclick: () => act('advance') }));
-  if (ph === 'final-answer') dock.push(button({ label: 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+  // Moving on before everyone has locked in skips them, so it asks first.
+  const early = (missing, title, message, label) => (missing ? () => C.confirm({ title, message, confirmLabel: label, onConfirm: () => act('advance') }) : () => act('advance'));
+  if (ph === 'final-wager') dock.push(button({ label: 'Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, onclick: early(f.wagered.length < f.eligible.length, 'Show the clue now?', 'Not everyone has locked in a wager. Missing wagers count as $0.', 'Show the clue') }));
+  if (ph === 'final-answer') dock.push(button({ label: 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: early(f.answered.length < f.eligible.length, 'Reveal now?', 'Not everyone has locked in an answer. Anything they typed still counts.', 'Reveal') }));
   if (ph === 'final-reveal') dock.push(button({ label: 'Next reveal', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
   return { body, dock };
 }

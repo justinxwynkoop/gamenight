@@ -50,6 +50,8 @@ const ctrlName = () => people.find((p) => p.id === g.controllerId)?.name;
 snap('lobby');
 g.start();
 g.controllerId = maya.id;
+snap('round-1-intro', { focus: 'Maya' });
+g.advance();
 // Some scores, so the sidebar looks like a game under way.
 room.adjustScore(maya.id, { set: 1200 }); room.adjustScore(leo.id, { set: 800 }); room.adjustScore(dad.id, { set: -200 }); room.adjustScore(gma.id, { set: 400 });
 // A few clues already played.
@@ -66,10 +68,14 @@ advance(300); g.buzz(leo.id); advance(80); g.buzz(maya.id); advance(140); g.buzz
 advance(2000);
 snap('answering', { focus: 'Leo' });
 g.answer(leo.id, 'a kangaroo');
+snap('ruling-wrong', { focus: 'Leo' });
+advance(T.ruling + 10);
 advance(200);
 snap('wrong-buzzers-reopen', { focus: 'Maya' });
-advance(250); g.buzz(maya.id);
+advance(250); g.buzz(maya.id, g.clue.open);
 g.answer(maya.id, first.cl.a);
+snap('ruling-right', { focus: 'Maya' });
+advance(T.ruling + 10);
 snap('reveal-correct', { focus: 'Maya' });
 g.react(dad.id, 2); g.react(gma.id, 0);
 advance(T.reveal + 10);
@@ -86,9 +92,11 @@ g.controllerId = maya.id;
 g.pick(dd.ci, dd.ri);
 snap('daily-double-wager', { focus: 'Maya' });
 g.ddWager(maya.id, 1000);
-advance(1500);
+snap('daily-double-bet', { focus: 'Maya' });
+advance(3000);
 snap('daily-double-clue', { focus: 'Maya' });
 g.answer(maya.id, dd.cl.a);
+advance(T.ruling + 10);
 snap('daily-double-reveal', { focus: 'Maya' });
 advance(T.reveal + 10);
 
@@ -109,6 +117,8 @@ const playOut = () => {
 playOut();
 snap('round-end', { focus: 'Maya' });
 g.advance();
+snap('round-2-intro', { focus: ctrlName() });
+g.advance();
 for (const s of spots().slice(0, 7)) s.cl.used = true;
 snap('board-round-2', { focus: ctrlName() });
 playOut();
@@ -124,16 +134,18 @@ g.finalAnswer(maya.id, g.finalClue.a); g.finalAnswer(leo.id, 'no clue');
 snap('final-some-answered', { focus: 'Dad' });
 g.finalAnswer(dad.id, g.finalClue.a); g.finalAnswer(gma.id, 'pass');
 advance(2000);
-snap('final-reveal-first', { focus: 'Maya' });
-advance(T.finalStep + 10);
-snap('final-reveal-more', { focus: 'Maya' });
+snap('final-reveal-response', { focus: 'Maya' });
+advance(T.finalBeat + 10);
+snap('final-reveal-verdict', { focus: 'Maya' });
+for (let i = 0; i < 20 && g.final.stage !== 'done'; i++) advance(T.finalStep + 10);
+snap('final-correct-answer', { focus: 'Maya' });
 for (let i = 0; i < 20 && g.phase !== 'gameover'; i++) advance(T.finalStep + 10);
 snap('champion', { focus: 'Maya' });
 g.playAgain();
 // The host judging spoken answers, with the answer clock.
 g.setHostJudges(true); g.setAnswerTime(10);
 snap('lobby-host-judges');
-g.start();
+g.start(); g.advance();
 const hs = spots().find((x) => !x.cl.dd);
 g.pick(hs.ci, hs.ri);
 advance(900);
@@ -211,9 +223,11 @@ for (const s of steps) {
   if (only && !only.has(s.name)) continue;
   current = s;
   push();
-  await tv.waitForTimeout(1300);   // let the entrance animations finish
+  // Let the entrance animations finish (the round's titles take a few seconds; the Daily Double bet shows briefly).
+  await tv.waitForTimeout(s.name.endsWith('intro') ? 6000 : s.name === 'daily-double-bet' ? 900 : s.name === 'daily-double-clue' ? 2600 : s.name === 'champion' ? 3500 : 1300);
   const files = [`${s.name}--tv.png`];
   await tv.screenshot({ path: path.join(out, files[0]) });
+  if (process.env.GALLERY_DEBUG) console.log(await tv.evaluate((sel) => [...document.querySelectorAll(sel)].map((e) => { const c = getComputedStyle(e); return [e.className, c.backgroundImage.slice(0, 80), c.backgroundColor, c.width, c.justifyContent, c.position]; }), process.env.GALLERY_DEBUG));
   for (const [name, page] of Object.entries(phones)) {
     if (s.name.startsWith('lobby') || name === s.extra.focus || name === 'Dad') {
       const f = `${s.name}--phone-${name}.png`;

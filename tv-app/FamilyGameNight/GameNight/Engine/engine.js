@@ -97,17 +97,66 @@
     thirty: 30,
     forty: 40,
     fifty: 50,
-    hundred: 100
+    sixty: 60,
+    seventy: 70,
+    eighty: 80,
+    ninety: 90
   };
+  var SCALES = { hundred: 100, thousand: 1e3, million: 1e6 };
+  function numberWords(words) {
+    const out = [];
+    let total = 0;
+    let cur = 0;
+    let inRun = false;
+    const flush = () => {
+      if (inRun) out.push(String(total + cur));
+      total = 0;
+      cur = 0;
+      inRun = false;
+    };
+    for (const w of words) {
+      if (w in NUM_WORDS) {
+        const n = NUM_WORDS[w];
+        if (inRun && n >= 10 && cur >= 10 && cur < 100) cur = cur * 100 + n;
+        else if (inRun && n < 10 && cur % 10 !== 0 && cur < 100) {
+          flush();
+          cur = n;
+          inRun = true;
+        } else cur += n;
+        inRun = true;
+      } else if (w in SCALES && inRun) {
+        if (SCALES[w] === 100) cur = (cur || 1) * 100;
+        else {
+          total += (cur || 1) * SCALES[w];
+          cur = 0;
+        }
+      } else if (w === "and" && inRun) {
+      } else {
+        flush();
+        out.push(w);
+      }
+    }
+    flush();
+    return out;
+  }
   function norm(s) {
     s = String(s || "").toLowerCase().normalize("NFD").replace(/\p{Mn}/gu, "").replace(/&/g, " and ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
     s = s.replace(/^(what|who|where|when|which|whats|whos|wheres)( (is|are|was|were|s))?\s+/, "");
     s = s.replace(/^(a|an|the)\s+/, "");
-    s = s.split(" ").map((w) => w in NUM_WORDS ? String(NUM_WORDS[w]) : ABBREV[w] ?? w).join(" ");
+    s = numberWords(s.split(" ")).map((w) => ABBREV[w] ?? w).join(" ");
     return s.trim();
   }
   var ABBREV = { mt: "mount", mtn: "mountain", st: "saint", ste: "sainte", ft: "fort", dr: "doctor", jr: "junior", sr: "senior", mr: "mister", mrs: "missus", pt: "point", pres: "president", gen: "general", capt: "captain", usa: "united states", us: "united states", uk: "united kingdom", nyc: "new york city" };
-  var PLACE_WORDS = /* @__PURE__ */ new Set(["ocean", "sea", "river", "lake", "mount", "mountain", "mountains", "island", "islands", "desert", "bay", "gulf", "canal", "falls", "peninsula", "strait", "city", "state", "county", "national", "park"]);
+  var PLACE_WORDS = /* @__PURE__ */ new Set(["ocean", "sea", "river", "lake", "mount", "mountain", "mountains", "island", "islands", "desert", "bay", "gulf", "falls", "peninsula", "strait", "national", "park"]);
+  var FILLER = /* @__PURE__ */ new Set(["the", "a", "an", "of", "is", "its", "it", "s", "planet", "river", "mount", "lake", "ocean", "sea", "island", "islands", "mountain", "mountains", "desert", "city", "state", "country", "saint", "sir", "doctor", "king", "queen", "president", "captain", "general", "lord", "lady", "mister", "missus", "miss", "answer", "my", "i", "think", "say", "guess"]);
+  var HEDGES = /* @__PURE__ */ new Set(["or", "and", "not", "no", "nor", "either", "maybe", "neither"]);
+  function fairExtras(g, n) {
+    const at = (" " + g + " ").indexOf(" " + n + " ");
+    const extra = ((" " + g + " ").slice(0, at) + " " + (" " + g + " ").slice(at + n.length + 2)).split(" ").filter(Boolean);
+    if (extra.some((w) => HEDGES.has(w))) return false;
+    const odd = extra.filter((w) => !FILLER.has(w));
+    return odd.length <= 1 && g.length <= n.length + 14;
+  }
   var withoutPlaceWords = (s) => s.split(" ").filter((w) => !PLACE_WORDS.has(w)).join(" ");
   function lev(a, b) {
     if (a === b) return 0;
@@ -137,7 +186,7 @@
     if (gs === ns) return true;
     if (/^\d+$/.test(ns) || /^\d+$/.test(gs)) return gs === ns;
     if (lev(gs, ns) <= tolerance(ns.length)) return true;
-    if ((" " + g + " ").includes(" " + n + " ") && g.length <= n.length + 14) return true;
+    if ((" " + g + " ").includes(" " + n + " ") && fairExtras(g, n)) return true;
     const gp = withoutPlaceWords(g).replace(/ /g, ""), np = withoutPlaceWords(n).replace(/ /g, "");
     if (gp && np && np !== ns && gp.length >= 4 && (gp === np || lev(gp, np) <= tolerance(np.length))) return true;
     return false;
@@ -320,12 +369,29 @@
     // time to type an answer after buzzing
     ddAnswer: 2e4,
     // Daily Double answer time (after reading)
-    reveal: 4500,
+    reveal: 5e3,
     // how long the correct answer stays up
+    revealNobody: 3800,
+    // ...when nobody got it
+    ruling: 1800,
+    // the ruling on an answer: their words and right or wrong, before anything else happens
+    roundIntro: 7e3,
+    // the round's title and categories before the first pick
     earlyPenalty: 400,
-    // lockout for buzzing before the clue unlocks
+    // lockout for buzzing before the clue unlocks (or while it is not open)
+    ddWager: 45e3,
+    // a Daily Double wager not placed by then is the minimum
+    ddSplash: 2200,
+    // "Maya bets $1,000" on the TV before the clock starts counting
+    finalWager: 6e4,
+    // Final Jeopardy wagers not placed by then are $0
     finalAnswer: 35e3,
-    finalStep: 6500,
+    finalBeat: 2800,
+    // final reveal: a player's response, before right or wrong
+    finalStep: 5e3,
+    // final reveal: right or wrong and the wager, before the next player
+    finalAnswerShow: 5e3,
+    // final reveal: the correct answer, after everyone
     hostRead: 3e4,
     // host mode: fallback if the host forgets to open buzzers
     hostAnswer: 3e4,
@@ -342,7 +408,7 @@
   var STREAK_HOT = 3;
   var MAX_PLAYERS2 = 10;
   var FINAL_FLOOR = 1e3;
-  var readingTime = (text) => Math.max(2500, Math.min(7e3, 1200 + String(text).length * 45));
+  var readingTime = (text) => Math.max(4e3, Math.min(1e4, 1500 + String(text).length * 55));
   function validateSet(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
     if (!cleanName(set.title, 80)) fail("Question set needs a title");
@@ -356,7 +422,7 @@
       cat.clues.forEach((cl, r) => {
         if (!String(cl?.clue ?? "").trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its clue text`);
         if (!String(cl?.answer ?? "").trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its answer`);
-        if (!(int(cl.value) > 0)) fail(`Category ${c + 1}, clue ${r + 1} needs a positive value`);
+        if (!(int(cl.value) > 0) || !Number.isInteger(Number(cl.value))) fail(`Category ${c + 1}, clue ${r + 1} needs a positive whole-dollar value`);
         altOk(cl.alt, `Category ${c + 1}, clue ${r + 1}`);
       });
     });
@@ -380,7 +446,7 @@
     };
   }
   var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, openBuzzers_fn, startAnswerClock_fn, tally_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -451,6 +517,7 @@
           }
         }
       } else this.captainGoneAt = null;
+      if (this.phase === "final-wager" || this.phase === "final-answer" && this.timer?.kind !== "final-wait") __privateMethod(this, _JeopardyGame_instances, checkFinalReady_fn).call(this);
       if (this.reactions.length && now - this.reactions[0].at > REACT_LIFE) {
         this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
         __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
@@ -596,8 +663,7 @@
       const order = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this);
       this.controllerId = order[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * order.length)];
       this.captainId ?? (this.captainId = order[0]);
-      this.phase = "board";
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, roundIntro_fn).call(this);
     }
     // ---------- the roster ----------
     kick(id) {
@@ -624,10 +690,11 @@
       if (!cl || cl.used) return;
       cl.used = true;
       this.lastResult = null;
-      this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null };
+      this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
       if (cl.dd) {
         this.phase = "dd-wager";
-        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        const who = this.controllerId;
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 5), "wager");
       } else {
         this.phase = "reading";
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, this.hostJudges() ? T.hostRead : readingTime(cl.q), () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow), "reading");
@@ -637,37 +704,59 @@
     openNow() {
       if (this.phase === "reading") __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
     }
-    /** A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }. */
-    buzz(pid) {
+    /**
+     * A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }.
+     * `seq` is the opening the phone saw (clue.open); a press for an earlier one arrives too early for this one.
+     */
+    buzz(pid, seq) {
       const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid);
       if (!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid) || !this.clue) return { result: "ignored" };
       const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
-      if (this.phase === "reading") {
+      const tried = this.clue.tried.includes(pid);
+      if (this.phase === "reading" || this.phase === "ruling" && !tried) {
         st.lockUntil = now + T.earlyPenalty;
         return { result: "early" };
       }
       if (this.phase === "answering" && this.openedAt) {
-        if (this.clue.tried.includes(pid) || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid)) return { result: "ignored" };
+        const opening = this.clue.open;
+        if (tried || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid && b.open === opening)) return { result: "ignored" };
+        if (seq != null && Number(seq) < opening) {
+          st.lockUntil = now + T.earlyPenalty;
+          return { result: "early" };
+        }
         const late = Math.max(0, now - this.openedAt);
-        this.clue.buzzes.push({ pid, ms: late });
-        if (st.fastest == null || late < st.fastest) st.fastest = late;
+        this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
+        this.clue.buzzes.push({ pid, ms: late, open: opening });
+        st.lockUntil = now + T.earlyPenalty;
+        if (opening === 1 && (st.fastest == null || late < st.fastest)) st.fastest = late;
         __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
         return { result: "late", ms: late };
       }
       if (this.phase !== "open") return { result: "ignored" };
-      if (this.clue.tried.includes(pid)) return { result: "tried" };
+      if (tried) return { result: "tried" };
+      if (seq != null && Number(seq) < this.clue.open) {
+        st.lockUntil = now + T.earlyPenalty;
+        return { result: "early" };
+      }
       if (now < st.lockUntil) return { result: "early" };
       this.clue.buzzedId = pid;
       const ms = Math.max(0, now - this.openedAt);
       this.clue.buzzMs = ms;
-      if (st.fastest == null || ms < st.fastest) st.fastest = ms;
+      if (this.clue.open === 1 && (st.fastest == null || ms < st.fastest)) st.fastest = ms;
       this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
-      this.clue.buzzes.push({ pid, ms, won: true });
+      this.clue.buzzes.push({ pid, ms, won: true, open: this.clue.open });
       this.phase = "answering";
       if (this.hostJudges()) __privateMethod(this, _JeopardyGame_instances, startAnswerClock_fn).call(this, pid);
-      else __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.answer, () => this.submitAnswer(pid, "", true), "answer");
+      else __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.answer, () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       return { result: "won", ms };
+    }
+    /** What a player has typed so far (sent as they type), kept in case the clock runs out before they send it. */
+    typing(pid, text) {
+      text = String(text ?? "").slice(0, 80);
+      if (this.phase === "answering" && this.clue?.buzzedId === pid) this.clue.drafts[pid] = text;
+      else if (this.phase === "dd-answer" && this.controllerId === pid) this.clue.drafts[pid] = text;
+      else if (this.phase === "final-answer" && this.final?.eligible.includes(pid) && !(pid in this.final.answers)) this.final.drafts[pid] = text;
     }
     /** The host's ruling on a spoken answer. */
     judgeNow(correct) {
@@ -687,16 +776,9 @@
         if (p) p.score += correct ? v : -v;
         __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, pid, correct, 0);
         this.clue.tried.push(pid);
-        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak };
-        if (correct) {
-          this.controllerId = pid;
-          __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
-        } else {
-          const remaining = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id));
-          if (remaining.length === 0) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
-          else __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.rebuzzWindow);
-        }
-        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak, timedOut: !!timedOut, prevController: this.clue.prevController };
+        if (correct) this.controllerId = pid;
+        __privateMethod(this, _JeopardyGame_instances, ruling_fn).call(this);
         return;
       }
       if (this.phase === "dd-answer" && this.controllerId === pid) {
@@ -705,14 +787,14 @@
         const v = this.clue.wager;
         if (p) p.score += correct ? v : -v;
         __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, pid, correct, v);
-        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, dd: true, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak };
-        __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
-        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        this.lastResult = { pid, answer: shown(), correct, delta: v, overridden: false, dd: true, streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid).streak, timedOut: !!timedOut, prevController: this.clue.prevController };
+        __privateMethod(this, _JeopardyGame_instances, ruling_fn).call(this);
       }
     }
     /** What a player typed for their answer (phones). */
     answer(pid, text) {
       if (this.hostJudges()) fail("The host judges answers out loud.");
+      if (!String(text ?? "").trim()) return;
       this.submitAnswer(pid, text, false);
     }
     ddWager(pid, amount) {
@@ -723,7 +805,7 @@
       w = clamp(w, 5, max);
       this.clue.wager = w;
       this.phase = "dd-answer";
-      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.submitAnswer(pid, "", true), "answer");
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddSplash + readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
@@ -739,11 +821,18 @@
       if (this.phase === "round-end") {
         if (this.round < this.rounds.length) {
           this.round += 1;
-          const sorted = this.room.players.slice().sort((a, b) => a.score - b.score);
-          this.controllerId = sorted[0].id;
-          this.phase = "board";
-          __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+          const here = this.room.players.filter((p) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, p.id));
+          const sorted = (here.length ? here : this.room.players).slice().sort((a, b) => a.score - b.score);
+          if (sorted.length) this.controllerId = sorted[0].id;
+          __privateMethod(this, _JeopardyGame_instances, roundIntro_fn).call(this);
         } else __privateMethod(this, _JeopardyGame_instances, startFinal_fn).call(this);
+      } else if (this.phase === "round-intro") {
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        this.phase = "board";
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      } else if (this.phase === "ruling") {
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, afterRuling_fn).call(this);
       } else if (this.phase === "reveal") {
         __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
         __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this);
@@ -753,14 +842,15 @@
         __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this);
       } else if (this.phase === "final-reveal") __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this);
     }
+    /** Skip a clue (a broken or unfair one): show the answer, and nobody wins or loses anything for it. */
     skipClue() {
-      if (["reading", "open", "answering"].includes(this.phase)) {
-        if (this.phase === "answering") {
-          this.submitAnswer(this.clue.buzzedId, "", true);
-          if (this.phase !== "reveal") __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
-        } else __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      if (["reading", "open", "answering", "ruling"].includes(this.phase)) {
+        if (this.phase !== "ruling") this.lastResult = null;
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
       } else if (this.phase === "dd-wager" || this.phase === "dd-answer") {
         if (this.phase === "dd-wager") this.clue.wager = 0;
+        this.lastResult = null;
         __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
       }
     }
@@ -788,7 +878,9 @@
       r.streak = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, r.pid).streak;
       if (r.correct) {
         this.controllerId = r.pid;
-        if (["open", "reading", "answering"].includes(this.phase)) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+        if (["open", "reading", "answering", "ruling"].includes(this.phase)) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      } else if (!r.dd && this.controllerId === r.pid && r.prevController && __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, r.prevController)) {
+        this.controllerId = r.prevController;
       }
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
@@ -800,15 +892,51 @@
       w = clamp(w, 0, this.maxFinalWager(pid));
       this.final.wagers[pid] = w;
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      if (!this.final.eligible.some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !(id in this.final.wagers))) __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, checkFinalReady_fn).call(this);
     }
     finalAnswer(pid, text) {
       if (this.phase !== "final-answer" || !this.final.eligible.includes(pid)) return;
       if (pid in this.final.answers) return;
       this.final.answers[pid] = String(text || "").slice(0, 80);
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      if (!this.final.eligible.some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !(id in this.final.answers))) {
-        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, 1500, () => __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this), "final-wait");
+      __privateMethod(this, _JeopardyGame_instances, checkFinalReady_fn).call(this);
+    }
+    /** A player left (the host removed them): forget them everywhere, so nothing waits for them. */
+    playerRemoved(id) {
+      const f = this.final;
+      if (f) {
+        f.eligible = f.eligible.filter((x) => x !== id);
+        delete f.wagers[id];
+        delete f.answers[id];
+        if (f.drafts) delete f.drafts[id];
+        const at = f.revealOrder.indexOf(id);
+        if (at >= 0) {
+          f.revealOrder.splice(at, 1);
+          if (at <= f.revealIndex) {
+            f.revealIndex -= 1;
+            if (at === f.revealIndex + 1 && f.stage === "answer") f.stage = "verdict";
+          }
+        }
+        if (this.phase === "final-wager" || this.phase === "final-answer") {
+          if (!f.eligible.length) {
+            this.phase = "gameover";
+            __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+          } else __privateMethod(this, _JeopardyGame_instances, checkFinalReady_fn).call(this);
+        }
+      }
+      if (this.clue && this.clue.buzzedId === id && this.phase === "answering") {
+        this.lastResult = null;
+        __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+        __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      }
+      if (this.controllerId === id) {
+        const here = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((x) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, x));
+        this.controllerId = here[0] ?? __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
+        if (this.phase === "dd-wager" || this.phase === "dd-answer") {
+          this.lastResult = null;
+          __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+          __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+        }
       }
     }
     /** Flip a final-round ruling for one player. */
@@ -934,7 +1062,10 @@
       const pid = player.id;
       switch (msg.t) {
         case "buzz":
-          return { t: "buzz-result", ...this.buzz(pid) };
+          return { t: "buzz-result", ...this.buzz(pid, msg.seq) };
+        case "draft":
+          this.typing(pid, msg.text);
+          return void 0;
         case "answer":
           this.answer(pid, msg.text);
           return { t: "ack", what: "answer" };
@@ -996,7 +1127,9 @@
           buzzedId: this.clue.buzzedId,
           buzzMs: this.clue.buzzMs,
           // Everyone who buzzed on this clue, fastest first, with their time in ms.
-          buzzes: this.clue.buzzes.slice().sort((x, y) => x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won })),
+          // Earlier openings first (after a wrong answer the buzzers open again), then fastest.
+          buzzes: this.clue.buzzes.slice().sort((x, y) => (x.open ?? 1) - (y.open ?? 1) || x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won, open: x.open ?? 1 })),
+          open: this.clue.open ?? 0,
           tried: this.clue.tried
         },
         lastResult: this.lastResult,
@@ -1032,12 +1165,21 @@
         v.final = {
           category: f.category,
           q: showQ ? f.q : null,
-          answer: done && (this.phase === "gameover" || f.revealIndex >= 0) ? f.a : null,
+          // The correct answer comes last, after every player's response.
+          answer: this.phase === "gameover" || this.phase === "final-reveal" && f.answerShown ? f.a : null,
           eligible: f.eligible,
           wagered: Object.keys(f.wagers),
           answered: Object.keys(f.answers),
           revealIndex: f.revealIndex,
-          reveals: done ? f.revealOrder.slice(0, f.revealIndex + 1).map((id) => ({ id, ...f.results[id], wager: f.wagers[id] })) : []
+          // 'answer' (their response is up), 'verdict' (right or wrong, and the wager), 'done' (the correct answer).
+          stage: this.phase === "final-reveal" ? f.stage ?? null : null,
+          answerShown: this.phase === "gameover" || !!f.answerShown,
+          order: done ? (f.revealOrder ?? []).slice() : [],
+          reveals: done ? (f.revealOrder ?? []).slice(0, f.revealIndex + 1).map((id, i) => {
+            const r = f.results[id] ?? {};
+            const pending = this.phase === "final-reveal" && i === f.revealIndex && f.stage === "answer";
+            return { id, answer: r.answer, correct: pending ? false : !!r.correct, overridden: !!r.overridden, wager: pending ? 0 : f.wagers[id] ?? 0, pending };
+          }) : []
         };
       }
       return v;
@@ -1111,10 +1253,12 @@
       __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
       for (const id of this.selected) if (!this.packs.some((p) => p.id === id)) this.selected.delete(id);
       if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
-      if (this.clue && ["reading", "open", "answering", "dd-wager", "dd-answer"].includes(this.phase)) {
+      if (this.clue && ["reading", "open", "answering", "ruling", "dd-wager", "dd-answer"].includes(this.phase)) {
         this.phase = "reveal";
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
       } else if (this.phase === "reveal") __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
+      else if (this.phase === "round-intro") this.phase = "board";
+      else if (this.phase === "final-wager") __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalWager, () => __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this), "wager");
       else if (this.phase === "final-answer") __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this);
       else if (this.phase === "final-reveal") __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalStep, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
       if (this.phase === "lobby" && !this.archivePacks.length) __privateMethod(this, _JeopardyGame_instances, requestArchive_fn).call(this, this.era);
@@ -1269,7 +1413,7 @@
       name: c.name,
       clues: c.clues.slice(0, 5).map((cl, i) => ({
         // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
-        value: Number(cl.v) > 0 ? Number(cl.v) : (i + 1) * 200 * r,
+        value: Number(cl.v) > 0 ? Math.round(Number(cl.v)) : (i + 1) * 200 * r,
         q: cl.q,
         a: cl.a,
         alt: cl.alt || [],
@@ -1320,9 +1464,22 @@
     if (f) this.played.add(`final:${f.q}`);
     this.finalClue = f ? { category: f.category, q: f.q, a: f.a, alt: f.alt || [] } : null;
   };
+  /** The round's title and its categories on the TV, then the first pick. */
+  roundIntro_fn = function() {
+    this.lastResult = null;
+    this.phase = "round-intro";
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.roundIntro, () => {
+      if (this.phase === "round-intro") {
+        this.phase = "board";
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      }
+    }, "intro");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
   openBuzzers_fn = function(window) {
     this.phase = "open";
     this.clue.buzzedId = null;
+    this.clue.open = (this.clue.open ?? 0) + 1;
     this.openedAt = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
     __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, window, () => __privateMethod(this, _JeopardyGame_instances, endClue_fn).call(this), "buzz");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
@@ -1335,9 +1492,15 @@
       return;
     }
     const ms = sec * 1e3;
-    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms + T.hostGrace, () => this.submitAnswer(pid, "", true), "answer");
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms + T.hostGrace, () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
     this.timer.totalMs = ms;
     this.timer.shownEnd = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
+  };
+  /** The answer clock ran out: whatever they had typed (and not sent) is their answer. */
+  timeUp_fn = function(pid) {
+    const typed = this.clue?.drafts?.[pid];
+    if (typed && String(typed).trim() && !this.hostJudges()) this.submitAnswer(pid, typed, false);
+    else this.submitAnswer(pid, "", true);
   };
   /** Count a ruling for the streaks and awards. `undo` flips an earlier one. */
   tally_fn = function(id, correct, wager, undo) {
@@ -1366,17 +1529,35 @@
       p.streak = 0;
     }
   };
+  /** A short beat for the ruling (their answer, then right or wrong) before the buzzers reopen or the answer shows. */
+  ruling_fn = function() {
+    this.phase = "ruling";
+    this.clue.buzzedId = this.lastResult.pid;
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ruling, () => __privateMethod(this, _JeopardyGame_instances, afterRuling_fn).call(this), "ruling");
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  afterRuling_fn = function() {
+    if (this.phase !== "ruling") return;
+    const r = this.lastResult;
+    if (!r || r.dd || r.correct) {
+      __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+      return;
+    }
+    const remaining = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id));
+    if (remaining.length === 0) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
+    else __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.rebuzzWindow);
+  };
   endClue_fn = function() {
     if (!this.clue) return;
     if (this.phase === "answering") {
-      this.submitAnswer(this.clue.buzzedId, "", true);
+      __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, this.clue.buzzedId);
       return;
     }
     __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
   };
   revealClue_fn = function() {
     this.phase = "reveal";
-    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.reveal, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, this.lastResult ? T.reveal : T.revealNobody, () => __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this), "reveal");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
   afterReveal_fn = function() {
@@ -1386,7 +1567,7 @@
     if (!left) this.phase = "round-end";
     else {
       this.phase = "board";
-      if (!__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) {
+      if (!__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId) || !__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.controllerId)) {
         const here = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
         if (here.length) this.controllerId = here[0];
       }
@@ -1403,10 +1584,20 @@
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       return;
     }
-    this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, results: {}, revealOrder: [], revealIndex: -1 };
+    this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, drafts: {}, results: {}, revealOrder: [], revealIndex: -1, stage: null, answerShown: false };
     this.phase = "final-wager";
-    __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalWager, () => __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this), "wager");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  /** Everyone who is here has wagered (or answered): go on without waiting for the clock. */
+  checkFinalReady_fn = function() {
+    const f = this.final;
+    if (!f) return;
+    const here = f.eligible.filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
+    if (this.phase === "final-wager" && here.length && here.every((id) => id in f.wagers)) __privateMethod(this, _JeopardyGame_instances, beginFinalClue_fn).call(this);
+    else if (this.phase === "final-answer" && here.length && here.every((id) => id in f.answers) && this.timer?.kind !== "final-wait") {
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, 1500, () => __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this), "final-wait");
+    }
   };
   beginFinalClue_fn = function() {
     if (this.phase !== "final-wager") return;
@@ -1418,40 +1609,64 @@
   beginFinalReveal_fn = function() {
     if (this.phase !== "final-answer") return;
     const f = this.final;
+    f.drafts ?? (f.drafts = {});
     for (const id of f.eligible) {
-      const ans = f.answers[id] || "";
-      f.results[id] = { answer: ans || "(no answer)", correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
+      const ans = f.answers[id] || f.drafts[id] || "";
+      f.results[id] = { answer: ans.trim() ? ans : "(no answer)", correct: judge(ans, [f.a, ...f.alt], { person: asksForPerson(f.q) }), shown: false, applied: false };
     }
-    f.revealOrder = f.eligible.slice().sort((a, b) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, a).score - __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, b).score);
+    const score = (id) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.score ?? 0;
+    f.revealOrder = f.eligible.filter((id) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)).sort((a, b) => score(a) - score(b));
     f.revealIndex = -1;
+    f.stage = null;
+    f.answerShown = false;
     this.phase = "final-reveal";
     __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this);
   };
+  /**
+   * One beat of the final reveal. Each player: their response ('answer'), then right or wrong with the wager
+   * ('verdict'). After everyone: the correct answer, then the champion.
+   */
   finalStep_fn = function() {
     const f = this.final;
+    if (f.stage === "answer" && f.revealIndex >= 0 && f.revealIndex < f.revealOrder.length) {
+      const id = f.revealOrder[f.revealIndex];
+      const r = f.results[id];
+      const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id);
+      if (p && !r.applied) {
+        p.score += r.correct ? f.wagers[id] : -f.wagers[id];
+        __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, id, r.correct, f.wagers[id]);
+        r.applied = true;
+      }
+      f.stage = "verdict";
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalStep, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+      return;
+    }
     f.revealIndex++;
     if (f.revealIndex >= f.revealOrder.length) {
+      f.revealIndex = f.revealOrder.length - 1;
+      if (!f.answerShown) {
+        f.answerShown = true;
+        f.stage = "done";
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalAnswerShow, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        return;
+      }
       this.phase = "gameover";
       __privateMethod(this, _JeopardyGame_instances, clearTimer_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       return;
     }
-    const id = f.revealOrder[f.revealIndex];
-    const r = f.results[id];
-    const p = __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id);
-    r.shown = true;
-    if (p && !r.applied) {
-      p.score += r.correct ? f.wagers[id] : -f.wagers[id];
-      __privateMethod(this, _JeopardyGame_instances, tally_fn).call(this, id, r.correct, f.wagers[id]);
-      r.applied = true;
-    }
-    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalStep, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
+    f.results[f.revealOrder[f.revealIndex]].shown = true;
+    f.stage = "answer";
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalBeat, () => __privateMethod(this, _JeopardyGame_instances, finalStep_fn).call(this), "final-step");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
   // ---------- views ----------
   timerView_fn = function() {
     const t = this.timer;
-    if (!t || !["buzz", "answer", "final"].includes(t.kind)) return null;
+    if (!t || !["buzz", "answer", "final", "wager", "reading", "intro"].includes(t.kind)) return null;
+    if (t.kind === "reading" && this.hostJudges()) return null;
     const left = Math.max(0, Math.round(t.shownEnd - __privateMethod(this, _JeopardyGame_instances, now_fn).call(this)));
     return { kind: t.kind, totalMs: t.totalMs, leftMs: left };
   };
@@ -2614,6 +2829,7 @@
 
   // room.js
   var VERSION = 2;
+  var MAX_SCORE = 1e7;
   var _Room_instances, id_fn, freeColor_fn, lobbyOnly_fn2, neededTeams_fn, individualsOnly_fn, maxPlayers_fn, fixedTeams_fn, effectiveMode_fn, wantedTeamCount_fn, reconcile_fn, ensureTeams_fn, shuffled_fn, deal_fn, placeUnassigned_fn, unitViews_fn, roomView_fn;
   var Room = class {
     constructor({ games = {}, now = () => performance.now(), onChange = () => {
@@ -2796,6 +3012,7 @@
       this.players = this.players.filter((p) => p.id !== id);
       this.connected.delete(id);
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
+      this.game?.playerRemoved?.(id);
       this.changed();
     }
     /** Lobby only: forget every player and team (a new party). */
@@ -2817,6 +3034,7 @@
         if (Number.isNaN(n)) fail("Adjustment must be a number");
         u.score += n;
       }
+      u.score = Math.max(-MAX_SCORE, Math.min(MAX_SCORE, u.score));
       this.changed();
     }
     resetScores() {

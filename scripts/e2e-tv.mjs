@@ -111,21 +111,21 @@ try {
   const picker = async () => ((await ann.locator('.jp-mini button').count()) > 0 ? ann : (await bo.locator('.jp-mini button').count()) > 0 ? bo : null);
   await until(async () => !!(await picker()), 'a mini board on the picker\'s phone');
   await (await picker()).locator('.jp-mini button').first().click();
-  await until(async () => (await tv.locator('.clue .meta, .ddbox').count()) > 0, 'the clue on the TV');
-  if (await tv.locator('.ddbox').count()) {
+  await until(async () => (await tv.locator('.card .rail, .dd').count()) > 0, 'the clue on the TV');
+  if (await tv.locator('.dd').count()) {
     console.log('(that was a Daily Double; skipping the buzzer part)');
   } else {
-    await until(async () => (await tv.locator('.clue .go').count()) > 0, 'the TV to say Buzz in', 15000);
+    await until(async () => (await tv.locator('.card .go').count()) > 0, 'the TV to say Buzz in', 15000);
     await shot(tv, 'buzz-in');
     await ann.locator('.jp-buzzer').dispatchEvent('pointerdown');
-    await until(async () => (await tv.locator('.clue .callout').count()) > 0, 'the TV to show who buzzed');
+    await until(async () => (await tv.locator('.card .buzzer').count()) > 0, 'the TV to show who buzzed');
     await shot(tv, 'answering');
-    await until(async () => (await ann.locator('input.jp-in').count()) > 0, 'the answer box');
-    await ann.locator('input.jp-in').fill('no idea');
+    await until(async () => (await ann.locator('.jp-answer.on input.jp-in').count()) > 0, 'the answer box');
+    await ann.locator('.jp-answer.on input.jp-in').fill('no idea');
     await ann.getByRole('button', { name: /lock it in/i }).click();
     console.log('Ann buzzed and answered; waiting for the reveal');
   }
-  await until(async () => (await tv.locator('.clue .ans').count()) > 0, 'the reveal with the answer on the TV', 30000);
+  await until(async () => (await tv.locator('.card .ans').count()) > 0, 'the reveal with the answer on the TV', 30000);
   await shot(tv, 'reveal');
   console.log('the TV showed the reveal');
 
