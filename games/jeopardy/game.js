@@ -26,7 +26,7 @@ export const T = {
   ddAnswer: 20000,      // Daily Double answer time (after reading)
   reveal: 5000,         // how long the correct answer stays up
   revealNobody: 3800,   // ...when nobody got it
-  ruling: 1800,         // the ruling on an answer: their words and right or wrong, before anything else happens
+  ruling: 2400,         // the ruling on an answer: their words and right or wrong, before anything else happens
   roundIntro: 7000,     // the round's title and categories before the first pick
   earlyPenalty: 400,    // lockout for buzzing before the clue unlocks (or while it is not open)
   ddWager: 45000,       // a Daily Double wager not placed by then is the minimum
@@ -968,7 +968,7 @@ export class JeopardyGame {
     }
   }
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  static CAPTAIN_ACTIONS = new Set(['kick', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll']);
+  static CAPTAIN_ACTIONS = new Set(['kick', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {

@@ -372,6 +372,8 @@ struct JeoControlBar: View {
     var onNewRoom: (() -> Void)?
     /// In the header during the game: smaller buttons.
     var compact = false
+    /// "End game" asks first, so a stray click of the remote can't throw a game away.
+    @State private var confirmEnd = false
 
     private struct Item: Identifiable {
         let id: String
@@ -413,6 +415,13 @@ struct JeoControlBar: View {
                 }
                 .buttonStyle(BWButtonStyle(fill: item.primary ? BW.gold : BW.surface2, text: item.primary ? BW.ink : BW.text, corner: compact ? 14 : 18))
             }
+            if game.phase != .lobby && game.phase != .gameover {
+                Button { confirmEnd = true } label: {
+                    Text("End game").font(BW.body(22, .semibold)).lineLimit(1)
+                        .padding(.horizontal, compact ? 20 : 24).padding(.vertical, compact ? 9 : 11)
+                }
+                .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: compact ? 14 : 18))
+            }
             if game.phase == .lobby, let onNewRoom {
                 Button(action: onNewRoom) {
                     Text("New room code").font(BW.body(22, .semibold)).padding(.horizontal, 24).padding(.vertical, 11)
@@ -422,6 +431,12 @@ struct JeoControlBar: View {
             if !compact { Spacer() }
         }
         .frame(minHeight: compact ? 0 : 64)
+        .confirmationDialog("End this game?", isPresented: $confirmEnd, titleVisibility: .visible) {
+            Button("End game", role: .destructive) { act("endGame", [:]) }
+            Button("Keep playing", role: .cancel) {}
+        } message: {
+            Text("Scores reset and everyone goes back to the lobby. Players stay in the room.")
+        }
     }
 }
 

@@ -192,8 +192,12 @@ export function mount(container, { send, flash }) {
     if (ph === 'open') { cls = 'live'; label = 'BUZZ!'; sub = ''; }
     if (pressed && ph === 'open') { cls = 'sent'; label = 'BUZZED'; sub = 'Sent!'; }
     if (tried) { cls = 'out'; label = 'OUT'; sub = 'You already took a shot at this one.'; }
+    let tint = null;
     if (ph === 'answering' || ph === 'ruling') {
-      cls = 'out'; label = '…';
+      // Someone else is answering: the button shows who (in their colour), not a dead grey circle, and during the
+      // ruling a green or red ring for how it went.
+      const up = player(c.buzzedId);
+      cls = up ? `other ${ph === 'ruling' ? (v.lastResult?.correct ? 'good' : 'bad') : ''}` : 'out'; label = up ? up.name.toUpperCase() : '…'; tint = up?.color ?? null;
       const mine = c.buzzes.find((b) => b.pid === me().id && (b.open ?? 1) === opening);
       const who = player(c.buzzedId);
       sub = ph === 'ruling' ? [named(who), ' answered. Watch the TV.']
@@ -201,7 +205,7 @@ export function mount(container, { send, flash }) {
       if (tried) sub = 'You already took a shot at this one.';
     }
     if (note) sub = note;
-    const bz = h('button', { type: 'button', class: `jp-buzzer ${cls}`, 'aria-label': 'Buzz' }, label);
+    const bz = h('button', { type: 'button', class: `jp-buzzer ${cls}`, 'aria-label': 'Buzz', style: tint ? { '--c': tint } : {} }, label);
     bz.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       const live = v.phase === 'open' && !c.tried.includes(me().id);
@@ -379,6 +383,7 @@ export function mount(container, { send, flash }) {
     if (['final-wager', 'final-answer'].includes(ph)) items.push(['Continue', carryOn, 'ghost']);
     if (ph === 'board') items.push(['End round early', () => { if (confirm('End this round now?')) cap('endRound'); }, 'ghost']);
     if (ph === 'gameover') items.push(['Play again', () => cap('playAgain'), '']);
+    if (ph !== 'lobby' && ph !== 'gameover') items.push(['End game', () => { if (confirm('End this game for everyone? Scores reset and everyone goes back to the lobby.')) cap('endGame'); }, 'ghost']);
     if (ph !== 'lobby' && v.players.length) items.push(['Fix scores', () => { sheet = true; renderSheet(); }, 'ghost']);
     const key = items.map((x) => x[0]).join('|');
     captainBar.style.display = items.length ? 'flex' : 'none';

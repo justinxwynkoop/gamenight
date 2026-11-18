@@ -83,6 +83,9 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-buzzer.live { background: radial-gradient(circle at 50% 35%, var(--jp-sun-hi), var(--jp-sun) 55%, var(--jp-sun-deep)); color: var(--jp-ink); box-shadow: 0 14px 0 #8A5A00, 0 0 60px rgba(255, 201, 64, .55); animation: jp-pulse .7s ease-in-out infinite alternate; }
 .jp .jp-buzzer.live:active { transform: translateY(12px); box-shadow: 0 2px 0 #8A5A00, 0 0 40px rgba(255, 201, 64, .55); animation: none; }
 .jp .jp-buzzer.sent { background: radial-gradient(circle at 50% 35%, var(--jp-sun), var(--jp-sun-deep)); color: var(--jp-ink); transform: translateY(12px); box-shadow: 0 2px 0 #8A5A00, 0 0 90px rgba(255, 201, 64, .8); font-size: min(10vw, 5vh, 42px); }
+.jp .jp-buzzer.other { background: color-mix(in srgb, var(--c) 22%, var(--jp-panel)); color: var(--c); box-shadow: inset 0 0 0 10px color-mix(in srgb, var(--c) 55%, transparent); font-size: min(10vw, 5vh, 44px); line-height: 1.05; text-align: center; padding: 0 12%; overflow-wrap: anywhere; }
+.jp .jp-buzzer.other.good { box-shadow: inset 0 0 0 10px var(--jp-good); }
+.jp .jp-buzzer.other.bad { box-shadow: inset 0 0 0 10px var(--jp-hot); }
 .jp .jp-buzzer.out { background: var(--jp-panel); color: #4A5080; box-shadow: inset 0 0 0 10px var(--jp-panel2); opacity: .7; font-size: min(11vw, 5.5vh, 48px); }
 @keyframes jp-pulse { to { box-shadow: 0 14px 0 #8A5A00, 0 0 90px rgba(255, 201, 64, .75); } }
 

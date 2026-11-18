@@ -107,7 +107,8 @@ function boardView() {
         : `Tap a tile only if you need to pick for them.${ddLeft ? ` White tiles are Daily Doubles (${ddLeft} left).` : ''}`),
       miniBoard({ pickable: true })),
   ];
-  const dock = [dockRow(button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }))];
+  const dock = [dockRow(button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }),
+    button({ label: 'End the game', size: 'sm', onclick: confirmEndGame }))];
   return { body, dock };
 }
 
@@ -219,6 +220,7 @@ function settingsCards() {
     : h('p', { class: 'dim' }, v.finalForAll ? 'Everyone plays Final Jeopardy.' : 'Only players with money play Final Jeopardy.'))];
 }
 
+const confirmEndGame = () => C.confirm({ title: 'End the game?', message: 'Scores are reset and everyone goes back to the lobby. Players stay in the room.', confirmLabel: 'End game', onConfirm: () => act('endGame') });
 function dangerButtons() {
   if (v.phase === 'lobby') return [];
   return [button({ label: 'End the game', icon: 'flag', kind: 'bad', block: true, onclick: () => C.confirm({ title: 'End the game?', message: 'Scores are reset and everyone goes back to the lobby. Players stay in the room.', confirmLabel: 'End game', onConfirm: () => act('endGame') }) })];

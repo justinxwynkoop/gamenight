@@ -45,6 +45,10 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
 
   let rt = null;
   let saveTimer = null;
+  // Set when this page is about to start over (a new room code, another game). From then on nothing is saved, or the
+  // save as the page unloads would write the old room (and its players) straight back, and they would be in the
+  // "new" room when the page comes back.
+  let leaving = false;
   const engine = createEngine({
     games: GAMES,
     pin,
@@ -57,7 +61,7 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     broadcast: (topic, event, payload) => rt?.send(topic, event, payload),
     // Only the TV's own display is local; phones and the host are answered through the relay.
     send: (id, message) => { if (id === 'tv' && message?.t === 'state') onState(message.view); },
-    save: (text) => { clearTimeout(saveTimer); saveTimer = setTimeout(() => put(KEYS.room, text), 400); },
+    save: (text) => { if (leaving) return; clearTimeout(saveTimer); saveTimer = setTimeout(() => { if (!leaving) put(KEYS.room, text); }, 400); },
     onError: (e) => console.error(e),
   });
   put(KEYS.code, engine.code);
@@ -88,7 +92,16 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     const want = engine.takeArchiveRequest();
     if (want) loadArchive(want);
   }, 250);
-  addEventListener('pagehide', () => { clearTimeout(saveTimer); try { put(KEYS.room, JSON.stringify(engine.room)); } catch { /* fine */ } });
+  addEventListener('pagehide', () => { clearTimeout(saveTimer); if (leaving) return; try { put(KEYS.room, JSON.stringify(engine.room)); } catch { /* fine */ } });
+
+  /** Forget this room's players and game, and start the page again. */
+  const startOver = (keepCode, go) => {
+    leaving = true;
+    clearTimeout(saveTimer);
+    put(KEYS.room, null);
+    if (!keepCode) { put(KEYS.code, null); put(KEYS.pin, null); }
+    go();
+  };
 
   const joinUrl = `${location.origin}/?r=${engine.code}`;
   let qrSvg = '';
@@ -102,8 +115,8 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     /** The TV acts on the game itself (Start, Continue, a clue it was clicked, ...), like the Apple TV's buttons. */
     act(action, args = {}) { engine.receive('tv', { t: 'act', action, args }); },
     chooseGame(id) { try { engine.room.chooseGame(id); } catch { /* under way */ } },
-    newRoom() { put(KEYS.code, null); put(KEYS.pin, null); put(KEYS.room, null); location.reload(); },
+    newRoom() { startOver(false, () => location.reload()); },
     /** Forget the game in this room (same code) and show the game picker. */
-    changeGame() { put(KEYS.room, null); location.replace(location.pathname); },
+    changeGame() { startOver(true, () => location.replace(location.pathname)); },
   };
 }

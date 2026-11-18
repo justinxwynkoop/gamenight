@@ -129,6 +129,26 @@ try {
   await shot(tv, 'reveal');
   console.log('the TV showed the reveal');
 
+  // The TV can end the game under way: everyone is back in the lobby, still in the room.
+  tv.once('dialog', (d) => d.accept());
+  await tv.locator('.controls button', { hasText: /^end game$/i }).click();
+  await until(async () => (await tv.locator('.seat', { hasText: 'Ann' }).count()) > 0 && (await tv.locator('.board .tile').count()) === 0, 'the lobby again after End game');
+  await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain lobby on Ann\'s phone after End game');
+  console.log('End game on the TV brought the TV and phones back to the lobby');
+
+  // A new room code starts an empty room: nobody from the old room is carried over (the page used to save the old
+  // room again as it reloaded, so its players came straight back, and a phone that had played was let in by itself).
+  await tv.getByRole('button', { name: /menu/i }).click();
+  await tv.getByRole('button', { name: /new room code/i }).click();
+  await until(async () => (await tv.locator('.roomcode').count()) > 0 && (await tv.locator('.roomcode').innerText()).trim() !== code, 'a new room code');
+  await tv.waitForTimeout(1500);
+  if (await tv.locator('.seat', { hasText: /Ann|Bo/ }).count()) fail('the new room still has the old room\'s players');
+  const code2 = (await tv.locator('.roomcode').innerText()).trim();
+  await ann.goto(`${base}/?r=${code2}`);
+  await until(async () => (await ann.getByRole('button', { name: /^join$/i }).count()) > 0, 'the join form (not an automatic seat) on a phone that played in the old room');
+  if (await tv.locator('.seat', { hasText: 'Ann' }).count()) fail('a phone from the old room was put in the new room by itself');
+  console.log('a new room code starts with nobody in it');
+
   // A fresh TV with no game chosen: the lobby offers the games, and picking Family Feud switches to it.
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const tv2 = await ctx2.newPage(); watch(tv2, 'tv2');

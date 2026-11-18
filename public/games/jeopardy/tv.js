@@ -132,6 +132,9 @@ let lastReact = 0;
 let screenKey = '';
 let scores = new Map(); // id -> the score last drawn, for the "+$1,000" that floats up from a podium
 let introKey = '';
+let cardKey = '';       // the clue (or Final) whose card is on screen: the card zooms in only when it changes
+/** ' enter' the first time a card for this clue is drawn, so its entrance plays once per clue, not at every step. */
+function enterOnce(key) { const first = key !== cardKey; cardKey = key; return first ? ' enter' : ''; }
 
 const player = (id) => g.players.find((p) => p.id === id) ?? null;
 const nameOf = (id) => player(id)?.name ?? 'Someone';
@@ -232,6 +235,7 @@ function controlItems() {
   if (['round-intro', 'reveal', 'round-end', 'final-wager', 'final-answer', 'final-reveal'].includes(ph)) list.push(['Continue (N)', 'advance']);
   if (ph === 'board') list.push(['End round early', 'endRound']);
   if (ph === 'gameover') list.push(['Play again', 'playAgain']);
+  if (ph !== 'lobby' && ph !== 'gameover') list.push(['End game', 'endGame']);
   return list;
 }
 function controls() {
@@ -240,7 +244,11 @@ function controls() {
   if (!items.length) return null;
   return h('div', { class: 'controls' }, items.map(([label, action, args]) => h('button', {
     type: 'button', class: 'ghost',
-    onclick: () => { if (action === 'endRound' && !confirm('End this round now?')) return; act(action, args ?? {}); },
+    onclick: () => {
+      if (action === 'endRound' && !confirm('End this round now?')) return;
+      if (action === 'endGame' && !confirm('End this game? Scores reset and everyone goes back to the lobby.')) return;
+      act(action, args ?? {});
+    },
   }, label)));
 }
 
@@ -439,7 +447,7 @@ function buzzChips(c, { label = false, open = 1 } = {}) {
 
 function card(c, { q, band, edge = null, cls = '' }) {
   const value = c.dd ? `DAILY DOUBLE · ${money(c.wager ?? 0)}` : money(c.value);
-  return h('div', { class: `card ${cls}`, style: edge ? { '--c': edge } : {} },
+  return h('div', { class: `card ${cls}${enterOnce(`${g.round}:${clueKey(c)}`)}`, style: edge ? { '--c': edge } : {} },
     h('div', { class: 'rail' }, h('div', { class: 'cn' }, c.cat), h('div', { class: 'val' }, value)),
     q,
     band);
@@ -519,7 +527,7 @@ function reveal(c) {
       h('b', {}, `−${money(Math.abs(r.delta ?? 0))}`), r.overridden ? h('small', {}, 'ruling flipped') : null);
   }
   const streak = r && r.correct && hot(r.streak ?? 0) ? h('div', { class: 'hot' }, `🔥 ${nameOf(r.pid)} is on fire! ${r.streak} in a row`) : null;
-  return frame(h('div', { class: 'card reveal' },
+  return frame(h('div', { class: `card reveal${enterOnce(`${g.round}:${clueKey(c)}`)}` },
     h('div', { class: 'rail' }, h('div', { class: 'cn' }, c.cat), h('div', { class: 'val' }, c.dd ? 'DAILY DOUBLE' : money(c.value))),
     h('div', { class: 'q faint' }, c.q ?? ''),
     h('div', { class: 'answer' }, h('div', { class: 'eyebrow' }, 'THE ANSWER'), h('div', { class: 'ans' }, c.answer ?? ''), line, streak),
@@ -570,7 +578,7 @@ function final() {
     const band = h('div', { class: 'band' },
       h('div', { class: 'grow' }, h('div', { class: 'hint' }, 'Write your response on your phone. ', h('span', {}, `${f.answered.length} of ${f.eligible.length} locked in`))),
       ring(g.timer));
-    return frame(h('div', { class: 'card', style: { '--c': '#FFC940' } },
+    return frame(h('div', { class: `card${enterOnce('final')}`, style: { '--c': '#FFC940' } },
       h('div', { class: 'rail' }, h('div', { class: 'cn' }, f.category), h('div', { class: 'val' }, 'FINAL JEOPARDY')),
       h('div', { class: 'q' }, f.q ?? ''), band));
   }
@@ -648,6 +656,7 @@ export function render(view, ctx) {
   setup(view, ctx);
   live = null; // each screen sets up its own countdown, if it has one
   if (g.phase !== 'gameover') confetti(false);
+  if (!['reading', 'open', 'answering', 'ruling', 'dd-answer', 'reveal', 'final-answer'].includes(g.phase)) cardKey = '';
   if (g.phase === 'gameover') return gameover();
   if (g.phase.startsWith('final') && g.final) return final();
   if (g.phase === 'round-end') return roundEnd();
