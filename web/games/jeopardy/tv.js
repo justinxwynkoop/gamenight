@@ -100,8 +100,15 @@ export function onChange(prev, view, sound) {
   const p = prev.game; const g = view.game;
   if (!p || !g) return;
   const was = p.phase; const now = g.phase;
+  phaseNow = now;
   const newClue = clueKey(g.clue) !== clueKey(p.clue);
+  // A new player steps up to a podium in the lobby.
+  if (now === 'lobby' && was === 'lobby' && g.players.length > p.players.length) sound.play('join');
   if (now === 'round-intro' && was !== 'round-intro') sound.play('roundstart');
+  if (now === 'board' && was === 'round-intro') sound.play('board');   // the board fills in
+  if (now === 'reading' && (was !== 'reading' || newClue)) sound.play('pick');
+  if (now === 'dd-answer' && was === 'dd-wager') sound.play('bet');
+  if (now === 'round-end' && was !== 'round-end') sound.play('applause');
   if (now === 'dd-wager' && (was !== 'dd-wager' || newClue)) sound.play('dd');
   else if (now === 'open' && was !== 'open') sound.play('open');
   else if (now === 'answering' && was !== 'answering') sound.play('buzz');
@@ -112,6 +119,9 @@ export function onChange(prev, view, sound) {
     else if (was !== 'ruling') sound.play(r.correct ? 'correct' : 'wrong');
   } else if (g.lastResult && p.lastResult && g.lastResult.overridden !== p.lastResult.overridden) sound.play(g.lastResult.correct ? 'correct' : 'wrong');
   if (now === 'final-wager' && was !== 'final-wager') sound.play('final');
+  // Each Final Jeopardy wager and answer locking in (the last answer goes straight on to the reveal, which has its own sound).
+  if (['final-wager', 'final-answer'].includes(now) && g.final && p.final && ((g.final.wagered?.length ?? 0) > (p.final.wagered?.length ?? 0)
+    || (g.final.answered?.length ?? 0) > (p.final.answered?.length ?? 0))) sound.play('lock');
   // Final Jeopardy's "think" music runs while answers are typed.
   if (now === 'final-answer' && was !== 'final-answer') sound.music('think', { owner: 'final', loop: false });
   else if (now !== 'final-answer') sound.stopMusic('final');
@@ -121,8 +131,16 @@ export function onChange(prev, view, sound) {
     if (f?.stage === 'verdict' && pf?.stage !== 'verdict') { const r = f.reveals.at(-1); if (r) sound.play(r.correct ? 'correct' : 'wrong'); }
     if (f?.stage === 'done' && pf?.stage !== 'done') sound.play('reveal');
   }
-  if (now === 'gameover' && was !== 'gameover') sound.play('fanfare');
+  if (now === 'gameover' && was !== 'gameover') {
+    sound.play('fanfare'); sound.play('applause');
+    // Once the fanfare has played out, the theme comes back over the champion's podium.
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(() => { if (phaseNow === 'gameover') sound.music('lobby', { owner: 'gameover', loop: true }); }, THEME_AFTER_WIN_MS);
+  } else if (now !== 'gameover') { clearTimeout(themeTimer); sound.stopMusic('gameover'); }
 }
+const THEME_AFTER_WIN_MS = 5500;
+let themeTimer = null;
+let phaseNow = null;   // the phase in the latest view, for the theme's delayed start
 
 // ---------- state shared by the screens ----------
 let g = null;          // the game's view

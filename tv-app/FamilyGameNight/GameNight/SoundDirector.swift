@@ -10,6 +10,8 @@ import Foundation
 @MainActor
 final class SoundDirector {
     private enum MusicOwner { case lobby, finalRound }
+    /// Music sits a little under the effects (the web TV's music gain, public/audio.js).
+    private static let musicGain = 0.6
 
     private var enabled = true
     private var volume = 0.7   // 0...1, from the host's setting
@@ -23,6 +25,9 @@ final class SoundDirector {
     private var musicOwner: MusicOwner?
     /// The game the playing music was chosen for, so switching games in the lobby changes the tune.
     private var musicGame: String?
+
+    /// While the winner's fanfare plays, the theme waits.
+    private var themeHeldUntil: Date?
 
     private var lastState: ServerState?
     private var lastStateAt = Date()
@@ -73,6 +78,13 @@ final class SoundDirector {
         refreshLobbyMusic()
 
         let plan = SoundPlanner.plan(from: previous, to: next)
+        if plan.cues.contains(.fanfare) {
+            themeHeldUntil = Date().addingTimeInterval(SoundPlanner.themeAfterWinSeconds)
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(SoundPlanner.themeAfterWinSeconds + 0.1))
+                self?.refreshLobbyMusic()
+            }
+        }
         for cue in plan.cues { play(cue) }
         if plan.startFinalMusic {
             startMusic(.finalRound, restart: true)
@@ -85,12 +97,14 @@ final class SoundDirector {
         enabled = settings.sound
         volume = min(1, max(0, Double(settings.volume) / 100))
         if !enabled { stopMusic() }
-        music?.volume = Float(volume * 0.5)
+        music?.volume = Float(volume * Self.musicGain)
     }
 
     private func refreshLobbyMusic() {
         guard let state = lastState else { return }
-        if SoundPlanner.wantsLobbyMusic(state) {
+        if SoundPlanner.wantsThemeMusic(state) {
+            // The winner's fanfare plays out before the theme comes back.
+            if let hold = themeHeldUntil, hold > Date() { return }
             startMusic(.lobby, restart: false)
         } else {
             stopMusic(owner: .lobby)
@@ -105,7 +119,7 @@ final class SoundDirector {
         let gain: Double
         if let file = customSound([cue.rawValue]) ?? cue.fallbackFile.flatMap({ customSound([$0]) }) {
             data = file
-            gain = 0.5          // the web TV plays everything through a 0.5 master gain
+            gain = 1.0          // recordings play at the host's volume (at half, they got lost under a room of talk)
         } else {
             data = synthesizedSound(for: cue)
             gain = 1.0          // the built-in sounds already include that 0.5
@@ -150,7 +164,7 @@ final class SoundDirector {
         stopMusic()
         guard let player = try? AVAudioPlayer(data: data) else { return }
         player.numberOfLoops = -1
-        player.volume = Float(volume * 0.5)
+        player.volume = Float(volume * Self.musicGain)
         player.play()
         music = player
         musicOwner = owner
@@ -160,12 +174,14 @@ final class SoundDirector {
     /// The game on screen, whose own folder of sounds comes first.
     private var currentGame: String? { lastState?.room.gameId }
 
-    /// The file to use for the first of these names that has one: the current game's own folder first, then the shared one.
+    /// The file for the first of these names that has one, from the current game's own folder or else the shared one.
+    /// The names come first: the shared "lobby" theme wins over a game's own "think" (its stand-in), or Jeopardy's
+    /// lobby would play the Final Jeopardy music.
     private func customSound(_ names: [String]) -> Data? {
-        if let game = currentGame {
-            for name in names { if let data = custom["\(game)/\(name)"] { return data } }
+        for name in names {
+            if let game = currentGame, let data = custom["\(game)/\(name)"] { return data }
+            if let data = custom[name] { return data }
         }
-        for name in names { if let data = custom[name] { return data } }
         return nil
     }
 

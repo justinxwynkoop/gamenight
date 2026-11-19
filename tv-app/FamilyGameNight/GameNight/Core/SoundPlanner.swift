@@ -39,10 +39,28 @@ enum SoundPlanner {
             plan.cues.append(result.correct ? .correct : .wrong)
         }
 
+        // A new player steps up to a podium in the lobby.
+        if after.phase == .lobby, before.phase == .lobby, after.players.count > before.players.count {
+            plan.cues.append(.join)
+        }
+        // Picking another clue while one is being read (the host's "skip") still sounds like a pick.
+        if after.phase == .reading, before.phase == .reading, after.clue?.ci != before.clue?.ci || after.clue?.ri != before.clue?.ri {
+            plan.cues.append(.pick)
+        }
+
         if after.phase != before.phase {
             switch after.phase {
             case .roundIntro:
                 plan.cues.append(.roundstart)
+            case .board:
+                // The board fills in once the round's titles have been shown.
+                if before.phase == .roundIntro { plan.cues.append(.board) }
+            case .reading:
+                plan.cues.append(.pick)
+            case .ddAnswer:
+                if before.phase == .ddWager { plan.cues.append(.bet) }
+            case .roundEnd:
+                plan.cues.append(.applause)
             case .ddWager:
                 plan.cues.append(.dd)
             case .open:
@@ -59,9 +77,16 @@ enum SoundPlanner {
                 plan.cues.append(.finalSting)
             case .gameover:
                 plan.cues.append(.fanfare)
+                plan.cues.append(.applause)
             default:
                 break
             }
+        }
+
+        // Each Final Jeopardy wager and answer locking in (the last answer goes straight on to the reveal, which has its own sound).
+        if after.phase == .finalWager || after.phase == .finalAnswer, let round = after.finalRound, let earlier = before.finalRound,
+           round.wagered.count > earlier.wagered.count || round.answered.count > earlier.answered.count {
+            plan.cues.append(.lock)
         }
 
         // Final Jeopardy is revealed one player at a time: their response, then right or wrong. The correct answer is last.
@@ -101,6 +126,14 @@ enum SoundPlanner {
         if case .noGame = state.game { return true }
         return !state.room.inProgress
     }
+
+    /// The theme also comes back over the champion's podium once a Jeopardy game is won (after the fanfare).
+    static func wantsThemeMusic(_ state: ServerState) -> Bool {
+        wantsLobbyMusic(state) || state.jeopardy?.phase == .gameover
+    }
+
+    /// How long the theme waits after the winner's fanfare, so the two don't play over each other.
+    static let themeAfterWinSeconds = 5.5
 
     /// The countdown on screen right now, if any: a clue's buzz-in or answer timer, or
     /// the Final Jeopardy timer. Its last five seconds tick.

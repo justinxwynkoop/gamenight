@@ -22,6 +22,12 @@ enum SoundCue: String, CaseIterable, Hashable {
     case zero        // Family Feud: Fast Money answer worth nothing
     case fmpoints    // Family Feud: Fast Money points are shown
     case fastmoney   // Family Feud: Fast Money is about to begin
+    case pick        // Jeopardy: a clue is picked
+    case board       // Jeopardy: the board fills in at the start of a round
+    case lock        // Jeopardy: a Final Jeopardy wager or answer locks in
+    case bet         // Jeopardy: a Daily Double wager is placed
+    case join        // Jeopardy: a player joins in the lobby
+    case applause    // Jeopardy: the end of a round, and the winner
 
     /// Every file name the server may supply: the cues above plus the music tracks. (The server keeps each game's files in their own folder.)
     static var customNames: Set<String> {
@@ -105,6 +111,38 @@ enum SoundSynth {
             return notes.enumerated().map { index, note in
                 ToneSpec(frequency: note, start: Double(index) * 0.12, duration: index == 6 ? 0.8 : 0.16, wave: .triangle)
             }
+        // The same stand-ins as the web TV (public/audio.js); the recordings in Sounds/ normally play instead.
+        case .pick:
+            return [
+                ToneSpec(frequency: 1046, start: 0, duration: 0.08, wave: .triangle, gain: 0.4),
+                ToneSpec(frequency: 1318, start: 0.06, duration: 0.16, wave: .triangle, gain: 0.35),
+            ]
+        case .board:
+            let notes: [Double] = [523, 587, 659, 698, 784, 880]
+            return notes.enumerated().map { index, note in
+                ToneSpec(frequency: note, start: Double(index) * 0.07, duration: 0.08, wave: .triangle, gain: 0.3)
+            }
+        case .lock:
+            return [
+                ToneSpec(frequency: 660, start: 0, duration: 0.06, wave: .square, gain: 0.2),
+                ToneSpec(frequency: 990, start: 0.05, duration: 0.12, wave: .triangle, gain: 0.35),
+            ]
+        case .bet:
+            return [
+                ToneSpec(frequency: 1976, start: 0, duration: 0.25, gain: 0.3),
+                ToneSpec(frequency: 2637, start: 0.08, duration: 0.4, gain: 0.25),
+            ]
+        case .join:
+            return [
+                ToneSpec(frequency: 784, start: 0, duration: 0.08, gain: 0.4, slideTo: 1175),
+                ToneSpec(frequency: 1175, start: 0.08, duration: 0.18, gain: 0.3),
+            ]
+        case .applause:
+            return [
+                ToneSpec(frequency: 523, start: 0, duration: 0.9, wave: .triangle, gain: 0.3),
+                ToneSpec(frequency: 659, start: 0.05, duration: 0.85, wave: .triangle, gain: 0.25),
+                ToneSpec(frequency: 784, start: 0.1, duration: 0.8, wave: .triangle, gain: 0.25),
+            ]
         case .ding, .strike, .strikeout, .faceoff, .roundstart, .winner, .zero, .fmpoints, .fastmoney:
             return feudTones(for: cue)   // Feud/Core/FeudSounds.swift
         }

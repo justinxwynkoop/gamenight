@@ -120,7 +120,7 @@ function lobbyMusic(v) {
   const owner = `lobby:${v.game?.game ?? ''}`;   // a different game's lobby music replaces this one
   if (lobbyOwner && lobbyOwner !== owner) audio.stopMusic(lobbyOwner);
   lobbyOwner = owner;
-  if (audio.musicOwner !== owner) audio.music('lobby', { owner, loop: true, fallback: 'think' });
+  if (audio.musicOwner !== owner || audio.upgrade('lobby')) audio.music('lobby', { owner, loop: true, fallback: 'think' });
 }
 audio.ready.then(() => { if (last) lobbyMusic(last); });
 

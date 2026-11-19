@@ -44,7 +44,8 @@ final class SoundSynthTests: XCTestCase {
     func testFileNamesTheServerMayProvide() {
         XCTAssertEqual(SoundCue.finalSting.rawValue, "final")
         XCTAssertTrue(SoundCue.customNames.isSuperset(of: ["open", "buzz", "correct", "wrong", "timeup", "tick", "reveal", "dd", "final", "fanfare", "ding", "strike", "strikeout", "faceoff", "roundstart", "winner", "zero", "fmpoints", "fastmoney", "think", "lobby"]))
-        XCTAssertEqual(SoundCue.customNames.count, 21)
+        XCTAssertTrue(SoundCue.customNames.isSuperset(of: ["pick", "board", "lock", "bet", "join", "applause"]))
+        XCTAssertEqual(SoundCue.customNames.count, 27)
     }
 
     func testWavContainer() {
@@ -105,12 +106,49 @@ final class SoundPlannerTests: XCTestCase {
 
     func testBackToTheBoardIsSilent() throws {
         XCTAssertEqual(try plan("jp-reveal-correct", "jp-board").cues, [])
-        XCTAssertEqual(try plan("jp-board", "jp-reading").cues, [])
+    }
+
+    func testPickingAClue() throws {
+        XCTAssertEqual(try plan("jp-board", "jp-reading").cues, [.pick])
+        XCTAssertEqual(try plan("jp-reading", "jp-reading").cues, [], "the same clue still being read")
+        var other = try Fixture.state("jp-reading")
+        guard case .jeopardy(var game) = other.game else { return XCTFail("expected a Jeopardy state") }
+        game.clue?.ri = 3
+        other.game = .jeopardy(game)
+        XCTAssertEqual(SoundPlanner.plan(from: try Fixture.state("jp-reading"), to: other).cues, [.pick])
+    }
+
+    func testAPlayerJoins() throws {
+        let all = try Fixture.state("jp-lobby")
+        guard case .jeopardy(var game) = all.game else { return XCTFail("expected a Jeopardy state") }
+        game.players.removeLast()
+        var fewer = all
+        fewer.game = .jeopardy(game)
+        XCTAssertEqual(SoundPlanner.plan(from: fewer, to: all).cues, [.join])
+        XCTAssertEqual(SoundPlanner.plan(from: all, to: fewer).cues, [], "leaving is quiet")
+    }
+
+    func testFinalAnswersLockIn() throws {
+        let none = try Fixture.state("jp-final-answer")
+        guard case .jeopardy(var game) = none.game else { return XCTFail("expected a Jeopardy state") }
+        game.finalRound?.answered = ["p1"]
+        var one = none
+        one.game = .jeopardy(game)
+        XCTAssertEqual(SoundPlanner.plan(from: none, to: one).cues, [.lock])
+        XCTAssertEqual(SoundPlanner.plan(from: one, to: one).cues, [])
+    }
+
+    func testRoundEnds() throws {
+        var earlier = try Fixture.state("jp-round-end")
+        guard case .jeopardy(var game) = earlier.game else { return XCTFail("expected a Jeopardy state") }
+        game.phase = .reveal
+        earlier.game = .jeopardy(game)
+        XCTAssertEqual(SoundPlanner.plan(from: earlier, to: try Fixture.state("jp-round-end")).cues, [.applause])
     }
 
     func testDailyDouble() throws {
         XCTAssertEqual(try plan("jp-board", "jp-dd-wager").cues, [.dd])
-        XCTAssertEqual(try plan("jp-dd-wager", "jp-dd-answer").cues, [])
+        XCTAssertEqual(try plan("jp-dd-wager", "jp-dd-answer").cues, [.bet])
         XCTAssertEqual(try plan("jp-dd-answer", "jp-dd-reveal").cues, [.correct])
     }
 
@@ -128,7 +166,7 @@ final class SoundPlannerTests: XCTestCase {
 
     func testFinalMusicStartsWithTheCountdownAndOnlyOnce() throws {
         let started = try plan("jp-final-wager", "jp-final-answer")
-        XCTAssertEqual(started.cues, [])
+        XCTAssertEqual(started.cues, [.lock], "the last wager locks in")
         XCTAssertTrue(started.startFinalMusic)
         XCTAssertFalse(started.stopFinalMusic)
 
@@ -156,13 +194,13 @@ final class SoundPlannerTests: XCTestCase {
     }
 
     func testWinner() throws {
-        XCTAssertEqual(try plan("jp-final-reveal-done", "jp-gameover").cues, [.fanfare])
+        XCTAssertEqual(try plan("jp-final-reveal-done", "jp-gameover").cues, [.fanfare, .applause])
     }
 
     func testRoundIntro() throws {
         XCTAssertEqual(try plan("jp-lobby", "jp-round-intro").cues, [.roundstart])
         XCTAssertEqual(try plan("jp-round-end", "jp-round-intro-2").cues, [.roundstart])
-        XCTAssertEqual(try plan("jp-round-intro", "jp-board").cues, [])
+        XCTAssertEqual(try plan("jp-round-intro", "jp-board").cues, [.board], "the board fills in")
     }
 
     func testTheRulingSoundsOnceAndTheNextStepIsQuiet() throws {
@@ -195,6 +233,12 @@ final class SoundPlannerTests: XCTestCase {
         }
         for name in ["jp-board", "jp-open", "jp-final-answer", "jp-gameover"] {
             XCTAssertFalse(SoundPlanner.wantsLobbyMusic(try Fixture.state(name)), name)
+        }
+        // The theme comes back after a win, but not during play.
+        XCTAssertTrue(SoundPlanner.wantsThemeMusic(try Fixture.state("jp-gameover")))
+        XCTAssertTrue(SoundPlanner.wantsThemeMusic(try Fixture.state("jp-lobby")))
+        for name in ["jp-board", "jp-open", "jp-final-answer", "jp-round-end"] {
+            XCTAssertFalse(SoundPlanner.wantsThemeMusic(try Fixture.state(name)), name)
         }
     }
 

@@ -104,7 +104,9 @@ the same name, and a sound with no file anywhere falls back to the built-in one.
 (`.mp3`, `.wav`, `.ogg` or `.m4a`):
 
 - **Jeopardy:** `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double),
-  `final` (Final Jeopardy sting), `fanfare` (winner).
+  `final` (Final Jeopardy sting), `fanfare` (winner), `roundstart` (a round's titles), `board` (the board fills in),
+  `pick` (a clue is picked), `bet` (a Daily Double bet), `lock` (a Final wager or answer locks in), `join` (a
+  player joins), `applause` (the end of a round, and the winner).
 - **Family Feud:** `ding` (an answer flips), `strike` (the buzzer; also used for the third strike and
   a Fast Money zero), `strikeout` (the third strike), `faceoff` (a face-off buzz), `open` (buzzers
   open), `fastmoney` (plays when Fast Money begins), `fmpoints` (Fast Money points shown),

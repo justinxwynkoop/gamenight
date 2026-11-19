@@ -1,5 +1,4 @@
-// Sound effects for the TV, synthesized with WebAudio, so there are no audio
-// files to ship or license. Browsers keep audio locked until the page has had
+// Sound effects for the TV: the recordings in builtin-sounds/ (CC0), with a WebAudio-synthesized stand-in for each. Browsers keep audio locked until the page has had
 // a click or key press; the kiosk launch flag in the README (autoplay-policy)
 // removes that on a kiosk, and elsewhere the first click or key unlocks it.
 
@@ -9,6 +8,7 @@ const cfg = { enabled: true, volume: 0.7 };
 const custom = {};  // "name" or "game/name" -> decoded audio the family dropped into data/sounds/ (or data/sounds/<game>/)
 let game = null;    // the game being played; its own sounds win over the shared ones
 let musicNode = null;
+let musicBuf = null;     // what it is playing
 let musicOwner = null;   // who started the music, so one screen can't switch off another's
 let resolveReady = () => {};
 
@@ -47,7 +47,8 @@ function tone(freq, at, dur, { type = 'sine', gain = 0.6, to = null } = {}) {
 // over from the Buzzworthy game. A family's own file with the same name wins; a sound with no file is synthesized below.
 // "shared" files serve every game (and the main menu): the theme loops in every lobby.
 const BUILTIN = {
-  jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think'],
+  jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think',
+    'pick', 'board', 'lock', 'bet', 'join', 'applause'],
   shared: ['lobby'],
 };
 
@@ -73,10 +74,16 @@ async function loadCustom() {
     } catch { /* a file the browser can't decode: keep the built-in sound */ }
   }));
 }
-function playBuffer(buf, loop = false) {
+// Recordings play louder than the synthesized notes: the master gain (volume x 0.5) leaves the synth headroom for
+// notes that overlap, but a recording is already mixed, and at half volume the effects got lost under a room of talk.
+const FILE_GAIN = 2;     // effects: the host's volume itself
+const MUSIC_GAIN = 1.2;  // music sits a little under the effects
+function playBuffer(buf, loop = false, gain = FILE_GAIN) {
   const src = ctx.createBufferSource();
   src.buffer = buf; src.loop = loop;
-  src.connect(master);
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(g).connect(master);
   src.start();
   return src;
 }
@@ -84,10 +91,16 @@ function playBuffer(buf, loop = false) {
 // A sound with no file of its own borrows another's if the family provided one (the third strike and a Fast Money zero use the strike buzzer).
 const ALIAS = { strikeout: 'strike', zero: 'strike' };
 
-/** The file to use for these names: this game's own folder first, then the shared one. */
+/**
+ * The file for the first of these names that has one, from this game's own folder or else the shared one. The names
+ * come first: the shared "lobby" theme wins over a game's own "think" (its stand-in), or Jeopardy's lobby would play
+ * the Final Jeopardy music.
+ */
 function findCustom(...names) {
-  for (const n of names) if (game && custom[`${game}/${n}`]) return custom[`${game}/${n}`];
-  for (const n of names) if (custom[n]) return custom[n];
+  for (const n of names) {
+    if (game && custom[`${game}/${n}`]) return custom[`${game}/${n}`];
+    if (custom[n]) return custom[n];
+  }
   return null;
 }
 
@@ -112,6 +125,14 @@ const SOUNDS = {
   winner: () => { [[523, 0, 0.14], [659, 0.14, 0.14], [784, 0.28, 0.14], [1047, 0.42, 0.3], [784, 0.76, 0.14], [1047, 0.9, 0.14]].forEach(([f, at, d]) => tone(f, at, d, { type: 'triangle', gain: 0.45 })); tone(1047, 1.06, 0.9, { type: 'triangle', gain: 0.4 }); tone(784, 1.06, 0.9, { type: 'triangle', gain: 0.3 }); tone(659, 1.06, 0.9, { type: 'triangle', gain: 0.25 }); },
   zero: () => { [[392, 0], [370, 0.2], [349, 0.4]].forEach(([f, at]) => tone(f, at, 0.22, { type: 'triangle', gain: 0.4 })); tone(294, 0.6, 0.5, { type: 'triangle', gain: 0.4, to: 233 }); },
   fanfare: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.12, i === 6 ? 0.8 : 0.16, { type: 'triangle' })),
+  // Jeopardy: a clue is picked, the board fills, a wager or Final answer locks in, a Daily Double bet, a player joins,
+  // and the end of a round. Each has a recording; these are the stand-ins if it can't be decoded.
+  pick: () => { tone(1046, 0, 0.08, { type: 'triangle', gain: 0.4 }); tone(1318, 0.06, 0.16, { type: 'triangle', gain: 0.35 }); },
+  board: () => [523, 587, 659, 698, 784, 880].forEach((f, i) => tone(f, i * 0.07, 0.08, { type: 'triangle', gain: 0.3 })),
+  lock: () => { tone(660, 0, 0.06, { type: 'square', gain: 0.2 }); tone(990, 0.05, 0.12, { type: 'triangle', gain: 0.35 }); },
+  bet: () => { tone(1976, 0, 0.25, { gain: 0.3 }); tone(2637, 0.08, 0.4, { gain: 0.25 }); },
+  join: () => { tone(784, 0, 0.08, { gain: 0.4, to: 1175 }); tone(1175, 0.08, 0.18, { gain: 0.3 }); },
+  applause: () => { tone(523, 0, 0.9, { type: 'triangle', gain: 0.3 }); tone(659, 0.05, 0.85, { type: 'triangle', gain: 0.25 }); tone(784, 0.1, 0.8, { type: 'triangle', gain: 0.25 }); },
 };
 
 export const audio = {
@@ -147,8 +168,8 @@ export const audio = {
     const c = ensure();
     if (!c || c.state !== 'running') return false;
     audio.stopMusic();
-    const node = playBuffer(buf, loop);
-    musicNode = node; musicOwner = owner;
+    const node = playBuffer(buf, loop, MUSIC_GAIN);
+    musicNode = node; musicOwner = owner; musicBuf = buf;
     node.onended = () => { if (musicNode === node) { musicNode = null; musicOwner = null; } };
     return true;
   },
@@ -156,8 +177,13 @@ export const audio = {
   stopMusic(owner) {
     if (owner && musicOwner !== owner) return;
     try { musicNode?.stop(); } catch { /* already stopped */ }
-    musicNode = null; musicOwner = null;
+    musicNode = null; musicOwner = null; musicBuf = null;
   },
+  /**
+   * True when the music playing is a stand-in and this tune has since loaded: the long theme decodes after the short
+   * "think" track, so a lobby opened in the first seconds started on the stand-in and would otherwise keep it.
+   */
+  upgrade(name) { const want = findCustom(name); return !!want && !!musicNode && musicBuf !== want; },
   get musicOwner() { return musicOwner; },
   get musicPlaying() { return !!musicNode; },
 };
