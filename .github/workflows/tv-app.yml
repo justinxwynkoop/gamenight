@@ -105,6 +105,30 @@ jobs:
           SIMCTL_CHILD_GN_HOME_OPEN=jeopardy xcrun simctl launch "$UDID" "$BUNDLE"
           sleep 20
           xcrun simctl io "$UDID" screenshot "shots/jeopardy-lobby.png"
+          # Jeopardy's screens from recorded states (no game runs; see DemoHooks in JeopardyRootView.swift), with the
+          # remote's focus where it lands by itself, the game menu and a lobby seat picked.
+          shot() {   # shot <name> <fixture> [extra env...]
+            local name=$1 fixture=$2; shift 2
+            xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+            env SIMCTL_CHILD_GN_HOME_OPEN=jeopardy SIMCTL_CHILD_GN_DEMO_STATE="$PWD/Tests/GameNightCoreTests/Fixtures/$fixture.json" "$@" \
+              xcrun simctl launch "$UDID" "$BUNDLE"
+            sleep 9
+            xcrun simctl io "$UDID" screenshot "shots/$name.png"
+            sips -Z 1280 -s format jpeg -s formatOptions 70 "shots/$name.png" --out "shots/$name.jpg" > /dev/null
+            echo "SHOT_BEGIN $name"; base64 -i "shots/$name.jpg" | fold -w 1000; echo "SHOT_END $name"
+          }
+          shot jp-lobby jp-lobby
+          shot jp-lobby-seat jp-lobby SIMCTL_CHILD_GN_DEMO_SEAT=1
+          shot jp-board jp-board
+          shot jp-board-menu jp-board SIMCTL_CHILD_GN_DEMO_MENU=1
+          shot jp-captain-menu jp-board SIMCTL_CHILD_GN_DEMO_MENU=captain
+          shot jp-open jp-open
+          shot jp-answering jp-answering
+          shot jp-host-answering jp-host-answering
+          shot jp-reveal jp-reveal-correct
+          shot jp-round-end jp-round-end
+          shot jp-final-wager jp-final-wager
+          shot jp-gameover jp-gameover
       - uses: actions/upload-artifact@v4
         with:
           name: home-screenshots

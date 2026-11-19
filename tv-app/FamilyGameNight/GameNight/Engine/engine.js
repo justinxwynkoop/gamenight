@@ -446,7 +446,7 @@
     };
   }
   var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -675,6 +675,13 @@
     captain() {
       if (!this.captainId || !__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.captainId)) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
       return this.captainId;
+    }
+    /** Hands the captain's controls to another player (the TV, the host or the captain themselves may do this). */
+    setCaptain(id) {
+      if (!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)) fail("No such player");
+      this.captainId = id;
+      this.captainGoneAt = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     hostJudges() {
       return !!this.settings.hostJudges;
@@ -1011,6 +1018,8 @@
           return this.togglePack(String(a.pack ?? a.id));
         case "start":
           return this.start();
+        case "setCaptain":
+          return this.setCaptain(String(a.pid ?? a.id ?? ""));
         case "pick":
           return this.pick(Number(a.ci), Number(a.ri));
         case "judge":
@@ -1114,6 +1123,7 @@
         controllerId: this.controllerId,
         players: __privateMethod(this, _JeopardyGame_instances, players_fn).call(this),
         timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this),
+        guide: __privateMethod(this, _JeopardyGame_instances, guide_fn).call(this),
         board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
         clue: this.clue && {
           ci: this.clue.ci,
@@ -1673,8 +1683,68 @@
   players_fn = function() {
     return this.room.players.map((p) => ({ id: p.id, name: p.name, score: p.score, color: p.color, connected: __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, p.id), streak: __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.id).streak }));
   };
+  /**
+   * One line for the TV that says what is going on and who has to do what next, so nobody has to guess:
+   * { pid: whose moment it is (or null), text: what is happening, next: what happens next, or who moves things along }.
+   * The Apple TV (JeoGuideStrip) and the browser TV (guideStrip() in public/games/jeopardy/tv.js) show it as it is.
+   */
+  guide_fn = function() {
+    const name = (id) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.name ?? "Someone";
+    const signed = (n) => `${n < 0 ? "-" : "+"}$${Math.abs(n).toLocaleString("en-US")}`;
+    const host = this.hostJudges();
+    const cap = this.captain();
+    const mover = host ? "The host" : cap ? `${name(cap)} (captain)` : "The captain";
+    const ctrl = this.controllerId;
+    const r = this.lastResult;
+    const c = this.clue;
+    const f = this.final;
+    const locked = (o) => `${Object.keys(o ?? {}).length} of ${f?.eligible.length ?? 0} locked in`;
+    switch (this.phase) {
+      case "lobby":
+        if (!this.room.players.length) return { pid: null, text: "Scan the code with your phone to join", next: "The first to join is captain" };
+        return { pid: cap, text: `${name(cap)} is captain`, next: host ? "The host starts the game when everyone is in" : `${name(cap)} starts the game when everyone is in` };
+      case "round-intro":
+        return { pid: ctrl, text: this.round === 2 ? "Round 2: every value is doubled" : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
+      case "board": {
+        const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it\u2019s their pick` : `${name(ctrl)}\u2019s pick`;
+        const next = host ? `${name(ctrl)}, tell the host a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so the captain picks for them`;
+        return { pid: ctrl, text, next };
+      }
+      case "reading":
+        return { pid: null, text: host ? "The host reads the clue out loud" : "Read the clue", next: host ? "Buzzers open when the host says go" : "Buzzers open when the bar fills. Buzz too early and you\u2019re locked out a moment" };
+      case "open":
+        return { pid: null, text: "Buzzers are open!", next: r && !r.correct ? `${name(r.pid)} missed it. Anyone else?` : "First to buzz on their phone answers" };
+      case "answering":
+        return { pid: c?.buzzedId ?? null, text: `${name(c?.buzzedId)} buzzed in first`, next: host ? `${name(c?.buzzedId)}, say your answer. The host rules Correct or Wrong` : `${name(c?.buzzedId)} is typing an answer on their phone` };
+      case "ruling":
+        if (!r) return null;
+        if (r.correct) return { pid: r.pid, text: `${name(r.pid)} is right! ${signed(r.delta)}`, next: r.dd ? "Here\u2019s the answer" : `${name(r.pid)} picks next` };
+        return { pid: r.pid, text: `${name(r.pid)} ${r.timedOut ? "ran out of time" : "is wrong"}. ${signed(-r.delta)}`, next: r.dd ? "Here\u2019s the answer" : "Everyone else can buzz in again" };
+      case "reveal":
+        return { pid: ctrl, text: r?.correct ? `${name(r.pid)} got it! ${signed(r.delta)}` : "Nobody got that one", next: `${name(ctrl)} picks next. The board is back in a moment` };
+      case "dd-wager":
+        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)}, tell the host your bet` : `${name(ctrl)} is placing a bet on their phone` };
+      case "dd-answer":
+        return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString("en-US")}`, next: host ? `${name(ctrl)}, say your answer. The host rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
+      case "round-end":
+        return { pid: host ? null : cap, text: `End of round ${this.round}`, next: `${mover} taps Continue for ${this.round >= this.rounds.length ? "Final Jeopardy" : `round ${this.round + 1}`}` };
+      case "final-wager":
+        return { pid: null, text: `Final Jeopardy: ${f?.category ?? ""}`, next: `Everyone bets on their phone. ${locked(f?.wagers)}` };
+      case "final-answer":
+        return { pid: null, text: "Write your response on your phone", next: locked(f?.answers) };
+      case "final-reveal": {
+        const id = f?.revealOrder?.[f.revealIndex];
+        if (f?.stage === "done" || !id) return { pid: null, text: "And the correct response is\u2026", next: "Then we crown the champion" };
+        return { pid: id, text: `${name(id)}\u2019s response`, next: "Lowest score goes first" };
+      }
+      case "gameover":
+        return { pid: host ? null : cap, text: "Game over!", next: `${mover} can start a new game` };
+      default:
+        return null;
+    }
+  };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js

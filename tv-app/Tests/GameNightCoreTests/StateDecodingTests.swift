@@ -128,6 +128,22 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(try Fixture.jeopardy("jp-lobby-easy").easyMode, true)
     }
 
+    // MARK: The status strip
+
+    func testGuideSaysWhoseMomentItIsAndWhatComesNext() throws {
+        let board = try Fixture.jeopardy("jp-board")
+        XCTAssertEqual(board.guide?.pid, "p2")
+        XCTAssertEqual(board.guide?.text, "Maya\u{2019}s pick")
+        XCTAssertEqual(board.guide?.next, "Maya picks a clue on their phone")
+        let roundEnd = try Fixture.jeopardy("jp-round-end")
+        XCTAssertTrue(roundEnd.guide?.next?.contains("taps Continue") ?? false)
+        // An older engine without the strip still decodes.
+        var text = try String(decoding: Fixture.data("jp-board"), as: UTF8.self)
+        text = text.replacingOccurrences(of: "\"guide\"", with: "\"guideOld\"")
+        let old = try JSONDecoder().decode(ServerState.self, from: Data(text.utf8))
+        XCTAssertNil(old.jeopardy?.guide)
+    }
+
     // MARK: Board and clues
 
     func testBoardShape() throws {

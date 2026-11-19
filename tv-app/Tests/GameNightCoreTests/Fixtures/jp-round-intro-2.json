@@ -85,6 +85,11 @@
       "totalMs": 7000,
       "leftMs": 7000
     },
+    "guide": {
+      "pid": "p2",
+      "text": "Round 2: every value is doubled",
+      "next": "Maya picks first"
+    },
     "board": [
       {
         "name": "Ancient Egypt",

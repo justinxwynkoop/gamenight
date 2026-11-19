@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p3",
+      "text": "Dad got it! +$200",
+      "next": "Dad picks next. The board is back in a moment"
+    },
     "board": [
       {
         "name": "Famous Scientists",

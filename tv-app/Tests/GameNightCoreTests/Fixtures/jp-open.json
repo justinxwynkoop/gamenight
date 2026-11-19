@@ -85,6 +85,11 @@
       "totalMs": 7000,
       "leftMs": 7000
     },
+    "guide": {
+      "pid": null,
+      "text": "Buzzers are open!",
+      "next": "First to buzz on their phone answers"
+    },
     "board": [
       {
         "name": "Famous Scientists",

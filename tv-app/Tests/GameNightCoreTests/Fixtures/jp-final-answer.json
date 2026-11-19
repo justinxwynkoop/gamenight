@@ -85,6 +85,11 @@
       "totalMs": 35000,
       "leftMs": 35000
     },
+    "guide": {
+      "pid": null,
+      "text": "Write your response on your phone",
+      "next": "0 of 2 locked in"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

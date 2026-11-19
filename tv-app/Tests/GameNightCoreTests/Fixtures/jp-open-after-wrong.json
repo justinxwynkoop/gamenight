@@ -85,6 +85,11 @@
       "totalMs": 6000,
       "leftMs": 6000
     },
+    "guide": {
+      "pid": null,
+      "text": "Buzzers are open!",
+      "next": "Maya missed it. Anyone else?"
+    },
     "board": [
       {
         "name": "Famous Scientists",

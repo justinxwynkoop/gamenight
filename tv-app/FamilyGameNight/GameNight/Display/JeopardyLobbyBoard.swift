@@ -23,16 +23,18 @@ struct JeopardyContent: View {
             if game.phase == .lobby {
                 VStack(spacing: 16) {
                     JeoLobby(game: game, joinURL: joinURL, roomCode: roomCode)
-                    JeoControlBar(game: game, onNewRoom: onNewRoom)
+                    JeoRemoteBar(game: game, onNewRoom: onNewRoom)
                 }
                 .padding(.horizontal, 60)
                 .padding(.vertical, 40)
             } else {
-                VStack(spacing: 24) {
+                VStack(spacing: 22) {
                     JeoHeader(game: game, joinURL: joinURL, roomCode: roomCode)
                     screen
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    if showPodiums { JeoPodiums(game: game).frame(height: 132) }
+                    // What is going on, what happens next, and the one button that moves the game along.
+                    JeoRemoteBar(game: game)
+                    if showPodiums { JeoPodiums(game: game).frame(height: 124) }
                 }
                 .padding(.horizontal, 80)
                 .padding(.top, 40)
@@ -105,8 +107,6 @@ struct JeoHeader: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
-            Spacer(minLength: 16)
-            JeoControlBar(game: game, compact: true)
             Spacer(minLength: 16)
             aside
         }
@@ -364,81 +364,7 @@ struct JeoFlame: View {
     }
 }
 
-// MARK: - The remote's own buttons
-
-struct JeoControlBar: View {
-    @Environment(\.jeoAct) private var act
-    let game: JeopardyState
-    var onNewRoom: (() -> Void)?
-    /// In the header during the game: smaller buttons.
-    var compact = false
-    /// "End game" asks first, so a stray click of the remote can't throw a game away.
-    @State private var confirmEnd = false
-
-    private struct Item: Identifiable {
-        let id: String
-        let title: String
-        let action: String
-        var args: [String: Any] = [:]
-        var primary = false
-    }
-
-    /// The same buttons the website's TV has (controlItems() in public/games/jeopardy/tv.js).
-    private var items: [Item] {
-        var list: [Item] = []
-        let phase = game.phase
-        if phase == .lobby && !game.players.isEmpty { list.append(Item(id: "start", title: "Start game", action: "start", primary: true)) }
-        if game.hostJudges && phase == .reading { list.append(Item(id: "open", title: "Open buzzers", action: "openNow")) }
-        if game.hostJudges && (phase == .answering || phase == .ddAnswer) {
-            list.append(Item(id: "right", title: "Correct", action: "judge", args: ["correct": true]))
-            list.append(Item(id: "wrong", title: "Wrong", action: "judge", args: ["correct": false]))
-        }
-        if [.reading, .open, .answering, .ruling, .ddWager, .ddAnswer].contains(phase) { list.append(Item(id: "skip", title: "Skip clue", action: "skip")) }
-        if game.lastResult != nil && [.ruling, .reveal, .open, .board].contains(phase) { list.append(Item(id: "flip", title: "Flip last ruling", action: "override")) }
-        if phase == .finalReveal, let final = game.finalRound, final.stage == "verdict", let reveal = final.reveals.last {
-            list.append(Item(id: "fflip", title: "Flip \(game.name(reveal.id))\u{2019}s ruling", action: "finalOverride", args: ["pid": reveal.id]))
-        }
-        if [.roundIntro, .reveal, .roundEnd, .finalWager, .finalAnswer, .finalReveal].contains(phase) { list.append(Item(id: "next", title: "Continue", action: "advance")) }
-        if phase == .board { list.append(Item(id: "end", title: "End round early", action: "endRound")) }
-        if phase == .gameover { list.append(Item(id: "again", title: "Play again", action: "playAgain", primary: true)) }
-        return list
-    }
-
-    var body: some View {
-        HStack(spacing: compact ? 12 : 18) {
-            ForEach(items) { item in
-                Button { act(item.action, item.args) } label: {
-                    Text(item.title)
-                        .font(BW.body(compact ? 22 : item.primary ? 28 : 22, item.primary ? .heavy : .semibold))
-                        .lineLimit(1)
-                        .padding(.horizontal, compact ? 20 : item.primary ? 34 : 24).padding(.vertical, compact ? 9 : item.primary ? 14 : 11)
-                }
-                .buttonStyle(BWButtonStyle(fill: item.primary ? BW.gold : BW.surface2, text: item.primary ? BW.ink : BW.text, corner: compact ? 14 : 18))
-            }
-            if game.phase != .lobby && game.phase != .gameover {
-                Button { confirmEnd = true } label: {
-                    Text("End game").font(BW.body(22, .semibold)).lineLimit(1)
-                        .padding(.horizontal, compact ? 20 : 24).padding(.vertical, compact ? 9 : 11)
-                }
-                .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: compact ? 14 : 18))
-            }
-            if game.phase == .lobby, let onNewRoom {
-                Button(action: onNewRoom) {
-                    Text("New room code").font(BW.body(22, .semibold)).padding(.horizontal, 24).padding(.vertical, 11)
-                }
-                .buttonStyle(BWButtonStyle())
-            }
-            if !compact { Spacer() }
-        }
-        .frame(minHeight: compact ? 0 : 64)
-        .confirmationDialog("End this game?", isPresented: $confirmEnd, titleVisibility: .visible) {
-            Button("End game", role: .destructive) { act("endGame", [:]) }
-            Button("Keep playing", role: .cancel) {}
-        } message: {
-            Text("Scores reset and everyone goes back to the lobby. Players stay in the room.")
-        }
-    }
-}
+// The remote's own buttons are in JeopardyRemote.swift.
 
 // MARK: - Emoji reactions from phones
 
@@ -538,7 +464,6 @@ struct JeoLobby: View {
                     .frame(maxHeight: .infinity)
             }
             .frame(maxHeight: .infinity)
-            footer
         }
         .animation(.easeInOut(duration: 0.25), value: choosing)
     }
@@ -571,20 +496,6 @@ struct JeoLobby: View {
         .overlay(RoundedRectangle(cornerRadius: 32).stroke(BW.line, lineWidth: 1))
     }
 
-    @ViewBuilder private var footer: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "play.circle").font(.system(size: 28, weight: .semibold)).foregroundColor(BW.yellow)
-            if let captain = game.players.first(where: { $0.id == game.captainId }) {
-                (Text(captain.name).foregroundColor(BW.text)
-                 + Text(game.hostJudges ? " or the host starts the game when everyone is in" : " starts the game from their phone when everyone is in"))
-            } else {
-                Text("Waiting for players to scan in")
-            }
-        }
-        .font(BW.body(26, .semibold))
-        .foregroundColor(BW.muted)
-        .frame(maxWidth: .infinity)
-    }
 }
 
 /// JEOPARDY and LOBBY in gold; the remote's Play/Pause hint on the right.
@@ -594,7 +505,7 @@ struct JeoLobbyHeader: View {
             JeoWordmark(size: 40)
             BWEyebrow(text: "Lobby", color: BW.gold, size: 22)
             Spacer()
-            Text("Play/Pause for the host PIN").font(BW.body(22, .semibold)).foregroundColor(BW.muted)
+            Text("Play/Pause: game menu and host PIN").font(BW.body(22, .semibold)).foregroundColor(BW.muted)
         }
     }
 }
@@ -731,6 +642,8 @@ struct JeoJoinCard: View {
 struct JeoSeats: View {
     @Environment(\.jeoAct) private var act
     let game: JeopardyState
+    /// The seat picked with the remote: make that player captain, or remove them.
+    @State private var chosen: JeoPlayer?
 
     var body: some View {
         let count = game.players.count
@@ -740,8 +653,8 @@ struct JeoSeats: View {
             HStack(alignment: .firstTextBaseline, spacing: 18) {
                 BWEyebrow(text: "Players", size: 20)
                 Text(count == 0 ? "Nobody yet" : "\(count) joined").font(BW.title(26))
-                Text(captain.map { "\($0.name) is captain" } ?? "The first to join is captain")
-                    .font(BW.body(21)).foregroundColor(BW.muted).lineLimit(1)
+                Text(captain.map { "\($0.name) is captain. Select a player to change it" } ?? "The first to join is captain")
+                    .font(BW.body(21)).foregroundColor(BW.muted).lineLimit(1).minimumScaleFactor(0.7)
                 Spacer(minLength: 8)
                 Button { act("setHostJudges", ["on": !game.hostJudges]) } label: {
                     HStack(spacing: 8) {
@@ -757,6 +670,7 @@ struct JeoSeats: View {
                     if index < count {
                         let player = game.players[index]
                         let isCaptain = player.id == game.captainId
+                        Button { chosen = player } label: {
                         HStack(spacing: 14) {
                             BWAvatar(name: player.name, color: Color(playerHex: player.color), size: 58)
                             VStack(alignment: .leading, spacing: 2) {
@@ -768,8 +682,10 @@ struct JeoSeats: View {
                             Spacer(minLength: 0)
                         }
                         .padding(.horizontal, 16)
-                        .frame(height: 86)
-                        .background(RoundedRectangle(cornerRadius: 22).fill(BW.surface2))
+                        .frame(maxWidth: .infinity, minHeight: 86, maxHeight: 86)
+                        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(isCaptain ? BW.gold.opacity(0.7) : .clear, lineWidth: 2))
+                        }
+                        .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: 22))
                         .opacity(player.connected ? 1 : 0.5)
                         .transition(.scale.combined(with: .opacity))
                     } else {
@@ -789,6 +705,16 @@ struct JeoSeats: View {
                 }
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: count)
+        }
+        .task {
+            // The CI screenshot job can pick a seat (DemoHooks).
+            if let seat = DemoHooks.seat, seat < game.players.count {
+                try? await Task.sleep(for: .seconds(1))
+                chosen = game.players[seat]
+            }
+        }
+        .fullScreenCover(item: $chosen) { player in
+            JeoPlayerSheet(player: player, isCaptain: player.id == game.captainId, act: act) { chosen = nil }
         }
         .padding(28)
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -954,6 +880,9 @@ struct JeoBoardBuilder: View {
 enum JeoShown {
     static var board = ""
     static var intro = ""
+    /// The tile last picked with the remote, and on which board, so the remote comes back next to it.
+    static var lastPick: (Int, Int)? { didSet { lastPickBoard = board } }
+    static var lastPickBoard = ""
 }
 
 /// The blue board: categories across the top, gold money below, empty squares where clues were played.
@@ -962,10 +891,26 @@ struct JeoBoard: View {
     let game: JeopardyState
     /// The tiles fly in, once for each new board.
     @State private var deal: Bool
+    /// The tile the remote is on, as "column-row".
+    @FocusState private var focusedTile: String?
 
     init(game: JeopardyState) {
         self.game = game
         _deal = State(initialValue: JeoBoard.key(game) != JeoShown.board)
+    }
+
+    /// Where the remote starts on the board: the next clue down in the column last picked, else the nearest one left
+    /// in that row, else the first clue left.
+    static func startTile(_ game: JeopardyState) -> String? {
+        let board = game.board ?? []
+        func open(_ c: Int, _ r: Int) -> Bool { c >= 0 && c < board.count && r >= 0 && r < board[c].clues.count && !board[c].clues[r].used }
+        if let last = JeoShown.lastPick, JeoShown.lastPickBoard == key(game) {
+            let (c, r) = last
+            for row in r..<5 where open(c, row) { return "\(c)-\(row)" }
+            for col in (0..<board.count).sorted(by: { abs($0 - c) < abs($1 - c) }) where open(col, r) { return "\(col)-\(r)" }
+        }
+        for row in 0..<5 { for col in 0..<board.count where open(col, row) { return "\(col)-\(row)" } }
+        return nil
     }
 
     static func key(_ game: JeopardyState) -> String {
@@ -1004,28 +949,25 @@ struct JeoBoard: View {
                                     let clues = board[column].clues
                                     JeoTileView(tile: row < clues.count ? clues[row] : nil, width: width, height: height,
                                                 delay: deal ? Double(row * 6 + column) * 0.028 : nil) {
+                                        JeoShown.lastPick = (column, row)
                                         act("pick", ["ci": column, "ri": row])
                                     }
+                                    .focused($focusedTile, equals: "\(column)-\(row)")
                                 }
                             }
                         }
                     }
                 }
             }
-            HStack(spacing: 16) {
-                if let player = game.player(game.controllerId) {
-                    BWAvatar(name: player.name, color: Color(playerHex: player.color), size: 48)
-                    (Text(player.name).font(BW.body(32, .heavy)).foregroundColor(Color(playerHex: player.color))
-                     + Text(game.hostJudges ? ", it\u{2019}s your pick. Tell the host a category and an amount." : ", it\u{2019}s your pick. Choose a clue on your phone."))
-                        .font(BW.body(32, .semibold))
-                        .foregroundColor(BW.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
-            }
-            .padding(.top, 14)
         }
-        .onAppear { JeoShown.board = JeoBoard.key(game) }
+        .focusSection()
+        .onAppear {
+            JeoShown.board = JeoBoard.key(game)
+            // Put the remote on a clue straight away: next to the last one picked, or the first one left.
+            let target = JeoBoard.startTile(game)
+            focusedTile = target
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { if focusedTile == nil { focusedTile = target } }
+        }
     }
 }
 

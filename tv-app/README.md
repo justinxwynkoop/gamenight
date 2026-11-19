@@ -38,8 +38,12 @@ account last a year; reinstall from Xcode after that.
    the board: press **Play/Pause** on the Apple TV remote and read it in the menu.
 4. The host picks a question set and starts. The host page's **Questions** tab is the question editor.
 
-**Remote:** **Menu** goes back to the game picker. **Play/Pause** opens a panel with the PIN, the room code, whether
-phones are connected, **New room code**, **Change server** and **Back to games**.
+**Remote:** in Jeopardy the focus always lands on the one button that moves the game along (or on a clue on the
+board), so pressing the touch surface does the obvious thing. **Play/Pause** (or **Menu** at the end of the bar) opens
+the game menu: skip a clue, flip a ruling, **Change the captain**, end the round or the game, the room code and PIN,
+whether phones are connected, **New room code**, **Change server** and **Back to games**. Anything that throws a game
+away asks first. In the lobby, select a player's seat to make them captain or remove them. The Menu button goes back
+to the game picker (inside the game menu it steps back a page).
 
 The phone site is `https://gamenight-one.vercel.app`. To change it, or the online relay behind it, see
 `FamilyGameNight/GameNight/RelayConfig.swift`.

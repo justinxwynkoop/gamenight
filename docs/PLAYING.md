@@ -39,7 +39,16 @@ touching the host page. The first player to join is the **captain**.
 
 Also: streaks (**on fire** after three right in a row), emoji reactions that float up the TV from phones, and
 **captain controls** on the captain's phone: choose packs, start, skip a clue, flip the last ruling, continue, end the
-round, fix any score, remove a player (before the game), play again. If the captain stays away, someone else takes over.
+round, fix any score, remove a player (before the game), play again, or hand the captain to someone else. If the
+captain stays away, someone else takes over. **Changing the captain:** on the Apple TV, select a player's seat in the
+lobby, or open the game menu (Play/Pause) at any time and pick **Change the captain**; on the website's TV, click a
+seat in the lobby; on the host page, **Make captain** in the Players tab.
+
+**What's going on:** a strip along the bottom of the TV says whose moment it is and what happens next (whose pick and
+why, who buzzed, who has to press Continue). On the Apple TV the remote always lands on the one button that moves the
+game along (Start game, Show the board, Next, Start round 2, Correct and Wrong for a host, Play again), or on a clue
+on the board. Everything else (skip a clue, flip a ruling, the captain, end the round or the game, the host PIN) is
+in the game menu: **Play/Pause**, or **Menu** at the end of the bar.
 
 **End game** (on the TV's buttons, the Apple TV's Play/Pause menu, the captain's phone and the host page) stops a game
 part way: scores reset and the TV and every phone go back to the lobby, with the players still in. **New room code**

@@ -4,9 +4,9 @@ import UIKit
 /// The TV display: draws whatever the engine says is happening, for Jeopardy or Family Feud (both home-screen
 /// tiles open this same display).
 ///
-/// Jeopardy's screens have buttons the Siri Remote can use (pick a clue, start, continue). Family Feud's have none.
-/// Menu returns to the game picker. Play/Pause opens a small panel to change the server or leave, since the
-/// remote has no other way to reach those while a game is on screen.
+/// Jeopardy's screens have buttons the Siri Remote can use (pick a clue, start, continue) and a game menu
+/// (JeopardyRemote.swift). Family Feud's have none. Menu returns to the game picker. Play/Pause opens the menu: for
+/// Jeopardy the game menu, for the others a small panel to change the server or leave.
 struct JeopardyDisplayView: View {
     let client: GameNightClient
     /// The tile that was opened, for the connecting screen's heading.
@@ -43,12 +43,28 @@ struct JeopardyDisplayView: View {
                 .padding(.top, 24)
             }
 
-            if showMenu {
+            if showMenu, let game = client.state?.jeopardy {
+                // Jeopardy's game menu: everything that is not the next step (skip, flip a ruling, the captain, end).
+                JeoGameMenu(
+                    game: game,
+                    act: { action, args in client.act(action, args) },
+                    roomCode: client.roomCode,
+                    hostPin: client.hostPin,
+                    phonesNote: phonesNote,
+                    address: client.isLocal ? nil : client.address?.text,
+                    joinURL: client.joinURL,
+                    onNewRoom: client.isLocal ? { client.newRoom() } : nil,
+                    onChangeServer: onChangeServer,
+                    onExit: onExit,
+                    onClose: { showMenu = false },
+                    startOnCaptain: DemoHooks.menu == "captain"
+                )
+            } else if showMenu {
                 DisplayMenu(
                     address: client.address?.text ?? "",
                     hostPin: client.hostPin,
                     roomCode: client.roomCode,
-                    phonesNote: client.isLocal ? (client.relayUp ? "Phones: connected" : "Phones: not connected\(client.relayIssue.map { " (\($0))" } ?? "")") : nil,
+                    phonesNote: phonesNote,
                     joinURL: client.joinURL,
                     onNewRoom: client.isLocal ? { showMenu = false; client.newRoom() } : nil,
                     onEndGame: client.isLocal && (client.state?.jeopardy.map { $0.phase != .lobby } ?? false)
@@ -71,6 +87,13 @@ struct JeopardyDisplayView: View {
             }
         }
         .onPlayPauseCommand { showMenu.toggle() }
+        .task {
+            // The CI screenshot job can open the menu (DemoHooks).
+            if DemoHooks.menu != nil {
+                try? await Task.sleep(for: .seconds(1))
+                showMenu = true
+            }
+        }
         // Take the focus when the display opens, when the first state arrives (the screen is only focusable
         // then), and whenever the Play/Pause panel closes and its buttons stop holding it.
         .onAppear { boardFocused = true }
@@ -94,6 +117,11 @@ struct JeopardyDisplayView: View {
         }
     }
 
+    /// "Phones: connected" or why not, when the game runs on this Apple TV.
+    private var phonesNote: String? {
+        client.isLocal ? (client.relayUp ? "Phones: connected" : "Phones: not connected\(client.relayIssue.map { " (\($0))" } ?? "")") : nil
+    }
+
     @ViewBuilder
     private var content: some View {
         if let state = client.state {
@@ -108,6 +136,7 @@ struct JeopardyDisplayView: View {
                     act: { action, args in client.act(action, args) },
                     onNewRoom: client.isLocal ? { client.newRoom() } : nil
                 )
+                .environment(\.jeoOpenMenu, { showMenu = true })
                 .disabled(showMenu)
             } else {
                 // The other games' screens have no buttons, so the screen itself takes focus. That is

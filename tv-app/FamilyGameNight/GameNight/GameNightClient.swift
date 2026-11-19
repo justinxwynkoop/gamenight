@@ -101,6 +101,20 @@ final class GameNightClient {
         return code
     }
 
+    /// For the CI screenshot job only (GN_DEMO_STATE): shows a recorded state with no game running behind it.
+    func showDemo(_ data: Data) {
+        disconnect()
+        guard let decoded = try? decoder.decode(ServerState.self, from: data) else { return }
+        state = decoded
+        stateReceivedAt = Date()
+        connection = .connected
+        isLocal = true
+        relayUp = true
+        roomCode = "4625"
+        hostPin = "2580"
+        joinURL = URL(string: "https://gamenight-one.vercel.app/?room=4625")
+    }
+
     /// Starts over with a new random room code and an empty room (phones must type the new code).
     func newRoom() {
         guard isLocal else { return }

@@ -85,6 +85,11 @@
       "totalMs": 45000,
       "leftMs": 45000
     },
+    "guide": {
+      "pid": "p3",
+      "text": "Daily Double! Only Dad plays this one",
+      "next": "Dad is placing a bet on their phone"
+    },
     "board": [
       {
         "name": "Famous Scientists",

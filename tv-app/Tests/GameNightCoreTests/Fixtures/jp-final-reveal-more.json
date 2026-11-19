@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p1",
+      "text": "Leo’s response",
+      "next": "Lowest score goes first"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

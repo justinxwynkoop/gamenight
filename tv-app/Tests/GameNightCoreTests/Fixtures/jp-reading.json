@@ -85,6 +85,11 @@
       "totalMs": 4000,
       "leftMs": 4000
     },
+    "guide": {
+      "pid": null,
+      "text": "Read the clue",
+      "next": "Buzzers open when the bar fills. Buzz too early and you’re locked out a moment"
+    },
     "board": [
       {
         "name": "Famous Scientists",
