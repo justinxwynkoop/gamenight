@@ -24,7 +24,9 @@ included. To replace one, install your own `jeopardy/<name>.m4a`: it overwrites 
 
 A sound with no file falls back to the built-in tone. Names that are used:
 
-- **Jeopardy:** `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`, `fanfare`.
+- **Jeopardy:** `open`, `buzz`, `correct`, `wrong`, `timeup`, `tick`, `reveal`, `dd` (Daily Double), `final`, `fanfare`,
+  `roundstart`, `board` (the board fills in), `pick` (a clue is picked), `bet` (a Daily Double bet), `lock` (a Final wager
+  or answer locks in), `join` (a player joins), `applause` (the end of a round, and the winner).
 - **Family Feud:** `ding` (an answer flips), `strike`, `strikeout`, `faceoff`, `fastmoney`, `fmpoints`, `roundstart`,
   `winner`, `zero` (plus `open`, `tick`, `timeup`, `correct`). `strikeout` and `zero` use your `strike` file if they
   have none of their own.

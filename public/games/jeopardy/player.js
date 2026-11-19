@@ -34,6 +34,43 @@ export function mount(container, { send, flash }) {
   const strip = h('div', { class: 'jp-strip' });
   const sheetEl = h('div');
 
+  // ---------- this phone's own sounds ----------
+  // Short, quiet cues for this player's own moments: their buzz, winning it, being too early, their turn to pick, and
+  // their answer ruled right or wrong. iPhones can't vibrate from a web page, so the sound is the feedback there.
+  // A phone only plays sound after a tap, so the first tap anywhere wakes it up. The host's "Sound off" mutes them.
+  let actx = null;
+  let soundOn = true;
+  const wake = () => {
+    try {
+      actx ??= new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume().catch(() => {});
+    } catch { actx = null; }
+  };
+  addEventListener('pointerdown', wake, { capture: true, passive: true });
+  /** Notes as [frequency, start (s), length (s), wave, gain]. */
+  const chirp = (notes) => {
+    if (!soundOn || !actx || actx.state !== 'running') return;
+    for (const [f, at, dur, type = 'triangle', gain = 0.18] of notes) {
+      const t0 = actx.currentTime + at;
+      const osc = actx.createOscillator(); const env = actx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(f, t0);
+      env.gain.setValueAtTime(0.0001, t0);
+      env.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(env).connect(actx.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.05);
+    }
+  };
+  const PHONE_SOUNDS = {
+    press: [[660, 0, 0.06, 'square', 0.08]],
+    won: [[880, 0, 0.1], [1320, 0.08, 0.25]],
+    early: [[180, 0, 0.3, 'square', 0.1]],
+    turn: [[784, 0, 0.12], [1047, 0.1, 0.3]],
+    right: [[523, 0, 0.1], [659, 0.08, 0.1], [784, 0.16, 0.3]],
+    wrong: [[220, 0, 0.35, 'sawtooth', 0.08]],
+  };
+  const cue = (name) => chirp(PHONE_SOUNDS[name]);
+
   // ---------- the answer box ----------
   // One input for the whole game. It is focused the moment the buzzer is pressed (inside the tap, which is the only
   // time a phone lets a page open the keyboard), and shown when the buzz is won, so typing can start at once.
@@ -214,6 +251,7 @@ export function mount(container, { send, flash }) {
       send({ t: 'buzz', seq: c.open || 0 });
       if (live && !pressed) {
         pressed = true;
+        wake(); cue('press');
         navigator.vibrate?.(25);
         bz.className = 'jp-buzzer sent'; bz.textContent = 'BUZZED';
         if (!v.hostJudges) { answerIn.value = ''; answerFor = `${id}-${c.open || 0}`; answerIn.focus({ preventScroll: true }); }
@@ -470,22 +508,35 @@ export function mount(container, { send, flash }) {
   return {
     update(r) {
       const before = v?.phase;
+      const old = v;
       v = r.game; receivedAt = performance.now();
+      if (typeof r.room?.settings?.sound === 'boolean') soundOn = r.room.settings.sound;
+      if (old && v.me) {
+        // Their turn to pick a clue.
+        if (v.phase === 'board' && v.controllerId === v.me.id && (old.phase !== 'board' || old.controllerId !== v.me.id)) {
+          cue('turn'); navigator.vibrate?.([30, 60, 30]);
+        }
+        // Their own answer, ruled right or wrong.
+        const r1 = v.lastResult; const r0 = old.lastResult;
+        if (r1 && r1.pid === v.me.id && JSON.stringify(r1) !== JSON.stringify(r0)) {
+          cue(r1.correct ? 'right' : 'wrong');
+        }
+      }
       if (before !== v.phase && !['dd-wager', 'final-wager'].includes(v.phase)) { wager = null; typing = false; }
       render();
     },
     onMessage(m) {
       if (m.t === 'buzz-result') {
-        if (m.result === 'won') navigator.vibrate?.(60);
+        if (m.result === 'won') { navigator.vibrate?.(60); cue('won'); }
         else {
           // Not this time: put the keyboard away again.
           if (document.activeElement === answerIn && !answerType) answerIn.blur();
           pressed = m.result === 'late' || m.result === 'tried';
-          if (m.result === 'early') { pressed = false; navigator.vibrate?.([40, 40, 40]); say('Too early! Wait for the gold button.', 900); }
+          if (m.result === 'early') { pressed = false; navigator.vibrate?.([40, 40, 40]); cue('early'); say('Too early! Wait for the gold button.', 900); }
           else if (m.result === 'late') say(`Beaten to it! Your time: ${secs(m.ms)}s`, 2500);
         }
       } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer locked in', 'ok');
     },
-    destroy() { clearInterval(ticker); clearTimeout(noteTimer); clearTimeout(draftTimer); document.body.classList.remove('jp-phone'); },
+    destroy() { removeEventListener('pointerdown', wake, { capture: true }); actx?.close?.().catch?.(() => {}); clearInterval(ticker); clearTimeout(noteTimer); clearTimeout(draftTimer); document.body.classList.remove('jp-phone'); },
   };
 }

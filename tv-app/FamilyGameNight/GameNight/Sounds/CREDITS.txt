@@ -7,3 +7,8 @@ jeopardy__*.m4a are these recordings, named for the app's sound cues:
 open, buzz, correct, wrong, dd, fanfare as named; timeup and reveal = "timeout"; final = "dd";
 roundstart = "board" fanfare; think = thinking music.
 shared__lobby.m4a is the "Happy Dance" theme: it loops on the main menu and in every game's lobby.
+
+Added for every game moment (all from SFX Kit, CC0): pick (a clue is picked; the Buzzworthy "pick" sound),
+board = "data-countup-medium" (the board fills in), lock = "mechanical-lock-light" (a Final wager or answer
+locks in), bet = "money-register" (a Daily Double bet), join = "notification-message-in-clear" (a player
+joins), applause = "celebration-applause-small" (the end of a round, and the winner). Levels raised to match.
