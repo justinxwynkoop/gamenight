@@ -112,8 +112,11 @@ Three checks need more than Node and run in GitHub Actions (`.github/workflows/w
 
 ## Limits
 
-- Needs the internet on the TV and on every phone. A buzz crosses the internet (usually well under half a second),
-  so the order messages reach the TV decides who was first (every press is timed on the TV's clock and the times are shown); it is not a hardware-grade buzzer. Light-up buzzers are only
+- Needs the internet on the TV and on every phone. A buzz crosses the internet (usually well under half a second), but
+  that delay doesn't decide who was first: phones keep their clocks in step with the TV's and stamp each press, and the
+  TV waits a split second for an earlier press still on its way (see "Fair buzzing" in [PLAYING.md](PLAYING.md)). Clock
+  sync over the internet is good to a few hundredths of a second, so a dead heat closer than that can still go either
+  way; it is not a hardware-grade buzzer. Light-up buzzers are only
   for [server mode](SERVER-MODE.md).
 - Supabase's free plan has message and connection limits, and pauses a project that has been idle for a long time.
   Opening the Supabase dashboard wakes it.

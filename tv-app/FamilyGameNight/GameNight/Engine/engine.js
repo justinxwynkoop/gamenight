@@ -377,8 +377,16 @@
     // the ruling on an answer: their words and right or wrong, before anything else happens
     roundIntro: 7e3,
     // the round's title and categories before the first pick
-    earlyPenalty: 400,
-    // lockout for buzzing before the clue unlocks (or while it is not open)
+    earlyPenalty: 250,
+    // lockout for buzzing before the clue unlocks (or while it is not open), as on the show
+    maxWait: 350,
+    // the longest the room waits after the first press for an earlier one still on its way
+    waitMargin: 30,
+    // added to the slowest phone's usual delay when deciding how long to wait
+    syncSlack: 40,
+    // a phone's clock may be this far out; a press this close to the opening still counts
+    trustAt: 2500,
+    // a press stamped longer ago than this (or in the future) is timed when it arrives instead
     ddWager: 45e3,
     // a Daily Double wager not placed by then is the minimum
     ddSplash: 2200,
@@ -446,7 +454,7 @@
     };
   }
   var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -473,6 +481,7 @@
       this.captainGoneAt = null;
       this.timer = null;
       this.openedAt = 0;
+      this.collecting = null;
       __privateMethod(this, _JeopardyGame_instances, resetRun_fn).call(this);
       __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
     }
@@ -500,6 +509,7 @@
     }
     tick() {
       const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      if (this.collecting && now >= this.collecting.until) __privateMethod(this, _JeopardyGame_instances, settle_fn).call(this);
       const t = this.timer;
       if (t && now >= t.at) {
         this.timer = null;
@@ -697,6 +707,7 @@
       if (!cl || cl.used) return;
       cl.used = true;
       this.lastResult = null;
+      this.collecting = null;
       this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
       if (cl.dd) {
         this.phase = "dd-wager";
@@ -704,7 +715,9 @@
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 5), "wager");
       } else {
         this.phase = "reading";
-        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, this.hostJudges() ? T.hostRead : readingTime(cl.q), () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow), "reading");
+        const ms = this.hostJudges() ? T.hostRead : readingTime(cl.q);
+        const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
       }
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
@@ -712,29 +725,38 @@
       if (this.phase === "reading") __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
     }
     /**
-     * A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }.
-     * `seq` is the opening the phone saw (clue.open); a press for an earlier one arrives too early for this one.
+     * A buzz. Returns what to tell the phone: { result: 'won' | 'wait' | 'late' | 'early' | 'tried' | 'ignored', ms }.
+     * `seq` is the opening the phone was pressing for (clue.open, or the next one once its button has turned gold for
+     * it); a press for an earlier one is too early for this one. `at` is when it was pressed on the room's clock.
+     * 'wait' means the press is in, and the room is waiting a split second for a faster one that may still be on its way.
      */
-    buzz(pid, seq) {
+    buzz(pid, seq, at) {
       const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid);
       if (!__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, pid) || !this.clue) return { result: "ignored" };
       const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
+      const pressed = __privateMethod(this, _JeopardyGame_instances, pressTime_fn).call(this, pid, at, now);
+      const due = __privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this);
+      if (due != null && this.phase !== "open" && this.timer && Math.max(now, pressed) >= due - T.syncSlack && (seq == null || Number(seq) > (this.clue.open ?? 0) || now >= due)) {
+        const t = this.timer;
+        this.timer = null;
+        t.fire();
+      }
       const tried = this.clue.tried.includes(pid);
       if (this.phase === "reading" || this.phase === "ruling" && !tried) {
-        st.lockUntil = now + T.earlyPenalty;
+        st.lockUntil = pressed + T.earlyPenalty;
         return { result: "early" };
       }
       if (this.phase === "answering" && this.openedAt) {
         const opening = this.clue.open;
         if (tried || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid && b.open === opening)) return { result: "ignored" };
         if (seq != null && Number(seq) < opening) {
-          st.lockUntil = now + T.earlyPenalty;
+          st.lockUntil = pressed + T.earlyPenalty;
           return { result: "early" };
         }
-        const late = Math.max(0, now - this.openedAt);
+        const late = Math.max(0, pressed - this.openedAt);
         this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
         this.clue.buzzes.push({ pid, ms: late, open: opening });
-        st.lockUntil = now + T.earlyPenalty;
+        st.lockUntil = pressed + T.earlyPenalty;
         if (opening === 1 && (st.fastest == null || late < st.fastest)) st.fastest = late;
         __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
         return { result: "late", ms: late };
@@ -742,21 +764,24 @@
       if (this.phase !== "open") return { result: "ignored" };
       if (tried) return { result: "tried" };
       if (seq != null && Number(seq) < this.clue.open) {
-        st.lockUntil = now + T.earlyPenalty;
+        st.lockUntil = pressed + T.earlyPenalty;
         return { result: "early" };
       }
-      if (now < st.lockUntil) return { result: "early" };
-      this.clue.buzzedId = pid;
-      const ms = Math.max(0, now - this.openedAt);
-      this.clue.buzzMs = ms;
-      if (this.clue.open === 1 && (st.fastest == null || ms < st.fastest)) st.fastest = ms;
-      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
-      this.clue.buzzes.push({ pid, ms, won: true, open: this.clue.open });
-      this.phase = "answering";
-      if (this.hostJudges()) __privateMethod(this, _JeopardyGame_instances, startAnswerClock_fn).call(this, pid);
-      else __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.answer, () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
-      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
-      return { result: "won", ms };
+      if (pressed < st.lockUntil) return { result: "early" };
+      const when = Math.max(pressed, this.openedAt);
+      const ms = when - this.openedAt;
+      const c = this.collecting ?? (this.collecting = { open: this.clue.open, presses: [], until: Infinity, n: 0 });
+      if (c.presses.some((p) => p.pid === pid)) return { result: "wait", ms };
+      c.presses.push({ pid, at: when, ms, n: c.n++ });
+      const earliest = Math.min(...c.presses.map((p) => p.at));
+      c.until = Math.min(c.until, earliest + __privateMethod(this, _JeopardyGame_instances, waitFor_fn).call(this, c.presses.length === 1 ? pid : null));
+      const waiting = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id) && !c.presses.some((p) => p.pid === id));
+      if (!waiting || now >= c.until) {
+        const winner = __privateMethod(this, _JeopardyGame_instances, settle_fn).call(this);
+        if (winner === pid) return { result: "won", ms };
+        return { result: "late", ms };
+      }
+      return { result: "wait", ms };
     }
     /** What a player has typed so far (sent as they type), kept in case the clock runs out before they send it. */
     typing(pid, text) {
@@ -1071,7 +1096,7 @@
       const pid = player.id;
       switch (msg.t) {
         case "buzz":
-          return { t: "buzz-result", ...this.buzz(pid, msg.seq) };
+          return { t: "buzz-result", ...this.buzz(pid, msg.seq, msg.at), ...msg.id != null ? { id: String(msg.id).slice(0, 20) } : {} };
         case "draft":
           this.typing(pid, msg.text);
           return void 0;
@@ -1140,6 +1165,13 @@
           // Earlier openings first (after a wrong answer the buzzers open again), then fastest.
           buzzes: this.clue.buzzes.slice().sort((x, y) => (x.open ?? 1) - (y.open ?? 1) || x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won, open: x.open ?? 1 })),
           open: this.clue.open ?? 0,
+          // When the buzzers open (or opened) on the room's clock, and which opening that is: each phone turns its
+          // button gold at that instant by its own clock, which it keeps in step with the room's.
+          liveAt: (() => {
+            const at = __privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this);
+            return at == null ? null : Math.round(at);
+          })(),
+          liveSeq: this.phase === "open" ? this.clue.open ?? 0 : (this.clue.open ?? 0) + 1,
           tried: this.clue.tried
         },
         lastResult: this.lastResult,
@@ -1285,6 +1317,7 @@
     this.final = null;
     this.finalClue = null;
     this.timer = null;
+    this.collecting = null;
   };
   changed_fn = function() {
     this.room.changed();
@@ -1326,6 +1359,10 @@
   setTimer_fn = function(ms, fire, kind = "") {
     const now = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
     this.timer = { at: now + ms, fire, kind, totalMs: ms, shownEnd: now + ms };
+  };
+  /** A timer that started at `from` (which may be a moment ago: timers are checked a few times a second). */
+  setTimerFrom_fn = function(from, ms, fire, kind) {
+    this.timer = { at: from + ms, fire, kind, totalMs: ms, shownEnd: from + ms };
   };
   clearTimer_fn = function() {
     this.timer = null;
@@ -1486,13 +1523,84 @@
     }, "intro");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
-  openBuzzers_fn = function(window) {
+  /** Opens the buzzers. `at` is when they were due to open (the timer may be checked a moment later). */
+  openBuzzers_fn = function(window, at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this)) {
     this.phase = "open";
     this.clue.buzzedId = null;
+    this.collecting = null;
     this.clue.open = (this.clue.open ?? 0) + 1;
-    this.openedAt = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this);
-    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, window, () => __privateMethod(this, _JeopardyGame_instances, endClue_fn).call(this), "buzz");
+    this.openedAt = Math.min(at, __privateMethod(this, _JeopardyGame_instances, now_fn).call(this));
+    __privateMethod(this, _JeopardyGame_instances, setTimerFrom_fn).call(this, this.openedAt, window, () => {
+      if (this.collecting) __privateMethod(this, _JeopardyGame_instances, settle_fn).call(this);
+      else __privateMethod(this, _JeopardyGame_instances, endClue_fn).call(this);
+    }, "buzz");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+  };
+  /** When the buzzers open next (or opened, while they are open), on the room's clock, or null if nobody knows yet. */
+  liveAt_fn = function() {
+    const t = this.timer;
+    if (!this.clue) return null;
+    if (this.phase === "open") return this.openedAt;
+    if (this.phase === "reading" && t?.kind === "reading" && !this.hostJudges()) return t.at;
+    if (this.phase === "ruling" && t?.kind === "ruling" && __privateMethod(this, _JeopardyGame_instances, reopens_fn).call(this)) return t.at;
+    return null;
+  };
+  /** After this ruling, will the buzzers open again? */
+  reopens_fn = function() {
+    const r = this.lastResult;
+    if (!r || r.dd || r.correct) return false;
+    return __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).some((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id));
+  };
+  /** When a press happened on the room's clock: the phone's own stamp when it is believable, else when it arrived. */
+  pressTime_fn = function(pid, at, now) {
+    const lag = this.room.lagOf?.(pid);
+    const stamp = Number(at);
+    if (at != null && Number.isFinite(stamp) && stamp <= now + T.syncSlack && stamp >= now - T.trustAt) {
+      this.room.noteLag?.(pid, now - stamp);
+      return Math.min(stamp, now);
+    }
+    return now - Math.min(lag ?? 0, T.maxWait);
+  };
+  /** How long after the earliest press the room waits for one still on its way: the slowest phone's usual delay. */
+  waitFor_fn = function(except) {
+    let slowest = null;
+    for (const id of __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)) {
+      if (id === except || !__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) || this.clue.tried.includes(id)) continue;
+      const lag = this.room.lagOf?.(id);
+      if (lag != null) slowest = Math.max(slowest ?? 0, lag);
+    }
+    if (slowest == null) return 0;
+    return Math.min(T.maxWait, slowest + T.waitMargin);
+  };
+  /** The wait is over: the earliest press wins, and the rest are timed as late. */
+  settle_fn = function() {
+    const c = this.collecting;
+    this.collecting = null;
+    if (!c || this.phase !== "open" || !this.clue || this.clue.open !== c.open) return null;
+    const order = c.presses.slice().sort((a, b) => a.at - b.at || a.n - b.n);
+    const [first, ...rest] = order;
+    __privateMethod(this, _JeopardyGame_instances, win_fn).call(this, first.pid, first.ms);
+    for (const p of rest) {
+      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== p.pid);
+      this.clue.buzzes.push({ pid: p.pid, ms: p.ms, open: c.open });
+      if (c.open === 1) {
+        const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, p.pid);
+        if (st.fastest == null || p.ms < st.fastest) st.fastest = p.ms;
+      }
+    }
+    __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    return first.pid;
+  };
+  win_fn = function(pid, ms) {
+    const st = __privateMethod(this, _JeopardyGame_instances, stat_fn).call(this, pid);
+    this.clue.buzzedId = pid;
+    this.clue.buzzMs = ms;
+    if (this.clue.open === 1 && (st.fastest == null || ms < st.fastest)) st.fastest = ms;
+    this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
+    this.clue.buzzes.push({ pid, ms, won: true, open: this.clue.open });
+    this.phase = "answering";
+    if (this.hostJudges()) __privateMethod(this, _JeopardyGame_instances, startAnswerClock_fn).call(this, pid);
+    else __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.answer, () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
   };
   /** Host mode: the visible answer clock. At zero the TV says "Time's up" and the host has a short grace to rule. */
   startAnswerClock_fn = function(pid) {
@@ -1543,10 +1651,11 @@
   ruling_fn = function() {
     this.phase = "ruling";
     this.clue.buzzedId = this.lastResult.pid;
-    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ruling, () => __privateMethod(this, _JeopardyGame_instances, afterRuling_fn).call(this), "ruling");
+    const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + T.ruling;
+    __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ruling, () => __privateMethod(this, _JeopardyGame_instances, afterRuling_fn).call(this, at), "ruling");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
-  afterRuling_fn = function() {
+  afterRuling_fn = function(at) {
     if (this.phase !== "ruling") return;
     const r = this.lastResult;
     if (!r || r.dd || r.correct) {
@@ -1555,7 +1664,7 @@
     }
     const remaining = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this).filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id) && !this.clue.tried.includes(id));
     if (remaining.length === 0) __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
-    else __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.rebuzzWindow);
+    else __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.rebuzzWindow, at);
   };
   endClue_fn = function() {
     if (!this.clue) return;
@@ -2922,6 +3031,7 @@
       this.settings = { sound: true, volume: 70, lateJoin: false };
       this.soundPing = 0;
       this.connected = /* @__PURE__ */ new Set();
+      this.lags = /* @__PURE__ */ new Map();
     }
     now() {
       return this.clock();
@@ -3018,6 +3128,17 @@
       p.token = newToken();
       this.changed();
       return p;
+    }
+    /** How long a player's messages take to arrive, from their phone's pings and stamped buzzes (rises fast, falls slowly). */
+    noteLag(playerId, ms) {
+      const v = Number(ms);
+      if (!playerId || !Number.isFinite(v)) return;
+      const lag = Math.min(2e3, Math.max(0, v));
+      const was = this.lags.get(playerId);
+      this.lags.set(playerId, was == null ? lag : lag > was ? (was + lag) / 2 : was * 0.85 + lag * 0.15);
+    }
+    lagOf(playerId) {
+      return this.lags.get(playerId);
     }
     setConnected(playerId, on) {
       on ? this.connected.add(playerId) : this.connected.delete(playerId);
@@ -3351,6 +3472,10 @@
       room.setConnected(player.id, true);
     }
     function handle(id, client, msg) {
+      if (msg.t === "sync") {
+        send(id, { t: "sync", c: Number(msg.c) || 0, at: room.now() });
+        return;
+      }
       if (msg.t !== "hello" && !client.role) {
         send(id, { t: "who" });
         return;
@@ -3396,6 +3521,7 @@
           return;
         }
         case "ping":
+          if (client.playerId && msg.lag != null) room.noteLag?.(client.playerId, msg.lag);
           send(id, { t: "pong" });
           return;
         default: {

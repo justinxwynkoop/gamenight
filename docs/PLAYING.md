@@ -24,8 +24,9 @@ touching the host page. The first player to join is the **captain**.
 2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote). Round 2 is worth
    double and has two Daily Doubles; the lowest score picks first.
 3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
-   phone. The first press wins. A press before the buzzers open locks that player out for a moment. Everyone who
-   pressed is timed, and the times are shown after the clue.
+   phone. Every phone turns gold at the same instant as the TV, and **the fastest thumb wins, not the fastest Wi-Fi**
+   (see Fair buzzing below). A press before the buzzers open locks that player out for a quarter second. Everyone
+   who pressed is timed, and the times are shown after the clue.
 4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
    articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
    gives that player control. **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
@@ -133,7 +134,17 @@ repo; their survey numbers are made up, not real survey results.
 | Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 3 seconds to rule) |
 | Final Jeopardy answer | 35 seconds |
 
-**Early buzzes.** Pressing before the buzzers open locks that player out for 0.4 seconds.
+**Early buzzes.** Pressing before the buzzers open locks that player out for 0.25 seconds, as on the show. The phone
+shows it the instant you press (the button flashes red and buzzes in your hand), and the TV keeps the same lockout.
+
+**Fair buzzing.** Each phone keeps its clock in step with the TV's: every few seconds it asks the TV the time, and
+keeps the answer that came back quickest, the way network time works. The TV tells every phone ahead of time when the
+buzzers will open, so all the buttons turn gold together, and each press is stamped with when it happened on the TV's
+clock. The TV then waits a split second (at most 0.35 seconds, and only as long as the slowest phone's messages take)
+for a press that happened earlier but is still on its way, and the earliest press wins. A phone resends its press
+until the TV confirms it, so a Wi-Fi hiccup doesn't lose a buzz, and checks its connection the moment it comes back
+from the lock screen. The whole middle of the screen is the buzzer, it fires the moment a finger lands, and it buzzes
+in your hand (Android, and iPhones on iOS 18 or later).
 
 **Reconnects.** A phone that sleeps or refreshes rejoins as the same player with
 its score (an id is kept in the browser). The whole game, scores included, is

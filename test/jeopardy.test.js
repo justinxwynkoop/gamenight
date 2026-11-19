@@ -19,7 +19,9 @@ function setup({ players = ['Ann', 'Bo', 'Cy'] } = {}) {
     loadContent: (g, id) => sets[id] ?? null,
     listContent: () => Object.entries(sets).map(([id, s]) => ({ id, title: s.title })),
   });
-  const clock = { advance: (ms) => { t += ms; room.tick(); } };
+  // advance: time passes and the room checks its timers; skip: time passes before the room has looked (it only checks
+  // its timers a few times a second).
+  const clock = { advance: (ms) => { t += ms; room.tick(); }, skip: (ms) => { t += ms; }, now: () => t };
   room.chooseGame('jeopardy');
   const ps = players.map((n) => room.join({ name: n }));
   ps.forEach((p) => room.setConnected(p.id, true));
@@ -696,4 +698,149 @@ test('the TV is told what is going on and who moves things along at every step',
   g.endRound();
   assert.equal(g.phase, 'round-end');
   assert.match(g.publicView().guide.next, /Ann \(captain\) taps Continue for round 2/);
+});
+
+// ---------- state-of-the-art buzzing: clock-synced phones, the fastest thumb wins ----------
+
+test('the fastest thumb wins, not the fastest Wi-Fi: the room waits a split second for an earlier press still on its way', () => {
+  const { room, g, ps, clock } = setup();
+  const [ann, bo, cy] = ps;
+  room.noteLag(ann.id, 40); room.noteLag(bo.id, 200); room.noteLag(cy.id, 60);   // Bo is on slow Wi-Fi
+  begin(g); openClue(g, clock);
+  const open = g.publicView().clue.liveAt;
+  clock.skip(140 - (clock.now() - open));
+  // Ann pressed 100ms after the buzzers opened; her press arrives first...
+  assert.equal(g.buzz(ann.id, 1, open + 100).result, 'wait');
+  assert.equal(g.phase, 'open', 'not decided yet: Bo and Cy may have pressed earlier');
+  // ...but Bo pressed at 80ms; his press is slower to arrive.
+  clock.skip(140);
+  assert.equal(g.buzz(bo.id, 1, open + 80).result, 'wait');
+  clock.advance(60);                                      // the wait is over (the slowest phone's delay, and a margin)
+  assert.equal(g.phase, 'answering');
+  const c = g.publicView().clue;
+  assert.equal(c.buzzedId, bo.id);
+  assert.equal(c.buzzMs, 80);
+  assert.deepEqual(c.buzzes.map((b) => [b.pid, Math.round(b.ms)]), [[bo.id, 80], [ann.id, 100]]);
+});
+
+test('when everyone who can buzz has pressed, the earliest wins at once', () => {
+  const { room, g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  ps.forEach((p) => room.noteLag(p.id, 150));
+  begin(g); openClue(g, clock);
+  const open = g.publicView().clue.liveAt;
+  clock.skip(300);
+  assert.equal(g.buzz(ps[0].id, 1, open + 200).result, 'wait');
+  const r = g.buzz(ps[1].id, 1, open + 120);
+  assert.equal(r.result, 'won');
+  assert.equal(g.clue.buzzedId, ps[1].id);
+});
+
+test('the room never waits longer than T.maxWait, however slow a phone says it is', () => {
+  const { room, g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  room.noteLag(ps[1].id, 1900);
+  begin(g); openClue(g, clock);
+  const open = g.publicView().clue.liveAt;
+  clock.skip(200);
+  assert.equal(g.buzz(ps[0].id, 1, open + 150).result, 'wait');
+  clock.advance(T.maxWait);
+  assert.equal(g.phase, 'answering');
+  assert.equal(g.clue.buzzedId, ps[0].id);
+});
+
+test('phones are told when the buzzers open, ahead of time, so they all turn gold at the same instant', () => {
+  const { g, clock } = setup();
+  begin(g);
+  const cl = g.board()[0].clues.find((c) => !c.dd);
+  const picked = clock.now();
+  g.pick(0, g.board()[0].clues.indexOf(cl));
+  const v = g.publicView().clue;
+  assert.equal(v.liveAt, picked + readingTime(cl.q));
+  assert.equal(v.liveSeq, 1);
+  clock.advance(readingTime(cl.q) + 30);              // the room looks a moment late...
+  assert.equal(g.phase, 'open');
+  assert.equal(g.publicView().clue.liveAt, picked + readingTime(cl.q), '...but the buzzers count as open from when they were due');
+  assert.equal(g.publicView().clue.liveSeq, 1);
+});
+
+test('a press made the instant the phone turned gold counts, even before the room has looked at its timers', () => {
+  const { g, ps, clock } = setup();
+  begin(g);
+  const cl = g.board()[0].clues.find((c) => !c.dd);
+  g.pick(0, g.board()[0].clues.indexOf(cl));
+  const due = g.publicView().clue.liveAt;
+  clock.skip(readingTime(cl.q) + 20);                 // the press arrives before the room's next look
+  const r = g.buzz(ps[0].id, 1, due + 12);
+  assert.equal(r.result, 'won');
+  assert.equal(Math.round(r.ms), 12);
+});
+
+test('pressing before the buzzer turns gold locks you out for a quarter second, timed by when you pressed', () => {
+  const { g, ps, clock } = setup();
+  begin(g);
+  const cl = g.board()[0].clues.find((c) => !c.dd);
+  g.pick(0, g.board()[0].clues.indexOf(cl));
+  const due = g.publicView().clue.liveAt;
+  clock.skip(readingTime(cl.q) - 100);
+  assert.equal(g.buzz(ps[0].id, 0, due - 100).result, 'early');
+  clock.advance(150);                                 // open now
+  assert.equal(g.phase, 'open');
+  assert.equal(g.buzz(ps[0].id, 1, due + 100).result, 'early', 'still locked out: 200ms after the early press');
+  assert.notEqual(g.buzz(ps[1].id, 1, due + 120).result, 'early', 'Bo was not early');
+  clock.advance(T.maxWait);
+  assert.equal(g.clue.buzzedId, ps[1].id);
+  assert.equal(T.earlyPenalty, 250);
+});
+
+test('after a miss, phones are told when the buzzers open again', () => {
+  const { g, ps, clock } = setup();
+  begin(g); openClue(g, clock);
+  g.buzz(ps[0].id);
+  g.answer(ps[0].id, 'zzzzzzzz');
+  const v = g.publicView().clue;
+  assert.equal(g.phase, 'ruling');
+  assert.equal(v.liveSeq, 2);
+  assert.equal(v.liveAt, clock.now() + T.ruling);
+  // Bo's phone turned gold on time; his press gets there before the room has looked at its timers.
+  clock.skip(T.ruling + 15);
+  assert.equal(g.buzz(ps[1].id, 2, v.liveAt + 5).result, 'won');
+  assert.equal(g.clue.open, 2);
+});
+
+test('a press stamped in the future (a phone whose clock is off) is timed when it arrives instead', () => {
+  const { g, ps, clock } = setup();
+  begin(g); openClue(g, clock);
+  const open = g.publicView().clue.liveAt;
+  clock.skip(300);
+  const r = g.buzz(ps[0].id, 1, clock.now() + 5000);
+  assert.equal(r.result, 'won');
+  assert.equal(Math.round(r.ms), clock.now() - open);
+});
+
+test('a press sent twice (the phone sends again until the TV confirms) counts once', () => {
+  const { room, g, ps, clock } = setup();
+  ps.forEach((p) => room.noteLag(p.id, 100));
+  begin(g); openClue(g, clock);
+  const open = g.publicView().clue.liveAt;
+  clock.skip(200);
+  assert.equal(g.onPlayer(ps[0], { t: 'buzz', seq: 1, at: open + 90, id: 'x1' }).result, 'wait');
+  const again = g.onPlayer(ps[0], { t: 'buzz', seq: 1, at: open + 90, id: 'x1' });
+  assert.equal(again.result, 'wait');
+  assert.equal(again.id, 'x1');
+  clock.advance(T.maxWait);
+  assert.equal(g.clue.buzzedId, ps[0].id);
+  assert.equal(g.onPlayer(ps[0], { t: 'buzz', seq: 1, at: open + 90, id: 'x1' }).result, 'ignored');
+  assert.equal(g.clue.buzzes.length, 1);
+});
+
+test('hub: a phone can set its clock by the room\'s, and says how slow its messages are', () => {
+  const { room, ps } = setup();
+  const sent = [];
+  const hub = createHub({ room, pinOk: () => false, send: (id, m) => sent.push([id, m]) });
+  hub.receive('ph', { t: 'hello', role: 'player', token: ps[0].token });
+  hub.receive('ph', { t: 'sync', c: 12.5 });
+  const reply = sent.at(-1)[1];
+  assert.deepEqual(reply, { t: 'sync', c: 12.5, at: room.now() });
+  hub.receive('ph', { t: 'ping', lag: 90 });
+  assert.equal(room.lagOf(ps[0].id), 90);
+  assert.equal(sent.at(-1)[1].t, 'pong');
 });

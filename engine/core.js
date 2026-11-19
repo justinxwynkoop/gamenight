@@ -4,7 +4,7 @@
 //
 //   const engine = createEngine({ games, pin, now, send, save, saved, content });
 //   engine.open(id) / engine.close(id) / engine.receive(id, message)   clients (the TV itself is just client "tv")
-//   engine.tick()                                                        call about four times a second
+//   engine.tick()                                                        call about twenty times a second
 //   engine.putSet(gameId, id, set) / engine.removeSet(gameId, id)        question sets (kept by whoever hosts the engine)
 //
 // send(clientId, message)   deliver a message to a client

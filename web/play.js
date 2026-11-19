@@ -127,7 +127,7 @@ async function showGame(id) {
   if (gameId !== id) return; // the host switched games while this one loaded
   const box = h('div', { style: { display: 'contents' } });
   screen.replaceChildren(box);
-  instance = mod.mount(box, { send: net.send, flash });
+  instance = mod.mount(box, { send: net.send, flash, clock: net.clock });
   instance.update(view);
 }
 

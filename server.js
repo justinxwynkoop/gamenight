@@ -276,8 +276,8 @@ setInterval(() => {
   }
 }, 10_000).unref();
 
-// Games with timers (answer countdowns) expire them from here.
-setInterval(() => room.tick(), 250).unref();
+// Games with timers (answer countdowns) expire them from here, often enough that the buzzers open on the dot.
+setInterval(() => room.tick(), 50).unref();
 
 const stop = () => { saveNow(); process.exit(0); };
 process.on('SIGINT', stop);
