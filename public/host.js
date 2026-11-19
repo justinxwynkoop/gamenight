@@ -225,7 +225,7 @@ function playersTab() {
   const how = room.individualsOnly ? [
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, 'Individual players'),
-    h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by individuals, up to ${room.maxPlayers} of them. The first player to join is the captain.`),
+    h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by individuals, up to ${room.maxPlayers} of them. The first player to join is the captain; tap Make captain below to change it.`),
   ] : room.fixedTeams ? [
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, `${room.fixedTeams} teams`),
@@ -263,6 +263,10 @@ function playersTab() {
         h('div', { class: 'grow' }, h('div', { class: 't' }, p.name),
           h('div', { class: 's' }, [t?.name, p.kind === 'buzzer' && 'buzzer', p.connected ? 'online' : 'offline'].filter(Boolean).join(' · '))),
         teams && button({ label: 'Team', icon: 'swap', kind: 'ghost', size: 'sm', onclick: () => openTeamSheet(p) }),
+        // Games with a captain (Jeopardy): hand the captain's controls to someone else, at any time.
+        view.game?.captainId !== undefined && (p.id === view.game.captainId
+          ? h('span', { class: 'pill' }, '★ Captain')
+          : button({ label: 'Make captain', kind: 'ghost', size: 'sm', onclick: () => act('setCaptain', { pid: p.id }) })),
         !teams && lobby && button({ icon: 'edit', kind: 'ghost', size: 'sm', aria: `Rename ${p.name}`, onclick: () => openRenameSheet(p.id, p.name) }),
         button({ icon: 'trash', kind: 'ghost', size: 'sm', aria: `Remove ${p.name}`, onclick: () => confirmSheet({ title: `Remove ${p.name}?`, message: 'They can rejoin by scanning the code again.', confirmLabel: 'Remove', onConfirm: () => act('removePlayer', { id: p.id }) }) }));
     }))

@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": null,
+      "text": "The host reads the clue out loud",
+      "next": "Buzzers open when the host says go"
+    },
     "board": [
       {
         "name": "Creepy Crawlies",

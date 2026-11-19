@@ -3,6 +3,18 @@ import SwiftUI
 /// The Jeopardy tile: asks for the server's address the first time, then shows
 /// the game on the TV. Everything else (buzzing, judging, picking clues) happens
 /// on phones, against the Game Night server (github.com/justinxwynkoop/gamenight).
+/// Switches for the CI screenshot job ("Jeopardy screenshots" in .github/workflows/tv-app.yml), which launches the
+/// app with these set to picture the Jeopardy screens without a game running. Unset, they do nothing.
+enum DemoHooks {
+    private static let env = ProcessInfo.processInfo.environment
+    /// GN_DEMO_STATE=<path to a recorded state, e.g. Tests/GameNightCoreTests/Fixtures/jp-board.json>
+    static let state: Data? = env["GN_DEMO_STATE"].flatMap { try? Data(contentsOf: URL(fileURLWithPath: $0)) }
+    /// GN_DEMO_MENU=1 opens the game menu; GN_DEMO_MENU=captain opens it on the captain's page.
+    static let menu: String? = env["GN_DEMO_MENU"]
+    /// GN_DEMO_SEAT=<n> picks the n-th player's seat in the lobby (0 is the first).
+    static let seat: Int? = env["GN_DEMO_SEAT"].flatMap(Int.init)
+}
+
 struct JeopardyRootView: View {
     /// The tile that opened this ("Jeopardy" or "Family Feud"). The display itself follows whatever the host starts.
     var title: String = "Game Night"
@@ -38,6 +50,13 @@ struct JeopardyRootView: View {
             }
         }
         .onAppear {
+            // The CI screenshot job shows recorded states (see DemoHooks).
+            if let data = DemoHooks.state {
+                editing = false
+                runningHere = true
+                client.showDemo(data)
+                return
+            }
             if runningHere, !editing { client.startLocal(game: gameId) }
             else if let address, !editing { client.connect(to: address) }
         }

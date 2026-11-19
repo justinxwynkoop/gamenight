@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p1",
+      "text": "Game over!",
+      "next": "Leo (captain) can start a new game"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

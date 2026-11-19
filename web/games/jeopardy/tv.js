@@ -188,8 +188,18 @@ function frame(kids, { podiums = true, cls = '', right = null, tag = roundLabel(
   const stage = h('div', { class: `bw-stage ${cls}` },
     h('header', {}, h('div', { class: 'wm' }, h('i', {}, 'JEOP'), 'ARDY'), tag && h('div', { class: 'roundtag' }, tag), right ?? joinInfo()),
     h('main', {}, kids),
+    guideStrip(),
     podiums ? podiumStrip() : null);
   return h('div', { class: `bw ${act ? 'can-act' : ''} ${still ? 'still' : ''}` }, stage, controls());
+}
+/** What is going on and what happens next, in one line (the engine writes it; the Apple TV shows the same). */
+function guideStrip() {
+  const gd = g.guide;
+  if (!gd || !gd.text) return null;
+  const p = player(gd.pid);
+  return h('div', { class: 'guide', style: { '--c': p ? p.color : 'var(--sun)' } },
+    p ? av(p, 52) : h('span', { class: 'spark' }, '✦'),
+    h('div', {}, h('b', {}, gd.text), gd.next && h('small', {}, gd.next)));
 }
 function joinInfo() {
   const join = (ctxInfo.site || ctxInfo.joinUrl || '').replace(/^https?:\/\//, '').replace(/\?.*$/, '').replace(/\/$/, '');
@@ -242,7 +252,7 @@ function podiumStrip() {
   }));
 }
 
-/** The TV's own buttons, the same ones the Apple TV shows, with keyboard shortcuts in their labels. */
+/** The TV's own buttons, with keyboard shortcuts in their labels. (The Apple TV shows only the step that moves the game along on screen and keeps the rest in its game menu: JeopardyRemote.swift.) */
 function controlItems() {
   const ph = g.phase; const list = [];
   if (ph === 'lobby' && g.players.length) list.push(['Start game (S)', 'start']);
@@ -325,12 +335,17 @@ export function lobby(view, ctx = {}) {
   const choosing = !!g.draft || (!!act && packsOpen);
   const step = (num, title, sub) => h('li', {}, h('span', { class: 'num' }, String(num)), h('span', {}, h('b', {}, title), h('small', {}, sub)));
 
-  const seats = g.players.map((p) => h('div', { class: `seat ${p.connected ? '' : 'off'}`, style: { '--c': p.color } }, av(p),
+  // On a TV that may act, clicking a seat makes that player the captain.
+  const seats = g.players.map((p) => h('div', {
+    class: `seat ${p.connected ? '' : 'off'} ${act && p.id !== g.captainId ? 'pickable' : ''}`, style: { '--c': p.color },
+    title: act && p.id !== g.captainId ? `Make ${p.name} captain` : null,
+    onclick: act && p.id !== g.captainId ? () => { if (confirm(`Make ${p.name} the captain?`)) act('setCaptain', { pid: p.id }); } : null,
+  }, av(p),
     h('span', { class: 'who' }, h('b', {}, p.name), h('small', { class: p.id === g.captainId ? 'cap' : '' }, p.id === g.captainId ? '★ Captain' : p.connected ? 'Ready' : 'Reconnecting…'))));
   for (let i = n; i < 8; i++) seats.push(h('div', { class: 'seat open' }, h('span', { class: 'av' }, '+'), h('span', { class: 'who' }, h('small', {}, 'Open seat'))));
   const players = h('div', { class: 'lb-panel lb-players' },
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
-      h('span', { class: 'aside' }, cap ? `${cap.name} is captain` : 'The first to join is captain')),
+      h('span', { class: 'aside' }, cap ? `${cap.name} is captain${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
     h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
   const packs = h('div', { class: 'lb-panel lb-packs' },
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, g.draft ? 'Board preview' : 'Question packs'),
@@ -448,8 +463,8 @@ function board() {
   const picker = player(g.controllerId);
   return frame([
     h('div', { class: `board ${enter ? 'enter' : ''}`, style: { gridTemplateColumns: `repeat(${g.board.length}, minmax(0, 1fr))`, gridTemplateRows: `1.3fr repeat(${rows}, minmax(0, 1fr))` } }, cells),
-    h('div', { class: 'caption' }, av(picker, 48), h('span', {}, named(picker),
-      g.hostJudges ? ', it’s your pick. Tell the host a category and an amount.' : ', it’s your pick. Choose a clue on your phone.')),
+    // Whose pick it is, and why, is in the strip below the board (guideStrip).
+    !g.guide && h('div', { class: 'caption' }, av(picker, 48), h('span', {}, named(picker), ', it’s your pick.')),
   ], { right: cluesLeft() });
 }
 

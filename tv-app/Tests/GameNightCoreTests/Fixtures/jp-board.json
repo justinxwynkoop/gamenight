@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p2",
+      "text": "Maya’s pick",
+      "next": "Maya picks a clue on their phone"
+    },
     "board": [
       {
         "name": "Famous Scientists",

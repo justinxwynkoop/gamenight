@@ -85,6 +85,11 @@
       "totalMs": 60000,
       "leftMs": 60000
     },
+    "guide": {
+      "pid": null,
+      "text": "Final Jeopardy: Planets",
+      "next": "Everyone bets on their phone. 0 of 2 locked in"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

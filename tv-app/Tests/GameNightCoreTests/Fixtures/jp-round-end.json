@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p1",
+      "text": "End of round 1",
+      "next": "Leo (captain) taps Continue for round 2"
+    },
     "board": [
       {
         "name": "Famous Scientists",

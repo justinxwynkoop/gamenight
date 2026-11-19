@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p1",
+      "text": "Leo is captain",
+      "next": "Leo starts the game when everyone is in"
+    },
     "board": null,
     "clue": null,
     "lastResult": null,

@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p3",
+      "text": "Dad’s response",
+      "next": "Lowest score goes first"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

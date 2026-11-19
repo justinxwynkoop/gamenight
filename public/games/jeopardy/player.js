@@ -160,7 +160,8 @@ export function mount(container, { send, flash }) {
   function kickList() {
     const others = v.players.filter((p) => p.id !== me().id);
     if (!others.length) return null;
-    return [h('div', { class: 'jp-muted jp-small', style: { textAlign: 'center' } }, 'Tap a name to remove that player'),
+    return [h('div', { class: 'jp-muted jp-small', style: { textAlign: 'center' } }, 'Make someone else captain, or remove a player'),
+      h('div', { class: 'jp-kick' }, others.map((p) => btn(`★ ${p.name}`, () => { if (confirm(`Make ${p.name} the captain? They get these controls and you become a regular player.`)) cap('setCaptain', { pid: p.id }); }, 'ghost'))),
       h('div', { class: 'jp-kick' }, others.map((p) => btn(`✕ ${p.name}`, () => { if (confirm(`Remove ${p.name} from the game?`)) cap('kick', { pid: p.id }); }, 'ghost')))];
   }
 

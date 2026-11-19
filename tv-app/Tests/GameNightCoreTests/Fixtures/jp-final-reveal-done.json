@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": null,
+      "text": "And the correct response is…",
+      "next": "Then we crown the champion"
+    },
     "board": null,
     "clue": null,
     "lastResult": {

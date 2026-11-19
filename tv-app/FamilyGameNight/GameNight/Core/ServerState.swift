@@ -163,6 +163,8 @@ struct JeopardyState: Decodable, Equatable {
     var controllerId: String?
     var players: [JeoPlayer]
     var timer: TimerState?
+    /// What is going on and who has to do what next, written by the engine for the TV's status strip.
+    var guide: JeoGuide?
     /// board[column] has the category name and its five tiles.
     var board: [JeoCategory]?
     var clue: JeoClue?
@@ -192,7 +194,7 @@ struct JeopardyState: Decodable, Equatable {
     var finalRound: JeoFinal?
 
     private enum CodingKeys: String, CodingKey {
-        case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, board, clue
+        case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
         case finalRound = "final"
@@ -214,6 +216,13 @@ extension JeopardyState {
         if round == 2 && rounds >= 2 { return "Round 2 · Double Up" }
         return "Round \(round)"
     }
+}
+
+/// The TV's status strip: whose moment it is, what is happening, and what happens next (or who moves things along).
+struct JeoGuide: Decodable, Equatable {
+    var pid: String?
+    var text: String
+    var next: String?
 }
 
 struct JeoPlayer: Decodable, Equatable, Identifiable {

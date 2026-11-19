@@ -81,6 +81,11 @@
       }
     ],
     "timer": null,
+    "guide": {
+      "pid": "p2",
+      "text": "Maya is wrong. -$200",
+      "next": "Everyone else can buzz in again"
+    },
     "board": [
       {
         "name": "Famous Scientists",

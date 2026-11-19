@@ -85,6 +85,11 @@
       "totalMs": 15000,
       "leftMs": 14920
     },
+    "guide": {
+      "pid": "p2",
+      "text": "Maya buzzed in first",
+      "next": "Maya is typing an answer on their phone"
+    },
     "board": [
       {
         "name": "Famous Scientists",

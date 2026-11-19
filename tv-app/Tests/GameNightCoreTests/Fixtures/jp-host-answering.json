@@ -85,6 +85,11 @@
       "totalMs": 10000,
       "leftMs": 10000
     },
+    "guide": {
+      "pid": "p1",
+      "text": "Leo buzzed in first",
+      "next": "Leo, say your answer. The host rules Correct or Wrong"
+    },
     "board": [
       {
         "name": "Creepy Crawlies",

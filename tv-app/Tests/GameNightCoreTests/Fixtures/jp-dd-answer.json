@@ -85,6 +85,11 @@
       "totalMs": 26725,
       "leftMs": 26725
     },
+    "guide": {
+      "pid": "p3",
+      "text": "Dad bet $300",
+      "next": "Only Dad answers, on their phone"
+    },
     "board": [
       {
         "name": "Famous Scientists",

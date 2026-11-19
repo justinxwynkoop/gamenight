@@ -662,3 +662,38 @@ test('judge reads number words and will not take a list of guesses', () => {
   assert.ok(!judge('paris or london', ['Paris']));
   assert.ok(!judge('not mars', ['Mars']));
 });
+
+test('the captain can be handed to someone else by the TV, the host or the captain, and not by anyone else', () => {
+  const { g, ps } = setup();
+  assert.equal(g.publicView().captainId, ps[0].id);
+  g.act('setCaptain', { pid: ps[1].id });                              // the TV's remote or the host page
+  assert.equal(g.publicView().captainId, ps[1].id);
+  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'setCaptain', args: { pid: ps[0].id } }), GameError);
+  g.onPlayer(ps[1], { t: 'cap', action: 'setCaptain', args: { pid: ps[2].id } });   // the captain passes it on
+  assert.equal(g.publicView().captainId, ps[2].id);
+  assert.throws(() => g.act('setCaptain', { pid: 'nobody' }), GameError);
+  begin(g);
+  g.act('setCaptain', { pid: ps[0].id });                              // mid-game too
+  assert.equal(g.playerView(ps[0]).me.isCaptain, true);
+});
+
+test('the TV is told what is going on and who moves things along at every step', () => {
+  const { g, ps, clock } = setup();
+  assert.match(g.publicView().guide.text, /Ann is captain/);
+  begin(g);
+  const ctrl = g.publicView().controllerId;
+  assert.equal(g.publicView().guide.pid, ctrl);
+  assert.match(g.publicView().guide.next, /picks a clue on their phone/);
+  const cl = openClue(g, clock);
+  assert.match(g.publicView().guide.text, /Buzzers are open/);
+  g.onPlayer(ps[2], { t: 'buzz' });
+  assert.match(g.publicView().guide.text, /Cy buzzed in first/);
+  g.onPlayer(ps[2], { t: 'answer', text: cl.a });
+  assert.match(g.publicView().guide.text, /Cy is right! \+\$/);
+  rule(clock);
+  assert.match(g.publicView().guide.next, /Cy picks next/);
+  g.advance();
+  g.endRound();
+  assert.equal(g.phase, 'round-end');
+  assert.match(g.publicView().guide.next, /Ann \(captain\) taps Continue for round 2/);
+});
