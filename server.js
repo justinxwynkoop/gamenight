@@ -16,6 +16,7 @@ import { createHub } from './engine/hub.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(here, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
+const MEMORY_FILE = path.join(DATA_DIR, 'memory.json');   // which clues this computer has shown, kept between rooms
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const PUBLIC_DIR = path.join(here, 'public');
 const SOUNDS_DIR = path.join(DATA_DIR, 'sounds');
@@ -77,8 +78,17 @@ function saveNow() {
   } catch (e) { console.error('Could not save state:', e.message); }
 }
 let broadcastQueued = false;
+let memory = {};
+try { memory = JSON.parse(readFileSync(MEMORY_FILE, 'utf8')) ?? {}; } catch { /* nothing shown yet */ }
 const room = new Room({
   games: GAMES,
+  memory: {
+    load: (gameId) => memory[gameId] ?? null,
+    save(gameId, data) {
+      memory[gameId] = data;
+      try { writeFileSync(MEMORY_FILE, JSON.stringify(memory)); } catch (e) { console.error('Could not save memory:', e.message); }
+    },
+  },
   loadContent: readSet,
   listContent: listSets,
   onChange() {

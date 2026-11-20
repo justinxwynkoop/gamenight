@@ -78,14 +78,14 @@ function miniBoard({ pickable }) {
 function lobbyView() {
   const problems = [];
   if (!v.players.length) problems.push('Waiting for players to join.');
-  if (!v.asWritten && v.categoryCount < 12) problems.push('Pick packs with at least 12 categories in total.');
+  if (!v.asWritten && v.categoryCount < 12) problems.push('Switch on topics with at least 12 categories in total.');
   const ready = problems.length === 0;
   const body = [
     card(eyebrow('Players'),
       h('div', { class: 'card-title' }, v.players.length ? `${v.players.length} of ${v.maxPlayers} ${v.players.length === 1 ? 'player' : 'players'}` : 'No one yet'),
       h('p', { class: 'dim' }, v.players.length ? 'Everyone plays on their own. The first to join is the captain and can also set things up from their phone.' : 'Players scan the QR code on the TV to join.'),
       button({ label: 'Manage players', icon: 'users', onclick: () => C.go('players') })),
-    card(eyebrow('Questions'), jp(lobbyControls(v, act)),
+    card(eyebrow('Questions'), jp(lobbyControls(v, act, { editorHint: 'Tap Write your own board, below.' })),
       h('a', { class: 'b b-block', href: '/editor?game=jeopardy', style: { textDecoration: 'none', marginTop: '10px' } }, icon('edit', 20), h('span', {}, 'Write your own board'))),
   ];
   const dock = [

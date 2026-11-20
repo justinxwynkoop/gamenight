@@ -14,6 +14,8 @@
 //   init()                    optional, called when the game is newly chosen
 //   contentChanged(setId)     optional, a question set was saved or deleted
 //   tick()                    optional, called ~20x a second; the place to expire timers
+// A game may also keep things that outlive the room (which clues this TV has already shown) with
+// room.memory.load(gameId) and room.memory.save(gameId, data); whoever hosts the room decides where they are kept.
 // and the module may declare `needs: { teams: 2 }` when the game can only be played by that many teams
 // (the room then always plays in teams, and the host cannot switch to individuals), or `needs: { individuals: true }`
 // when the game is always played by individuals, and `maxPlayers` for a smaller limit than the room's.
@@ -27,14 +29,22 @@ import { GameError, fail, cleanName, int, COLORS, MAX_PLAYERS, INDIVIDUAL_MAX, T
 const VERSION = 2;
 
 const MAX_SCORE = 10000000;
+/** Keeps each game's memory for as long as the room lives. */
+export function memoryStore(initial = {}) {
+  const kept = { ...initial };
+  return { load: (gameId) => kept[gameId] ?? null, save: (gameId, data) => { kept[gameId] = data; }, all: () => kept };
+}
 export class Room {
-  constructor({ games = {}, now = () => performance.now(), onChange = () => {}, loadContent = () => null, listContent = () => [], random = Math.random } = {}) {
+  constructor({ games = {}, now = () => performance.now(), onChange = () => {}, loadContent = () => null, listContent = () => [], random = Math.random, memory = null } = {}) {
     this.rng = random; // for dealing players onto teams; tests pass a fixed one
     this.games = games;
     this.clock = now;
     this.onChange = onChange;
     this.loadContent = loadContent; // (gameId, setId) => object | null
     this.listContent = listContent; // (gameId) => [{id, title}]
+    // What a game keeps between rooms on this TV: { load(gameId) => data | null, save(gameId, data) }. Kept in memory
+    // when the host gives nowhere to keep it.
+    this.memory = memory ?? memoryStore();
     this.nextId = 1;
     this.mode = 'players'; // what is actually being played: 'players' | 'teams'
     this.modeSetting = 'auto'; // the host's choice: 'auto' | 'players' | 'teams'. Auto means teams once there are more than INDIVIDUAL_MAX players.

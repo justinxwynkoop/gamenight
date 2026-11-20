@@ -55,7 +55,13 @@ const shot = (page, name) => (process.env.SHOT_DIR ? page.screenshot({ path: `${
 
 try {
   const tv = await browser.newPage({ viewport: { width: 1280, height: 720 } }); watch(tv, 'tv');
-  await tv.route('https://raw.githubusercontent.com/**', (r) => r.abort());   // no clue archive here: keep the test offline
+  // No clue archive from the internet here: the TV gets a small made-up season instead, so the test stays offline.
+  const header = 'round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes';
+  const rows = [];
+  for (const [topic, word] of [['history', 'Kings'], ['movies', 'Movies']]) {
+    for (let c = 0; c < 13; c++) for (let r = 0; r < 5; r++) rows.push(['1', String((r + 1) * 200), '0', `${word} ${topic} ${c}`, '', `A ${word.toLowerCase()} clue ${c}-${r}`, `Answer ${c}-${r}`, '2005-01-01', ''].join('\t'));
+  }
+  await tv.route('https://raw.githubusercontent.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/plain', body: [header, ...rows].join('\n') }));
   await tv.goto(`${base}/tv?game=jeopardy`);
   await until(async () => (await tv.locator('.roomcode').count()) > 0, 'the TV lobby with a room code');
   const code = (await tv.locator('.roomcode').innerText()).trim();
@@ -90,17 +96,36 @@ try {
   console.log('host page unlocked with the PIN from the TV menu');
 
   await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain lobby on the first phone');
-  // The TV lobby lists the question packs, and the website's TV can switch one on or off itself.
-  await tv.getByRole('button', { name: 'Change packs' }).click();
-  await until(async () => (await tv.locator('.lb-packs .packs button.pack').count()) > 0 && await tv.locator('.lb-packs').isVisible(), 'the question packs on the TV lobby');
+  // The TV lobby's question chooser: three shelves (real show, family packs, your games), and the website's TV can
+  // switch a pack on or off itself.
+  await tv.getByRole('button', { name: 'Choose questions' }).click();
+  await until(async () => (await tv.locator('.lb-packs .pk-tab').count()) >= 2 && await tv.locator('.lb-packs').isVisible(), 'the question chooser on the TV lobby');
   await shot(tv, 'lobby-packs');
-  const off = tv.locator('.packs button.pack:not(.on):not(.era)').filter({ hasNotText: /easy|preview/i }).first();
+  await tv.locator('.pk-tab', { hasText: 'Your games' }).click();
+  await until(async () => (await tv.locator('.pk-games .pk-game').count()) > 1, 'your games (the boards from the editor) on the TV');
+  if (!(await tv.locator('.pk-game .pk-cats span').count())) fail('your games do not list their categories');
+  await shot(tv, 'lobby-your-games');
+  await tv.locator('.pk-tab', { hasText: 'Family packs' }).click();
+  await until(async () => (await tv.locator('.pk-grid .pk-card').count()) > 0, 'the family packs on the TV');
+  if (!/new/i.test(await tv.locator('.pk-grid .pk-card').first().innerText())) fail('a pack does not say how much of it is new');
+  const off = tv.locator('.pk-grid .pk-card:not(.on)').first();
   if (await off.count()) {
-    const title = (await off.innerText()).replace(/\s*(\d+|your board)$/, '').trim();
+    const title = (await off.locator('b').innerText()).trim();
     await off.click();
-    await until(async () => (await tv.locator('.packs button.pack.on', { hasText: title }).count()) > 0, `the TV to switch on the ${title} pack`);
+    await until(async () => (await tv.locator('.pk-grid .pk-card.on', { hasText: title }).count()) > 0, `the TV to switch on the ${title} pack`);
     console.log(`the TV switched on the ${title} pack`);
   }
+  await tv.locator('.pk-tab', { hasText: 'Real show' }).click();
+  await until(async () => (await tv.locator('.pk-grid .pk-card', { hasText: 'History' }).count()) > 0, 'the real-show topics on the TV');
+  await shot(tv, 'lobby-real-show');
+  // The board preview: twelve categories, each one says whether it is new to this TV; clicking one swaps it.
+  await tv.getByRole('button', { name: /preview and swap/i }).click();
+  await until(async () => (await tv.locator('.pk-draftrow .pk-cat').count()) === 12, 'the board preview on the TV');
+  await shot(tv, 'lobby-preview');
+  const firstCat = await tv.locator('.pk-draftrow .pk-cat span').first().innerText();
+  await tv.locator('.pk-draftrow .pk-cat').first().click();
+  await until(async () => (await tv.locator('.pk-draftrow .pk-cat span').first().innerText()) !== firstCat, 'a category swapped on the TV');
+  console.log('the TV previewed the board and swapped a category');
   await ann.getByRole('button', { name: /start game/i }).click();
   await until(async () => (await tv.locator('.board .tile').count()) >= 25, 'the board on the TV');
   await shot(tv, 'board');

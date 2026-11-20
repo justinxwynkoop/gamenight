@@ -9,16 +9,19 @@ Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. 
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
 touching the host page. The first player to join is the **captain**.
 
-1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV, or the captain's phone, chooses what
-   to play:
-   - **Your own boards** (the ones in the question editor), the **house packs** that come with the app, and
-     **topics from the real show** (a random season of the public clue archive is fetched for each room, and you can
-     choose the era: any, classic 80s and 90s, 2000s, recent). Switch on as many packs as you like; the game mixes
-     twelve categories from them.
-   - **Easy mode** keeps only casual, family-friendly packs.
-   - **Preview the board** shows the twelve categories and lets you swap any of them before you start.
-   - If you switch on **one or two of your own boards and nothing else**, they are played **just as you wrote them**
-     (your categories, your values, your Daily Doubles), one board per round.
+1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV (**Choose questions**), the captain's
+   phone or the host page chooses what to play, on three shelves:
+   - **Real show**: topics from a random season of the public clue archive, fetched for each room. Pick the era (any,
+     classic 80s and 90s, 2000s, recent) and switch topics on or off.
+   - **Family packs**: the packs that come with the game (Easy Breezy is the casual, family-friendly one).
+   - **Your games**: whole boards written in the question editor (the host page's **Questions** tab), played **just
+     as written** (your categories, your values, your Daily Doubles). Pick one, or add a second one as round 2.
+     Making one: six categories of five clues and a Final, and it appears on this shelf.
+   - Switch on as many topics and packs as you like; the game mixes twelve categories from them. **Preview and swap**
+     shows the twelve and lets you swap any of them before you start.
+   - **No repeats.** The TV remembers every clue it has shown (on the Apple TV and in the browser, kept between rooms).
+     Each topic says how many of its categories are still new, and the game deals new categories first, so a clue only
+     comes back once every clue in its pack has been played. Then that pack starts over. **Start fresh** forgets it all.
    - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page
      or with the remote) taps Correct or Wrong.
 2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote). Round 2 is worth

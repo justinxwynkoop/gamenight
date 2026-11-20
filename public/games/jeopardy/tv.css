@@ -347,6 +347,55 @@
 .bw .bwlobby.choosing .lb-packs { display: flex; }
 .bw .bwlobby.choosing .lb-players { display: none; }
 .bw .lb-packs .packs { margin: 0; overflow: auto; min-height: 0; }
+/* The question chooser: shelves as tabs, topic cards with how much is new, your games as cards, the board preview. */
+.bw .lb-packs { gap: 1.6vh; }
+.bw .pk-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: .8vw; }
+.bw button.pk-tab { background: var(--panel2); color: var(--muted); border: 2px solid transparent; border-radius: 2vh; padding: 1.3vh 1.2vw; text-align: left; display: grid; gap: .2vh; }
+.bw button.pk-tab b { font-family: var(--display); font-weight: 700; font-size: 2.3vh; color: var(--text); }
+.bw button.pk-tab small { font-size: 1.8vh; font-weight: 600; }
+.bw button.pk-tab.on { background: linear-gradient(180deg, var(--blue-hi), var(--blue)); border-color: var(--sun); color: var(--sun-hi); }
+.bw .pk-body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 1.4vh; padding-right: .4vw; }
+.bw .pk-row, .bw .pk-era { display: flex; flex-wrap: wrap; align-items: center; gap: .6vw; }
+.bw .pk-row .packlabel, .bw .pk-era .packlabel { width: auto; margin-right: auto; }
+.bw .pk-era .packlabel { margin-right: .4vw; }
+.bw .pk-note { font-size: 1.9vh; color: var(--muted); }
+.bw .pk-note .warn, .bw .pk-foot .warn { color: var(--bad); }
+.bw button.pk-chip { font-size: 1.9vh; padding: .7vh 1vw; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 3vh; font-weight: 700; }
+.bw button.pk-chip.on { background: var(--blue); border-color: var(--sun); }
+.bw button.pk-chip.small { font-size: 1.7vh; padding: .5vh .8vw; justify-self: start; }
+.bw .pk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1vh .7vw; }
+.bw button.pk-card { background: var(--panel2); color: var(--muted); border: 2px solid var(--line); border-radius: 1.8vh; padding: 1.2vh .9vw; text-align: left; display: grid; gap: .5vh; font-weight: 600; min-width: 0; }
+.bw button.pk-card.on { background: linear-gradient(180deg, var(--blue-hi), var(--blue)); color: var(--text); border-color: var(--sun); }
+.bw .pk-top { display: flex; align-items: center; gap: .6vw; min-width: 0; }
+.bw .pk-top b { font-size: 2.2vh; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw .pk-top em, .bw .pk-play em { font-style: normal; font-size: 1.5vh; font-weight: 800; color: var(--ink); background: var(--sun); border-radius: 1vh; padding: .1vh .5vw; margin-left: auto; }
+.bw .pk-check { flex: none; width: 2.6vh; height: 2.6vh; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); display: grid; place-items: center; font-size: 1.6vh; color: var(--ink); }
+.bw .on > .pk-top .pk-check, .bw .pk-game.on .pk-check { background: var(--sun); border-color: var(--sun); }
+.bw button.pk-card small { font-size: 1.7vh; }
+.bw .pk-fresh { display: grid; gap: .4vh; font-size: 1.7vh; font-weight: 700; color: var(--good); }
+.bw .pk-fresh i { height: .6vh; border-radius: .3vh; background: linear-gradient(90deg, var(--good) var(--f), rgba(255, 255, 255, .14) var(--f)); }
+.bw .pk-games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2vh .8vw; }
+.bw .pk-game { background: var(--panel2); border: 2px solid var(--line); border-radius: 2vh; padding: 1.4vh 1vw; display: grid; gap: 1vh; align-content: start; min-width: 0; }
+.bw .pk-game.on { border-color: var(--sun); background: linear-gradient(180deg, rgba(42, 75, 216, .55), rgba(27, 54, 184, .35)); }
+.bw .pk-game.make { border-style: dashed; background: none; }
+.bw .pk-game.make b { font-size: 2.2vh; color: var(--sun); }
+.bw .pk-game.make small { font-size: 1.8vh; color: var(--muted); line-height: 1.35; }
+.bw button.pk-play { background: none; color: var(--text); padding: 0; display: flex; align-items: center; gap: .6vw; text-align: left; border-radius: 0; }
+.bw button.pk-play b { font-size: 2.3vh; font-weight: 800; }
+.bw .pk-cats { display: flex; flex-wrap: wrap; gap: .5vh .4vw; }
+.bw .pk-cats span { font-size: 1.5vh; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--soft); background: var(--blue-lo); border-radius: .8vh; padding: .3vh .5vw; }
+.bw .pk-draft { display: grid; gap: .8vh; }
+.bw .pk-draftrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6vw; }
+.bw button.pk-cat { position: relative; min-height: 11vh; border-radius: 1.4vh; padding: 1.2vh .6vw 2.8vh; color: var(--text); background: linear-gradient(180deg, var(--blue-mid), var(--blue-lo)); border: 0; border-bottom: .4vh solid var(--sun); display: grid; place-items: center; text-align: center; font-weight: 800; font-size: 1.8vh; letter-spacing: .04em; text-transform: uppercase; }
+.bw button.pk-cat em { position: absolute; left: 0; right: 0; bottom: .8vh; font-style: normal; font-size: 1.4vh; letter-spacing: .08em; color: var(--good); }
+.bw button.pk-cat em.old { color: var(--muted); }
+.bw button.pk-cat i { position: absolute; top: .6vh; right: .6vw; font-style: normal; color: var(--sun); font-size: 1.8vh; }
+.bw .pk-empty { font-size: 2vh; color: var(--muted); padding: 2vh 0; }
+.bw .pk-foot { display: flex; align-items: center; gap: .8vw; font-size: 2vh; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1.4vh; }
+.bw .pk-foot > span { margin-right: auto; }
+.bw .pk-foot b { color: var(--text); }
+.bw .pk-foot button { font-size: 1.9vh; }
+.bw:not(.can-act) .lb-packs button { pointer-events: none; }
 .bw .lb-board { display: flex; align-items: center; gap: 1.4vw; background: var(--panel); border: 1px solid var(--line); border-radius: 2.2vh; padding: 1.6vh 1.6vw; }
 .bw .lb-board .strip { display: grid; grid-template-columns: repeat(6, 3.4vh); gap: .45vh; flex: none; }
 .bw .lb-board .strip i { height: 4vh; border-radius: .6vh; font-style: normal; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 1.8vh; color: var(--sun); background: linear-gradient(180deg, var(--blue-hi), var(--blue-mid)); }

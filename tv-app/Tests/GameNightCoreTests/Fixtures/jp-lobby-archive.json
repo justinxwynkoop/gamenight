@@ -118,7 +118,16 @@
         "selected": false,
         "easy": false,
         "own": true,
-        "archive": false
+        "archive": false,
+        "fresh": 6,
+        "cats": [
+          "Around the World",
+          "Food & Drink",
+          "Movie Night",
+          "Science & Nature",
+          "Name That Decade",
+          "Word Play"
+        ]
       },
       {
         "id": "archive-anything-goes",
@@ -128,7 +137,8 @@
         "selected": true,
         "easy": false,
         "own": false,
-        "archive": true
+        "archive": true,
+        "fresh": 14
       },
       {
         "id": "house-easy",
@@ -138,7 +148,8 @@
         "selected": false,
         "easy": true,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 20
       },
       {
         "id": "house-classic",
@@ -148,7 +159,8 @@
         "selected": false,
         "easy": false,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 18
       },
       {
         "id": "house-general",
@@ -158,7 +170,8 @@
         "selected": false,
         "easy": false,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 34
       },
       {
         "id": "house-movies",
@@ -168,7 +181,8 @@
         "selected": false,
         "easy": false,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 14
       },
       {
         "id": "house-nineties",
@@ -178,7 +192,8 @@
         "selected": false,
         "easy": false,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 14
       },
       {
         "id": "house-sports",
@@ -188,10 +203,13 @@
         "selected": false,
         "easy": false,
         "own": false,
-        "archive": false
+        "archive": false,
+        "fresh": 14
       }
     ],
     "categoryCount": 14,
+    "freshCount": 14,
+    "seenCount": 0,
     "easyAvailable": true,
     "easyMode": false,
     "hasArchive": true,
@@ -206,6 +224,7 @@
     "archiveLoading": false,
     "archiveError": false,
     "draft": null,
+    "draftFresh": null,
     "asWritten": false,
     "asWrittenChoice": null,
     "maxPlayers": 10

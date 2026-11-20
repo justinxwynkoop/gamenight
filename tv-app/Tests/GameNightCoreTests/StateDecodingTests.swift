@@ -106,6 +106,23 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(game.easyMode, false)
     }
 
+    func testQuestionChooserShelves() throws {
+        let game = try Fixture.jeopardy("jp-lobby")
+        let packs = try XCTUnwrap(game.packs)
+        let own = try XCTUnwrap(packs.first { $0.id == "own-family-night" })
+        XCTAssertEqual(own.shelf, .own)
+        XCTAssertEqual(own.cats?.count, 6, "your games list their six categories")
+        let classic = try XCTUnwrap(packs.first { $0.id == "house-classic" })
+        XCTAssertEqual(classic.shelf, .house)
+        XCTAssertEqual(classic.fresh, classic.count, "nothing has been shown on a new TV")
+        XCTAssertEqual(game.freshCount, 52)
+        XCTAssertEqual(game.seenCount, 0)
+        let archive = try XCTUnwrap(Fixture.jeopardy("jp-lobby-archive").packs?.first { $0.archive == true })
+        XCTAssertEqual(archive.shelf, .archive)
+        let draft = try Fixture.jeopardy("jp-lobby-draft")
+        XCTAssertEqual(draft.draftFresh?.map(\.count), [6, 6])
+    }
+
     func testRealShowClues() throws {
         let loading = try Fixture.jeopardy("jp-lobby-loading")
         XCTAssertEqual(loading.hasArchive, true)

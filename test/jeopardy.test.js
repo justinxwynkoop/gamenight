@@ -844,3 +844,103 @@ test('hub: a phone can set its clock by the room\'s, and says how slow its messa
   assert.equal(room.lagOf(ps[0].id), 90);
   assert.equal(sent.at(-1)[1].t, 'pong');
 });
+
+// ---------- clues this TV has shown ----------
+import { memoryStore } from '../room.js';
+import { clueKey } from '../games/jeopardy/game.js';
+
+/** A room that keeps its memory in `memory` (as the Apple TV keeps it between rooms), with only Classic Mix on. */
+function remembering(memory) {
+  const room = new Room({ games: GAMES, now: () => 1000, random: Math.random, memory, loadContent: () => null, listContent: () => [] });
+  room.chooseGame('jeopardy');
+  const p = room.join({ name: 'Ann' }); room.setConnected(p.id, true);
+  const g = room.game;
+  for (const pk of g.publicView().packs) if (pk.selected) g.togglePack(pk.id);
+  g.togglePack('house-classic');
+  return g;
+}
+const shownClues = (g) => g.rounds.flat().flatMap((c) => c.clues.map((cl) => cl.q));
+
+test('a clue shown on this TV is not dealt again, even in a new room, until its whole pack has been played', () => {
+  const memory = memoryStore();
+  const classic = JSON.parse(readFileSync(new URL('../games/jeopardy/packs/default.json', import.meta.url)));
+  const total = classic.categories.length;   // 18 categories: one game deals 12
+  let g = remembering(memory);
+  assert.equal(g.publicView().freshCount, total);
+  g.start();
+  const first = shownClues(g);
+  for (const q of first) g.seen.add(clueKey(q));   // as if every clue on both boards was played
+  g.endGame();
+  assert.equal(g.publicView().packs.find((p) => p.id === 'house-classic').fresh, total - 12);
+
+  // A new room on the same TV: the six categories not played yet come first, and the rest of the board is a repeat
+  // only because the pack has no more new ones.
+  memory.save('jeopardy', { v: 1, seen: [...g.seen] });
+  g = remembering(memory);
+  assert.equal(g.publicView().freshCount, total - 12);
+  g.start();
+  const fresh = g.rounds.flat().filter((c) => c.clues.every((cl) => !first.includes(cl.q)));
+  assert.equal(fresh.length, total - 12, 'every category not shown yet is dealt');
+  for (const q of shownClues(g)) g.seen.add(clueKey(q));
+  g.endGame();
+
+  // Every clue in Classic Mix has now been shown: the pack starts over, so all of it is new again.
+  assert.equal(g.publicView().freshCount, 0);
+  g.previewBoard();
+  assert.equal(g.publicView().freshCount, total);
+});
+
+test('picking a clue remembers it in the memory the host keeps', () => {
+  const memory = memoryStore();
+  const g = remembering(memory);
+  g.start(); g.advance();
+  const ci = g.board().findIndex((c) => !c.clues[0].dd);
+  g.pick(ci, 0);
+  assert.ok(memory.load('jeopardy').seen.includes(clueKey(g.board()[ci].clues[0].q)));
+  assert.equal(g.seen.size, 1);
+});
+
+test('the host can forget every clue shown, and the swap button prefers categories not shown yet', () => {
+  const memory = memoryStore();
+  const g = remembering(memory);
+  g.previewBoard();
+  const shown = g.draft.flat().flatMap((c) => c.clues.map((cl) => cl.q));
+  for (const q of shown) g.seen.add(clueKey(q));
+  g.swapCategory(1, 0);
+  assert.equal(g.publicView().draftFresh[0][0], true, 'the swap brings in a category with no clue shown');
+  g.resetHistory();
+  assert.equal(g.publicView().seenCount, 0);
+  assert.deepEqual(memory.load('jeopardy').seen, []);
+});
+
+test('your games: playBoard plays one as written, and switching a topic on goes back to mixing', () => {
+  const { g } = setup();
+  const v = g.publicView();
+  assert.deepEqual(v.packs.find((p) => p.id === 'own-family-night').cats, own.categories.map((c) => c.name));
+  g.playBoard('own-family-night');
+  assert.deepEqual(g.publicView().packs.filter((p) => p.selected).map((p) => p.id), ['own-family-night']);
+  assert.equal(g.publicView().asWritten, true);
+  g.playBoard('own-science-lab', true);
+  assert.equal(g.publicView().packs.filter((p) => p.selected).length, 2);
+  g.togglePack('house-classic');
+  assert.deepEqual(g.publicView().packs.filter((p) => p.selected).map((p) => p.id), ['house-classic']);
+  assert.throws(() => g.playBoard('own-nope'), GameError);
+  g.setAllPacks('house', true);
+  assert.ok(g.publicView().packs.filter((p) => !p.own && !p.archive).every((p) => p.selected));
+  g.setAllPacks('house', false);
+  assert.equal(g.publicView().packs.filter((p) => p.selected).length, 1, 'one pack always stays on');
+});
+
+test('the engine hands the memory to whoever hosts it, and takes it back on the next start', async () => {
+  const { createEngine } = await import('../engine/core.js');
+  let kept = null;
+  const mk = (memory) => createEngine({ games: GAMES, pin: '1234', send: () => {}, memory, onMemory: (m) => { kept = structuredClone(m); } });
+  const e1 = mk(null);
+  e1.room.chooseGame('jeopardy');
+  e1.room.game.seen.add('abc');
+  e1.room.game.resetHistory();
+  assert.deepEqual(kept, { jeopardy: { v: 1, seen: [] } });
+  const e2 = mk({ jeopardy: { v: 1, seen: ['xyz'] } });
+  e2.room.chooseGame('jeopardy');
+  assert.ok(e2.room.game.seen.has('xyz'));
+});

@@ -178,14 +178,14 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     const n = v.players.length;
     const sel = v.packs.filter((p) => p.selected).map((p) => p.title).join(', ');
     return {
-      key: `lobby-${v.players.map((p) => p.id).join('')}-${me().isCaptain}-${JSON.stringify([v.packs.map((p) => p.selected), v.easyMode, v.era, v.archiveSeason, v.archiveLoading, v.archiveError, v.hostJudges, v.answerTime, v.asWritten, v.draft, v.finalForAll])}`,
+      key: `lobby-${v.players.map((p) => p.id).join('')}-${me().isCaptain}-${JSON.stringify([v.packs.map((p) => [p.id, p.selected, p.fresh]), v.freshCount, v.seenCount, v.draftFresh, v.easyMode, v.era, v.archiveSeason, v.archiveLoading, v.archiveError, v.hostJudges, v.answerTime, v.asWritten, v.draft, v.finalForAll])}`,
       nodes: center(
         h('div', { class: 'jp-logo' }, 'YOU’RE IN!'),
         h('div', { class: 'jp-msg' }, `${n} player${n === 1 ? '' : 's'} in the room`),
         h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the captain. Choose the questions, then tap Start game when everyone has joined.' : 'Your phone is your buzzer. Waiting for the captain to start the game…'),
         me().isCaptain
           ? h('div', { class: 'jp-stack', style: { marginTop: '8px' } }, kickList(), lobbyControls(v, cap))
-          : h('div', { class: 'jp-muted jp-small' }, v.draft ? `Board: ${v.draft.flat().join(', ')}` : `Packs: ${sel || '…'}`)),
+          : h('div', { class: 'jp-muted jp-small' }, v.draft ? `Board: ${v.draft.flat().join(', ')}` : `Questions: ${sel || '…'}`)),
     };
   }
 

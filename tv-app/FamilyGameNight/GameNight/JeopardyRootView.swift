@@ -13,6 +13,8 @@ enum DemoHooks {
     static let menu: String? = env["GN_DEMO_MENU"]
     /// GN_DEMO_SEAT=<n> picks the n-th player's seat in the lobby (0 is the first).
     static let seat: Int? = env["GN_DEMO_SEAT"].flatMap(Int.init)
+    /// GN_DEMO_SHELF=archive|house|own opens the question chooser in the lobby on that shelf.
+    static let shelf: String? = env["GN_DEMO_SHELF"]
 }
 
 struct JeopardyRootView: View {

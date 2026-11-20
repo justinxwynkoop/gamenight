@@ -347,10 +347,7 @@ export function lobby(view, ctx = {}) {
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
       h('span', { class: 'aside' }, cap ? `${cap.name} is captain${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
     h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
-  const packs = h('div', { class: 'lb-panel lb-packs' },
-    h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, g.draft ? 'Board preview' : 'Question packs'),
-      act && !g.draft && h('button', { type: 'button', class: 'ghost done', onclick: () => toggle(false) }, '✓ Done')),
-    h('div', { class: 'packs' }, eraRow(), g.draft ? draftRow() : packRow()));
+  const packs = pickerPanel();
 
   const lb = h('div', { class: `bwlobby ${choosing ? 'choosing' : ''}` },
     h('section', { class: 'lb-left' },
@@ -371,8 +368,9 @@ export function lobby(view, ctx = {}) {
   function toggle(open) {
     packsOpen = open;
     lb.classList.toggle('choosing', !!g.draft || open);
+    if (!open) pickTab = null;
     const btn = lb.querySelector('.lb-board button');
-    if (btn) btn.textContent = open ? '✓ Done' : 'Change packs';
+    if (btn) btn.textContent = open ? '✓ Done' : 'Choose questions';
   }
   lb.toggle = toggle;
   screenKey = '';
@@ -387,42 +385,127 @@ export function lobby(view, ctx = {}) {
 /** "Tonight's board": one line saying what will be played, with a button to change it on a TV that may act. */
 function boardLine() {
   const chosen = (g.packs ?? []).filter((pk) => pk.selected).map((pk) => pk.title);
-  const what = g.asWritten ? 'Your own board, as written' : g.draft ? 'Your board (preview)'
-    : chosen.length ? (chosen.length > 2 ? `${chosen.slice(0, 2).join(' + ')} + ${chosen.length - 2} more` : chosen.join(' + ')) : 'No packs chosen';
+  const what = g.asWritten ? (chosen.length === 2 ? `Your games: ${chosen.join(', then ')}` : `Your game: ${chosen[0] ?? ''}`) : g.draft ? 'Your board (preview)'
+    : chosen.length ? (chosen.length > 2 ? `${chosen.slice(0, 2).join(' + ')} + ${chosen.length - 2} more` : chosen.join(' + ')) : 'No topics chosen';
   const n = g.categoryCount ?? 0;
-  const bits = [n ? `${n} categories` : null, g.easyMode ? 'easy mode' : null, g.hasArchive ? (ERA_LABELS[g.era] ?? g.era ?? '').toLowerCase() : null].filter(Boolean);
+  const realShow = (g.packs ?? []).some((pk) => pk.selected && pk.archive);
+  const bits = g.asWritten ? ['as written'] : [n ? `${n} categories` : null, g.freshCount ? `${g.freshCount} new` : null, g.easyMode ? 'easy mode' : null, realShow ? (ERA_LABELS[g.era] ?? g.era ?? '').toLowerCase() : null].filter(Boolean);
   return h('div', { class: 'lb-board' },
     h('div', { class: 'strip' }, Array.from({ length: 6 }, (_, i) => h('i', { style: { '--d': String(i) } }, '$'))),
     h('div', { class: 'what' }, h('div', { class: 'eyebrow' }, 'Tonight’s board'),
       h('div', {}, what, bits.length ? h('span', {}, ` · ${bits.join(' · ')}`) : null, !g.asWritten && n < 12 ? h('span', { class: 'warn' }, ' · needs at least 12 categories') : null)),
     act && !g.draft
-      ? h('button', { type: 'button', class: 'ghost', onclick: (e) => e.currentTarget.closest('.bwlobby')?.toggle(!packsOpen) }, packsOpen ? '✓ Done' : 'Change packs')
-      : h('div', { class: 'aside' }, 'The host picks packs', h('br'), 'on their phone'));
+      ? h('button', { type: 'button', class: 'ghost', onclick: (e) => e.currentTarget.closest('.bwlobby')?.toggle(!packsOpen) }, packsOpen ? '✓ Done' : 'Choose questions')
+      : !act && h('div', { class: 'aside' }, 'Picked on the', h('br'), 'captain’s phone'));
 }
 
-function eraRow() {
-  if (!g.hasArchive) return null;
-  const note = g.archiveLoading ? 'Loading clues…' : g.archiveError ? h('span', { class: 'warn' }, act ? 'Real-show clues did not load. Click an era to retry.' : 'Real-show clues did not load. Pick an era to retry.') : seasonLabel(g.archiveSeason);
-  return [h('div', { class: 'packlabel' }, 'Clues from · ', note),
-    (g.eras ?? []).map((e) => actBtn(`pack era ${g.era === e ? 'on' : ''}`, [g.era === e ? '✓ ' : '', ERA_LABELS[e] ?? e], 'setEra', { era: e })),
-    h('div', { class: 'brk' })];
+// ---------- choosing the questions ----------
+// Three shelves: clues from the real show (by topic and era), the family packs that come with the game, and your own
+// games from the question editor (played just as written). Each topic says how many of its categories this TV has
+// not shown yet; a clue is not dealt again until its whole pack has been played.
+let pickTab = null;      // the shelf open on this TV: 'archive', 'house' or 'own' (null: the one in use)
+const TABS = [['archive', 'Real show', 'Clues from the TV show'], ['house', 'Family packs', 'Made for family night'], ['own', 'Your games', 'Whole boards, as written']];
+export const shelfOf = (pk) => (pk.own ? 'own' : pk.archive ? 'archive' : 'house');
+/** The shelf to open first: the one with what is switched on (your games win, then the real show). */
+export function shelfInUse(v) {
+  const on = (v.packs ?? []).filter((pk) => pk.selected);
+  if (on.some((pk) => pk.own)) return 'own';
+  if (on.some((pk) => pk.archive)) return 'archive';
+  if (on.length) return 'house';
+  return v.hasArchive ? 'archive' : 'house';
 }
-function packRow() {
+
+function pickerPanel() {
+  const tab = pickTab ?? shelfInUse(g);
+  const packs = g.packs ?? [];
+  const tabs = h('div', { class: 'pk-tabs', role: 'tablist' }, TABS.map(([id, label, sub]) => {
+    if (id === 'archive' && !g.hasArchive) return null;
+    const of = packs.filter((pk) => shelfOf(pk) === id);
+    const on = of.filter((pk) => pk.selected).length;
+    return h('button', {
+      type: 'button', role: 'tab', class: `pk-tab ${tab === id ? 'on' : ''}`, 'aria-selected': String(tab === id),
+      onclick: act ? (e) => { pickTab = id; e.currentTarget.closest('.lb-packs')?.replaceWith(pickerPanel()); } : null,
+    }, h('b', {}, label), h('small', {}, on ? (id === 'own' ? `${on === 1 ? 'Playing 1' : `Playing ${on}`}` : `${on} on`) : of.length ? sub : id === 'own' ? 'Make your own' : sub));
+  }));
+  const body = g.draft ? draftShelf() : tab === 'own' ? ownShelf() : topicShelf(tab);
+  return h('div', { class: 'lb-panel lb-packs' },
+    h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, g.draft ? 'Your board' : 'Choose the questions'),
+      act && !g.draft && h('button', { type: 'button', class: 'ghost done', onclick: (e) => e.currentTarget.closest('.bwlobby')?.toggle(false) }, '✓ Done')),
+    !g.draft && tabs,
+    h('div', { class: 'pk-body' }, body),
+    pickerFoot());
+}
+
+/** How much of a topic this TV has not shown yet, as a bar and a count. */
+function freshness(pk) {
+  if (pk.fresh == null || !pk.count) return null;
+  const frac = pk.fresh / pk.count;
+  return h('span', { class: 'pk-fresh' }, h('i', { style: { '--f': `${Math.round(frac * 100)}%` } }),
+    pk.fresh === pk.count ? 'All new' : pk.fresh ? `${pk.fresh} new` : 'All played: starts over');
+}
+
+function topicShelf(tab) {
+  const packs = (g.packs ?? []).filter((pk) => shelfOf(pk) === tab);
+  const era = tab === 'archive' && g.hasArchive && h('div', { class: 'pk-era' },
+    h('span', { class: 'packlabel' }, 'Clues from'),
+    (g.eras ?? []).map((e) => actBtn(`pk-chip ${g.era === e ? 'on' : ''}`, [g.era === e ? '✓ ' : '', ERA_LABELS[e] ?? e], 'setEra', { era: e })),
+    h('span', { class: 'pk-note' }, g.archiveLoading ? 'Loading clues…' : g.archiveError
+      ? h('span', { class: 'warn' }, act ? 'Did not load. Click an era to try again.' : 'Did not load. Pick an era to try again.') : seasonLabel(g.archiveSeason)));
+  const allOn = packs.length && packs.every((pk) => pk.selected);
+  return [
+    era,
+    h('div', { class: 'pk-row' },
+      h('span', { class: 'packlabel' }, tab === 'archive' ? 'Topics' : 'Packs', act ? ' · click to switch on or off' : ''),
+      act && packs.length > 1 && actBtn('pk-chip', allOn ? 'All off' : 'All on', 'setAllPacks', { kind: tab, on: !allOn })),
+    packs.length
+      ? h('div', { class: 'pk-grid' }, packs.map((pk) => actBtn(`pk-card ${pk.selected ? 'on' : ''} ${pk.easy ? 'easy' : ''}`, [
+        h('span', { class: 'pk-top' }, h('span', { class: 'pk-check' }, pk.selected ? '✓' : ''), h('b', {}, pk.title), pk.easy ? h('em', {}, 'Easy') : null),
+        h('small', {}, `${pk.count} categories`),
+        freshness(pk),
+      ], 'togglePack', { pack: pk.id }, pk.description)))
+      : h('div', { class: 'pk-empty' }, g.archiveLoading ? 'Loading a season of the show…' : 'Nothing here yet'),
+  ];
+}
+
+function ownShelf() {
+  const own = (g.packs ?? []).filter((pk) => pk.own);
+  const on = own.filter((pk) => pk.selected);
+  const make = h('div', { class: 'pk-game make' },
+    h('b', {}, '+ Make your own game'),
+    h('small', {}, 'On the host page, open Questions and write a board: six categories, five clues each, and a Final. It shows up here, on every TV in the house.'));
+  return [
+    h('div', { class: 'pk-row' }, h('span', { class: 'packlabel' }, own.length ? `${own.length} games · played just as written${act ? ' · click to play one' : ''}` : 'No games yet')),
+    h('div', { class: 'pk-games' },
+      own.map((pk) => {
+        const round = on.length === 2 ? on.findIndex((x) => x.id === pk.id) + 1 : 0;
+        return h('div', { class: `pk-game ${pk.selected ? 'on' : ''}` },
+          actBtn('pk-play', [h('span', { class: 'pk-check' }, pk.selected ? '✓' : ''), h('b', {}, pk.title), round ? h('em', {}, `Round ${round}`) : null], 'playBoard', { pack: pk.id }, 'Play this game'),
+          h('div', { class: 'pk-cats' }, (pk.cats ?? []).map((c) => h('span', {}, c))),
+          act && on.length === 1 && !pk.selected && actBtn('pk-chip small', '+ Add as round 2', 'playBoard', { pack: pk.id, add: true }));
+      }),
+      make),
+  ];
+}
+
+function draftShelf() {
+  return [
+    h('div', { class: 'pk-row' }, h('span', { class: 'packlabel' }, act ? 'Click a category to swap it for another one' : 'The categories that will be played'),
+      act && [actBtn('pk-chip', '⇄ Shuffle all', 'previewBoard'), actBtn('pk-chip', '‹ Back to topics', 'clearPreview')]),
+    g.draft.map((row, r) => h('div', { class: 'pk-draft' }, h('span', { class: 'rlabel' }, `Round ${r + 1}`),
+      h('div', { class: 'pk-draftrow' }, row.map((name, ci) => actBtn('pk-cat', [h('span', {}, name), g.draftFresh?.[r]?.[ci] === false ? h('em', { class: 'old' }, 'Played before') : h('em', {}, 'New'), act ? h('i', {}, '↻') : null], 'swapCategory', { r: r + 1, ci }, 'Swap this category'))))),
+  ];
+}
+
+function pickerFoot() {
   const n = g.categoryCount ?? 0;
-  return [
-    h('div', { class: 'packlabel' }, g.asWritten ? 'Playing your own board just as you wrote it' : ['Question packs', act ? ' (click to switch on or off)' : '', ` · ${n} categories`, n < 12 ? h('span', { class: 'warn' }, ' need at least 12') : '']),
-    g.easyAvailable && actBtn(`pack ${g.easyMode ? 'on' : ''}`, [g.easyMode ? '✓ ' : '', '★ Easy mode'], 'toggleEasy', {}, 'Only casual, family-friendly questions'),
-    (g.packs ?? []).map((pk) => actBtn(`pack ${pk.selected ? 'on' : ''}`, [pk.selected ? '✓ ' : '', pk.title, ' ', h('small', {}, pk.own ? 'board' : String(pk.count))], 'togglePack', { pack: pk.id }, pk.description)),
-    !g.asWritten && n >= 12 && act && actBtn('pack sun', '▦ Preview the board', 'previewBoard'),
-  ];
-}
-function draftRow() {
-  return [
-    h('div', { class: 'packlabel' }, act ? 'Your board (click a category to swap it)' : 'Your board'),
-    g.draft.map((row, r) => [h('div', { class: 'brk', style: { height: '0' } }), h('span', { class: 'rlabel' }, `R${r + 1}`),
-      row.map((name, ci) => actBtn('pack mini on', ['↻ ', name], 'swapCategory', { r: r + 1, ci }, 'Swap this category'))]),
-    act && [h('div', { class: 'brk' }), actBtn('pack mini', 'Shuffle all', 'previewBoard'), actBtn('pack mini', 'Back to packs', 'clearPreview')],
-  ];
+  const text = g.asWritten ? 'Played just as written, then Final Jeopardy'
+    : [h('b', {}, `${n} categories`), g.freshCount != null ? ` · ${g.freshCount} not seen on this TV` : '', n < 12 ? h('span', { class: 'warn' }, ' · switch on at least 12') : ''];
+  return h('div', { class: 'pk-foot' }, h('span', {}, text),
+    act && g.seenCount > 0 && !g.draft && h('button', {
+      type: 'button', class: 'ghost', title: 'Every clue counts as new again',
+      onclick: () => { if (confirm('Forget every clue this TV has shown? They can all come up again.')) act('resetHistory'); },
+    }, 'Start fresh'),
+    act && !g.asWritten && !g.draft && n >= 12 && actBtn('pk-preview', '▦ Preview and swap', 'previewBoard'));
 }
 
 // ---------- the round's opening titles ----------

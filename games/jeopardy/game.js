@@ -106,6 +106,20 @@ export function normalizePack(id, data) {
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
+/** How a clue is remembered once this TV has shown it: a short fingerprint of its text (not the text itself). */
+export function clueKey(q) {
+  const text = String(q ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+    h2 = Math.imul(h2 ^ c, 0x5bd1e995) >>> 0;
+  }
+  return h1.toString(36) + h2.toString(36).slice(0, 3);
+}
+/** The most clues remembered; the oldest are forgotten first. */
+export const MAX_SEEN = 15000;
+
 export class JeopardyGame {
   constructor(room) {
     this.room = room;
@@ -124,6 +138,10 @@ export class JeopardyGame {
     this.easyPrev = null;           // the selection to bring back when easy mode is switched off
     this.draft = null;              // the 12 categories chosen ahead of time ([round 1, round 2]), to look over and swap
     this.played = new Set();        // category names already played, so Play again deals a fresh board
+    // Every clue this TV has shown (by clueKey), kept between rooms in room.memory. A clue is not dealt again until
+    // every clue in its pack has been shown; then that pack starts over.
+    this.seen = new Set();
+    this.#loadSeen();
     this.stats = new Map();         // per player: streak, best, right, wrong, fastest, bigWin, lockUntil, lastReact
     this.reactions = [];            // recent emoji reactions [{ id, pid, e, at }]
     this.reactSeq = 0;
@@ -215,6 +233,56 @@ export class JeopardyGame {
   #setTimerFrom(from, ms, fire, kind) { this.timer = { at: from + ms, fire, kind, totalMs: ms, shownEnd: from + ms }; }
   #clearTimer() { this.timer = null; }
 
+  // ---------- clues already shown on this TV ----------
+  #loadSeen() {
+    let data = null;
+    try { data = this.room.memory?.load(GAME); } catch { data = null; }
+    this.seen = new Set(Array.isArray(data?.seen) ? data.seen.filter((k) => typeof k === 'string') : []);
+  }
+  #saveSeen() {
+    while (this.seen.size > MAX_SEEN) this.seen.delete(this.seen.values().next().value);
+    try { this.room.memory?.save(GAME, { v: 1, seen: [...this.seen] }); } catch { /* nowhere to keep it */ }
+  }
+  #seenClue(cl) { return this.seen.has(cl.k ??= clueKey(cl.q)); }
+  /** The clues of a category that have not been shown yet (of the five that are dealt). */
+  #freshIn(c) { let n = 0; for (const cl of c.clues.slice(0, ROWS)) if (!this.#seenClue(cl)) n++; return n; }
+  #markSeen(q) {
+    const k = clueKey(q);
+    this.seen.delete(k);   // most recent last, so the oldest are forgotten first
+    this.seen.add(k);
+    this.#saveSeen();
+  }
+  /** Packs whose every clue has been shown start over: their clues count as new again. Finals the same way. */
+  #renewUsedUp(packs) {
+    let changed = false;
+    for (const p of packs) {
+      if (!p.categories.length || p.categories.some((c) => this.#freshIn(c) > 0)) continue;
+      for (const c of p.categories) for (const cl of c.clues) changed = this.seen.delete(cl.k ??= clueKey(cl.q)) || changed;
+    }
+    const finals = packs.flatMap((p) => p.finals);
+    if (finals.length && finals.every((f) => this.#seenClue(f))) for (const f of finals) changed = this.seen.delete(f.k) || changed;
+    if (changed) this.#saveSeen();
+  }
+  /**
+   * Categories in the order they should be dealt: those with no clue shown yet first, then those with the most new
+   * clues, then (in a tie) those not played in this room yet. Shuffled within each group.
+   */
+  #ranked(categories) {
+    return this.#shuffle(categories)
+      .map((c, i) => ({ c, i, fresh: this.#freshIn(c), played: this.played.has(c.name.toLowerCase()) ? 1 : 0 }))
+      .sort((x, y) => y.fresh - x.fresh || x.played - y.played || x.i - y.i)
+      .map((x) => x.c);
+  }
+  /** Forget which clues this TV has shown (the host's "start fresh"). */
+  resetHistory() {
+    this.#lobbyOnly();
+    this.seen.clear();
+    this.played.clear();
+    this.#saveSeen();
+    this.draft = null;
+    this.#changed();
+  }
+
   // ---------- packs: your boards, real-show topics, and the house packs ----------
   #refreshPacks() {
     const own = [];
@@ -256,11 +324,7 @@ export class JeopardyGame {
     if (!finals.length) finals = this.packs.flatMap((p) => p.finals);
     return { categories, finals };
   }
-  /** Categories that have not been played in this room yet (all of them if that leaves too few). */
-  #fresh(categories, need) {
-    const unplayed = categories.filter((c) => !this.played.has(c.name.toLowerCase()));
-    return unplayed.length >= need ? unplayed : categories;
-  }
+  #chosen() { return this.packs.filter((p) => this.selected.has(p.id)); }
   /** Own boards picked to be played just as written: one board per round (the boards you wrote, not a shuffle). */
   #asWrittenPacks() {
     const chosen = this.packs.filter((p) => this.selected.has(p.id));
@@ -272,8 +336,34 @@ export class JeopardyGame {
   #lobbyOnly() { if (this.phase !== 'lobby') fail('Change this before the game starts'); }
   togglePack(id) {
     this.#lobbyOnly();
-    if (!this.packs.some((p) => p.id === id)) return;
+    const pack = this.packs.find((p) => p.id === id);
+    if (!pack) return;
+    // Switching a topic on while one of your games is set to be played as written goes back to mixing topics.
+    if (!pack.own && !this.selected.has(id) && this.#asWrittenPacks()) for (const p of this.ownPacks) this.selected.delete(p.id);
     if (this.selected.has(id)) this.selected.delete(id); else this.selected.add(id);
+    this.draft = null;
+    this.#changed();
+  }
+  /** Play one of your own games (a board from the question editor) just as it was written. `add` makes it round 2. */
+  playBoard(id, add = false) {
+    this.#lobbyOnly();
+    const pack = this.ownPacks.find((p) => p.id === id);
+    if (!pack) fail('That game is not here any more');
+    const keep = add ? this.#chosen().filter((p) => p.own && p.id !== id).slice(0, 1).map((p) => p.id) : [];
+    this.selected = new Set([...keep, id]);
+    this.settings.asWritten = null;
+    this.easyPrev = null;
+    this.draft = null;
+    this.#changed();
+  }
+  /** Switch on every topic of one kind ('archive' or 'house'), or off. */
+  setAllPacks(kind, on) {
+    this.#lobbyOnly();
+    const of = this.packs.filter((p) => !p.own && (kind === 'archive' ? p.id.startsWith('archive-') : !p.id.startsWith('archive-')));
+    if (!of.length) return;
+    if (on && this.#asWrittenPacks()) for (const p of this.ownPacks) this.selected.delete(p.id);
+    for (const p of of) if (on) this.selected.add(p.id); else this.selected.delete(p.id);
+    if (!this.selected.size) this.selected.add(of[0].id);
     this.draft = null;
     this.#changed();
   }
@@ -362,7 +452,8 @@ export class JeopardyGame {
     if (this.#asWrittenPacks()) fail('Your boards are played as written; there is nothing to shuffle.');
     const all = this.#bank().categories.filter((c) => c.clues.length >= 5);
     if (all.length < 12) fail('Pick packs with at least 12 categories in total.');
-    const cats = this.#shuffle(this.#fresh(all, 12));
+    this.#renewUsedUp(this.#chosen());
+    const cats = this.#ranked(all);   // shuffled, the ones with nothing shown yet first
     this.draft = [cats.slice(0, 6), cats.slice(6, 12)];
     this.#changed();
   }
@@ -375,7 +466,9 @@ export class JeopardyGame {
     const inUse = new Set(this.draft.flat().map((c) => c.name.toLowerCase()));
     const spareAll = this.#bank().categories.filter((c) => c.clues.length >= 5 && !inUse.has(c.name.toLowerCase()));
     if (!spareAll.length) fail('No other categories left. Switch on more topics.');
-    const spare = this.#fresh(spareAll, 1);
+    const ranked = this.#ranked(spareAll);
+    const best = this.#freshIn(ranked[0]);
+    const spare = ranked.filter((c) => this.#freshIn(c) === best);
     row[Number(ci)] = spare[Math.floor(this.#rng() * spare.length)];
     this.#changed();
   }
@@ -424,9 +517,9 @@ export class JeopardyGame {
       for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
       return;
     }
-    // Unplayed categories first, then the rest, so a replay only repeats when it has to.
-    const cats = this.#shuffle(bank.categories.filter((c) => !this.played.has(c.name.toLowerCase())))
-      .concat(this.#shuffle(bank.categories.filter((c) => this.played.has(c.name.toLowerCase()))));
+    // Categories with no clue shown on this TV yet first, so a clue only comes back once its whole pack has been played.
+    this.#renewUsedUp(this.#chosen());
+    const cats = this.#ranked(bank.categories);
     const used = new Set();
     const pick = () => {
       const out = [];
@@ -442,7 +535,7 @@ export class JeopardyGame {
     this.rounds = chosen ? [this.#makeRound(1, chosen[0], 1), this.#makeRound(2, chosen[1], 2)] : [this.#makeRound(1, pick(), 1), this.#makeRound(2, pick(), 2)];
     this.draft = null;
     for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
-    const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`));
+    const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`) && !this.#seenClue(fin));
     const f = this.#shuffle(freshFinals.length ? freshFinals : bank.finals)[0];
     if (f) this.played.add(`final:${f.q}`);
     this.finalClue = f ? { category: f.category, q: f.q, a: f.a, alt: f.alt || [] } : null;
@@ -497,6 +590,7 @@ export class JeopardyGame {
     const cl = b?.[ci]?.clues[ri];
     if (!cl || cl.used) return;
     cl.used = true;
+    this.#markSeen(cl.q);
     this.lastResult = null;
     this.collecting = null;
     this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
@@ -886,6 +980,7 @@ export class JeopardyGame {
     if (this.phase !== 'final-wager') return;
     for (const id of this.final.eligible) if (!(id in this.final.wagers)) this.final.wagers[id] = 0;
     this.phase = 'final-answer';
+    this.#markSeen(this.final.q);
     this.#setTimer(T.finalAnswer, () => this.#beginFinalReveal(), 'final');
     this.#changed();
   }
@@ -1072,11 +1167,14 @@ export class JeopardyGame {
       case 'previewBoard': return this.previewBoard();
       case 'swapCategory': return this.swapCategory(Number(a.r), Number(a.ci));
       case 'clearPreview': return this.clearPreview();
+      case 'playBoard': return this.playBoard(String(a.pack ?? a.id ?? ''), a.add === true);
+      case 'setAllPacks': return this.setAllPacks(a.kind === 'archive' ? 'archive' : 'house', a.on !== false);
+      case 'resetHistory': return this.resetHistory();
       default: throw new GameError(`Unknown action ${action}`);
     }
   }
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll']);
+  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'playBoard', 'setAllPacks', 'resetHistory']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -1226,8 +1324,16 @@ export class JeopardyGame {
     if (this.phase === 'gameover') v.awards = this.awards();
     if (this.phase === 'lobby') {
       const written = this.#asWrittenPacks();
-      v.packs = this.packs.map((p) => ({ id: p.id, title: p.title, description: p.description, count: p.categories.length, selected: this.selected.has(p.id), easy: p.easy, own: p.own, archive: p.id.startsWith('archive-') }));
-      v.categoryCount = this.#bank().categories.length;
+      // fresh: categories none of whose clues this TV has shown yet. cats: the category names of one of your games.
+      v.packs = this.packs.map((p) => ({
+        id: p.id, title: p.title, description: p.description, count: p.categories.length, selected: this.selected.has(p.id), easy: p.easy, own: p.own,
+        archive: p.id.startsWith('archive-'), fresh: p.categories.filter((c) => this.#freshIn(c) === ROWS).length,
+        ...(p.own ? { cats: p.categories.slice(0, COLS).map((c) => c.name) } : {}),
+      }));
+      const bankCats = this.#bank().categories;
+      v.categoryCount = bankCats.length;
+      v.freshCount = bankCats.filter((c) => this.#freshIn(c) === ROWS).length;
+      v.seenCount = this.seen.size;
       v.easyAvailable = this.easyPacks().length > 0;
       v.easyMode = this.easyOn();
       v.hasArchive = this.hasArchive();
@@ -1237,6 +1343,7 @@ export class JeopardyGame {
       v.archiveLoading = this.archiveLoading;
       v.archiveError = this.archiveError;
       v.draft = this.draft && this.draft.map((row) => row.map((c) => c.name));
+      v.draftFresh = this.draft && this.draft.map((row) => row.map((c) => this.#freshIn(c) === ROWS));
       v.asWritten = !!written;
       v.asWrittenChoice = this.settings.asWritten;
       v.maxPlayers = MAX_PLAYERS;

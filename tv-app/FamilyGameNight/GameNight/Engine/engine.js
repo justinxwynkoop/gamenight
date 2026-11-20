@@ -454,7 +454,18 @@
     };
   }
   var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, refreshPacks_fn, composePacks_fn, bank_fn, fresh_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
+  function clueKey(q) {
+    const text = String(q ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    let h1 = 2166136261, h2 = 16777619;
+    for (let i = 0; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+      h2 = Math.imul(h2 ^ c, 1540483477) >>> 0;
+    }
+    return h1.toString(36) + h2.toString(36).slice(0, 3);
+  }
+  var MAX_SEEN = 15e3;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, loadSeen_fn, saveSeen_fn, seenClue_fn, freshIn_fn, markSeen_fn, renewUsedUp_fn, ranked_fn, refreshPacks_fn, composePacks_fn, bank_fn, chosen_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -474,6 +485,8 @@
       this.easyPrev = null;
       this.draft = null;
       this.played = /* @__PURE__ */ new Set();
+      this.seen = /* @__PURE__ */ new Set();
+      __privateMethod(this, _JeopardyGame_instances, loadSeen_fn).call(this);
       this.stats = /* @__PURE__ */ new Map();
       this.reactions = [];
       this.reactSeq = 0;
@@ -533,11 +546,46 @@
         __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       }
     }
+    /** Forget which clues this TV has shown (the host's "start fresh"). */
+    resetHistory() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.seen.clear();
+      this.played.clear();
+      __privateMethod(this, _JeopardyGame_instances, saveSeen_fn).call(this);
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
     togglePack(id) {
       __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
-      if (!this.packs.some((p) => p.id === id)) return;
+      const pack = this.packs.find((p) => p.id === id);
+      if (!pack) return;
+      if (!pack.own && !this.selected.has(id) && __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)) for (const p of this.ownPacks) this.selected.delete(p.id);
       if (this.selected.has(id)) this.selected.delete(id);
       else this.selected.add(id);
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** Play one of your own games (a board from the question editor) just as it was written. `add` makes it round 2. */
+    playBoard(id, add = false) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      const pack = this.ownPacks.find((p) => p.id === id);
+      if (!pack) fail("That game is not here any more");
+      const keep = add ? __privateMethod(this, _JeopardyGame_instances, chosen_fn).call(this).filter((p) => p.own && p.id !== id).slice(0, 1).map((p) => p.id) : [];
+      this.selected = /* @__PURE__ */ new Set([...keep, id]);
+      this.settings.asWritten = null;
+      this.easyPrev = null;
+      this.draft = null;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** Switch on every topic of one kind ('archive' or 'house'), or off. */
+    setAllPacks(kind, on) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      const of = this.packs.filter((p) => !p.own && (kind === "archive" ? p.id.startsWith("archive-") : !p.id.startsWith("archive-")));
+      if (!of.length) return;
+      if (on && __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)) for (const p of this.ownPacks) this.selected.delete(p.id);
+      for (const p of of) if (on) this.selected.add(p.id);
+      else this.selected.delete(p.id);
+      if (!this.selected.size) this.selected.add(of[0].id);
       this.draft = null;
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
@@ -641,7 +689,8 @@
       if (__privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)) fail("Your boards are played as written; there is nothing to shuffle.");
       const all = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.filter((c) => c.clues.length >= 5);
       if (all.length < 12) fail("Pick packs with at least 12 categories in total.");
-      const cats = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, __privateMethod(this, _JeopardyGame_instances, fresh_fn).call(this, all, 12));
+      __privateMethod(this, _JeopardyGame_instances, renewUsedUp_fn).call(this, __privateMethod(this, _JeopardyGame_instances, chosen_fn).call(this));
+      const cats = __privateMethod(this, _JeopardyGame_instances, ranked_fn).call(this, all);
       this.draft = [cats.slice(0, 6), cats.slice(6, 12)];
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
@@ -654,7 +703,9 @@
       const inUse = new Set(this.draft.flat().map((c) => c.name.toLowerCase()));
       const spareAll = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.filter((c) => c.clues.length >= 5 && !inUse.has(c.name.toLowerCase()));
       if (!spareAll.length) fail("No other categories left. Switch on more topics.");
-      const spare = __privateMethod(this, _JeopardyGame_instances, fresh_fn).call(this, spareAll, 1);
+      const ranked2 = __privateMethod(this, _JeopardyGame_instances, ranked_fn).call(this, spareAll);
+      const best = __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, ranked2[0]);
+      const spare = ranked2.filter((c) => __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c) === best);
       row[Number(ci)] = spare[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * spare.length)];
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
@@ -706,6 +757,7 @@
       const cl = b?.[ci]?.clues[ri];
       if (!cl || cl.used) return;
       cl.used = true;
+      __privateMethod(this, _JeopardyGame_instances, markSeen_fn).call(this, cl.q);
       this.lastResult = null;
       this.collecting = null;
       this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
@@ -1087,6 +1139,12 @@
           return this.swapCategory(Number(a.r), Number(a.ci));
         case "clearPreview":
           return this.clearPreview();
+        case "playBoard":
+          return this.playBoard(String(a.pack ?? a.id ?? ""), a.add === true);
+        case "setAllPacks":
+          return this.setAllPacks(a.kind === "archive" ? "archive" : "house", a.on !== false);
+        case "resetHistory":
+          return this.resetHistory();
         default:
           throw new GameError(`Unknown action ${action}`);
       }
@@ -1185,8 +1243,22 @@
       if (this.phase === "gameover") v.awards = this.awards();
       if (this.phase === "lobby") {
         const written = __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this);
-        v.packs = this.packs.map((p) => ({ id: p.id, title: p.title, description: p.description, count: p.categories.length, selected: this.selected.has(p.id), easy: p.easy, own: p.own, archive: p.id.startsWith("archive-") }));
-        v.categoryCount = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories.length;
+        v.packs = this.packs.map((p) => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          count: p.categories.length,
+          selected: this.selected.has(p.id),
+          easy: p.easy,
+          own: p.own,
+          archive: p.id.startsWith("archive-"),
+          fresh: p.categories.filter((c) => __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c) === ROWS).length,
+          ...p.own ? { cats: p.categories.slice(0, COLS).map((c) => c.name) } : {}
+        }));
+        const bankCats = __privateMethod(this, _JeopardyGame_instances, bank_fn).call(this).categories;
+        v.categoryCount = bankCats.length;
+        v.freshCount = bankCats.filter((c) => __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c) === ROWS).length;
+        v.seenCount = this.seen.size;
         v.easyAvailable = this.easyPacks().length > 0;
         v.easyMode = this.easyOn();
         v.hasArchive = this.hasArchive();
@@ -1196,6 +1268,7 @@
         v.archiveLoading = this.archiveLoading;
         v.archiveError = this.archiveError;
         v.draft = this.draft && this.draft.map((row) => row.map((c) => c.name));
+        v.draftFresh = this.draft && this.draft.map((row) => row.map((c) => __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c) === ROWS));
         v.asWritten = !!written;
         v.asWrittenChoice = this.settings.asWritten;
         v.maxPlayers = MAX_PLAYERS2;
@@ -1367,6 +1440,56 @@
   clearTimer_fn = function() {
     this.timer = null;
   };
+  // ---------- clues already shown on this TV ----------
+  loadSeen_fn = function() {
+    let data = null;
+    try {
+      data = this.room.memory?.load(GAME);
+    } catch {
+      data = null;
+    }
+    this.seen = new Set(Array.isArray(data?.seen) ? data.seen.filter((k) => typeof k === "string") : []);
+  };
+  saveSeen_fn = function() {
+    while (this.seen.size > MAX_SEEN) this.seen.delete(this.seen.values().next().value);
+    try {
+      this.room.memory?.save(GAME, { v: 1, seen: [...this.seen] });
+    } catch {
+    }
+  };
+  seenClue_fn = function(cl) {
+    return this.seen.has(cl.k ?? (cl.k = clueKey(cl.q)));
+  };
+  /** The clues of a category that have not been shown yet (of the five that are dealt). */
+  freshIn_fn = function(c) {
+    let n = 0;
+    for (const cl of c.clues.slice(0, ROWS)) if (!__privateMethod(this, _JeopardyGame_instances, seenClue_fn).call(this, cl)) n++;
+    return n;
+  };
+  markSeen_fn = function(q) {
+    const k = clueKey(q);
+    this.seen.delete(k);
+    this.seen.add(k);
+    __privateMethod(this, _JeopardyGame_instances, saveSeen_fn).call(this);
+  };
+  /** Packs whose every clue has been shown start over: their clues count as new again. Finals the same way. */
+  renewUsedUp_fn = function(packs) {
+    let changed = false;
+    for (const p of packs) {
+      if (!p.categories.length || p.categories.some((c) => __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c) > 0)) continue;
+      for (const c of p.categories) for (const cl of c.clues) changed = this.seen.delete(cl.k ?? (cl.k = clueKey(cl.q))) || changed;
+    }
+    const finals = packs.flatMap((p) => p.finals);
+    if (finals.length && finals.every((f) => __privateMethod(this, _JeopardyGame_instances, seenClue_fn).call(this, f))) for (const f of finals) changed = this.seen.delete(f.k) || changed;
+    if (changed) __privateMethod(this, _JeopardyGame_instances, saveSeen_fn).call(this);
+  };
+  /**
+   * Categories in the order they should be dealt: those with no clue shown yet first, then those with the most new
+   * clues, then (in a tie) those not played in this room yet. Shuffled within each group.
+   */
+  ranked_fn = function(categories) {
+    return __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, categories).map((c, i) => ({ c, i, fresh: __privateMethod(this, _JeopardyGame_instances, freshIn_fn).call(this, c), played: this.played.has(c.name.toLowerCase()) ? 1 : 0 })).sort((x, y) => y.fresh - x.fresh || x.played - y.played || x.i - y.i).map((x) => x.c);
+  };
   // ---------- packs: your boards, real-show topics, and the house packs ----------
   refreshPacks_fn = function() {
     const own = [];
@@ -1417,10 +1540,8 @@
     if (!finals.length) finals = this.packs.flatMap((p) => p.finals);
     return { categories, finals };
   };
-  /** Categories that have not been played in this room yet (all of them if that leaves too few). */
-  fresh_fn = function(categories, need) {
-    const unplayed = categories.filter((c) => !this.played.has(c.name.toLowerCase()));
-    return unplayed.length >= need ? unplayed : categories;
+  chosen_fn = function() {
+    return this.packs.filter((p) => this.selected.has(p.id));
   };
   /** Own boards picked to be played just as written: one board per round (the boards you wrote, not a shuffle). */
   asWrittenPacks_fn = function() {
@@ -1490,7 +1611,8 @@
       for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
       return;
     }
-    const cats = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, bank.categories.filter((c) => !this.played.has(c.name.toLowerCase()))).concat(__privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, bank.categories.filter((c) => this.played.has(c.name.toLowerCase()))));
+    __privateMethod(this, _JeopardyGame_instances, renewUsedUp_fn).call(this, __privateMethod(this, _JeopardyGame_instances, chosen_fn).call(this));
+    const cats = __privateMethod(this, _JeopardyGame_instances, ranked_fn).call(this, bank.categories);
     const used = /* @__PURE__ */ new Set();
     const pick = () => {
       const out = [];
@@ -1506,7 +1628,7 @@
     this.rounds = chosen ? [__privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 1, chosen[0], 1), __privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 2, chosen[1], 2)] : [__privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 1, pick(), 1), __privateMethod(this, _JeopardyGame_instances, makeRound_fn).call(this, 2, pick(), 2)];
     this.draft = null;
     for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
-    const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`));
+    const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`) && !__privateMethod(this, _JeopardyGame_instances, seenClue_fn).call(this, fin));
     const f = __privateMethod(this, _JeopardyGame_instances, shuffle_fn).call(this, freshFinals.length ? freshFinals : bank.finals)[0];
     if (f) this.played.add(`final:${f.q}`);
     this.finalClue = f ? { category: f.category, q: f.q, a: f.a, alt: f.alt || [] } : null;
@@ -1722,6 +1844,7 @@
     if (this.phase !== "final-wager") return;
     for (const id of this.final.eligible) if (!(id in this.final.wagers)) this.final.wagers[id] = 0;
     this.phase = "final-answer";
+    __privateMethod(this, _JeopardyGame_instances, markSeen_fn).call(this, this.final.q);
     __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.finalAnswer, () => __privateMethod(this, _JeopardyGame_instances, beginFinalReveal_fn).call(this), "final");
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
@@ -1853,7 +1976,7 @@
     }
   };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "playBoard", "setAllPacks", "resetHistory"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js
@@ -3009,10 +3132,16 @@
   // room.js
   var VERSION = 2;
   var MAX_SCORE = 1e7;
+  function memoryStore(initial = {}) {
+    const kept = { ...initial };
+    return { load: (gameId) => kept[gameId] ?? null, save: (gameId, data) => {
+      kept[gameId] = data;
+    }, all: () => kept };
+  }
   var _Room_instances, id_fn, freeColor_fn, lobbyOnly_fn2, neededTeams_fn, individualsOnly_fn, maxPlayers_fn, fixedTeams_fn, effectiveMode_fn, wantedTeamCount_fn, reconcile_fn, ensureTeams_fn, shuffled_fn, deal_fn, placeUnassigned_fn, unitViews_fn, roomView_fn;
   var Room = class {
     constructor({ games = {}, now = () => performance.now(), onChange = () => {
-    }, loadContent = () => null, listContent = () => [], random = Math.random } = {}) {
+    }, loadContent = () => null, listContent = () => [], random = Math.random, memory = null } = {}) {
       __privateAdd(this, _Room_instances);
       this.rng = random;
       this.games = games;
@@ -3020,6 +3149,7 @@
       this.onChange = onChange;
       this.loadContent = loadContent;
       this.listContent = listContent;
+      this.memory = memory ?? memoryStore();
       this.nextId = 1;
       this.mode = "players";
       this.modeSetting = "auto";
@@ -3618,6 +3748,7 @@
   var SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
   function createEngine({ games, pin, now, send, save = () => {
   }, saved = null, content = {}, userSets = {}, onSetsChanged = () => {
+  }, memory = null, onMemory = () => {
   }, onError, code = newRoomCode(), broadcast = null }) {
     const sets = {};
     for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
@@ -3631,8 +3762,17 @@
       }
     }
     let queued = false;
+    const kept = memoryStore(memory && typeof memory === "object" ? memory : {});
     const room = new Room({
       games,
+      memory: { load: kept.load, save(gameId, data) {
+        kept.save(gameId, data);
+        try {
+          onMemory(kept.all());
+        } catch (e) {
+          onError?.(e);
+        }
+      } },
       ...now ? { now } : {},
       loadContent: (gameId, id) => sets[gameId]?.[id] ?? null,
       listContent: (gameId) => Object.entries(sets[gameId] ?? {}).map(([id, s]) => ({ id, title: s?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title)),
@@ -3747,7 +3887,7 @@
   globalThis.Engine = {
     /** The games this engine can run, for the host's menus. */
     games: () => JSON.stringify(Object.values(GAMES).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
-    /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } } }. The room code is the relay's. */
+    /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } }, memory?: object }. The room code is the relay's. */
     start(optionsJson) {
       const o = parse(optionsJson);
       if (o.saved && o.game) {
@@ -3766,6 +3906,11 @@
         userSets: o.userSets ?? {},
         onSetsChanged: (c) => {
           if (__native.saveSets) __native.saveSets(JSON.stringify(c));
+        },
+        // Which clues this Apple TV has shown (kept by the app between rooms), so the next game deals new ones.
+        memory: o.memory ?? null,
+        onMemory: (m) => {
+          if (__native.saveMemory) __native.saveMemory(JSON.stringify(m));
         },
         now: () => performance.now(),
         code: o.code || void 0,

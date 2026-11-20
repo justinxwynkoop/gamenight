@@ -188,6 +188,12 @@ struct JeopardyState: Decodable, Equatable {
     var archiveError: Bool?
     /// The 12 categories picked ahead of time: round 1 and round 2.
     var draft: [[String]]?
+    /// For each previewed category: true when this TV has not shown any of its clues yet.
+    var draftFresh: [[Bool]]?
+    /// Categories switched on that this TV has not shown a clue from yet.
+    var freshCount: Int?
+    /// How many clues this TV remembers showing (0: nothing to forget).
+    var seenCount: Int?
     /// One of your own boards, played just as you wrote it.
     var asWritten: Bool?
     var maxPlayers: Int?
@@ -197,6 +203,7 @@ struct JeopardyState: Decodable, Equatable {
         case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
+        case draftFresh, freshCount, seenCount
         case finalRound = "final"
     }
 }
@@ -312,6 +319,33 @@ struct JeoPack: Decodable, Equatable, Identifiable {
     var own: Bool?
     /// Topics from the real-show archive.
     var archive: Bool?
+    /// Categories none of whose clues this TV has shown yet.
+    var fresh: Int?
+    /// One of your own boards: its category names.
+    var cats: [String]?
+
+    /// Which shelf of the question chooser it sits on.
+    var shelf: JeoShelf { own == true ? .own : archive == true ? .archive : .house }
+}
+
+/// The question chooser's shelves: real-show topics, the family packs, and your own games (played as written).
+enum JeoShelf: String, CaseIterable, Identifiable {
+    case archive, house, own
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .archive: return "Real show"
+        case .house: return "Family packs"
+        case .own: return "Your games"
+        }
+    }
+    var subtitle: String {
+        switch self {
+        case .archive: return "Clues from the TV show"
+        case .house: return "Made for family night"
+        case .own: return "Whole boards, as written"
+        }
+    }
 }
 
 struct JeoFinal: Decodable, Equatable {

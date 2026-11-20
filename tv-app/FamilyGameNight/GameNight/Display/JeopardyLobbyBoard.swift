@@ -435,8 +435,9 @@ struct JeoLobby: View {
     let game: JeopardyState
     let joinURL: URL?
     let roomCode: String?
-    /// The question packs are open in place of the players (the "Change packs" button). A board preview opens them too.
-    @State private var packsOpen = false
+    /// The question chooser is open in place of the players (the "Choose questions" button). A board preview opens it too.
+    /// The CI screenshot job can open it on a shelf (DemoHooks).
+    @State private var packsOpen = DemoHooks.shelf != nil
 
     private var choosing: Bool { packsOpen || game.draft != nil }
 
@@ -483,11 +484,10 @@ struct JeoLobby: View {
 
     private var packsPanel: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if game.hasArchive == true { JeoEraPicker(game: game) }
             if let draft = game.draft, draft.count == 2 {
-                JeoBoardBuilder(draft: draft)
+                JeoBoardBuilder(draft: draft, fresh: game.draftFresh)
             } else {
-                JeoPackPicker(game: game)
+                JeoQuestionPicker(game: game)
             }
         }
         .padding(28)
@@ -551,18 +551,23 @@ struct JeoBoardLine: View {
     let toggle: () -> Void
 
     private var what: String {
-        if game.asWritten == true { return "Your own board, as written" }
-        if game.draft != nil { return "Your board (preview)" }
         let chosen = (game.packs ?? []).filter(\.selected).map(\.title)
-        if chosen.isEmpty { return "No packs chosen" }
+        if game.asWritten == true {
+            return chosen.count == 2 ? "Your games: \(chosen[0]), then \(chosen[1])" : "Your game: \(chosen.first ?? "")"
+        }
+        if game.draft != nil { return "Your board (preview)" }
+        if chosen.isEmpty { return "No topics chosen" }
         return chosen.count > 2 ? "\(chosen.prefix(2).joined(separator: " + ")) + \(chosen.count - 2) more" : chosen.joined(separator: " + ")
     }
 
     private var details: String {
         var bits: [String] = []
+        if game.asWritten == true { return " \u{00B7} as written" }
         if let n = game.categoryCount, n > 0 { bits.append("\(n) categories") }
+        if let fresh = game.freshCount, fresh > 0 { bits.append("\(fresh) new") }
         if game.easyMode == true { bits.append("easy mode") }
-        if game.hasArchive == true, let era = game.era { bits.append((JeoEraPicker.labels[era] ?? era).lowercased()) }
+        let realShow = (game.packs ?? []).contains { $0.selected && $0.archive == true }
+        if realShow, let era = game.era { bits.append((JeoEraPicker.labels[era] ?? era).lowercased()) }
         return bits.isEmpty ? "" : " \u{00B7} " + bits.joined(separator: " \u{00B7} ")
     }
 
@@ -592,7 +597,7 @@ struct JeoBoardLine: View {
                 Button(action: toggle) {
                     HStack(spacing: 10) {
                         Image(systemName: choosing ? "checkmark" : "square.grid.3x2.fill").font(.system(size: 20, weight: .bold))
-                        Text(choosing ? "Done" : "Change packs").font(BW.body(21, .heavy))
+                        Text(choosing ? "Done" : "Choose questions").font(BW.body(21, .heavy))
                     }
                     .padding(.horizontal, 22).padding(.vertical, 12)
                 }
@@ -723,68 +728,238 @@ struct JeoSeats: View {
     }
 }
 
-struct JeoPackPicker: View {
+/// The question chooser: three shelves (the real show by topic and era, the family packs, your own games), each topic
+/// saying how much of it this TV has not shown yet. A clue is not dealt again until its whole pack has been played.
+struct JeoQuestionPicker: View {
+    @Environment(\.jeoAct) private var act
+    let game: JeopardyState
+    /// The shelf open on the TV (nil: the one with what is switched on). The CI screenshot job can pick one (DemoHooks).
+    @State private var shelf: JeoShelf? = DemoHooks.shelf.flatMap(JeoShelf.init(rawValue:))
+    @State private var confirmReset = false
+
+    /// The shelf to open first: your games win, then the real show, then the family packs.
+    static func inUse(_ game: JeopardyState) -> JeoShelf {
+        let on = (game.packs ?? []).filter(\.selected)
+        if on.contains(where: { $0.own == true }) { return .own }
+        if on.contains(where: { $0.archive == true }) { return .archive }
+        if !on.isEmpty { return .house }
+        return game.hasArchive == true ? .archive : .house
+    }
+
+    private var open: JeoShelf { shelf ?? Self.inUse(game) }
+    private var shelves: [JeoShelf] { JeoShelf.allCases.filter { $0 != .archive || game.hasArchive == true } }
+
+    var body: some View {
+        let packs = game.packs ?? []
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 16) {
+                BWEyebrow(text: "Choose the questions")
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: 16) {
+                ForEach(shelves) { tab in
+                    let on = tab == open
+                    let count = packs.filter { $0.shelf == tab && $0.selected }.count
+                    Button { shelf = tab } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(tab.title).font(BW.title(26)).lineLimit(1).minimumScaleFactor(0.7)
+                            Text(count > 0 ? (tab == .own ? "Playing" : "\(count) on") : tab.subtitle)
+                                .font(BW.body(18, .semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                                .opacity(0.85)
+                        }
+                        .padding(.horizontal, 22).padding(.vertical, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(on ? BW.gold : .clear, lineWidth: 3))
+                    }
+                    .buttonStyle(BWButtonStyle(fill: on ? BW.blue : BW.surface2, text: on ? BW.text : BW.muted, corner: 22))
+                }
+            }
+            .focusSection()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                Group {
+                    if open == .own { JeoOwnShelf(game: game) } else { JeoTopicShelf(game: game, shelf: open) }
+                }
+                .padding(.vertical, 12).padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxHeight: .infinity)
+            .focusSection()
+
+            footer.focusSection()
+        }
+        .confirmationDialog("Forget every clue this TV has shown?", isPresented: $confirmReset, titleVisibility: .visible) {
+            Button("Start fresh", role: .destructive) { act("resetHistory", [:]) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every clue can come up again.")
+        }
+    }
+
+    private var footer: some View {
+        let count = game.categoryCount ?? 0
+        let written = game.asWritten == true
+        return HStack(spacing: 16) {
+            if written {
+                Text("Played just as written, then Final Jeopardy").font(BW.body(21, .semibold)).foregroundColor(BW.muted)
+            } else {
+                (Text("\(count) categories").foregroundColor(BW.text)
+                 + Text(game.freshCount.map { " \u{00B7} \($0) not seen on this TV" } ?? "").foregroundColor(BW.muted))
+                    .font(BW.body(21, .semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                if count < 12 { Text("Switch on 12 or more").font(BW.body(20, .semibold)).foregroundColor(BW.bad) }
+            }
+            Spacer(minLength: 0)
+            if (game.seenCount ?? 0) > 0 {
+                Button { confirmReset = true } label: {
+                    Text("Start fresh").font(BW.body(19, .heavy)).padding(.horizontal, 18).padding(.vertical, 8)
+                }
+                .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.muted, corner: 30))
+            }
+            if !written && count >= 12 {
+                Button { act("previewBoard", [:]) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.grid.3x2.fill").font(.system(size: 20))
+                        Text("Preview and swap").font(BW.body(20, .heavy))
+                    }
+                    .padding(.horizontal, 18).padding(.vertical, 8)
+                }
+                .buttonStyle(BWButtonStyle(fill: BW.gold, text: BW.ink, corner: 30))
+            }
+        }
+        .padding(.top, 6)
+    }
+}
+
+/// How much of a topic this TV has not shown yet: a bar and a few words.
+struct JeoFreshness: View {
+    let pack: JeoPack
+
+    var body: some View {
+        if let fresh = pack.fresh, pack.count > 0 {
+            VStack(alignment: .leading, spacing: 6) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.15))
+                        Capsule().fill(BW.good).frame(width: geo.size.width * CGFloat(fresh) / CGFloat(pack.count))
+                    }
+                }
+                .frame(height: 6)
+                Text(fresh == pack.count ? "All new" : fresh > 0 ? "\(fresh) new" : "All played: starts over")
+                    .font(BW.body(17, .heavy)).foregroundColor(BW.good)
+            }
+        }
+    }
+}
+
+/// The real-show topics (with the era row) or the family packs: a card each, switched on or off with the remote.
+struct JeoTopicShelf: View {
+    @Environment(\.jeoAct) private var act
+    let game: JeopardyState
+    let shelf: JeoShelf
+
+    var body: some View {
+        let packs = (game.packs ?? []).filter { $0.shelf == shelf }
+        let allOn = !packs.isEmpty && packs.allSatisfy(\.selected)
+        VStack(alignment: .leading, spacing: 16) {
+            if shelf == .archive, game.hasArchive == true { JeoEraPicker(game: game) }
+            HStack(spacing: 14) {
+                BWEyebrow(text: shelf == .archive ? "Topics" : "Packs", size: 18)
+                Text("Select one to switch it on or off").font(BW.body(19)).foregroundColor(BW.muted)
+                Spacer(minLength: 0)
+                if packs.count > 1 {
+                    Button { act("setAllPacks", ["kind": shelf.rawValue, "on": !allOn]) } label: {
+                        Text(allOn ? "All off" : "All on").font(BW.body(18, .heavy)).padding(.horizontal, 16).padding(.vertical, 6)
+                    }
+                    .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: 30))
+                }
+            }
+            if packs.isEmpty {
+                Text(game.archiveLoading == true ? "Loading a season of the show\u{2026}" : "Nothing here yet")
+                    .font(BW.body(22)).foregroundColor(BW.muted)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(262), spacing: 14), count: 4), alignment: .leading, spacing: 14) {
+                ForEach(packs) { pack in
+                    Button { act("togglePack", ["pack": pack.id]) } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                Image(systemName: pack.selected ? "checkmark.circle.fill" : "circle").font(.system(size: 22))
+                                    .foregroundColor(pack.selected ? BW.gold : nil)
+                                Text(pack.title).font(BW.body(21, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                                Spacer(minLength: 0)
+                                if pack.easy == true {
+                                    Text("Easy").font(BW.body(14, .heavy)).foregroundColor(BW.ink)
+                                        .padding(.horizontal, 7).padding(.vertical, 1)
+                                        .background(Capsule().fill(BW.gold))
+                                }
+                            }
+                            Text("\(pack.count) categories").font(BW.body(17, .semibold)).opacity(0.75)
+                            JeoFreshness(pack: pack)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .frame(width: 262, alignment: .leading)
+                        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(pack.selected ? BW.gold : BW.line, lineWidth: pack.selected ? 3 : 1))
+                    }
+                    .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.blue : BW.surface2, text: pack.selected ? BW.text : BW.muted, corner: 20))
+                }
+            }
+        }
+    }
+}
+
+/// Your own games from the question editor: select one to play it just as it was written (a second one is round 2).
+struct JeoOwnShelf: View {
     @Environment(\.jeoAct) private var act
     let game: JeopardyState
 
     var body: some View {
-        let packs = game.packs ?? []
-        let count = game.categoryCount ?? 0
-        let written = game.asWritten == true
-        VStack(alignment: .leading, spacing: 12) {
+        let own = (game.packs ?? []).filter { $0.own == true }
+        let on = own.filter(\.selected)
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 14) {
-                BWEyebrow(text: "Question packs")
-                if written {
-                    Text("Playing your own board just as you wrote it").font(BW.body(20)).foregroundColor(BW.yellow)
-                } else {
-                    Text("\(count) categories switched on").font(BW.body(20)).foregroundColor(BW.muted)
-                    if count < 12 { Text("Need at least 12").font(BW.body(20, .semibold)).foregroundColor(BW.bad) }
-                }
-                Spacer(minLength: 0)
-                if !written && count >= 12 {
-                    Button { act("previewBoard", [:]) } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "square.grid.3x2.fill").font(.system(size: 20))
-                            Text("Preview the board").font(BW.body(20, .heavy))
-                        }
-                        .padding(.horizontal, 18).padding(.vertical, 8)
-                    }
-                    .buttonStyle(BWButtonStyle(fill: BW.surface, text: BW.yellow, corner: 30))
-                }
-                if game.easyAvailable == true {
-                    let on = game.easyMode == true
-                    Button { act("toggleEasy", [:]) } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: on ? "checkmark.circle.fill" : "star.fill").font(.system(size: 20))
-                            Text(on ? "Easy mode on" : "Easy mode").font(BW.body(20, .heavy))
-                        }
-                        .padding(.horizontal, 18).padding(.vertical, 8)
-                    }
-                    .buttonStyle(BWButtonStyle(fill: on ? BW.yellow : BW.surface, text: on ? BW.ink : BW.yellow, corner: 30))
-                }
+                BWEyebrow(text: own.isEmpty ? "No games yet" : "\(own.count) games", size: 18)
+                Text("Played just as written. Select one to play it").font(BW.body(19)).foregroundColor(BW.muted)
             }
-            // With the real-show topics there are about 15 buttons, so use four narrower columns.
-            let many = packs.count > 9
-            let columns = many ? 4 : 3
-            let width: CGFloat = many ? 232 : 314
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: 14), count: columns), alignment: .leading, spacing: many ? 10 : 14) {
-                ForEach(packs) { pack in
-                    Button { act("togglePack", ["pack": pack.id]) } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: pack.selected ? "checkmark.circle.fill" : "circle").font(.system(size: many ? 19 : 22))
-                            Text(pack.title).font(BW.body(many ? 19 : 22, pack.selected ? .heavy : .semibold)).lineLimit(1).minimumScaleFactor(0.6)
-                            Spacer(minLength: 4)
-                            if pack.own == true {
-                                Image(systemName: "pencil.circle.fill").font(.system(size: many ? 17 : 20)).opacity(0.7)
-                            } else {
-                                Text("\(pack.count)").font(BW.body(many ? 17 : 20)).opacity(0.6)
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(540), spacing: 16), count: 2), alignment: .leading, spacing: 16) {
+                ForEach(own) { pack in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button { act("playBoard", ["pack": pack.id]) } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: pack.selected ? "checkmark.circle.fill" : "circle").font(.system(size: 24))
+                                        .foregroundColor(pack.selected ? BW.gold : nil)
+                                    Text(pack.title).font(BW.body(24, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                                    Spacer(minLength: 0)
+                                    if on.count == 2, let index = on.firstIndex(where: { $0.id == pack.id }) {
+                                        Text("Round \(index + 1)").font(BW.body(15, .heavy)).foregroundColor(BW.ink)
+                                            .padding(.horizontal, 8).padding(.vertical, 2)
+                                            .background(Capsule().fill(BW.gold))
+                                    }
+                                }
+                                Text((pack.cats ?? []).map { $0.uppercased() }.joined(separator: "  \u{00B7}  "))
+                                    .font(BW.body(15, .heavy)).kerning(0.5).lineLimit(2).opacity(0.8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(.horizontal, 18).padding(.vertical, 14)
+                            .frame(width: 540, alignment: .leading)
+                            .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(pack.selected ? BW.gold : BW.line, lineWidth: pack.selected ? 3 : 1))
                         }
-                        .padding(.horizontal, many ? 14 : 18).padding(.vertical, many ? 9 : 11)
-                        .frame(width: width)
+                        .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.blue : BW.surface2, text: pack.selected ? BW.text : BW.muted, corner: 22))
+                        if on.count == 1, !pack.selected {
+                            Button { act("playBoard", ["pack": pack.id, "add": true]) } label: {
+                                Text("+ Add as round 2").font(BW.body(16, .heavy)).padding(.horizontal, 14).padding(.vertical, 5)
+                            }
+                            .buttonStyle(BWButtonStyle(fill: BW.surface, text: BW.muted, corner: 20))
+                        }
                     }
-                    .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.blue : BW.surface, text: pack.selected ? BW.text : BW.muted, corner: 30))
                 }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("+ Make your own game").font(BW.body(24, .heavy)).foregroundColor(BW.gold)
+                    Text("On the host page, open Questions and write a board: six categories, five clues each, and a Final. It shows up here.")
+                        .font(BW.body(18)).foregroundColor(BW.muted).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 18).padding(.vertical, 14)
+                .frame(width: 540, alignment: .leading)
+                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 2, dash: [8, 8])))
             }
         }
     }
@@ -829,6 +1004,8 @@ struct JeoEraPicker: View {
 struct JeoBoardBuilder: View {
     @Environment(\.jeoAct) private var act
     let draft: [[String]]
+    /// For each category: true when this TV has not shown any of its clues yet.
+    var fresh: [[Bool]]? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -837,7 +1014,7 @@ struct JeoBoardBuilder: View {
                 Text("Select a category to swap it").font(BW.body(20)).foregroundColor(BW.muted)
                 Spacer(minLength: 0)
                 small("Shuffle all", icon: "shuffle") { act("previewBoard", [:]) }
-                small("Back to packs", icon: "chevron.left") { act("clearPreview", [:]) }
+                small("Back to topics", icon: "chevron.left") { act("clearPreview", [:]) }
             }
             ForEach(0..<2, id: \.self) { round in
                 HStack(alignment: .top, spacing: 12) {
@@ -845,13 +1022,18 @@ struct JeoBoardBuilder: View {
                         .frame(width: 40, alignment: .leading).padding(.top, 10)
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(298), spacing: 12), count: 3), alignment: .leading, spacing: 10) {
                         ForEach(Array(draft[round].enumerated()), id: \.offset) { column, name in
+                            let isNew = Self.isNew(fresh, round, column)
                             Button { act("swapCategory", ["r": round + 1, "ci": column]) } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 16, weight: .bold))
-                                    Text(name).font(BW.body(18, .heavy)).lineLimit(1).minimumScaleFactor(0.55)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(name).font(BW.body(18, .heavy)).lineLimit(1).minimumScaleFactor(0.55)
+                                        Text(isNew ? "NEW" : "PLAYED BEFORE").font(BW.body(12, .heavy)).kerning(1)
+                                            .foregroundColor(isNew ? BW.good : nil).opacity(isNew ? 1 : 0.6)
+                                    }
                                     Spacer(minLength: 0)
                                 }
-                                .padding(.horizontal, 14).padding(.vertical, 9)
+                                .padding(.horizontal, 14).padding(.vertical, 7)
                                 .frame(width: 298)
                             }
                             .buttonStyle(BWButtonStyle(fill: BW.blue, text: BW.text, corner: 24))
@@ -860,6 +1042,11 @@ struct JeoBoardBuilder: View {
                 }
             }
         }
+    }
+
+    static func isNew(_ fresh: [[Bool]]?, _ round: Int, _ column: Int) -> Bool {
+        guard let fresh, round < fresh.count, column < fresh[round].count else { return true }
+        return fresh[round][column]
     }
 
     private func small(_ title: String, icon: String, _ action: @escaping () -> Void) -> some View {
