@@ -2,6 +2,10 @@
 #   - when a change that goes into the app is merged into main (the TV app, the rules, the engine or the shipped sets),
 #   - on the 1st of every other month, so the build on the TVs never reaches Apple's 90-day expiry,
 #   - and by hand: GitHub -> Actions -> "Send to TestFlight" -> Run workflow (the version box is optional).
+# On a pull request it does everything except the upload: it builds, signs and exports the app with the same key, so a
+# signing or build problem shows up as a red check before the merge instead of a failed upload after it.
+# After an upload it sets the build's TestFlight "What to Test" notes from the pull request that was merged.
+# A failed upload from main opens a GitHub issue (alert.yml), which emails the people watching the repository.
 # Every run rebuilds the game engine and question sets from this same commit into the app first and runs the tests.
 # It needs three repository secrets from an App Store Connect API key (see tv-app/docs/TESTFLIGHT.md):
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole contents of the .p8 file).
@@ -32,6 +36,20 @@ on:
       - 'scripts/bundle-sets.mjs'
       - 'package-lock.json'
       - '.github/workflows/testflight.yml'
+  pull_request:
+    paths:
+      - 'tv-app/**'
+      - '!tv-app/docs/**'
+      - '!tv-app/**.md'
+      - 'games/**'
+      - 'engine/**'
+      - 'room.js'
+      - 'lib.js'
+      - 'data/**'
+      - 'scripts/build-engine.mjs'
+      - 'scripts/bundle-sets.mjs'
+      - 'package-lock.json'
+      - '.github/workflows/testflight.yml'
   schedule:
     - cron: '17 9 1 */2 *'   # 09:17 UTC on the 1st of every other month
   workflow_dispatch:
@@ -41,8 +59,9 @@ on:
         required: false
 
 concurrency:
-  group: testflight
-  cancel-in-progress: false
+  # Uploads wait their turn; a pull request's check only waits for (and replaces) that pull request's own last check.
+  group: ${{ github.event_name == 'pull_request' && format('testflight-check-{0}', github.ref) || 'testflight' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BUNDLE_ID: family.singonight.app
@@ -50,7 +69,13 @@ env:
 
 jobs:
   upload:
+    name: ${{ github.event_name == 'pull_request' && 'Build and sign for TestFlight (no upload)' || 'Upload to TestFlight' }}
     runs-on: macos-15
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.build.outputs.version }}
+      build: ${{ steps.build.outputs.build }}
+      app_id: ${{ steps.asc.outputs.app_id }}
     defaults:
       run:
         working-directory: tv-app
@@ -127,8 +152,9 @@ jobs:
           ASC_KEY_ID=$(printf %s "$ASC_KEY_ID" | tr -d "[:space:]"); ASC_ISSUER_ID=$(printf %s "${ASC_ISSUER_ID:-}" | tr -d "[:space:]"); export ASC_KEY_ID ASC_ISSUER_ID   # a pasted space or newline breaks the sign-in
           python3 -m pip install --quiet --break-system-packages pyjwt cryptography || python3 -m pip install --quiet pyjwt cryptography
           python3 Tools/asc.py prepare "$BUNDLE_ID" "$APP_NAME"
-      - name: Build, sign and upload to TestFlight
+      - name: Build, sign and upload to TestFlight (on a pull request, build and sign only)
         if: env.ready == 'true' && steps.asc.outputs.app_exists == 'true'
+        id: build
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -149,6 +175,8 @@ jobs:
           fi
           BUILD=$((100 + ${{ github.run_number }}))
           if [ "$VERSION" = "$LATEST_VERSION" ] && [ "${LATEST_BUILD:-0}" -ge "$BUILD" ]; then BUILD=$((LATEST_BUILD + 1)); fi
+          DESTINATION=upload
+          if [ "${{ github.event_name }}" = "pull_request" ]; then DESTINATION=export; fi
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
           # Archive unsigned and let the export sign it in the cloud. Signing the archive made Xcode create a new
@@ -164,7 +192,7 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>$DESTINATION</string>
             <key>teamID</key><string>$TEAM_ID</string>
             <key>signingStyle</key><string>automatic</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
@@ -172,8 +200,68 @@ jobs:
           PLIST
           xcodebuild -exportArchive -archivePath build/FamilyGameNight.xcarchive \
             -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH | tail -n 40
-          echo "Uploaded version $VERSION (build $BUILD). It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
+          if [ "$DESTINATION" = export ]; then
+            ls build/export/*.ipa > /dev/null || { echo "::error::The export made no .ipa"; exit 1; }
+            echo "Built and signed version $VERSION (build $BUILD) for TestFlight. Nothing was uploaded (this is a pull request check)."
+          else
+            echo "Uploaded version $VERSION (build $BUILD). It appears in TestFlight after Apple finishes processing it (usually 5 to 15 minutes)."
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          fi
       - name: Remove the key file
         if: always()
         working-directory: .
         run: rm -rf ~/private_keys
+
+  notes:
+    # The "What to Test" text the TestFlight app shows for this build. Waits (cheaply, on Linux) for Apple to receive
+    # the upload. Never fails the run: a missing note is only a warning.
+    name: Set the TestFlight "What to Test" notes
+    needs: upload
+    if: needs.upload.outputs.build != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write the notes
+        env:
+          EVENT: ${{ github.event_name }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          VERSION: ${{ needs.upload.outputs.version }}
+          BUILD: ${{ needs.upload.outputs.build }}
+        run: |
+          python3 - > notes.txt <<'PY'
+          import os
+          event, msg = os.environ["EVENT"], os.environ.get("MESSAGE", "").strip()
+          lines = [l.strip() for l in msg.splitlines() if l.strip() and not l.lower().startswith(("co-authored-by", "claude-session"))]
+          if event == "schedule":
+              print("Scheduled rebuild so the app on the TVs does not expire. Nothing new to try.")
+          elif lines and lines[0].startswith("Merge pull request"):
+              # "Merge pull request #21 from ..." then the pull request's title
+              number = lines[0].split()[3] if len(lines[0].split()) > 3 else ""
+              print((lines[1] if len(lines) > 1 else "Changes") + (f" (pull request {number})" if number else ""))
+          elif lines:
+              print("\n".join(lines[:6]))
+          else:
+              print("A new build.")
+          print(f"\nVersion {os.environ['VERSION']} ({os.environ['BUILD']}).")
+          PY
+          cat notes.txt
+      - name: Set them in App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          ASC_KEY_ID=$(printf %s "$ASC_KEY_ID" | tr -d "[:space:]"); ASC_ISSUER_ID=$(printf %s "${ASC_ISSUER_ID:-}" | tr -d "[:space:]"); export ASC_KEY_ID ASC_ISSUER_ID
+          mkdir -p ~/private_keys
+          python3 - "$HOME/private_keys/key.p8" <<'PY'
+          import os, re, sys, textwrap
+          body = re.sub(r"\s+", "", re.sub(r"-----(BEGIN|END)[A-Z ]*-----", "", os.environ["ASC_KEY_P8"]))
+          open(sys.argv[1], "w").write("-----BEGIN PRIVATE KEY-----\n" + "\n".join(textwrap.wrap(body, 64)) + "\n-----END PRIVATE KEY-----\n")
+          PY
+          export ASC_KEY_PATH=$HOME/private_keys/key.p8
+          python3 -m pip install --quiet pyjwt cryptography
+          python3 tv-app/Tools/asc.py notes "${{ needs.upload.outputs.app_id }}" "${{ needs.upload.outputs.version }}" "${{ needs.upload.outputs.build }}" notes.txt
+          rm -rf ~/private_keys
