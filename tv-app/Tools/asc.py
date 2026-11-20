@@ -122,7 +122,41 @@ def prepare(bundle_id, app_name):
         ensure_group(app_id)
     except Exception as e:  # never block the upload over the tester group
         print(f"::warning::Could not set up the TestFlight group automatically: {e}")
-    output(team_id=team, app_exists="true", app_id=app_id)
+    try:
+        latest_version, latest_build = latest_upload(app_id)
+    except Exception as e:  # the workflow still has the repository's own version to go on
+        print(f"::warning::Could not read the builds already in TestFlight: {e}")
+        latest_version, latest_build = "", 0
+    output(team_id=team, app_exists="true", app_id=app_id, latest_version=latest_version, latest_build=latest_build)
+
+
+def version_key(v):
+    return tuple(int(p) for p in v.split(".") if p.isdigit())
+
+
+def latest_upload(app_id):
+    """The highest version in TestFlight and the highest build number uploaded for it, from any Mac or workflow, so the
+    next upload can go above both. Also prints the most recent uploads, which shows where each one came from."""
+    status, res = call("GET", "/v1/preReleaseVersions", params={"filter[app]": app_id, "limit": 200})
+    if status != 200:
+        raise RuntimeError(f"preReleaseVersions {status}")
+    versions = [v["attributes"]["version"] for v in res.get("data", [])]
+    latest_version = max(versions, key=version_key) if versions else ""
+    status, res = call("GET", "/v1/builds", params={
+        "filter[app]": app_id, "sort": "-uploadedDate", "limit": 200, "include": "preReleaseVersion"})
+    if status != 200:
+        raise RuntimeError(f"builds {status}")
+    names = {i["id"]: i["attributes"]["version"] for i in res.get("included", []) if i["type"] == "preReleaseVersions"}
+    builds = res.get("data", [])
+    print("Most recent TestFlight uploads (newest first):")
+    for b in builds[:10]:
+        a = b["attributes"]
+        rel = (b.get("relationships", {}).get("preReleaseVersion", {}).get("data") or {}).get("id")
+        print(f"  {names.get(rel, '?')} ({a.get('version')})  uploaded {a.get('uploadedDate')}  {a.get('processingState')}")
+    # Build numbers only need to go up within one version, so look at the highest version's builds alone.
+    numbers = [int(b["attributes"]["version"]) for b in builds if str(b["attributes"].get("version", "")).isdigit()
+               and names.get((b.get("relationships", {}).get("preReleaseVersion", {}).get("data") or {}).get("id")) == latest_version]
+    return latest_version, max(numbers, default=0)
 
 
 def ensure_group(app_id):
