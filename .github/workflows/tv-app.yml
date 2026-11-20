@@ -119,6 +119,10 @@ jobs:
           }
           shot jp-lobby jp-lobby
           shot jp-lobby-seat jp-lobby SIMCTL_CHILD_GN_DEMO_SEAT=1
+          shot jp-lobby-real-show jp-lobby-archive SIMCTL_CHILD_GN_DEMO_SHELF=archive
+          shot jp-lobby-family-packs jp-lobby SIMCTL_CHILD_GN_DEMO_SHELF=house
+          shot jp-lobby-your-games jp-lobby SIMCTL_CHILD_GN_DEMO_SHELF=own
+          shot jp-lobby-preview jp-lobby-draft
           shot jp-board jp-board
           shot jp-board-menu jp-board SIMCTL_CHILD_GN_DEMO_MENU=1
           shot jp-captain-menu jp-board SIMCTL_CHILD_GN_DEMO_MENU=captain

@@ -10,14 +10,16 @@
 // send(clientId, message)   deliver a message to a client
 // save(json)                the room changed; keep this text so a restart can pick up where it left off (debounce it)
 // saved                     the text save() last gave (or null)
-import { Room } from '../room.js';
+// memory                    what the games keep between rooms on this TV (which clues it has shown), as onMemory last gave it
+// onMemory(data)            the games' memory changed: keep this object (it is plain JSON) and pass it back as `memory`
+import { Room, memoryStore } from '../room.js';
 import { createHub } from './hub.js';
 import { createRelayHost, newRoomCode } from './relay.js';
 import { GameError } from '../lib.js';
 
 const SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
 
-export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, userSets = {}, onSetsChanged = () => {}, onError, code = newRoomCode(), broadcast = null }) {
+export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, userSets = {}, onSetsChanged = () => {}, memory = null, onMemory = () => {}, onError, code = newRoomCode(), broadcast = null }) {
   // sets[gameId][setId] = set: the sets that came with the app, then what the family saved or deleted (userSets,
   // { game: { id: set | null } }, where null means deleted). onSetsChanged(changes) gets the family's changes to keep.
   const sets = {};
@@ -32,8 +34,10 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
   }
 
   let queued = false;
+  const kept = memoryStore(memory && typeof memory === 'object' ? memory : {});
   const room = new Room({
     games,
+    memory: { load: kept.load, save(gameId, data) { kept.save(gameId, data); try { onMemory(kept.all()); } catch (e) { onError?.(e); } } },
     ...(now ? { now } : {}),
     loadContent: (gameId, id) => sets[gameId]?.[id] ?? null,
     listContent: (gameId) => Object.entries(sets[gameId] ?? {})

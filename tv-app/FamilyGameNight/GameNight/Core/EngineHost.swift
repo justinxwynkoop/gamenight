@@ -46,6 +46,8 @@ public final class EngineHost {
     ///   - content: question sets as JSON text, `[gameId: [setId: json]]`
     ///   - userSets: the family's own changes to the question sets, as the last `onSets` gave them: `{game: {id: set | null}}`
     ///   - onSets: the family saved, imported or deleted a set (from the online editor): keep this text
+    ///   - memory: what the games keep between rooms (which clues this TV has shown), as the last `onMemory` gave it
+    ///   - onMemory: that memory changed: keep this text
     ///   - game: the game the TV's tile is for ("jeopardy" or "feud"). A saved room that was playing another game is not resumed.
     ///   - code: the room code phones type (four letters); the engine makes one if this is nil
     ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
@@ -57,10 +59,12 @@ public final class EngineHost {
         code: String? = nil,
         game: String? = nil,
         userSets: String? = nil,
+        memory: String? = nil,
         onSend: @escaping (_ clientId: String, _ json: String) -> Void,
         onBroadcast: @escaping (_ topic: String, _ event: String, _ json: String) -> Void = { _, _, _ in },
         onSave: @escaping (_ json: String) -> Void = { _ in },
         onSets: @escaping (_ json: String) -> Void = { _ in },
+        onMemory: @escaping (_ json: String) -> Void = { _ in },
         onArchive: @escaping (_ request: ArchiveRequest) -> Void = { _ in }
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
@@ -83,6 +87,8 @@ public final class EngineHost {
         set("broadcast", unsafeBitCast(broadcast, to: AnyObject.self))
         let saveSets: @convention(block) (String) -> Void = { onSets($0) }
         set("saveSets", unsafeBitCast(saveSets, to: AnyObject.self))
+        let saveMemory: @convention(block) (String) -> Void = { onMemory($0) }
+        set("saveMemory", unsafeBitCast(saveMemory, to: AnyObject.self))
         let loadArchive: @convention(block) (String) -> Void = { json in
             if let request = try? JSONDecoder().decode(ArchiveRequest.self, from: Data(json.utf8)) { onArchive(request) }
         }
@@ -107,6 +113,7 @@ public final class EngineHost {
         if let code { options["code"] = code }
         if let game { options["game"] = game }
         if let userSets, let object = Self.object(userSets) { options["userSets"] = object }
+        if let memory, let object = Self.object(memory) { options["memory"] = object }
         engine.invokeMethod("start", withArguments: [Self.json(options)])
         if let first = problems.list.first { throw EngineError.scriptFailed(first) }
     }

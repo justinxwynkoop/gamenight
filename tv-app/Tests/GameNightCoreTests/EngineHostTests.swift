@@ -242,4 +242,20 @@ final class EngineHostTests: XCTestCase {
         let titles = (reply["data"] as? [[String: Any]])?.compactMap { $0["title"] as? String }
         XCTAssertEqual(titles, ["Made on a phone"], "the saved set is there and the deleted one stays deleted")
     }
+
+    func testTheTVRemembersWhichCluesItHasShownBetweenRooms() throws {
+        var kept: String?
+        let wire = Wire()
+        let host = try EngineHost(script: Self.script, pin: "4321", game: "jeopardy",
+                                  memory: #"{"jeopardy":{"v":1,"seen":["abc"]}}"#,
+                                  onSend: { wire.sent.append(($0, $1)) }, onMemory: { kept = $0 })
+        host.open("tv")
+        say(host, "tv", #"{"t":"hello","role":"tv"}"#)
+        let data = try XCTUnwrap(wire.lastStateData(to: "tv"))
+        let lobby = try XCTUnwrap(try JSONDecoder().decode(StateMessage.self, from: data).view.jeopardy)
+        XCTAssertEqual(lobby.seenCount, 1, "the memory the app kept is handed back to the engine")
+        say(host, "tv", #"{"t":"act","action":"resetHistory","args":{}}"#)
+        let memory = try XCTUnwrap(kept, "the engine asks the app to keep its memory")
+        XCTAssertTrue(memory.contains(#""seen":[]"#), memory)
+    }
 }

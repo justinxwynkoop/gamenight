@@ -10,7 +10,7 @@ globalThis.Engine = {
   /** The games this engine can run, for the host's menus. */
   games: () => JSON.stringify(Object.values(GAMES).filter((g) => !g.appOnly).map((g) => ({ id: g.id, name: g.name, description: g.description, needs: g.needs ?? null }))),
 
-  /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } } }. The room code is the relay's. */
+  /** options: { pin, game?, code?, saved?: string, content?: { <gameId>: { <setId>: set } }, userSets?: { <gameId>: { <setId>: set | null } }, memory?: object }. The room code is the relay's. */
   start(optionsJson) {
     const o = parse(optionsJson);
     // A tile for one game never resumes a room that was playing another: that room starts fresh.
@@ -24,6 +24,9 @@ globalThis.Engine = {
       content: o.content ?? {},
       userSets: o.userSets ?? {},
       onSetsChanged: (c) => { if (__native.saveSets) __native.saveSets(JSON.stringify(c)); },
+      // Which clues this Apple TV has shown (kept by the app between rooms), so the next game deals new ones.
+      memory: o.memory ?? null,
+      onMemory: (m) => { if (__native.saveMemory) __native.saveMemory(JSON.stringify(m)); },
       now: () => performance.now(),
       code: o.code || undefined,
       broadcast: (topic, event, payload) => __native.broadcast(topic, event, JSON.stringify(payload)),

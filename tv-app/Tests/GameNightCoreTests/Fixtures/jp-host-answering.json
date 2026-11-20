@@ -92,7 +92,7 @@
     },
     "board": [
       {
-        "name": "Creepy Crawlies",
+        "name": "World Capitals",
         "clues": [
           {
             "value": 200,
@@ -117,7 +117,7 @@
         ]
       },
       {
-        "name": "Movie Magic",
+        "name": "Animal Kingdom",
         "clues": [
           {
             "value": 200,
@@ -142,7 +142,7 @@
         ]
       },
       {
-        "name": "Foreign Words",
+        "name": "Holidays",
         "clues": [
           {
             "value": 200,
@@ -167,7 +167,7 @@
         ]
       },
       {
-        "name": "Famous Landmarks",
+        "name": "Pets",
         "clues": [
           {
             "value": 200,
@@ -192,7 +192,7 @@
         ]
       },
       {
-        "name": "Presidents",
+        "name": "Music Notes",
         "clues": [
           {
             "value": 200,
@@ -217,7 +217,7 @@
         ]
       },
       {
-        "name": "Tech Talk",
+        "name": "Inventions",
         "clues": [
           {
             "value": 200,
@@ -245,11 +245,11 @@
     "clue": {
       "ci": 0,
       "ri": 0,
-      "cat": "Creepy Crawlies",
+      "cat": "World Capitals",
       "value": 200,
       "dd": false,
       "wager": null,
-      "q": "The number of legs on an insect.",
+      "q": "The capital of Japan.",
       "answer": null,
       "buzzedId": "p1",
       "buzzMs": 200,

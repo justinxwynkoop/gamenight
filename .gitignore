@@ -1,5 +1,6 @@
 node_modules/
 data/state.json
+data/memory.json
 data/config.json
 data/sounds/
 data/server.log

@@ -11,7 +11,7 @@ import { createEngine } from '../core.js';
 import { Realtime } from '../../public/relay/phoenix.js';
 import QRCode from 'qrcode';
 
-const KEYS = { room: 'gn-tv-room', code: 'gn-tv-code', pin: 'gn-tv-pin', sets: 'gn-tv-sets' };
+const KEYS = { room: 'gn-tv-room', code: 'gn-tv-code', pin: 'gn-tv-pin', sets: 'gn-tv-sets', memory: 'gn-tv-memory' };
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const put = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } };
 const json = (text) => { try { return text ? JSON.parse(text) : null; } catch { return null; } };
@@ -56,6 +56,9 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     content,
     userSets: json(get(KEYS.sets)) ?? {},
     onSetsChanged: (changes) => put(KEYS.sets, JSON.stringify(changes)),
+    // Which clues this TV has shown, so the next game deals new ones. It outlives the room (a new room code keeps it).
+    memory: json(get(KEYS.memory)) ?? {},
+    onMemory: (data) => put(KEYS.memory, JSON.stringify(data)),
     now: () => performance.now(),
     code,
     broadcast: (topic, event, payload) => rt?.send(topic, event, payload),

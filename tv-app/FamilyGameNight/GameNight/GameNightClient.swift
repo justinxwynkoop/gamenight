@@ -94,6 +94,8 @@ final class GameNightClient {
     private static let savedRoomKey = "gamenight.localRoom"
     private static let roomCodeKey = "gamenight.roomCode"
     private static let userSetsKey = "gamenight.userSets"
+    /// Which clues this Apple TV has shown, so the next game deals new ones. Kept when the room changes.
+    private static let memoryKey = "gamenight.memory"
 
     /// A room code kept from an earlier run, if it is the four digits rooms use now (older rooms used letters).
     private static func storedRoomCode() -> String? {
@@ -185,6 +187,7 @@ final class GameNightClient {
                 code: Self.storedRoomCode(),
                 game: game,
                 userSets: UserDefaults.standard.string(forKey: Self.userSetsKey),
+                memory: UserDefaults.standard.string(forKey: Self.memoryKey),
                 onSend: { [weak self] id, json in
                     // Only the TV's own display is local; phones and the host are answered through the relay.
                     if id == "tv" { self?.handle(Data(json.utf8)) }
@@ -194,6 +197,7 @@ final class GameNightClient {
                 },
                 onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) },
                 onSets: { json in UserDefaults.standard.set(json, forKey: Self.userSetsKey) },
+                onMemory: { json in UserDefaults.standard.set(json, forKey: Self.memoryKey) },
                 onArchive: { [weak self] request in self?.loadArchive(request) }
             )
             engine = host
