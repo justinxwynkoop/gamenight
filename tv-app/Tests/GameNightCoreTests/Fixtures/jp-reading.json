@@ -82,8 +82,8 @@
     ],
     "timer": {
       "kind": "reading",
-      "totalMs": 5780,
-      "leftMs": 5780
+      "totalMs": 5000,
+      "leftMs": 5000
     },
     "guide": {
       "pid": null,
@@ -255,7 +255,7 @@
       "buzzMs": null,
       "buzzes": [],
       "open": 0,
-      "liveAt": 13790,
+      "liveAt": 13010,
       "liveSeq": 1,
       "tried": []
     },

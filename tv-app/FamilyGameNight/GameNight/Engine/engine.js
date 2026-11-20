@@ -434,7 +434,7 @@
   var MAX_PLAYERS2 = 10;
   var FINAL_FLOOR = 1e3;
   var readingTime = (text) => Math.max(4e3, Math.min(1e4, 1500 + String(text).length * 55));
-  var speakingTime = (text) => Math.max(5e3, Math.min(18e3, 2500 + String(text).length * 80));
+  var speakingTime = (text) => Math.max(5e3, Math.min(16e3, 2e3 + String(text).length * 70));
   var AFTER_SPEECH = 600;
   var HALL_MAX = 40;
   var hallKey = (name) => String(name ?? "").trim().toLowerCase().replace(/\s+/g, " ");

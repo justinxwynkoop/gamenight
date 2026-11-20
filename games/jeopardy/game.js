@@ -65,7 +65,7 @@ export const FINAL_FLOOR = 1000;   // the most a player with little or no money 
 export const readingTime = (text) => Math.max(4000, Math.min(10000, 1500 + String(text).length * 55));
 /** With the TV reading the clue out loud: the longest the voice may take. The TV says when it is done (readDone),
  * which opens the buzzers sooner; this is only the backstop for a TV whose voice never starts or never ends. */
-export const speakingTime = (text) => Math.max(5000, Math.min(18000, 2500 + String(text).length * 80));
+export const speakingTime = (text) => Math.max(5000, Math.min(16000, 2000 + String(text).length * 70));
 /** After the voice stops, the buzzers open this much later, a moment every phone is told in advance. */
 export const AFTER_SPEECH = 600;
 /** The family scoreboard keeps this many players (those who played least are forgotten first). */
