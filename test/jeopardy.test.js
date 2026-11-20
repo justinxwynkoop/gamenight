@@ -944,3 +944,22 @@ test('the engine hands the memory to whoever hosts it, and takes it back on the 
   e2.room.chooseGame('jeopardy');
   assert.ok(e2.room.game.seen.has('xyz'));
 });
+
+test('real-show clues that need a picture or a sound are left out; harmless stage directions are taken off', async () => {
+  const { playable, parseArchive } = await import('../games/jeopardy/archive.js');
+  assert.equal(playable('(Sarah of the Clue Crew shows a map on the monitor.) This country is the largest in South America'), null);
+  assert.equal(playable('Seen here, this bird is the national symbol of the U.S.'), null);
+  assert.equal(playable('Here are some of the colorful characters from this brand'), null);
+  assert.equal(playable('(Kelly of the Clue Crew presents from Edison Labs.) Edison filmed this showman in 1894'), 'Edison filmed this showman in 1894');
+  assert.equal(playable('(Gene Simmons presents the clue.) Kids once traded prayers for this Halloween treat'), 'Kids once traded prayers for this Halloween treat');
+  assert.equal(playable('This river flows through Cairo'), 'This river flows through Cairo');
+  const header = 'round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes';
+  const col = (cat, date, first) => [200, 400, 600, 800, 1000].map((v, i) =>
+    ['1', v, 0, cat, '', i === 0 ? first : `History clue ${v} about a war`, `Ans ${v}`, date, ''].join('\t'));
+  const rows = [];
+  for (let d = 0; d < 14; d++) rows.push(...col(`WARS ${d}`, `2001-01-${String(d + 1).padStart(2, '0')}`, 'An ancient war clue'));
+  rows.push(...col('MAPS', '2001-02-01', '(Jimmy of the Clue Crew shows a map on the monitor.) This war began in 1914'));
+  const packs = parseArchive([header, ...rows].join('\n'), 17, () => 0.5);
+  const names = packs.flatMap((p) => p.categories.map((c) => c.name));
+  assert.ok(names.length >= 14 && !names.includes('MAPS'), 'the column with a picture clue is not played');
+});

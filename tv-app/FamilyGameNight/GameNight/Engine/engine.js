@@ -256,6 +256,15 @@
     alt.delete(a);
     return { a, alt: [...alt].filter(Boolean).slice(0, 6) };
   }
+  var STAGE = /^\(([^)]*)\)\s*/;
+  var SHOWS = /\b(monitor|shows?|showing|holds?|holding|points?|pointing|demonstrat\w*|plays?|playing|sings?|singing|hums?|draws?|drawing|video|audio|maps?|images?|pictures?|photos?|diagrams?|charts?|models?|display\w*|is shown|are shown|reads? (?:from|a|an|the)|performs?|wear\w*|uses?|using|tastes?|pours?|mix\w*|walks|stands next)\b/i;
+  var NEEDS_MEDIA = /\b(seen here|shown here|pictured here|heard here|you see here|you hear here|this clip|in this video|on the monitor|seen in this|shown in this|here is|here are|the following)\b|\[/i;
+  function playable(q) {
+    const m = q.match(STAGE);
+    if (m && SHOWS.test(m[1]) || NEEDS_MEDIA.test(q)) return null;
+    const text = m ? q.slice(m[0].length).trim() : q;
+    return text || null;
+  }
   function parseArchive(tsv, season, rng = Math.random) {
     const lines2 = tsv.split("\n");
     const head = lines2.shift().split("	");
@@ -267,7 +276,15 @@
     for (const line of lines2) {
       if (!line) continue;
       const f = line.split("	");
-      const round = f[iR], clue = clean(f[iQ]), resp = f[iA], cat = clean(f[iC]);
+      const round = f[iR], resp = f[iA], cat = clean(f[iC]);
+      const raw = clean(f[iQ]);
+      const clue = raw && playable(raw);
+      if (raw && !clue && (round === "1" || round === "2")) {
+        const key2 = `${f[iD]}|${round}|${cat}`;
+        if (!groups.has(key2)) groups.set(key2, { name: cat, round, clues: [] });
+        groups.get(key2).bad = true;
+        continue;
+      }
       if (!clue || !resp || !cat) continue;
       if (round === "3") {
         finals.push({ category: cat, q: clue, ...response(resp), date: f[iD] });
@@ -281,7 +298,7 @@
     }
     const categories = [];
     for (const g of groups.values()) {
-      if (g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
+      if (g.bad || g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
       g.clues.sort((x, y) => x.v - y.v);
       categories.push({ name: g.name, clues: g.clues.map(({ q, a, alt }) => ({ q, a, alt })) });
     }
