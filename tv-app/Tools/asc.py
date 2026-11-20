@@ -2,6 +2,10 @@
 github.com/JasonWynkoop1/buzzworthy).
 
     python3 Tools/asc.py prepare BUNDLE_ID APP_NAME
+    python3 Tools/asc.py notes APP_ID VERSION BUILD NOTES_FILE
+
+"notes" waits for the uploaded build to show up in App Store Connect (up to 30 minutes) and sets its TestFlight
+"What to Test" text, which the TestFlight app on the Apple TV shows before you update.
 
 Needs the environment variables ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH (the .p8 key file). It registers the bundle ID if
 needed, finds the Apple developer team that owns it, checks that the app exists in App Store Connect, and makes sure there
@@ -176,8 +180,45 @@ def ensure_group(app_id):
     print(f"Created the internal TestFlight group '{GROUP}'")
 
 
+def find_build(app_id, version, build, wait=1800):
+    """The id of the upload VERSION (BUILD), waiting while Apple receives it."""
+    deadline = time.time() + wait
+    while True:
+        status, res = call("GET", "/v1/builds", params={
+            "filter[app]": app_id, "filter[version]": build, "filter[preReleaseVersion.version]": version, "limit": 5})
+        if status == 200 and res.get("data"):
+            return res["data"][0]["id"]
+        if time.time() > deadline:
+            return None
+        print(f"Waiting for {version} ({build}) to appear in App Store Connect ({'not yet' if status == 200 else f'error {status}'})")
+        time.sleep(30)
+
+
+def notes(app_id, version, build, path):
+    text = open(path, encoding="utf-8").read().strip()[:3900] or f"Version {version} ({build})"
+    build_id = find_build(app_id, version, build)
+    if not build_id:
+        print(f"::warning::{version} ({build}) did not show up in App Store Connect within 30 minutes, so it has no What to Test notes.")
+        return
+    status, res = call("GET", f"/v1/builds/{build_id}/betaBuildLocalizations", params={"limit": 50})
+    have = [l for l in res.get("data", []) if l["attributes"].get("locale") == "en-US"] if status == 200 else []
+    if have:
+        status, res = call("PATCH", f"/v1/betaBuildLocalizations/{have[0]['id']}", {
+            "data": {"type": "betaBuildLocalizations", "id": have[0]["id"], "attributes": {"whatsNew": text}}})
+    else:
+        status, res = call("POST", "/v1/betaBuildLocalizations", {
+            "data": {"type": "betaBuildLocalizations", "attributes": {"locale": "en-US", "whatsNew": text},
+                     "relationships": {"build": {"data": {"type": "builds", "id": build_id}}}}})
+    if status not in (200, 201):
+        print(f"::warning::Could not set the What to Test notes ({status}): {res}")
+        return
+    print(f"What to Test for {version} ({build}):\n{text}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 4 and sys.argv[1] == "prepare":
         prepare(sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 6 and sys.argv[1] == "notes":
+        notes(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     else:
         sys.exit(__doc__)

@@ -9,6 +9,10 @@ the TV, played from phones. Everything is in this one repository. Read `README.m
 - **Merging is going live.** The project is still in development, so there are no preview or staging steps: when the
   checks pass, merge. Vercel deploys the website from `main`, and the TestFlight workflow uploads a new Apple TV build
   when the app, rules, engine or shipped question sets change.
+- Merge only once **every** check on the PR has finished and passed, including the slow Mac ones ("Apple TV app" and
+  "Build and sign for TestFlight (no upload)", about 10 minutes). A check still running is not a pass.
+- If an issue labelled `main-broken` is open, something failed on `main` after a merge (alert.yml opens it): fix that
+  first. It closes itself when the workflow passes again.
 - Never skip or weaken a test to get a green check. Fix the cause.
 
 ## Before you push

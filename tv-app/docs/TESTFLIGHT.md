@@ -80,6 +80,17 @@ TestFlight shows them as 1.3 (122), 1.3 (123) and so on. To
 start a new version, upload it by hand (or with the script) and commit the new number in that file. If you forget, the
 workflow notices: it never uploads a lower version or build than the highest one already in TestFlight.
 
+**Checked before it merges.** On a pull request the same workflow builds, signs and exports the app with the same key but
+does not upload it (the check "Build and sign for TestFlight (no upload)"), so a signing or build problem shows up red on
+the pull request instead of as a failed upload after the merge.
+
+**What to Test notes.** After each upload a small follow-up job waits for Apple to receive the build and sets its
+TestFlight "What to Test" text to the title of the pull request that was merged, so the TestFlight app on the Apple TV
+says what changed before you update.
+
+**You hear about failures.** If an upload (or the tests) fails on `main`, `alert.yml` opens a GitHub issue labelled
+`main-broken`, assigned to Jason, and GitHub emails it. It closes itself when the workflow next passes on `main`.
+
 The workflow archives the app unsigned and signs it only at export, in the cloud. Signing the archive made Xcode create a
 new development certificate on each fresh runner until the team hit Apple's limit and every upload failed.
 
