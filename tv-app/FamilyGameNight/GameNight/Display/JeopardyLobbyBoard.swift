@@ -479,6 +479,13 @@ struct JeoLobby: View {
             .font(BW.display(64))
             .lineLimit(1)
             .minimumScaleFactor(0.6)
+            if let line = game.hall?.line {
+                Label(line, systemImage: "trophy.fill")
+                    .font(BW.body(24, .semibold))
+                    .foregroundColor(BW.soft)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
         }
     }
 

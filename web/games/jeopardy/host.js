@@ -215,9 +215,12 @@ function settingsCards() {
     lobby ? jp(judgeControl(v, act), v.hostJudges && answerTimeControl(v, act), readAloudControl(v, act))
       : h('p', { class: 'dim' }, v.hostJudges ? 'A host judges spoken answers. This can only be changed before the game starts.' : 'Players type their answers and the game checks them. This can only be changed before the game starts.'),
     h('p', { class: 'dim' }, v.readsAloud ? 'The TV reads each clue out loud; the buzzers open when it finishes,' : 'Buzzers open a few seconds after the clue appears, stay open for seven seconds, and a wrong answer opens them again for everyone who has not tried.')),
+  lobby && v.hall?.games > 0 && card(eyebrow('Family scoreboard'),
+    h('p', { class: 'dim' }, `${v.hall.games} game${v.hall.games === 1 ? '' : 's'} on this TV. ` + (v.hall.players.filter((e) => e.wins).map((e) => `${e.name}: ${e.wins}`).join(', ') || 'No champion yet.')),
+    button({ label: 'Clear the scoreboard', size: 'sm', onclick: () => C.confirm({ title: 'Clear the family scoreboard?', message: 'Every win and game on this TV is forgotten.', confirmLabel: 'Clear', onConfirm: () => act('resetHall') }) })),
   card(eyebrow('Final Jeopardy'), !(v.phase.startsWith('final') || v.phase === 'gameover')
     ? jp(finalControl(v, act))
-    : h('p', { class: 'dim' }, v.finalForAll ? 'Everyone plays Final Jeopardy.' : 'Only players with money play Final Jeopardy.'))];
+    : h('p', { class: 'dim' }, v.finalForAll ? 'Everyone plays Final Jeopardy.' : 'Only players with money play Final Jeopardy.'))].filter(Boolean);
 }
 
 const confirmEndGame = () => C.confirm({ title: 'End the game?', message: 'Scores are reset and everyone goes back to the lobby. Players stay in the room.', confirmLabel: 'End game', onConfirm: () => act('endGame') });

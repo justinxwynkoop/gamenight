@@ -436,6 +436,17 @@
   var readingTime = (text) => Math.max(4e3, Math.min(1e4, 1500 + String(text).length * 55));
   var speakingTime = (text) => Math.max(5e3, Math.min(18e3, 2500 + String(text).length * 80));
   var AFTER_SPEECH = 600;
+  var HALL_MAX = 40;
+  var hallKey = (name) => String(name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  function cleanHall(h) {
+    const out = { games: Number.isInteger(h?.games) && h.games >= 0 ? h.games : 0, last: Array.isArray(h?.last) ? h.last.filter((k) => typeof k === "string") : [], players: {} };
+    for (const [k, e] of Object.entries(h?.players && typeof h.players === "object" ? h.players : {})) {
+      if (!e || typeof e.name !== "string") continue;
+      const n = (x) => Number.isFinite(x) ? x : 0;
+      out.players[k] = { name: e.name, color: typeof e.color === "string" ? e.color : "#FFC940", games: n(e.games), wins: n(e.wins), best: n(e.best), streak: n(e.streak), bestStreak: n(e.bestStreak) };
+    }
+    return out;
+  }
   function validateSet(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
     if (!cleanName(set.title, 80)) fail("Question set needs a title");
@@ -484,7 +495,7 @@
     return h1.toString(36) + h2.toString(36).slice(0, 3);
   }
   var MAX_SEEN = 15e3;
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, loadSeen_fn, saveSeen_fn, seenClue_fn, freshIn_fn, markSeen_fn, renewUsedUp_fn, ranked_fn, refreshPacks_fn, composePacks_fn, bank_fn, chosen_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, loadSeen_fn, saveSeen_fn, recordGame_fn, hallView_fn, seenClue_fn, freshIn_fn, markSeen_fn, renewUsedUp_fn, ranked_fn, refreshPacks_fn, composePacks_fn, bank_fn, chosen_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, buildRounds_fn, roundIntro_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalStep_fn, timerView_fn, players_fn, guide_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -564,6 +575,14 @@
         this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
         __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
       }
+    }
+    /** Forget the family scoreboard (the host's "clear the scoreboard"). */
+    resetHall() {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.hall = cleanHall(null);
+      this.hallBefore = null;
+      __privateMethod(this, _JeopardyGame_instances, saveSeen_fn).call(this);
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     /** Forget which clues this TV has shown (the host's "start fresh"). */
     resetHistory() {
@@ -1159,8 +1178,12 @@
           return this.endGame();
         case "kick":
           return this.kick(String(a.pid ?? a.targetPid ?? a.id ?? ""));
-        case "adjustScore":
-          return this.room.adjustScore(String(a.id ?? a.targetPid ?? ""), { delta: a.delta, set: a.set });
+        // After the game, a fixed score changes the family scoreboard too.
+        case "adjustScore": {
+          const r = this.room.adjustScore(String(a.id ?? a.targetPid ?? ""), { delta: a.delta, set: a.set });
+          __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+          return r;
+        }
         case "toggleEasy":
           return this.toggleEasy();
         case "setAnswerTime":
@@ -1185,6 +1208,8 @@
           return this.setAllPacks(a.kind === "archive" ? "archive" : "house", a.on !== false);
         case "resetHistory":
           return this.resetHistory();
+        case "resetHall":
+          return this.resetHall();
         default:
           throw new GameError(`Unknown action ${action}`);
       }
@@ -1283,6 +1308,7 @@
         reactionChoices: REACTIONS
       };
       if (this.phase === "gameover") v.awards = this.awards();
+      if (this.phase === "gameover" || this.phase === "lobby") v.hall = __privateMethod(this, _JeopardyGame_instances, hallView_fn).call(this);
       if (this.phase === "lobby") {
         const written = __privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this);
         v.packs = this.packs.map((p) => ({
@@ -1388,6 +1414,8 @@
         final: this.final,
         lastResult: this.lastResult,
         clue: this.clue,
+        hallSig: this.hallSig,
+        hallBefore: this.hallBefore,
         stats: [...this.stats.entries()]
       };
     }
@@ -1398,6 +1426,8 @@
       this.selected = new Set(data.selected ?? []);
       this.phase = data.phase ?? "lobby";
       this.round = data.round ?? 0;
+      this.hallSig = data.hallSig ?? null;
+      this.hallBefore = data.hallBefore ?? null;
       this.rounds = data.rounds ?? [];
       this.controllerId = data.controllerId ?? null;
       this.captainId = data.captainId ?? null;
@@ -1433,8 +1463,11 @@
     this.finalClue = null;
     this.timer = null;
     this.collecting = null;
+    this.hallSig = null;
+    this.hallBefore = null;
   };
   changed_fn = function() {
+    if (this.phase === "gameover") __privateMethod(this, _JeopardyGame_instances, recordGame_fn).call(this);
     this.room.changed();
   };
   now_fn = function() {
@@ -1491,13 +1524,60 @@
       data = null;
     }
     this.seen = new Set(Array.isArray(data?.seen) ? data.seen.filter((k) => typeof k === "string") : []);
+    this.hall = cleanHall(data?.hall);
   };
   saveSeen_fn = function() {
     while (this.seen.size > MAX_SEEN) this.seen.delete(this.seen.values().next().value);
     try {
-      this.room.memory?.save(GAME, { v: 1, seen: [...this.seen] });
+      this.room.memory?.save(GAME, { v: 1, seen: [...this.seen], hall: this.hall });
     } catch {
     }
+  };
+  // ---------- the family scoreboard: every finished game on this TV, kept between nights ----------
+  /**
+   * Adds the finished game to the scoreboard, once. A Final Jeopardy ruling flipped after the game ended changes the
+   * scores, so the game is taken back out (from the copy kept before it went in) and added again.
+   */
+  recordGame_fn = function() {
+    var _a;
+    const now = new Map(this.room.players.filter((p) => cleanName(p.name, 40)).map((p) => [hallKey(p.name), p]));
+    const ps = this.hallSig ? JSON.parse(this.hallSig).map((e) => ({ ...e, score: now.get(hallKey(e.name))?.score ?? e.score })) : [...now.values()].map((p) => ({ name: p.name, color: p.color, score: p.score }));
+    if (!ps.length) return;
+    const sig = JSON.stringify(ps);
+    if (sig === this.hallSig) return;
+    if (this.hallBefore) this.hall = cleanHall(this.hallBefore);
+    this.hallBefore = JSON.parse(JSON.stringify(this.hall));
+    this.hallSig = sig;
+    const top = Math.max(...ps.map((p) => p.score));
+    const champs = top > 0 ? ps.filter((p) => p.score === top).map((p) => hallKey(p.name)) : [];
+    const h = this.hall;
+    h.games += 1;
+    for (const p of ps) {
+      const k = hallKey(p.name);
+      const e = (_a = h.players)[k] ?? (_a[k] = { name: p.name, color: p.color, games: 0, wins: 0, best: 0, streak: 0, bestStreak: 0 });
+      e.name = p.name;
+      e.color = p.color;
+      e.games += 1;
+      e.best = Math.max(e.best, p.score);
+      if (champs.includes(k)) {
+        e.wins += 1;
+        e.streak = h.last.includes(k) ? e.streak + 1 : 1;
+        e.bestStreak = Math.max(e.bestStreak, e.streak);
+      } else e.streak = 0;
+    }
+    for (const [k, e] of Object.entries(h.players)) if (!ps.some((p) => hallKey(p.name) === k)) e.streak = 0;
+    h.last = champs;
+    const keys = Object.keys(h.players);
+    if (keys.length > HALL_MAX) {
+      keys.sort((a, b) => h.players[a].games - h.players[b].games || h.players[a].wins - h.players[b].wins);
+      for (const k of keys.slice(0, keys.length - HALL_MAX)) delete h.players[k];
+    }
+    __privateMethod(this, _JeopardyGame_instances, saveSeen_fn).call(this);
+  };
+  /** The scoreboard as the screens show it: most wins first. */
+  hallView_fn = function() {
+    const list = Object.values(this.hall.players).sort((a, b) => b.wins - a.wins || b.best - a.best || a.name.localeCompare(b.name)).slice(0, 8).map((e) => ({ name: e.name, color: e.color, wins: e.wins, games: e.games, best: e.best, streak: e.streak }));
+    return { games: this.hall.games, players: list };
   };
   seenClue_fn = function(cl) {
     return this.seen.has(cl.k ?? (cl.k = clueKey(cl.q)));
@@ -2018,7 +2098,7 @@
     }
   };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory", "resetHall"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js

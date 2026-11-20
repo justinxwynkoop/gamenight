@@ -68,6 +68,18 @@ export const readingTime = (text) => Math.max(4000, Math.min(10000, 1500 + Strin
 export const speakingTime = (text) => Math.max(5000, Math.min(18000, 2500 + String(text).length * 80));
 /** After the voice stops, the buzzers open this much later, a moment every phone is told in advance. */
 export const AFTER_SPEECH = 600;
+/** The family scoreboard keeps this many players (those who played least are forgotten first). */
+const HALL_MAX = 40;
+const hallKey = (name) => String(name ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+function cleanHall(h) {
+  const out = { games: Number.isInteger(h?.games) && h.games >= 0 ? h.games : 0, last: Array.isArray(h?.last) ? h.last.filter((k) => typeof k === 'string') : [], players: {} };
+  for (const [k, e] of Object.entries(h?.players && typeof h.players === 'object' ? h.players : {})) {
+    if (!e || typeof e.name !== 'string') continue;
+    const n = (x) => (Number.isFinite(x) ? x : 0);
+    out.players[k] = { name: e.name, color: typeof e.color === 'string' ? e.color : '#FFC940', games: n(e.games), wins: n(e.wins), best: n(e.best), streak: n(e.streak), bestStreak: n(e.bestStreak) };
+  }
+  return out;
+}
 
 /** Checks one of our own boards (what the editor saves). A clue may list other words to accept in `alt`. */
 export function validateSet(set) {
@@ -170,8 +182,13 @@ export class JeopardyGame {
     this.finalClue = null;
     this.timer = null;
     this.collecting = null;
+    this.hallSig = null;            // the finished game already on the scoreboard (its players and scores)
+    this.hallBefore = null;         // the scoreboard before it went in
   }
-  #changed() { this.room.changed(); }
+  #changed() {
+    if (this.phase === 'gameover') this.#recordGame();
+    this.room.changed();
+  }
   #now() { return this.room.now(); }
   #rng() { return this.room.rng(); }
   #shuffle(a) {
@@ -243,10 +260,71 @@ export class JeopardyGame {
     let data = null;
     try { data = this.room.memory?.load(GAME); } catch { data = null; }
     this.seen = new Set(Array.isArray(data?.seen) ? data.seen.filter((k) => typeof k === 'string') : []);
+    this.hall = cleanHall(data?.hall);
   }
   #saveSeen() {
     while (this.seen.size > MAX_SEEN) this.seen.delete(this.seen.values().next().value);
-    try { this.room.memory?.save(GAME, { v: 1, seen: [...this.seen] }); } catch { /* nowhere to keep it */ }
+    try { this.room.memory?.save(GAME, { v: 1, seen: [...this.seen], hall: this.hall }); } catch { /* nowhere to keep it */ }
+  }
+
+  // ---------- the family scoreboard: every finished game on this TV, kept between nights ----------
+  /**
+   * Adds the finished game to the scoreboard, once. A Final Jeopardy ruling flipped after the game ended changes the
+   * scores, so the game is taken back out (from the copy kept before it went in) and added again.
+   */
+  #recordGame() {
+    // Who played is fixed when the game first ends; someone leaving afterwards is still counted, with their score.
+    const now = new Map(this.room.players.filter((p) => cleanName(p.name, 40)).map((p) => [hallKey(p.name), p]));
+    const ps = this.hallSig
+      ? JSON.parse(this.hallSig).map((e) => ({ ...e, score: now.get(hallKey(e.name))?.score ?? e.score }))
+      : [...now.values()].map((p) => ({ name: p.name, color: p.color, score: p.score }));
+    if (!ps.length) return;
+    const sig = JSON.stringify(ps);
+    if (sig === this.hallSig) return;
+    if (this.hallBefore) this.hall = cleanHall(this.hallBefore);
+    this.hallBefore = JSON.parse(JSON.stringify(this.hall));
+    this.hallSig = sig;
+    const top = Math.max(...ps.map((p) => p.score));
+    const champs = top > 0 ? ps.filter((p) => p.score === top).map((p) => hallKey(p.name)) : [];
+    const h = this.hall;
+    h.games += 1;
+    for (const p of ps) {
+      const k = hallKey(p.name);
+      const e = h.players[k] ??= { name: p.name, color: p.color, games: 0, wins: 0, best: 0, streak: 0, bestStreak: 0 };
+      e.name = p.name; e.color = p.color;
+      e.games += 1;
+      e.best = Math.max(e.best, p.score);
+      if (champs.includes(k)) {
+        e.wins += 1;
+        e.streak = h.last.includes(k) ? e.streak + 1 : 1;
+        e.bestStreak = Math.max(e.bestStreak, e.streak);
+      } else e.streak = 0;
+    }
+    // Someone who did not play tonight keeps their wins but loses their run as champion.
+    for (const [k, e] of Object.entries(h.players)) if (!ps.some((p) => hallKey(p.name) === k)) e.streak = 0;
+    h.last = champs;
+    const keys = Object.keys(h.players);
+    if (keys.length > HALL_MAX) {
+      keys.sort((a, b) => h.players[a].games - h.players[b].games || h.players[a].wins - h.players[b].wins);
+      for (const k of keys.slice(0, keys.length - HALL_MAX)) delete h.players[k];
+    }
+    this.#saveSeen();
+  }
+  /** The scoreboard as the screens show it: most wins first. */
+  #hallView() {
+    const list = Object.values(this.hall.players)
+      .sort((a, b) => b.wins - a.wins || b.best - a.best || a.name.localeCompare(b.name))
+      .slice(0, 8)
+      .map((e) => ({ name: e.name, color: e.color, wins: e.wins, games: e.games, best: e.best, streak: e.streak }));
+    return { games: this.hall.games, players: list };
+  }
+  /** Forget the family scoreboard (the host's "clear the scoreboard"). */
+  resetHall() {
+    this.#lobbyOnly();
+    this.hall = cleanHall(null);
+    this.hallBefore = null;
+    this.#saveSeen();
+    this.#changed();
   }
   #seenClue(cl) { return this.seen.has(cl.k ??= clueKey(cl.q)); }
   /** The clues of a category that have not been shown yet (of the five that are dealt). */
@@ -1176,7 +1254,8 @@ export class JeopardyGame {
       case 'playAgain': return this.playAgain();
       case 'endGame': return this.endGame();
       case 'kick': return this.kick(String(a.pid ?? a.targetPid ?? a.id ?? ''));
-      case 'adjustScore': return this.room.adjustScore(String(a.id ?? a.targetPid ?? ''), { delta: a.delta, set: a.set });
+      // After the game, a fixed score changes the family scoreboard too.
+      case 'adjustScore': { const r = this.room.adjustScore(String(a.id ?? a.targetPid ?? ''), { delta: a.delta, set: a.set }); this.#changed(); return r; }
       case 'toggleEasy': return this.toggleEasy();
       case 'setAnswerTime': return this.setAnswerTime(a.seconds);
       case 'setFinalForAll': return this.setFinalForAll(a.on);
@@ -1189,11 +1268,12 @@ export class JeopardyGame {
       case 'playBoard': return this.playBoard(String(a.pack ?? a.id ?? ''), a.add === true);
       case 'setAllPacks': return this.setAllPacks(a.kind === 'archive' ? 'archive' : 'house', a.on !== false);
       case 'resetHistory': return this.resetHistory();
+      case 'resetHall': return this.resetHall();
       default: throw new GameError(`Unknown action ${action}`);
     }
   }
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory']);
+  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory', 'resetHall']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -1343,6 +1423,7 @@ export class JeopardyGame {
       reactionChoices: REACTIONS,
     };
     if (this.phase === 'gameover') v.awards = this.awards();
+    if (this.phase === 'gameover' || this.phase === 'lobby') v.hall = this.#hallView();
     if (this.phase === 'lobby') {
       const written = this.#asWrittenPacks();
       // fresh: categories none of whose clues this TV has shown yet. cats: the category names of one of your games.
@@ -1432,6 +1513,7 @@ export class JeopardyGame {
       settings: this.settings, era: this.era, selected: [...this.selected], played: [...this.played],
       phase: this.phase, round: this.round, rounds: this.rounds, controllerId: this.controllerId, captainId: this.captainId,
       finalClue: this.finalClue, final: this.final, lastResult: this.lastResult, clue: this.clue,
+      hallSig: this.hallSig, hallBefore: this.hallBefore,
       stats: [...this.stats.entries()],
     };
   }
@@ -1442,6 +1524,8 @@ export class JeopardyGame {
     this.selected = new Set(data.selected ?? []);
     this.phase = data.phase ?? 'lobby';
     this.round = data.round ?? 0;
+    this.hallSig = data.hallSig ?? null;
+    this.hallBefore = data.hallBefore ?? null;
     this.rounds = data.rounds ?? [];
     this.controllerId = data.controllerId ?? null;
     this.captainId = data.captainId ?? null;

@@ -351,3 +351,19 @@ final class CluePlannerTests: XCTestCase {
         XCTAssertEqual(CluePlanner.spoken("Fill in the ____ please"), "Fill in the blank please")
     }
 }
+
+final class FamilyScoreboardTests: XCTestCase {
+    func testTheChampionsScreenSaysWhoHasWonOnThisTV() throws {
+        let game = try XCTUnwrap(try Fixture.state("jp-gameover").jeopardy)
+        XCTAssertEqual(game.hall?.line, "Family scoreboard after 1 game: Leo 1 win")
+    }
+
+    func testStreaksAndNoChampionYet() {
+        let maya = JeoHallEntry(name: "Maya", color: "#f97316", wins: 3, games: 4, best: 9000, streak: 2)
+        let leo = JeoHallEntry(name: "Leo", color: "#ef4444", wins: 1, games: 4, best: 4000, streak: 0)
+        XCTAssertEqual(JeoHall(games: 4, players: [maya, leo]).line, "Family scoreboard after 4 games: Maya 3 wins (2 in a row) \u{00B7} Leo 1 win")
+        XCTAssertEqual(JeoHall(games: 2, players: [JeoHallEntry(name: "Dad", color: "#fff", wins: 0, games: 2, best: 0, streak: 0)]).line,
+                       "Family scoreboard after 2 games: no champion yet")
+        XCTAssertNil(JeoHall(games: 0, players: []).line)
+    }
+}

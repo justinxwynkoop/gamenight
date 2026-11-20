@@ -381,7 +381,8 @@ export function lobby(view, ctx = {}) {
   const lb = h('div', { class: `bwlobby ${choosing ? 'choosing' : ''}` },
     h('section', { class: 'lb-left' },
       h('div', { class: 'lb-hero' }, h('div', { class: 'eyebrow sun' }, 'Tonight’s trivia showdown'),
-        h('h1', {}, 'Grab your phone.', h('br'), h('i', {}, 'It’s your buzzer.'))),
+        h('h1', {}, 'Grab your phone.', h('br'), h('i', {}, 'It’s your buzzer.')),
+        hallLine(g.hall) && h('div', { class: 'hall' }, '🏆 ', hallLine(g.hall))),
       h('ol', { class: 'lb-steps' },
         step(1, 'Scan the code', 'with your phone camera'),
         step(2, 'Pick a name', 'and your colour'),
@@ -763,6 +764,15 @@ function finalReveal() {
 }
 
 // ---------- the champion ----------
+/** The family scoreboard in one line (the same words as JeoHall.line in the Apple TV app), or null. */
+export function hallLine(hall) {
+  if (!hall?.games) return null;
+  const head = `Family scoreboard after ${hall.games} game${hall.games === 1 ? '' : 's'}`;
+  const winners = hall.players.filter((e) => e.wins > 0).slice(0, 4);
+  if (!winners.length) return `${head}: no champion yet`;
+  return `${head}: ${winners.map((e) => `${e.name} ${e.wins} win${e.wins === 1 ? '' : 's'}${e.streak >= 2 ? ` (${e.streak} in a row)` : ''}`).join(' · ')}`;
+}
+
 function gameover() {
   const sorted = byScore();
   const top = sorted.length ? sorted[0].score : 0;
@@ -782,6 +792,7 @@ function gameover() {
     h('div', { class: 'eyebrow sun' }, champs.length > 1 ? 'IT’S A TIE! TONIGHT’S CHAMPIONS' : 'TONIGHT’S CHAMPION'),
     h('div', { class: `name ${champs.length > 1 || (champs[0]?.name.length ?? 0) > 9 ? 'long' : ''}` }, sorted.length ? names : 'NOBODY!'),
     h('div', { class: 'lead' }, h('span', { class: 'dot', style: { background: champColor } }), minus(top), g.final?.answer ? [' · the final answer was ', h('b', {}, g.final.answer)] : null),
+    hallLine(g.hall) && h('div', { class: 'hall' }, '🏆 ', hallLine(g.hall)),
     h('div', { class: 'bottom' }, h('div', { class: 'podium' }, podium), awards.length ? h('div', { class: 'awards' }, awards) : null)),
   { podiums: false, tag: null, right: h('div', { class: 'aside' }, `The ${g.hostJudges ? 'host' : 'captain'} can start a new game`), cls: 'gold' });
 }

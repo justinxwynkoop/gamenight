@@ -111,6 +111,10 @@
       "🤯",
       "🎉"
     ],
+    "hall": {
+      "games": 0,
+      "players": []
+    },
     "packs": [
       {
         "id": "own-family-night",

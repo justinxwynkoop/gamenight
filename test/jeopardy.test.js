@@ -941,7 +941,7 @@ test('the engine hands the memory to whoever hosts it, and takes it back on the 
   e1.room.chooseGame('jeopardy');
   e1.room.game.seen.add('abc');
   e1.room.game.resetHistory();
-  assert.deepEqual(kept, { jeopardy: { v: 1, seen: [] } });
+  assert.deepEqual(kept, { jeopardy: { v: 1, seen: [], hall: { games: 0, last: [], players: {} } } });
   const e2 = mk({ jeopardy: { v: 1, seen: ['xyz'] } });
   e2.room.chooseGame('jeopardy');
   assert.ok(e2.room.game.seen.has('xyz'));
@@ -964,6 +964,8 @@ test('real-show clues that need a picture or a sound are left out; harmless stag
   const packs = parseArchive([header, ...rows].join('\n'), 17, () => 0.5);
   const names = packs.flatMap((p) => p.categories.map((c) => c.name));
   assert.ok(names.length >= 14 && !names.includes('MAPS'), 'the column with a picture clue is not played');
+});
+
 test('the TV reads the clue out loud and the buzzers open a moment after its voice stops', () => {
   const { g, clock } = setup();
   assert.equal(g.publicView().readAloud, true);
@@ -995,4 +997,40 @@ test('reading aloud can be switched off, and never runs when a host reads the cl
   g.setHostJudges(false);
   begin(g);
   openClue(g, clock);                                  // without the TV ever saying it is done, they still open
+});
+
+test('the family scoreboard counts every finished game on this TV, by name, and keeps it between rooms', () => {
+  let kept = null;
+  const memory = { load: () => kept, save: (_g, d) => { kept = JSON.parse(JSON.stringify(d)); } };
+  const play = (names, scores) => {
+    let t = 1000;
+    const room = new Room({ games: GAMES, now: () => t, random: () => 0.42, memory,
+      loadContent: (g, id) => sets[id] ?? null, listContent: () => Object.entries(sets).map(([id, s]) => ({ id, title: s.title })) });
+    room.chooseGame('jeopardy');
+    const ps = names.map((n) => room.join({ name: n }));
+    const g = room.game;
+    assert.equal(g.publicView().hall.games, kept?.hall?.games ?? 0);
+    ps.forEach((p, i) => { room.players.find((x) => x.id === p.id).score = scores[i]; });
+    g.phase = 'gameover';
+    g.act('adjustScore', { id: ps[0].id, delta: 0 });   // anything that changes the room
+    return { room, g, ps };
+  };
+  play(['Maya', 'Leo'], [3000, 1000]);
+  let v = play(['maya ', 'Leo', 'Dad'], [5000, 200, 400]).g.publicView().hall;
+  assert.equal(v.games, 2);
+  assert.deepEqual(v.players.map((p) => [p.name, p.wins, p.games, p.streak]), [['maya', 2, 2, 2], ['Leo', 0, 2, 0], ['Dad', 0, 1, 0]]);
+  const { room, g, ps } = play(['Maya', 'Leo'], [100, 900]);
+  v = g.publicView().hall;
+  assert.equal(v.players.find((p) => p.name === 'Leo').wins, 1);
+  assert.equal(v.players.find((p) => p.name === 'Maya').streak, 0, 'the run ends');
+  // A ruling flipped after the game ended: the game is counted again with the new scores, not twice.
+  room.players.find((x) => x.id === ps[0].id).score = 2000;
+  g.act('adjustScore', { id: ps[0].id, delta: 0 });
+  v = g.publicView().hall;
+  assert.equal(v.games, 3);
+  assert.equal(v.players.find((p) => p.name === 'Maya').wins, 3);
+  assert.equal(v.players.find((p) => p.name === 'Leo').wins, 0);
+  g.playAgain();
+  g.resetHall();
+  assert.equal(g.publicView().hall.games, 0);
 });
