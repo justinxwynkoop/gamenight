@@ -54,6 +54,22 @@ export function response(raw) {
   return { a, alt: [...alt].filter(Boolean).slice(0, 6) };
 }
 
+// On the show some clues lean on something we cannot show: a picture on the monitor, a Clue Crew demonstration, a
+// map, a sound. The dataset only has the words, so those clues are dropped (and with them their column, as only full
+// columns are played). The stage direction in front of a clue that reads fine without it ("Kelly of the Clue Crew
+// presents from Edison Labs.", "Gene Simmons presents the clue.") is taken off, and the clue is kept.
+const STAGE = /^\(([^)]*)\)\s*/;
+const SHOWS = /\b(monitor|shows?|showing|holds?|holding|points?|pointing|demonstrat\w*|plays?|playing|sings?|singing|hums?|draws?|drawing|video|audio|maps?|images?|pictures?|photos?|diagrams?|charts?|models?|display\w*|is shown|are shown|reads? (?:from|a|an|the)|performs?|wear\w*|uses?|using|tastes?|pours?|mix\w*|walks|stands next)\b/i;
+const NEEDS_MEDIA = /\b(seen here|shown here|pictured here|heard here|you see here|you hear here|this clip|in this video|on the monitor|seen in this|shown in this|here is|here are|the following)\b|\[/i;
+
+/** The clue as players can read it, or null when it needs a picture or sound we do not have. */
+export function playable(q) {
+  const m = q.match(STAGE);
+  if ((m && SHOWS.test(m[1])) || NEEDS_MEDIA.test(q)) return null;
+  const text = m ? q.slice(m[0].length).trim() : q;
+  return text || null;
+}
+
 export function parseArchive(tsv, season, rng = Math.random) {
   const lines = tsv.split('\n');
   const head = lines.shift().split('\t');
@@ -65,7 +81,16 @@ export function parseArchive(tsv, season, rng = Math.random) {
   for (const line of lines) {
     if (!line) continue;
     const f = line.split('\t');
-    const round = f[iR], clue = clean(f[iQ]), resp = f[iA], cat = clean(f[iC]);
+    const round = f[iR], resp = f[iA], cat = clean(f[iC]);
+    const raw = clean(f[iQ]);
+    const clue = raw && playable(raw);
+    if (raw && !clue && (round === '1' || round === '2')) {
+      // A clue we cannot play spoils its whole column.
+      const key = `${f[iD]}|${round}|${cat}`;
+      if (!groups.has(key)) groups.set(key, { name: cat, round, clues: [] });
+      groups.get(key).bad = true;
+      continue;
+    }
     if (!clue || !resp || !cat) continue;
     if (round === '3') {
       finals.push({ category: cat, q: clue, ...response(resp), date: f[iD] });
@@ -81,7 +106,7 @@ export function parseArchive(tsv, season, rng = Math.random) {
   const categories = [];
   for (const g of groups.values()) {
     // Only full columns: five clues with five different dollar values.
-    if (g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
+    if (g.bad || g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
     g.clues.sort((x, y) => x.v - y.v);
     categories.push({ name: g.name, clues: g.clues.map(({ q, a, alt }) => ({ q, a, alt })) });
   }
