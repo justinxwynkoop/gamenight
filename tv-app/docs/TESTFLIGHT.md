@@ -76,8 +76,12 @@ refuse it. Use the script (or the GitHub workflow below).
 
 Automatic builds use the version in `tv-app/Config/testflight-version.txt` (the first number) and 100 plus the workflow's
 run number as the build number (the app's old repository used builds 1 to 4), which always goes up, so they never clash:
-TestFlight shows them as 1.1 (101), 1.1 (102) and so on. To
-start a new version, upload it by hand (or with the script) and commit the new number in that file.
+TestFlight shows them as 1.3 (122), 1.3 (123) and so on. To
+start a new version, upload it by hand (or with the script) and commit the new number in that file. If you forget, the
+workflow notices: it never uploads a lower version or build than the highest one already in TestFlight.
+
+The workflow archives the app unsigned and signs it only at export, in the cloud. Signing the archive made Xcode create a
+new development certificate on each fresh runner until the team hit Apple's limit and every upload failed.
 
 The key is as powerful as an Admin login: never put it in a file in the repository, and delete the key in App Store Connect
 if it ever leaks. The workflow does nothing without the secrets, so it is safe to leave in place. A cloud build does not

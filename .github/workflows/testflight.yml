@@ -9,7 +9,8 @@
 #
 # Version and build: the version is the one typed in, or else the first number in tv-app/Config/testflight-version.txt;
 # the build number is 100 + this workflow's run number (the old familygamenight repo used builds 1 to 4), so it only
-# ever goes up and automatic uploads never clash.
+# ever goes up and automatic uploads never clash. If TestFlight already has a higher version or build (an upload from a
+# Mac), the run goes above it instead, so a new build never looks older than the one on the TVs.
 #
 # A build made here does not contain your own sound files or extra question sets (they are not in the repository).
 # To include them, archive from Xcode on your Mac instead (tv-app/docs/TESTFLIGHT.md).
@@ -138,13 +139,26 @@ jobs:
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then read -r VERSION _ < Config/testflight-version.txt; fi
           case "$VERSION" in *[!0-9.]*|.*|*.|*..*|"") echo "::error::The version must look like 1.2, not $VERSION"; exit 1 ;; esac
+          # Never go below what is already in TestFlight: a Mac upload (Tools/upload-testflight.sh) may have used a
+          # higher version or build than this repository knows about, and TestFlight shows the newest upload.
+          LATEST_VERSION="${{ steps.asc.outputs.latest_version }}"
+          LATEST_BUILD="${{ steps.asc.outputs.latest_build }}"
+          if [ -n "$LATEST_VERSION" ] && python3 -c 'import sys; k=lambda v: [int(p) for p in v.split(".")]; sys.exit(0 if k(sys.argv[2]) > k(sys.argv[1]) else 1)' "$VERSION" "$LATEST_VERSION"; then
+            echo "::warning::TestFlight already has version $LATEST_VERSION, higher than $VERSION; uploading as $LATEST_VERSION. Raise tv-app/Config/testflight-version.txt."
+            VERSION="$LATEST_VERSION"
+          fi
           BUILD=$((100 + ${{ github.run_number }}))
+          if [ "$VERSION" = "$LATEST_VERSION" ] && [ "${LATEST_BUILD:-0}" -ge "$BUILD" ]; then BUILD=$((LATEST_BUILD + 1)); fi
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $ASC_KEY_PATH -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           mkdir -p build
+          # Archive unsigned and let the export sign it in the cloud. Signing the archive made Xcode create a new
+          # development certificate on every fresh runner, and once the team hit Apple's limit every upload failed
+          # ("Your account has reached the maximum number of certificates").
           xcodebuild -project FamilyGameNight.xcodeproj -scheme FamilyGameNight -configuration Release \
             -destination 'generic/platform=tvOS' -archivePath build/FamilyGameNight.xcarchive \
-            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$BUILD \
-            $AUTH archive | tail -n 40
+            DEVELOPMENT_TEAM=$TEAM_ID MARKETING_VERSION=$VERSION CURRENT_PROJECT_VERSION=$BUILD \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive | tail -n 40
           cat > build/ExportOptions.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
