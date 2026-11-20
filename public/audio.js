@@ -186,4 +186,32 @@ export const audio = {
   upgrade(name) { const want = findCustom(name); return !!want && !!musicNode && musicBuf !== want; },
   get musicOwner() { return musicOwner; },
   get musicPlaying() { return !!musicNode; },
+  /**
+   * Read text out loud with the browser's own voice, at the host's volume. `done` is called once the voice finishes
+   * (or, if the browser refuses to speak, once a person would have read it). Returns false, and never calls `done`,
+   * when nothing can be said at all (sound off, or no voice in this browser).
+   */
+  speak(text, done = () => {}) {
+    const synth = globalThis.speechSynthesis;
+    if (!synth || typeof SpeechSynthesisUtterance === 'undefined' || !cfg.enabled || cfg.volume <= 0 || !text) return false;
+    let called = false;
+    const started = Date.now();
+    const readTime = 1500 + String(text).length * 55;
+    const finish = () => { if (!called) { called = true; done(); } };
+    const later = () => setTimeout(finish, Math.max(0, readTime - (Date.now() - started)));
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(String(text).replace(/_{2,}/g, 'blank'));
+      u.volume = Math.min(1, cfg.volume * 1.2);
+      const voices = synth.getVoices();
+      u.voice = voices.find((v) => /en[-_]US/i.test(v.lang) && /natural|enhanced|premium|google/i.test(v.name))
+        ?? voices.find((v) => /^en/i.test(v.lang)) ?? null;
+      u.onend = finish;
+      u.onerror = later;            // e.g. not allowed before a click: give people the time to read it themselves
+      synth.speak(u);
+      setTimeout(finish, 3000 + String(text).length * 90);   // a voice that never ends
+      return true;
+    } catch { later(); return true; }
+  },
+  stopSpeaking() { try { globalThis.speechSynthesis?.cancel(); } catch { /* nothing to stop */ } },
 };

@@ -101,6 +101,7 @@ struct JeopardyDisplayView: View {
         .onChange(of: showMenu) { _, shown in if !shown { boardFocused = true } }
         .onChange(of: client.state) { previous, next in
             guard let next else { return }
+            if sound.act == nil { sound.act = { [client] action, args in client.act(action, args) } }
             sound.stateChanged(from: previous, to: next, receivedAt: client.stateReceivedAt)
         }
         // Fetches the family's own sound files from the server (and again if the server changes).

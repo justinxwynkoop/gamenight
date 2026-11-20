@@ -308,3 +308,62 @@ final class ServerSoundListTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode([ServerSound].self, from: Data("[]".utf8)), [])
     }
 }
+
+final class CluePlannerTests: XCTestCase {
+    private func jeopardy(_ name: String) throws -> JeopardyState {
+        try XCTUnwrap(try Fixture.state(name).jeopardy)
+    }
+
+    func testAPickedClueIsReadAndTheGameIsToldWhenTheVoiceStops() throws {
+        let reading = try jeopardy("jp-reading")
+        let plan = CluePlanner.plan(from: try jeopardy("jp-board"), to: reading, spoken: nil)
+        let say = try XCTUnwrap(plan.speak)
+        XCTAssertEqual(say.text, reading.clue?.q)
+        XCTAssertEqual(say.doneColumn, reading.clue?.ci)
+        XCTAssertEqual(say.doneRow, reading.clue?.ri)
+        XCTAssertFalse(say.thenFinalMusic)
+        XCTAssertNil(CluePlanner.plan(from: reading, to: reading, spoken: say.key).speak, "never read twice")
+    }
+
+    func testTheVoiceGoesOnThroughTheBuzzAndStopsBackAtTheBoard() throws {
+        XCTAssertFalse(CluePlanner.plan(from: try jeopardy("jp-reading"), to: try jeopardy("jp-open"), spoken: "x").stop)
+        XCTAssertTrue(CluePlanner.plan(from: try jeopardy("jp-reveal-correct"), to: try jeopardy("jp-board"), spoken: "x").stop)
+    }
+
+    func testADailyDoubleIsReadOnceTheBetIsIn() throws {
+        let say = try XCTUnwrap(CluePlanner.plan(from: try jeopardy("jp-dd-wager"), to: try jeopardy("jp-dd-answer"), spoken: nil).speak)
+        XCTAssertNil(say.doneColumn, "no buzzers to open")
+    }
+
+    func testFinalJeopardyIsReadBeforeTheThinkMusic() throws {
+        let say = try XCTUnwrap(CluePlanner.plan(from: try jeopardy("jp-final-wager"), to: try jeopardy("jp-final-answer"), spoken: nil).speak)
+        XCTAssertTrue(say.thenFinalMusic)
+    }
+
+    func testNothingIsReadWhenSwitchedOffOrWithAHost() throws {
+        var reading = try jeopardy("jp-reading")
+        reading.readsAloud = false
+        XCTAssertNil(CluePlanner.plan(from: try jeopardy("jp-board"), to: reading, spoken: nil).speak)
+        XCTAssertEqual(try jeopardy("jp-host-reading").readsAloud, false)
+    }
+
+    func testBlanksAreReadAsBlank() {
+        XCTAssertEqual(CluePlanner.spoken("Fill in the ____ please"), "Fill in the blank please")
+    }
+}
+
+final class FamilyScoreboardTests: XCTestCase {
+    func testTheChampionsScreenSaysWhoHasWonOnThisTV() throws {
+        let game = try XCTUnwrap(try Fixture.state("jp-gameover").jeopardy)
+        XCTAssertEqual(game.hall?.line, "Family scoreboard after 1 game: Leo 1 win")
+    }
+
+    func testStreaksAndNoChampionYet() {
+        let maya = JeoHallEntry(name: "Maya", color: "#f97316", wins: 3, games: 4, best: 9000, streak: 2)
+        let leo = JeoHallEntry(name: "Leo", color: "#ef4444", wins: 1, games: 4, best: 4000, streak: 0)
+        XCTAssertEqual(JeoHall(games: 4, players: [maya, leo]).line, "Family scoreboard after 4 games: Maya 3 wins (2 in a row) \u{00B7} Leo 1 win")
+        XCTAssertEqual(JeoHall(games: 2, players: [JeoHallEntry(name: "Dad", color: "#fff", wins: 0, games: 2, best: 0, streak: 0)]).line,
+                       "Family scoreboard after 2 games: no champion yet")
+        XCTAssertNil(JeoHall(games: 0, players: []).line)
+    }
+}

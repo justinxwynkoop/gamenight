@@ -200,7 +200,8 @@ test('server end to end', async (t) => {
     host.act('pick', { ci: next[0], ri: next[1] });
     await tv.until((c) => c.view?.game?.phase === 'reading');
     const t0 = Date.now();
-    await tv.until((c) => c.view?.game?.phase === 'open', 'buzzers open', 6000);
+    // This TV reads clues out loud but is only a test client, so it never says it is done: the longer backstop applies.
+    await tv.until((c) => c.view?.game?.phase === 'open', 'buzzers open', 18000);
     assert.ok(Date.now() - t0 >= 1500);
     assert.equal(tv.view.game.timer.kind, 'buzz');
     host.act('skip');

@@ -31,6 +31,11 @@ final class SoundDirector {
 
     private var lastState: ServerState?
     private var lastStateAt = Date()
+
+    /// Reads Jeopardy clues out loud (CluePlanner decides which), and tells the game through `act` when one is read.
+    var act: ((String, [String: Any]) -> Void)?
+    private let voice = ClueVoice()
+    private var spokenKey: String?
     private var ticker = TickTracker()
     private var tickTask: Task<Void, Never>?
 
@@ -61,6 +66,8 @@ final class SoundDirector {
 
     /// Called when the display goes away: silence everything.
     func deactivate() {
+        voice.stop()
+        spokenKey = nil
         tickTask?.cancel()
         tickTask = nil
         stopMusic()
@@ -86,17 +93,40 @@ final class SoundDirector {
             }
         }
         for cue in plan.cues { play(cue) }
-        if plan.startFinalMusic {
+        let holdFinalMusic = speak(from: previous?.jeopardy, to: next.jeopardy)
+        if plan.startFinalMusic && !holdFinalMusic {
             startMusic(.finalRound, restart: true)
         } else if plan.stopFinalMusic {
             stopMusic(owner: .finalRound)
         }
     }
 
+    /// Reads the clue out loud when CluePlanner says so. True when Final Jeopardy's music waits for the voice.
+    private func speak(from before: JeopardyState?, to after: JeopardyState?) -> Bool {
+        guard let after else {
+            if spokenKey != nil { voice.stop(); spokenKey = nil }
+            return false
+        }
+        let speech = CluePlanner.plan(from: before, to: after, spoken: spokenKey)
+        if speech.stop { voice.stop(); spokenKey = nil }
+        // With the sound off nothing is said, and the game opens the buzzers after its own (longer) reading time.
+        guard let say = speech.speak, enabled, volume > 0 else { return false }
+        spokenKey = say.key
+        voice.speak(CluePlanner.spoken(say.text), volume: Float(volume), after: say.thenFinalMusic ? 0 : 0.45) { [weak self] in
+            guard let self, self.spokenKey == say.key else { return }
+            let phase = self.lastState?.jeopardy?.phase
+            if let ci = say.doneColumn, let ri = say.doneRow, phase == .reading {
+                self.act?("readDone", ["ci": ci, "ri": ri])
+            }
+            if say.thenFinalMusic, phase == .finalAnswer { self.startMusic(.finalRound, restart: true) }
+        }
+        return say.thenFinalMusic
+    }
+
     private func configure(_ settings: RoomSettings) {
         enabled = settings.sound
         volume = min(1, max(0, Double(settings.volume) / 100))
-        if !enabled { stopMusic() }
+        if !enabled { stopMusic(); voice.stop(); spokenKey = nil }
         music?.volume = Float(volume * Self.musicGain)
     }
 
@@ -240,6 +270,56 @@ final class SoundDirector {
             }
         } catch {
             // No list (an older server, or it is unreachable): the sounds from inside the app, or the built-in ones, are used.
+        }
+    }
+}
+
+/// The Apple TV's voice for reading clues out loud (AVSpeechSynthesizer). `done` runs on the main actor once the voice
+/// finishes a reading; a reading that is cut off by the next one, or stopped, never calls it.
+@MainActor
+final class ClueVoice: NSObject, AVSpeechSynthesizerDelegate {
+    private let synth = AVSpeechSynthesizer()
+    private var pending: (utterance: AVSpeechUtterance, done: () -> Void)?
+    private var startTask: Task<Void, Never>?
+
+    override init() {
+        super.init()
+        synth.delegate = self
+    }
+
+    func speak(_ text: String, volume: Float, after delay: Double, done: @escaping () -> Void) {
+        stop()
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = Self.bestVoice
+        utterance.volume = min(1, max(0, volume * 1.2))
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        pending = (utterance, done)
+        startTask = Task { [weak self] in
+            if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+            guard let self, !Task.isCancelled, self.pending?.utterance === utterance else { return }
+            self.synth.speak(utterance)
+        }
+    }
+
+    func stop() {
+        startTask?.cancel()
+        startTask = nil
+        pending = nil
+        if synth.isSpeaking { synth.stopSpeaking(at: .immediate) }
+    }
+
+    /// The nicest US English voice installed (an enhanced or premium one when the Apple TV has it).
+    private static let bestVoice: AVSpeechSynthesisVoice? = {
+        let english = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+        return english.max { $0.quality.rawValue < $1.quality.rawValue } ?? AVSpeechSynthesisVoice(language: "en-US")
+    }()
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let id = ObjectIdentifier(utterance)
+        Task { @MainActor in
+            guard let pending = self.pending, ObjectIdentifier(pending.utterance) == id else { return }
+            self.pending = nil
+            pending.done()
         }
     }
 }

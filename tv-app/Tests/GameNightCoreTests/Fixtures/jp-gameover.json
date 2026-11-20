@@ -100,6 +100,8 @@
     },
     "answerTime": 10,
     "finalForAll": false,
+    "readAloud": true,
+    "readsAloud": true,
     "answerTimes": [
       5,
       10,
@@ -144,6 +146,35 @@
         "detail": "won a $300 bet"
       }
     ],
+    "hall": {
+      "games": 1,
+      "players": [
+        {
+          "name": "Leo",
+          "color": "#ef4444",
+          "wins": 1,
+          "games": 1,
+          "best": 49310,
+          "streak": 1
+        },
+        {
+          "name": "Dad",
+          "color": "#eab308",
+          "wins": 0,
+          "games": 1,
+          "best": 400,
+          "streak": 0
+        },
+        {
+          "name": "Maya",
+          "color": "#f97316",
+          "wins": 0,
+          "games": 1,
+          "best": 0,
+          "streak": 0
+        }
+      ]
+    },
     "final": {
       "category": "Planets",
       "q": "Tilted about 98 degrees, this planet basically rolls around the Sun on its side.",

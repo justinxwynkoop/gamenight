@@ -11,7 +11,7 @@ import { WebSocketServer } from 'ws';
 import QRCode from 'qrcode';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
-import { T, readingTime } from '../games/jeopardy/game.js';
+import { T, readingTime, speakingTime } from '../games/jeopardy/game.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.resolve(process.argv[2] ?? 'gallery-out');
@@ -30,6 +30,8 @@ const room = new Room({ games: GAMES, now: () => t, random, loadContent: (_g, id
 const advance = (ms) => { t += ms; room.tick(); };
 room.chooseGame('jeopardy');
 const g = room.game;
+// The buzzers open after the reading time, or with the TV reading clues aloud and never saying it is done, the longer one.
+const waitFor = (q) => (g.readsAloud() ? speakingTime(q) : readingTime(q));
 const people = [['Maya', '#ff5d8f'], ['Leo', '#3ec7ff'], ['Dad', '#ffd23f'], ['Grandma', '#7ee081']].map(([name, color]) => room.join({ name, color }));
 people.forEach((p) => room.setConnected(p.id, true));
 g.takeArchiveRequest?.();
@@ -61,7 +63,7 @@ const first = spots().find((x) => !x.cl.dd && !x.cl.used && x.ri >= 2);
 g.pick(first.ci, first.ri);
 advance(800);
 snap('reading', { focus: 'Maya' });
-advance(readingTime(first.cl.q) + 10 - 800);
+advance(waitFor(first.cl.q) + 10 - 800);
 advance(1500);
 snap('buzzers-open', { focus: 'Leo' });
 advance(300); g.buzz(leo.id); advance(80); g.buzz(maya.id); advance(140); g.buzz(dad.id);
@@ -82,7 +84,7 @@ advance(T.reveal + 10);
 
 const second = spots().find((x) => !x.cl.dd && !x.cl.used);
 g.pick(second.ci, second.ri);
-advance(readingTime(second.cl.q) + 10);
+advance(waitFor(second.cl.q) + 10);
 advance(T.buzzWindow + 10);
 snap('reveal-nobody', { focus: 'Maya' });
 advance(T.reveal + 10);
@@ -108,7 +110,7 @@ const playOut = () => {
     g.pick(spot.ci, spot.ri);
     const who = people[turn++ % people.length];
     if (spot.cl.dd) { g.ddWager(g.controllerId, 200); g.answer(g.controllerId, spot.cl.a); } else {
-      advance(readingTime(spot.cl.q) + 10);
+      advance(waitFor(spot.cl.q) + 10);
       if (turn % 5 !== 0) { g.buzz(who.id); g.answer(who.id, turn % 3 ? spot.cl.a : 'no idea'); } else advance(T.buzzWindow + 10);
     }
     for (let i = 0; i < 6 && !['board', 'round-end'].includes(g.phase); i++) advance(Math.max(T.reveal, T.buzzWindow) + 10);

@@ -255,13 +255,15 @@
       "buzzMs": null,
       "buzzes": [],
       "open": 1,
-      "liveAt": 12010,
+      "liveAt": 13010,
       "liveSeq": 1,
       "tried": []
     },
     "lastResult": null,
     "answerTime": 10,
     "finalForAll": true,
+    "readAloud": true,
+    "readsAloud": true,
     "answerTimes": [
       5,
       10,

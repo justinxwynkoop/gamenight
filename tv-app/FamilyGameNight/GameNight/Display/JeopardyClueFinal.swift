@@ -877,6 +877,14 @@ struct JeoGameOver: View {
             .foregroundColor(BW.soft)
             .lineLimit(1)
             .minimumScaleFactor(0.6)
+            if let line = game.hall?.line {
+                Label(line, systemImage: "trophy.fill")
+                    .font(BW.body(24, .semibold))
+                    .foregroundColor(BW.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.top, 4)
+            }
             HStack(alignment: .bottom, spacing: 70) {
                 HStack(alignment: .bottom, spacing: 16) {
                     ForEach([1, 0, 2], id: \.self) { rank in

@@ -159,6 +159,8 @@ struct JeopardyState: Decodable, Equatable {
     var captainId: String?
     /// A host judges spoken answers (so players do not type them).
     var hostJudges: Bool
+    /// The TV reads each clue out loud and says when it is done (never with a host, who reads them).
+    var readsAloud: Bool?
     /// Who picks the next clue (and, in a Daily Double, who is playing it).
     var controllerId: String?
     var players: [JeoPlayer]
@@ -198,12 +200,14 @@ struct JeopardyState: Decodable, Equatable {
     var asWritten: Bool?
     var maxPlayers: Int?
     var finalRound: JeoFinal?
+    /// The family scoreboard: every finished game on this TV (lobby and game over only).
+    var hall: JeoHall?
 
     private enum CodingKeys: String, CodingKey {
         case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
-        case draftFresh, freshCount, seenCount
+        case draftFresh, freshCount, seenCount, readsAloud, hall
         case finalRound = "final"
     }
 }
@@ -223,6 +227,35 @@ extension JeopardyState {
         if round == 2 && rounds >= 2 { return "Round 2 · Double Up" }
         return "Round \(round)"
     }
+}
+
+/// The family scoreboard kept on this TV between nights: games played, and players by most wins.
+struct JeoHall: Decodable, Equatable {
+    var games: Int
+    var players: [JeoHallEntry]
+
+    /// One line for the lobby and the champion's screen (the same words as hallLine in public/games/jeopardy/tv.js),
+    /// or nil before the first finished game.
+    var line: String? {
+        guard games > 0 else { return nil }
+        let winners = players.filter { $0.wins > 0 }.prefix(4)
+        let head = "Family scoreboard after \(games) game\(games == 1 ? "" : "s")"
+        guard !winners.isEmpty else { return "\(head): no champion yet" }
+        let parts = winners.map { e -> String in
+            let streak = e.streak >= 2 ? " (\(e.streak) in a row)" : ""
+            return "\(e.name) \(e.wins) win\(e.wins == 1 ? "" : "s")\(streak)"
+        }
+        return "\(head): " + parts.joined(separator: " \u{00B7} ")
+    }
+}
+
+struct JeoHallEntry: Decodable, Equatable {
+    var name: String
+    var color: String
+    var wins: Int
+    var games: Int
+    var best: Int
+    var streak: Int
 }
 
 /// The TV's status strip: whose moment it is, what is happening, and what happens next (or who moves things along).

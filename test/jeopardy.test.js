@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
 import { GameError } from '../lib.js';
-import { validateSet, T, readingTime, FINAL_FLOOR } from '../games/jeopardy/game.js';
+import { validateSet, T, readingTime, speakingTime, AFTER_SPEECH, FINAL_FLOOR } from '../games/jeopardy/game.js';
 import { judge, asksForPerson } from '../games/jeopardy/judge.js';
 import { createHub } from '../engine/hub.js';
 
@@ -31,13 +31,15 @@ function setup({ players = ['Ann', 'Bo', 'Cy'] } = {}) {
 const begin = (g) => { g.start(); assert.equal(g.phase, 'round-intro'); g.advance(); return g; };
 /** Wait out the moment the ruling is shown, before the clue moves on. */
 const rule = (clock) => clock.advance(T.ruling + 10);
+/** How long the buzzers take to open on their own: the TV's voice has longer, unless it says it is done. */
+const waitFor = (g, q) => (g.readsAloud() ? speakingTime(q) : readingTime(q));
 /** Pick the first unused clue that is not a Daily Double, and wait out the reading time. */
 function openClue(g, clock, { dd = false } = {}) {
   const b = g.board();
   for (let ci = 0; ci < 6; ci++) for (let ri = 0; ri < 5; ri++) {
     if (!b[ci].clues[ri].used && b[ci].clues[ri].dd === dd) {
       g.pick(ci, ri);
-      if (!dd) { clock.advance(readingTime(b[ci].clues[ri].q) + 10); assert.equal(g.phase, 'open'); }
+      if (!dd) { clock.advance(waitFor(g, b[ci].clues[ri].q) + 10); assert.equal(g.phase, 'open'); }
       return b[ci].clues[ri];
     }
   }
@@ -147,7 +149,7 @@ test('a clue is read, then the buzzers open with a countdown', () => {
   g.pick(0, g.board()[0].clues.indexOf(cl));
   assert.equal(g.phase, 'reading');
   assert.equal(g.publicView().clue.q, cl.q);
-  clock.advance(readingTime(cl.q) + 10);
+  clock.advance(waitFor(g, cl.q) + 10);
   assert.equal(g.phase, 'open');
   const timer = g.publicView().timer;
   assert.equal(timer.kind, 'buzz');
@@ -189,7 +191,7 @@ test('buzzing while the clue is still being read costs a short lockout', () => {
   const cl = g.board()[0].clues.find((c) => !c.dd);
   g.pick(0, g.board()[0].clues.indexOf(cl));
   assert.equal(g.buzz(ps[0].id).result, 'early');
-  clock.advance(readingTime(cl.q) + 10);          // the lockout (400ms) is shorter than the reading time? no: wait it out
+  clock.advance(waitFor(g, cl.q) + 10);          // the lockout (400ms) is shorter than the reading time? no: wait it out
   clock.advance(T.earlyPenalty);
   assert.equal(g.buzz(ps[0].id).result, 'won');
 });
@@ -386,7 +388,7 @@ function playRound(g, ps, clock) {
       const cl = b[ci].clues[ri];
       g.pick(ci, ri);
       if (cl.dd) { g.ddWager(g.controllerId, 5); g.answer(g.controllerId, cl.a); } else {
-        clock.advance(readingTime(cl.q) + 10);
+        clock.advance(waitFor(g, cl.q) + 10);
         g.buzz(ps[0].id); g.answer(ps[0].id, cl.a);
       }
       clock.advance(T.ruling + 10);
@@ -510,7 +512,7 @@ test('"also accept" answers on your own clues count', () => {
   begin(g);
   g.pick(0, 0);
   if (g.phase === 'dd-wager') { g.ddWager(g.controllerId, 5); g.answer(g.controllerId, 'zebra crossing'); assert.equal(g.lastResult.correct, true); } else {
-    clock.advance(readingTime(g.clue.q) + 10);
+    clock.advance(waitFor(g, g.clue.q) + 10);
     g.buzz(ps[0].id); g.answer(ps[0].id, 'zebra crossing');
     assert.equal(g.lastResult.correct, true);
   }
@@ -754,11 +756,11 @@ test('phones are told when the buzzers open, ahead of time, so they all turn gol
   const picked = clock.now();
   g.pick(0, g.board()[0].clues.indexOf(cl));
   const v = g.publicView().clue;
-  assert.equal(v.liveAt, picked + readingTime(cl.q));
+  assert.equal(v.liveAt, picked + waitFor(g, cl.q));
   assert.equal(v.liveSeq, 1);
-  clock.advance(readingTime(cl.q) + 30);              // the room looks a moment late...
+  clock.advance(waitFor(g, cl.q) + 30);              // the room looks a moment late...
   assert.equal(g.phase, 'open');
-  assert.equal(g.publicView().clue.liveAt, picked + readingTime(cl.q), '...but the buzzers count as open from when they were due');
+  assert.equal(g.publicView().clue.liveAt, picked + waitFor(g, cl.q), '...but the buzzers count as open from when they were due');
   assert.equal(g.publicView().clue.liveSeq, 1);
 });
 
@@ -768,7 +770,7 @@ test('a press made the instant the phone turned gold counts, even before the roo
   const cl = g.board()[0].clues.find((c) => !c.dd);
   g.pick(0, g.board()[0].clues.indexOf(cl));
   const due = g.publicView().clue.liveAt;
-  clock.skip(readingTime(cl.q) + 20);                 // the press arrives before the room's next look
+  clock.skip(waitFor(g, cl.q) + 20);                 // the press arrives before the room's next look
   const r = g.buzz(ps[0].id, 1, due + 12);
   assert.equal(r.result, 'won');
   assert.equal(Math.round(r.ms), 12);
@@ -780,7 +782,7 @@ test('pressing before the buzzer turns gold locks you out for a quarter second, 
   const cl = g.board()[0].clues.find((c) => !c.dd);
   g.pick(0, g.board()[0].clues.indexOf(cl));
   const due = g.publicView().clue.liveAt;
-  clock.skip(readingTime(cl.q) - 100);
+  clock.skip(waitFor(g, cl.q) - 100);
   assert.equal(g.buzz(ps[0].id, 0, due - 100).result, 'early');
   clock.advance(150);                                 // open now
   assert.equal(g.phase, 'open');
@@ -939,7 +941,7 @@ test('the engine hands the memory to whoever hosts it, and takes it back on the 
   e1.room.chooseGame('jeopardy');
   e1.room.game.seen.add('abc');
   e1.room.game.resetHistory();
-  assert.deepEqual(kept, { jeopardy: { v: 1, seen: [] } });
+  assert.deepEqual(kept, { jeopardy: { v: 1, seen: [], hall: { games: 0, last: [], players: {} } } });
   const e2 = mk({ jeopardy: { v: 1, seen: ['xyz'] } });
   e2.room.chooseGame('jeopardy');
   assert.ok(e2.room.game.seen.has('xyz'));
@@ -962,4 +964,73 @@ test('real-show clues that need a picture or a sound are left out; harmless stag
   const packs = parseArchive([header, ...rows].join('\n'), 17, () => 0.5);
   const names = packs.flatMap((p) => p.categories.map((c) => c.name));
   assert.ok(names.length >= 14 && !names.includes('MAPS'), 'the column with a picture clue is not played');
+});
+
+test('the TV reads the clue out loud and the buzzers open a moment after its voice stops', () => {
+  const { g, clock } = setup();
+  assert.equal(g.publicView().readAloud, true);
+  begin(g);
+  const b = g.board();
+  let ci = 0, ri = 0;
+  while (b[ci].clues[ri].dd) ri++;
+  g.pick(ci, ri);
+  assert.equal(g.phase, 'reading');
+  clock.advance(readingTime(b[ci].clues[ri].q) + 10);
+  assert.equal(g.phase, 'reading', 'with the voice on, the plain reading time is not enough');
+  g.act('readDone', { ci: ci + 1, ri });            // another clue's voice is ignored
+  assert.equal(g.publicView().clue.liveAt, 1000 + speakingTime(b[ci].clues[ri].q));
+  g.act('readDone', { ci, ri });
+  const at = g.publicView().clue.liveAt;
+  assert.equal(at, clock.now() + AFTER_SPEECH, 'the phones are told when the buzzers open');
+  clock.advance(AFTER_SPEECH + 10);
+  assert.equal(g.phase, 'open');
+});
+
+test('reading aloud can be switched off, and never runs when a host reads the clues', () => {
+  const { g, clock } = setup();
+  g.act('setReadAloud', { on: false });
+  assert.equal(g.readsAloud(), false);
+  g.act('setReadAloud', { on: true });
+  g.setHostJudges(true);
+  assert.equal(g.readsAloud(), false);
+  assert.equal(g.publicView().readsAloud, false);
+  g.setHostJudges(false);
+  begin(g);
+  openClue(g, clock);                                  // without the TV ever saying it is done, they still open
+});
+
+test('the family scoreboard counts every finished game on this TV, by name, and keeps it between rooms', () => {
+  let kept = null;
+  const memory = { load: () => kept, save: (_g, d) => { kept = JSON.parse(JSON.stringify(d)); } };
+  const play = (names, scores) => {
+    let t = 1000;
+    const room = new Room({ games: GAMES, now: () => t, random: () => 0.42, memory,
+      loadContent: (g, id) => sets[id] ?? null, listContent: () => Object.entries(sets).map(([id, s]) => ({ id, title: s.title })) });
+    room.chooseGame('jeopardy');
+    const ps = names.map((n) => room.join({ name: n }));
+    const g = room.game;
+    assert.equal(g.publicView().hall.games, kept?.hall?.games ?? 0);
+    ps.forEach((p, i) => { room.players.find((x) => x.id === p.id).score = scores[i]; });
+    g.phase = 'gameover';
+    g.act('adjustScore', { id: ps[0].id, delta: 0 });   // anything that changes the room
+    return { room, g, ps };
+  };
+  play(['Maya', 'Leo'], [3000, 1000]);
+  let v = play(['maya ', 'Leo', 'Dad'], [5000, 200, 400]).g.publicView().hall;
+  assert.equal(v.games, 2);
+  assert.deepEqual(v.players.map((p) => [p.name, p.wins, p.games, p.streak]), [['maya', 2, 2, 2], ['Leo', 0, 2, 0], ['Dad', 0, 1, 0]]);
+  const { room, g, ps } = play(['Maya', 'Leo'], [100, 900]);
+  v = g.publicView().hall;
+  assert.equal(v.players.find((p) => p.name === 'Leo').wins, 1);
+  assert.equal(v.players.find((p) => p.name === 'Maya').streak, 0, 'the run ends');
+  // A ruling flipped after the game ended: the game is counted again with the new scores, not twice.
+  room.players.find((x) => x.id === ps[0].id).score = 2000;
+  g.act('adjustScore', { id: ps[0].id, delta: 0 });
+  v = g.publicView().hall;
+  assert.equal(v.games, 3);
+  assert.equal(v.players.find((p) => p.name === 'Maya').wins, 3);
+  assert.equal(v.players.find((p) => p.name === 'Leo').wins, 0);
+  g.playAgain();
+  g.resetHall();
+  assert.equal(g.publicView().hall.games, 0);
 });

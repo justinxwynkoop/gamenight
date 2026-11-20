@@ -258,6 +258,8 @@
     "lastResult": null,
     "answerTime": 10,
     "finalForAll": false,
+    "readAloud": true,
+    "readsAloud": false,
     "answerTimes": [
       5,
       10,
