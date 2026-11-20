@@ -190,3 +190,37 @@ test('phones carry on after the TV restarts: the new TV asks them who they are, 
     assert.equal(got.states.at(-1).room.me.name, 'Ann');
   } finally { link.close(); tv.rt.close(); sb.close(); }
 });
+
+test('clock sync: a phone learns the room clock from the quickest answer, and turns room times into its own', async () => {
+  const { createClockSync } = await import('../public/relay/client.js');
+  // The room's clock is 5,000ms ahead of the phone's. Messages take 30-200ms each way.
+  let phone = 100;
+  const room = () => phone + 5000;
+  const timers = [];
+  const answers = [];
+  const clock = createClockSync({
+    hires: () => phone,
+    setTimer: (fn, ms) => timers.push({ fn, ms }),
+    probe: (c) => answers.push(c),
+  });
+  assert.equal(clock.synced(), false);
+  assert.equal(clock.now(), null);
+  clock.restart();
+  assert.ok(timers.length >= 5, 'a quick burst of questions');
+  // Three round trips: slow out, fast back; fast both ways; slow both ways.
+  for (const [out, back] of [[180, 40], [30, 32], [200, 190]]) {
+    const c = phone; phone += out; const at = room(); phone += back;
+    clock.answer({ c, at });
+  }
+  assert.equal(clock.synced(), true);
+  // The quickest round trip (30 out, 32 back) decides: off by half the difference at most.
+  assert.ok(Math.abs(clock.offset() - 5000) <= 1, `offset ${clock.offset()}`);
+  assert.ok(Math.abs(clock.now() - room()) <= 1);
+  assert.ok(Math.abs(clock.toLocal(room() + 250) - (phone + 250)) <= 1);
+  assert.ok(clock.lag() > 100 && clock.lag() < 200, 'a typical one-way delay, not the best one');
+  // Starting again (after a reconnect) forgets it all.
+  clock.restart();
+  assert.equal(clock.synced(), false);
+  clock.answer({ c: 'x', at: 1 });
+  assert.equal(clock.synced(), false, 'nonsense is ignored');
+});

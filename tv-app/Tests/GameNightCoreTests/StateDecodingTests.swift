@@ -178,17 +178,18 @@ final class StateDecodingTests: XCTestCase {
 
         let open = try Fixture.jeopardy("jp-open")
         XCTAssertEqual(open.phase, .open)
-        XCTAssertEqual(open.timer, TimerState(kind: "buzz", totalMs: 7000, leftMs: 7000, timedOut: false))
+        // The recording looks 10ms after the buzzers were due to open; they count from when they were due.
+        XCTAssertEqual(open.timer, TimerState(kind: "buzz", totalMs: 7000, leftMs: 6990, timedOut: false))
 
         let answering = try Fixture.jeopardy("jp-answering")
         XCTAssertEqual(answering.phase, .answering)
         XCTAssertEqual(answering.clue?.buzzedId, "p2")
-        XCTAssertEqual(answering.clue?.buzzMs, 300)
+        XCTAssertEqual(answering.clue?.buzzMs, 310)
         XCTAssertEqual(answering.timer?.kind, "answer")
         XCTAssertEqual(answering.timer?.totalMs, 15000)
         let buzzes = try XCTUnwrap(answering.clue?.buzzes)
         XCTAssertEqual(buzzes.map(\.pid), ["p2", "p1"], "everyone's buzz is timed, fastest first")
-        XCTAssertEqual(buzzes.map(\.ms), [300, 380])
+        XCTAssertEqual(buzzes.map(\.ms), [310, 390])
 
         let wrong = try Fixture.jeopardy("jp-ruling-wrong")
         XCTAssertEqual(wrong.phase, .ruling)

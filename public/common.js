@@ -1,5 +1,5 @@
 // Shared by every page: DOM helper, auto-reconnecting game socket, formatting.
-import { connectRelay, cleanCode } from './relay/client.js';
+import { connectRelay, cleanCode, createClockSync } from './relay/client.js';
 
 /** h('div', {class:'x', onclick: fn}, 'text', childEl) — builds DOM without innerHTML, so names can't inject markup. */
 export function h(tag, props = {}, ...kids) {
@@ -54,24 +54,31 @@ export const COLORS = [
 export function connect({ hello, onState, onMessage = () => {}, onStatus = () => {} }) {
   if (globalThis.GN_RELAY) return connectOnline({ hello, onState, onMessage, onStatus });
   let ws; let retry = 500; let closed = false;
+  const raw = (msg) => { if (ws?.readyState === 1) { ws.send(JSON.stringify(msg)); return true; } return false; };
+  // The room's clock, kept in step (see createClockSync), so the buzzer turns gold with everyone else's.
+  const clock = createClockSync({ hires: () => performance.now(), probe: (c) => raw({ t: 'sync', c }) });
   const open = () => {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     ws = new WebSocket(`${proto}://${location.host}/ws`);
-    ws.onopen = () => { retry = 500; onStatus(true); ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello)); };
+    ws.onopen = () => { retry = 500; onStatus(true); ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello)); clock.restart(); };
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.t === 'state') onState(msg.view);
-      else if (msg.t === 'who') ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello));
-      else onMessage(msg);
+      else if (msg.t === 'sync') clock.answer(msg);
+      else if (msg.t === 'who') { ws.send(JSON.stringify(typeof hello === 'function' ? hello() : hello)); clock.restart(); }
+      else if (msg.t !== 'pong') onMessage(msg);
     };
     ws.onclose = () => { onStatus(false); if (!closed) setTimeout(open, retry = Math.min(retry * 1.6, 3000)); };
     ws.onerror = () => ws.close();
   };
   open();
+  const beat = setInterval(() => { const lag = clock.lag(); raw({ t: 'ping', ...(lag != null ? { lag: Math.round(lag) } : {}) }); clock.probeNow(); }, 8000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !closed && ws?.readyState === 1) clock.restart(); });
   return {
-    send: (msg) => { if (ws.readyState === 1) { ws.send(JSON.stringify(msg)); return true; } return false; },
-    act: (action, args = {}) => { if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'act', action, args })); },
-    close: () => { closed = true; ws.close(); },
+    send: raw,
+    act: (action, args = {}) => raw({ t: 'act', action, args }),
+    clock,
+    close: () => { closed = true; clearInterval(beat); clock.stop(); ws.close(); },
   };
 }
 
@@ -122,6 +129,14 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
     act: (action, args = {}) => link?.act(action, args),
     rpc: (op, args) => (link ? link.rpc(op, args) : Promise.resolve({ ok: false, error: 'Not connected' })),
     status: () => link?.status() ?? 'Starting…',
+    /** The room's clock, kept in step (null answers until the first sync comes back). */
+    clock: {
+      now: () => link?.clock.now() ?? null,
+      toLocal: (t) => link?.clock.toLocal(t) ?? null,
+      synced: () => !!link?.clock.synced(),
+      lag: () => link?.clock.lag() ?? null,
+      error: () => link?.clock.error() ?? null,
+    },
     close: () => { closed = true; link?.close(); },
   };
   onlineConnection = connection;

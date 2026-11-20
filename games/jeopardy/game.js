@@ -6,8 +6,13 @@
 // host ruling (host mode). A wrong answer opens the buzzers again for everyone who has not tried. Players buzz in as
 // individuals (up to 8); the room is never split into teams for this game.
 //
-// Fairness: buzz() is called in the order messages arrive at the room and stamps the press with the room clock. Device
-// clocks are never consulted. A press that loses by a hair is still timed, so everyone can see the buzz order.
+// Fairness: the fastest thumb wins, not the fastest Wi-Fi. Each phone keeps its clock in step with the room's (it
+// asks the TV the time every few seconds and keeps the answer that came back quickest), so every phone turns gold at
+// the instant the room opens the buzzers (clue.liveAt), and each press says when it happened on the room's clock
+// (`at`). The first press to arrive does not win outright: the room waits just long enough for a press from a phone
+// on slower Wi-Fi that may have happened earlier (at most T.maxWait), then the earliest press wins. A phone that cannot
+// stamp its presses (an older page) is timed when its press arrives, less its usual delay. A press that loses by a
+// hair is still timed, so everyone can see the buzz order.
 import { GameError, fail, cleanName, int } from '../../lib.js';
 import { judge, asksForPerson } from './judge.js';
 import { parseArchive, pickSeason, ERAS } from './archive.js';
@@ -28,7 +33,11 @@ export const T = {
   revealNobody: 3800,   // ...when nobody got it
   ruling: 2400,         // the ruling on an answer: their words and right or wrong, before anything else happens
   roundIntro: 7000,     // the round's title and categories before the first pick
-  earlyPenalty: 400,    // lockout for buzzing before the clue unlocks (or while it is not open)
+  earlyPenalty: 250,    // lockout for buzzing before the clue unlocks (or while it is not open), as on the show
+  maxWait: 350,         // the longest the room waits after the first press for an earlier one still on its way
+  waitMargin: 30,       // added to the slowest phone's usual delay when deciding how long to wait
+  syncSlack: 40,        // a phone's clock may be this far out; a press this close to the opening still counts
+  trustAt: 2500,        // a press stamped longer ago than this (or in the future) is timed when it arrives instead
   ddWager: 45000,       // a Daily Double wager not placed by then is the minimum
   ddSplash: 2200,       // "Maya bets $1,000" on the TV before the clock starts counting
   finalWager: 60000,    // Final Jeopardy wagers not placed by then are $0
@@ -122,6 +131,7 @@ export class JeopardyGame {
     this.captainGoneAt = null;
     this.timer = null;              // { at, fire, kind, shownAt, shownMs }
     this.openedAt = 0;              // when the buzzers last opened, to time each press
+    this.collecting = null;         // presses for the current opening, while the room waits for any earlier one still on its way
     this.#resetRun();
     this.#refreshPacks();
   }
@@ -136,6 +146,7 @@ export class JeopardyGame {
     this.final = null;
     this.finalClue = null;
     this.timer = null;
+    this.collecting = null;
   }
   #changed() { this.room.changed(); }
   #now() { return this.room.now(); }
@@ -173,6 +184,8 @@ export class JeopardyGame {
 
   tick() {
     const now = this.#now();
+    // The wait for a slower phone's press is over: the earliest press wins.
+    if (this.collecting && now >= this.collecting.until) this.#settle();
     const t = this.timer;
     if (t && now >= t.at) { this.timer = null; t.fire(); }
     // The captain may step away, but not for long.
@@ -198,6 +211,8 @@ export class JeopardyGame {
     // `shownEnd` is where the clock on screen reaches zero (the host-mode answer clock ends before the timer fires).
     this.timer = { at: now + ms, fire, kind, totalMs: ms, shownEnd: now + ms };
   }
+  /** A timer that started at `from` (which may be a moment ago: timers are checked a few times a second). */
+  #setTimerFrom(from, ms, fire, kind) { this.timer = { at: from + ms, fire, kind, totalMs: ms, shownEnd: from + ms }; }
   #clearTimer() { this.timer = null; }
 
   // ---------- packs: your boards, real-show topics, and the house packs ----------
@@ -483,6 +498,7 @@ export class JeopardyGame {
     if (!cl || cl.used) return;
     cl.used = true;
     this.lastResult = null;
+    this.collecting = null;
     this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
@@ -491,52 +507,83 @@ export class JeopardyGame {
       this.#setTimer(T.ddWager, () => this.ddWager(who, 5), 'wager');
     } else {
       this.phase = 'reading';
-      // With a host judging, the buzzers open when the host finishes reading aloud.
-      this.#setTimer(this.hostJudges() ? T.hostRead : readingTime(cl.q), () => this.#openBuzzers(T.buzzWindow), 'reading');
+      // With a host judging, the buzzers open when the host finishes reading aloud. Otherwise they open at a moment
+      // known in advance, which every phone is told, so they all turn gold together.
+      const ms = this.hostJudges() ? T.hostRead : readingTime(cl.q);
+      const at = this.#now() + ms;
+      this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
     }
     this.#changed();
   }
   openNow() { if (this.phase === 'reading') this.#openBuzzers(T.buzzWindow); }
-  #openBuzzers(window) {
+  /** Opens the buzzers. `at` is when they were due to open (the timer may be checked a moment later). */
+  #openBuzzers(window, at = this.#now()) {
     this.phase = 'open';
     this.clue.buzzedId = null;
+    this.collecting = null;
     // Each opening has a number: a press the phone sent for an earlier one (mashing through someone's answer) is too early.
     this.clue.open = (this.clue.open ?? 0) + 1;
-    this.openedAt = this.#now();
-    this.#setTimer(window, () => this.#endClue(), 'buzz');
+    this.openedAt = Math.min(at, this.#now());
+    this.#setTimerFrom(this.openedAt, window, () => { if (this.collecting) this.#settle(); else this.#endClue(); }, 'buzz');
     this.#changed();
   }
 
-  /**
-   * A buzz. Returns what to tell the phone: { result: 'won' | 'late' | 'early' | 'tried' | 'ignored', ms }.
-   * `seq` is the opening the phone saw (clue.open); a press for an earlier one arrives too early for this one.
-   */
-  buzz(pid, seq) {
-    const st = this.#stat(pid);
-    if (!this.#player(pid) || !this.clue) return { result: 'ignored' };
-    const now = this.#now();
-    const tried = this.clue.tried.includes(pid);
-    if (this.phase === 'reading' || (this.phase === 'ruling' && !tried)) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
-    // Someone beat them to it: still time it, so everyone sees the buzz order.
-    if (this.phase === 'answering' && this.openedAt) {
-      const opening = this.clue.open;
-      if (tried || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid && b.open === opening)) return { result: 'ignored' };
-      if (seq != null && Number(seq) < opening) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
-      const late = Math.max(0, now - this.openedAt);
-      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
-      this.clue.buzzes.push({ pid, ms: late, open: opening });
-      // Pressing on through someone's answer earns a short lockout, so mashing can't win the next opening.
-      st.lockUntil = now + T.earlyPenalty;
-      if (opening === 1 && (st.fastest == null || late < st.fastest)) st.fastest = late;
-      this.#changed();
-      return { result: 'late', ms: late };
+  /** When the buzzers open next (or opened, while they are open), on the room's clock, or null if nobody knows yet. */
+  #liveAt() {
+    const t = this.timer;
+    if (!this.clue) return null;
+    if (this.phase === 'open') return this.openedAt;
+    if (this.phase === 'reading' && t?.kind === 'reading' && !this.hostJudges()) return t.at;
+    if (this.phase === 'ruling' && t?.kind === 'ruling' && this.#reopens()) return t.at;
+    return null;
+  }
+  /** After this ruling, will the buzzers open again? */
+  #reopens() {
+    const r = this.lastResult;
+    if (!r || r.dd || r.correct) return false;
+    return this.#order().some((id) => this.#connected(id) && !this.clue.tried.includes(id));
+  }
+  /** When a press happened on the room's clock: the phone's own stamp when it is believable, else when it arrived. */
+  #pressTime(pid, at, now) {
+    const lag = this.room.lagOf?.(pid);
+    const stamp = Number(at);
+    if (at != null && Number.isFinite(stamp) && stamp <= now + T.syncSlack && stamp >= now - T.trustAt) {
+      this.room.noteLag?.(pid, now - stamp);
+      return Math.min(stamp, now);
     }
-    if (this.phase !== 'open') return { result: 'ignored' };
-    if (tried) return { result: 'tried' };
-    if (seq != null && Number(seq) < this.clue.open) { st.lockUntil = now + T.earlyPenalty; return { result: 'early' }; }
-    if (now < st.lockUntil) return { result: 'early' };
+    return now - Math.min(lag ?? 0, T.maxWait);
+  }
+  /** How long after the earliest press the room waits for one still on its way: the slowest phone's usual delay. */
+  #waitFor(except) {
+    let slowest = null;
+    for (const id of this.#order()) {
+      if (id === except || !this.#connected(id) || this.clue.tried.includes(id)) continue;
+      const lag = this.room.lagOf?.(id);
+      if (lag != null) slowest = Math.max(slowest ?? 0, lag);
+    }
+    // Nobody else can stamp their presses (older pages): first come, first served.
+    if (slowest == null) return 0;
+    return Math.min(T.maxWait, slowest + T.waitMargin);
+  }
+  /** The wait is over: the earliest press wins, and the rest are timed as late. */
+  #settle() {
+    const c = this.collecting;
+    this.collecting = null;
+    if (!c || this.phase !== 'open' || !this.clue || this.clue.open !== c.open) return null;
+    const order = c.presses.slice().sort((a, b) => a.at - b.at || a.n - b.n);
+    const [first, ...rest] = order;
+    this.#win(first.pid, first.ms);
+    for (const p of rest) {
+      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== p.pid);
+      this.clue.buzzes.push({ pid: p.pid, ms: p.ms, open: c.open });
+      if (c.open === 1) { const st = this.#stat(p.pid); if (st.fastest == null || p.ms < st.fastest) st.fastest = p.ms; }
+    }
+    this.#changed();
+    return first.pid;
+  }
+  #win(pid, ms) {
+    const st = this.#stat(pid);
     this.clue.buzzedId = pid;
-    const ms = Math.max(0, now - this.openedAt);
     this.clue.buzzMs = ms;
     // Fastest Finger counts the first opening only: after a miss everyone is already poised over the button.
     if (this.clue.open === 1 && (st.fastest == null || ms < st.fastest)) st.fastest = ms;
@@ -546,8 +593,60 @@ export class JeopardyGame {
     this.phase = 'answering';
     if (this.hostJudges()) this.#startAnswerClock(pid);
     else this.#setTimer(T.answer, () => this.#timeUp(pid), 'answer');
-    this.#changed();
-    return { result: 'won', ms };
+  }
+
+  /**
+   * A buzz. Returns what to tell the phone: { result: 'won' | 'wait' | 'late' | 'early' | 'tried' | 'ignored', ms }.
+   * `seq` is the opening the phone was pressing for (clue.open, or the next one once its button has turned gold for
+   * it); a press for an earlier one is too early for this one. `at` is when it was pressed on the room's clock.
+   * 'wait' means the press is in, and the room is waiting a split second for a faster one that may still be on its way.
+   */
+  buzz(pid, seq, at) {
+    const st = this.#stat(pid);
+    if (!this.#player(pid) || !this.clue) return { result: 'ignored' };
+    const now = this.#now();
+    const pressed = this.#pressTime(pid, at, now);
+    // The buzzers were due to open by the time of this press (the room's timers are only checked a few times a
+    // second, and the phone turned gold right on time): open them now, as of when they were due.
+    const due = this.#liveAt();
+    if (due != null && this.phase !== 'open' && this.timer && Math.max(now, pressed) >= due - T.syncSlack && (seq == null || Number(seq) > (this.clue.open ?? 0) || now >= due)) {
+      const t = this.timer; this.timer = null; t.fire();
+    }
+    const tried = this.clue.tried.includes(pid);
+    if (this.phase === 'reading' || (this.phase === 'ruling' && !tried)) { st.lockUntil = pressed + T.earlyPenalty; return { result: 'early' }; }
+    // Someone beat them to it: still time it, so everyone sees the buzz order.
+    if (this.phase === 'answering' && this.openedAt) {
+      const opening = this.clue.open;
+      if (tried || this.clue.buzzedId === pid || this.clue.buzzes.some((b) => b.pid === pid && b.open === opening)) return { result: 'ignored' };
+      if (seq != null && Number(seq) < opening) { st.lockUntil = pressed + T.earlyPenalty; return { result: 'early' }; }
+      const late = Math.max(0, pressed - this.openedAt);
+      this.clue.buzzes = this.clue.buzzes.filter((b) => b.pid !== pid);
+      this.clue.buzzes.push({ pid, ms: late, open: opening });
+      // Pressing on through someone's answer earns a short lockout, so mashing can't win the next opening.
+      st.lockUntil = pressed + T.earlyPenalty;
+      if (opening === 1 && (st.fastest == null || late < st.fastest)) st.fastest = late;
+      this.#changed();
+      return { result: 'late', ms: late };
+    }
+    if (this.phase !== 'open') return { result: 'ignored' };
+    if (tried) return { result: 'tried' };
+    if (seq != null && Number(seq) < this.clue.open) { st.lockUntil = pressed + T.earlyPenalty; return { result: 'early' }; }
+    if (pressed < st.lockUntil) return { result: 'early' };
+    const when = Math.max(pressed, this.openedAt);
+    const ms = when - this.openedAt;
+    // Wait a split second for an earlier press from a phone on slower Wi-Fi, unless nobody else could have one.
+    const c = (this.collecting ??= { open: this.clue.open, presses: [], until: Infinity, n: 0 });
+    if (c.presses.some((p) => p.pid === pid)) return { result: 'wait', ms };
+    c.presses.push({ pid, at: when, ms, n: c.n++ });
+    const earliest = Math.min(...c.presses.map((p) => p.at));
+    c.until = Math.min(c.until, earliest + this.#waitFor(c.presses.length === 1 ? pid : null));
+    const waiting = this.#order().some((id) => this.#connected(id) && !this.clue.tried.includes(id) && !c.presses.some((p) => p.pid === id));
+    if (!waiting || now >= c.until) {
+      const winner = this.#settle();
+      if (winner === pid) return { result: 'won', ms };
+      return { result: 'late', ms };
+    }
+    return { result: 'wait', ms };
   }
 
   /** Host mode: the visible answer clock. At zero the TV says "Time's up" and the host has a short grace to rule. */
@@ -622,16 +721,17 @@ export class JeopardyGame {
   #ruling() {
     this.phase = 'ruling';
     this.clue.buzzedId = this.lastResult.pid;
-    this.#setTimer(T.ruling, () => this.#afterRuling(), 'ruling');
+    const at = this.#now() + T.ruling;
+    this.#setTimer(T.ruling, () => this.#afterRuling(at), 'ruling');
     this.#changed();
   }
-  #afterRuling() {
+  #afterRuling(at) {
     if (this.phase !== 'ruling') return;
     const r = this.lastResult;
     if (!r || r.dd || r.correct) { this.#revealClue(); return; }
     const remaining = this.#order().filter((id) => this.#connected(id) && !this.clue.tried.includes(id));
     if (remaining.length === 0) this.#revealClue();
-    else this.#openBuzzers(T.rebuzzWindow);
+    else this.#openBuzzers(T.rebuzzWindow, at);
   }
   /** What a player typed for their answer (phones). */
   answer(pid, text) {
@@ -982,7 +1082,7 @@ export class JeopardyGame {
   onPlayer(player, msg) {
     const pid = player.id;
     switch (msg.t) {
-      case 'buzz': return { t: 'buzz-result', ...this.buzz(pid, msg.seq) };
+      case 'buzz': return { t: 'buzz-result', ...this.buzz(pid, msg.seq, msg.at), ...(msg.id != null ? { id: String(msg.id).slice(0, 20) } : {}) };
       case 'draft': this.typing(pid, msg.text); return undefined;
       case 'answer': this.answer(pid, msg.text); return { t: 'ack', what: 'answer' };
       case 'pick': {
@@ -1109,6 +1209,10 @@ export class JeopardyGame {
         // Earlier openings first (after a wrong answer the buzzers open again), then fastest.
         buzzes: this.clue.buzzes.slice().sort((x, y) => (x.open ?? 1) - (y.open ?? 1) || x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won, open: x.open ?? 1 })),
         open: this.clue.open ?? 0,
+        // When the buzzers open (or opened) on the room's clock, and which opening that is: each phone turns its
+        // button gold at that instant by its own clock, which it keeps in step with the room's.
+        liveAt: (() => { const at = this.#liveAt(); return at == null ? null : Math.round(at); })(),
+        liveSeq: this.phase === 'open' ? (this.clue.open ?? 0) : (this.clue.open ?? 0) + 1,
         tried: this.clue.tried,
       },
       lastResult: this.lastResult,

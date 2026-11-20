@@ -248,22 +248,24 @@
       "q": "He came up with the theory of relativity.",
       "answer": null,
       "buzzedId": "p2",
-      "buzzMs": 300,
+      "buzzMs": 310,
       "buzzes": [
         {
           "pid": "p2",
-          "ms": 300,
+          "ms": 310,
           "won": true,
           "open": 1
         },
         {
           "pid": "p1",
-          "ms": 380,
+          "ms": 390,
           "won": false,
           "open": 1
         }
       ],
       "open": 1,
+      "liveAt": 14800,
+      "liveSeq": 2,
       "tried": [
         "p2"
       ]

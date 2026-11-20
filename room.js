@@ -13,7 +13,7 @@
 //   toJSON() / restore(data)  saved with the room
 //   init()                    optional, called when the game is newly chosen
 //   contentChanged(setId)     optional, a question set was saved or deleted
-//   tick()                    optional, called ~4x a second; the place to expire timers
+//   tick()                    optional, called ~20x a second; the place to expire timers
 // and the module may declare `needs: { teams: 2 }` when the game can only be played by that many teams
 // (the room then always plays in teams, and the host cannot switch to individuals), or `needs: { individuals: true }`
 // when the game is always played by individuals, and `maxPlayers` for a smaller limit than the room's.
@@ -46,6 +46,7 @@ export class Room {
     this.settings = { sound: true, volume: 70, lateJoin: false }; // sound plays on the TV; lateJoin lets new players in mid-game
     this.soundPing = 0; // bumped by the host's "test sound" so the TV can play one
     this.connected = new Set(); // runtime only: player ids with a live socket
+    this.lags = new Map(); // runtime only: player id -> how long their messages usually take to reach the room (ms)
   }
 
   now() { return this.clock(); }
@@ -128,6 +129,15 @@ export class Room {
     this.changed();
     return p;
   }
+  /** How long a player's messages take to arrive, from their phone's pings and stamped buzzes (rises fast, falls slowly). */
+  noteLag(playerId, ms) {
+    const v = Number(ms);
+    if (!playerId || !Number.isFinite(v)) return;
+    const lag = Math.min(2000, Math.max(0, v));
+    const was = this.lags.get(playerId);
+    this.lags.set(playerId, was == null ? lag : lag > was ? (was + lag) / 2 : was * 0.85 + lag * 0.15);
+  }
+  lagOf(playerId) { return this.lags.get(playerId); }
   setConnected(playerId, on) {
     on ? this.connected.add(playerId) : this.connected.delete(playerId);
     this.changed();

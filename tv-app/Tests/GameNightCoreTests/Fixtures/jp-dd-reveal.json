@@ -251,6 +251,8 @@
       "buzzMs": null,
       "buzzes": [],
       "open": 0,
+      "liveAt": null,
+      "liveSeq": 1,
       "tried": []
     },
     "lastResult": {

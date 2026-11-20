@@ -11,7 +11,11 @@ const signed = (n) => (n >= 0 ? '+' : '−') + money(Math.abs(n));
 const secs = (ms) => (ms / 1000).toFixed(2);
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
-export function mount(container, { send, flash }) {
+const LOCKOUT = 250;          // ms locked out for pressing before the buzzer turns gold, as on the show
+const RESEND = 350;           // ms between tries while the TV has not confirmed a press
+const RESEND_FOR = 3000;      // ...for this long
+
+export function mount(container, { send, flash, clock: roomClock = null }) {
   loadStyles();
   document.body.classList.add('jp-phone');
   const root = h('div', { class: 'jp' });
@@ -24,6 +28,13 @@ export function mount(container, { send, flash }) {
   let noteTimer = null;
   let pressed = false;     // this phone pressed the buzzer for the current opening: the button shows it at once
   let pressedKey = '';
+  let lockedUntil = 0;     // pressed too early: locked out until then (this phone's clock), shown at once
+  let liveTimer = null;    // turns the button gold at the moment the buzzers open
+  let lockTimer = null;
+  let pending = null;      // a press the TV has not confirmed yet: { msg, until }, sent again until it does
+  let resendTimer = null;
+  let buzzId = 0;
+  let wonKey = '';         // the opening this phone was told it won, so the cue plays once
   let sheet = false;       // the "fix scores" sheet
   let step = 200;
   let wager = null;        // the amount on the wager stepper
@@ -70,6 +81,27 @@ export function mount(container, { send, flash }) {
     wrong: [[220, 0, 0.35, 'sawtooth', 0.08]],
   };
   const cue = (name) => chirp(PHONE_SOUNDS[name]);
+
+  // ---------- a buzz you can feel ----------
+  // Android vibrates from a web page. iPhones can't, but Safari (iOS 18 and later) gives a light tap when a switch
+  // toggle is flipped, and flipping a hidden one from inside the press gives that tap. Either way it is instant.
+  const hapticSwitch = (() => {
+    if (navigator.vibrate) return null;
+    try {
+      const input = document.createElement('input');
+      input.type = 'checkbox'; input.setAttribute('switch', ''); input.tabIndex = -1;
+      const label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.cssText = 'position:fixed;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;left:-10px;top:-10px';
+      label.append(input);
+      document.body.append(label);
+      return label;
+    } catch { return null; }
+  })();
+  const haptic = (pattern = 20) => {
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch { /* not allowed */ } return; }
+    try { hapticSwitch?.click(); } catch { /* fine */ }
+  };
 
   // ---------- the answer box ----------
   // One input for the whole game. It is focused the moment the buzzer is pressed (inside the tap, which is the only
@@ -214,7 +246,9 @@ export function mount(container, { send, flash }) {
     const ph = v.phase;
     const id = `${c.ci}-${c.ri}-${v.round}`;
     const opening = c.open || 0;
-    if (`${id}-${opening}` !== pressedKey) { pressed = false; pressedKey = `${id}-${opening}`; }
+    // Which opening a press now would be for: the one under way, or the next one (its button may turn gold before the
+    // TV's word that it opened arrives).
+    if (`${id}-${target()}` !== pressedKey) { pressed = false; pressedKey = `${id}-${target()}`; }
     const tried = c.tried.includes(me().id);
     const head = meta(c.cat, money(c.value));
     // I won the buzz: the answer box is up.
@@ -225,46 +259,129 @@ export function mount(container, { send, flash }) {
       }
       return { key: `ans-${id}-${opening}`, answer: { type: 'answer', for: `${id}-${opening}`, head: h('div', { class: 'jp-won' }, h('div', { class: 'jp-logo good' }, 'YOU’RE IN!'), clock()) }, nodes: [head, clueCard(c.q)] };
     }
+    const now = performance.now();
+    const live = isLive(now);
+    const locked = now < lockedUntil;
     let cls = 'wait'; let label = 'WAIT'; let sub = 'Eyes on the TV. Buzz when the bar fills and the button turns gold.';
     if (v.hostJudges && ph === 'reading') sub = 'The host is reading. Buzz when the button turns gold.';
-    if (ph === 'open') { cls = 'live'; label = 'BUZZ!'; sub = ''; }
-    if (pressed && ph === 'open') { cls = 'sent'; label = 'BUZZED'; sub = 'Sent!'; }
+    if (live) { cls = 'live'; label = 'BUZZ!'; sub = ''; }
+    if (pressed && live) { cls = 'sent'; label = 'BUZZED'; sub = 'In! Waiting for the TV…'; }
     if (tried) { cls = 'out'; label = 'OUT'; sub = 'You already took a shot at this one.'; }
     let tint = null;
-    if (ph === 'answering' || ph === 'ruling') {
+    if (!live && (ph === 'answering' || ph === 'ruling')) {
       // Someone else is answering: the button shows who (in their colour), not a dead grey circle, and during the
       // ruling a green or red ring for how it went.
       const up = player(c.buzzedId);
       cls = up ? `other ${ph === 'ruling' ? (v.lastResult?.correct ? 'good' : 'bad') : ''}` : 'out'; label = up ? up.name.toUpperCase() : '…'; tint = up?.color ?? null;
       const mine = c.buzzes.find((b) => b.pid === me().id && (b.open ?? 1) === opening);
       const who = player(c.buzzedId);
+      const winner = c.buzzes.find((b) => b.pid === c.buzzedId && (b.open ?? 1) === opening);
       sub = ph === 'ruling' ? [named(who), ' answered. Watch the TV.']
-        : mine ? `Beaten to it! Your time: ${secs(mine.ms)}s` : [named(who), ` buzzed in first${c.buzzMs != null ? ` (${secs(c.buzzMs)}s)` : ''}.`];
+        : mine ? `Beaten to it! You ${secs(mine.ms)}s, ${who?.name ?? 'them'} ${secs(winner?.ms ?? c.buzzMs ?? 0)}s`
+          : [named(who), ` buzzed in first${c.buzzMs != null ? ` (${secs(c.buzzMs)}s)` : ''}.`];
       if (tried) sub = 'You already took a shot at this one.';
     }
+    if (locked && !tried) { cls = 'locked'; label = 'TOO SOON'; sub = 'Too early! Locked out for a split second.'; }
     if (note) sub = note;
     const bz = h('button', { type: 'button', class: `jp-buzzer ${cls}`, 'aria-label': 'Buzz', style: tint ? { '--c': tint } : {} }, label);
-    bz.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      const live = v.phase === 'open' && !c.tried.includes(me().id);
-      // Taps after someone else won still count, so everyone gets a buzz time.
-      if (!['reading', 'open', 'answering'].includes(v.phase)) return;
-      send({ t: 'buzz', seq: c.open || 0 });
-      if (live && !pressed) {
-        pressed = true;
-        wake(); cue('press');
-        navigator.vibrate?.(25);
-        bz.className = 'jp-buzzer sent'; bz.textContent = 'BUZZED';
-        if (!v.hostJudges) { answerIn.value = ''; answerFor = `${id}-${c.open || 0}`; answerIn.focus({ preventScroll: true }); }
-      }
-    });
+    // The whole middle of the screen is the buzzer, and it fires the instant a finger lands (not when it lifts).
+    const wrap = h('div', { class: 'jp-buzzwrap' }, bz);
+    wrap.addEventListener('pointerdown', (e) => { e.preventDefault(); press(bz); });
+    wrap.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Turn gold at the very moment the buzzers open, by this phone's clock (kept in step with the TV's).
+    scheduleLive(now);
     const reading = ph === 'reading' && v.timer?.kind === 'reading';
     return {
       key: `buzz-${id}-${opening}-${ph}-${cls}-${c.buzzes.length}-${note}`,
-      nodes: [head, clueCard(c.q, ph === 'open'), h('div', { class: 'jp-buzzwrap' }, bz),
-        reading ? bar(true) : ph === 'open' && v.timer?.kind === 'buzz' ? bar() : null,
+      nodes: [head, clueCard(c.q, live), wrap,
+        reading && !live ? bar(true) : live && v.timer?.kind === 'buzz' ? bar() : null,
         sub && h('div', { class: 'jp-small jp-muted jp-center-t' }, sub)],
     };
+  }
+
+  /** When this phone's buzzer turns gold for the next opening, on this phone's clock, or null when nobody knows yet. */
+  function liveAtLocal() {
+    const c = v?.clue;
+    if (!c || c.liveAt == null) return null;   // a TV that does not say ahead (or the host is reading): wait for it
+    const local = roomClock?.toLocal?.(c.liveAt);
+    if (local != null) return local;
+    // The clock is not in step yet: go by the reading countdown that came with the state.
+    if (v.phase === 'reading' && v.timer?.kind === 'reading') return receivedAt + v.timer.leftMs;
+    return v.phase === 'open' ? 0 : null;
+  }
+  /** The opening a press now is for: the one under way, or the next one (the TV numbers them from 1). */
+  function target() {
+    const c = v.clue;
+    if (v.phase === 'answering') return c.open || 0;
+    return c.liveSeq ?? (v.phase === 'open' ? c.open || 0 : (c.open || 0) + 1);
+  }
+  /** Is the buzzer gold right now? */
+  function isLive(now = performance.now()) {
+    const c = v?.clue;
+    if (!c || c.tried.includes(me().id)) return false;
+    if (v.phase === 'open') return true;
+    if (v.phase === 'reading' || v.phase === 'ruling') { const at = liveAtLocal(); return at != null && now >= at; }
+    return false;
+  }
+  function scheduleLive(now) {
+    clearTimeout(liveTimer);
+    if (isLive(now)) return;
+    const at = liveAtLocal();
+    if (at == null || at - now > 60000) return;
+    liveTimer = setTimeout(() => render(), Math.max(0, at - now));
+  }
+
+  /** A finger landed on the buzzer. */
+  function press(bz) {
+    const c = v?.clue;
+    if (!c || !['reading', 'open', 'answering', 'ruling'].includes(v.phase)) return;
+    const now = performance.now();
+    const at = roomClock?.now?.() ?? null;
+    const stamp = at != null ? { at: Math.round(at * 10) / 10 } : {};
+    wake();
+    const tried = c.tried.includes(me().id);
+    if (tried) return;
+    if (isLive(now)) {
+      if (now < lockedUntil) { lockOut(now, c, stamp); return; }
+      if (pressed) return;
+      pressed = true;
+      haptic(25); cue('press');
+      bz.className = 'jp-buzzer sent'; bz.textContent = 'BUZZED';
+      buzz({ t: 'buzz', seq: target(), ...stamp });
+      if (!v.hostJudges) { answerIn.value = ''; answerFor = `${c.ci}-${c.ri}-${v.round}-${target()}`; answerIn.focus({ preventScroll: true }); }
+      return;
+    }
+    if (v.phase === 'answering') {
+      // Someone else won: the press still counts for a buzz time, so everyone sees how close it was.
+      if (pressed) return;
+      pressed = true;
+      haptic(10);
+      buzz({ t: 'buzz', seq: c.open || 0, ...stamp });
+      return;
+    }
+    // Before the buzzer turned gold: locked out, like the show.
+    lockOut(now, c, stamp);
+  }
+  function lockOut(now, c, stamp) {
+    lockedUntil = now + LOCKOUT;
+    haptic([30, 40, 30]); cue('early');
+    send({ t: 'buzz', seq: c.open || 0, ...stamp });   // the TV keeps the same lockout
+    clearTimeout(lockTimer);
+    lockTimer = setTimeout(() => render(), LOCKOUT + 5);
+    render();
+  }
+  /** Send a press, and keep sending it until the TV says it has it (a message can be lost while Wi-Fi hiccups). */
+  function buzz(msg) {
+    msg.id = `${Date.now().toString(36)}${(buzzId++).toString(36)}`;
+    pending = { msg, until: performance.now() + RESEND_FOR };
+    trySend();
+  }
+  function trySend() {
+    clearTimeout(resendTimer);
+    if (!pending) return;
+    if (performance.now() > pending.until) { pending = null; return; }
+    send(pending.msg);
+    resendTimer = setTimeout(trySend, RESEND);
   }
 
   /** Their answer and the ruling, as the TV shows it. */
@@ -492,7 +609,9 @@ export function mount(container, { send, flash }) {
   /** Redraws the countdown bars and clock from the last timer the server sent. */
   function tick() {
     const t = v?.timer;
-    const left = t ? Math.max(0, t.leftMs - (performance.now() - receivedAt)) : 0;
+    let left = t ? Math.max(0, t.leftMs - (performance.now() - receivedAt)) : 0;
+    // The reading bar fills at the very moment the button turns gold (by the clock kept in step with the TV's).
+    if (t?.kind === 'reading' && v.phase === 'reading') { const at = liveAtLocal(); if (at != null) left = Math.max(0, at - performance.now()); }
     const frac = t && t.totalMs ? Math.min(1, left / t.totalMs) : 0;
     for (const el of root.querySelectorAll('[data-jp-bar]')) el.style.transform = `scaleX(${frac})`;
     for (const el of root.querySelectorAll('[data-jp-fill]')) el.style.transform = `scaleX(${t ? 1 - frac : 0})`;
@@ -506,12 +625,30 @@ export function mount(container, { send, flash }) {
     noteTimer = setTimeout(() => { note = ''; render(); }, ms);
   }
 
+  /** This phone won the buzz: a cue you hear and feel, once. */
+  function wonCue() {
+    const c = v?.clue;
+    const key = c ? `${c.ci}-${c.ri}-${v.round}-${c.open}` : '';
+    if (key && key === wonKey) return;
+    wonKey = key;
+    haptic(60); cue('won');
+  }
+
   return {
     update(r) {
       const before = v?.phase;
       const old = v;
       v = r.game; receivedAt = performance.now();
       if (typeof r.room?.settings?.sound === 'boolean') soundOn = r.room.settings.sound;
+      // The press is in (the state shows it): no need to send it again.
+      if (pending && v.clue?.buzzes?.some((b) => b.pid === v.me?.id && b.open >= (pending.msg.seq ?? 0))) { pending = null; clearTimeout(resendTimer); }
+      if (v.phase !== 'open' && v.phase !== 'answering' && v.phase !== 'reading' && v.phase !== 'ruling') { pending = null; clearTimeout(resendTimer); }
+      // Won the buzz (the room may decide a split second after the press, once any earlier press has had time to arrive).
+      if (v.me && v.phase === 'answering' && v.clue?.buzzedId === v.me.id && old?.clue?.buzzedId !== v.me.id) wonCue();
+      else if (v.me && v.phase === 'answering' && v.clue && v.clue.buzzedId !== v.me.id && old?.phase !== 'answering') {
+        // Someone else won while this phone's press was still on its way: put the keyboard away again.
+        if (document.activeElement === answerIn && !answerType) setTimeout(() => { if (!answerType) answerIn.blur(); }, 0);
+      }
       if (old && v.me) {
         // Their turn to pick a clue.
         if (v.phase === 'board' && v.controllerId === v.me.id && (old.phase !== 'board' || old.controllerId !== v.me.id)) {
@@ -528,16 +665,21 @@ export function mount(container, { send, flash }) {
     },
     onMessage(m) {
       if (m.t === 'buzz-result') {
-        if (m.result === 'won') { navigator.vibrate?.(60); cue('won'); }
-        else {
-          // Not this time: put the keyboard away again.
+        // An answer for a press we are still sending: stop sending it. (Answers to repeats of it are ignored.)
+        if (m.id != null && pending?.msg.id === m.id) { pending = null; clearTimeout(resendTimer); }
+        else if (m.id != null) return;
+        if (m.result === 'won') wonCue();
+        else if (m.result === 'early') {
+          // The TV saw it as too early. Usually this phone already knew (and showed it at once); if not, show it now.
+          pressed = false;
           if (document.activeElement === answerIn && !answerType) answerIn.blur();
-          pressed = m.result === 'late' || m.result === 'tried';
-          if (m.result === 'early') { pressed = false; navigator.vibrate?.([40, 40, 40]); cue('early'); say('Too early! Wait for the gold button.', 900); }
-          else if (m.result === 'late') say(`Beaten to it! Your time: ${secs(m.ms)}s`, 2500);
+          if (m.id != null) { lockedUntil = performance.now() + LOCKOUT; cue('early'); clearTimeout(lockTimer); lockTimer = setTimeout(() => render(), LOCKOUT + 5); render(); }
+        } else if (m.result === 'late') {
+          if (document.activeElement === answerIn && !answerType) answerIn.blur();
+          say(`Beaten to it! Your time: ${secs(m.ms)}s`, 2500);
         }
       } else if (m.t === 'ack') flash(m.what === 'wager' ? 'Wager locked in' : 'Answer locked in', 'ok');
     },
-    destroy() { removeEventListener('pointerdown', wake, { capture: true }); actx?.close?.().catch?.(() => {}); clearInterval(ticker); clearTimeout(noteTimer); clearTimeout(draftTimer); document.body.classList.remove('jp-phone'); },
+    destroy() { clearTimeout(liveTimer); clearTimeout(lockTimer); clearTimeout(resendTimer); hapticSwitch?.remove(); removeEventListener('pointerdown', wake, { capture: true }); actx?.close?.().catch?.(() => {}); clearInterval(ticker); clearTimeout(noteTimer); clearTimeout(draftTimer); document.body.classList.remove('jp-phone'); },
   };
 }

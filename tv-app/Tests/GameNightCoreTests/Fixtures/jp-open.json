@@ -83,7 +83,7 @@
     "timer": {
       "kind": "buzz",
       "totalMs": 7000,
-      "leftMs": 7000
+      "leftMs": 6990
     },
     "guide": {
       "pid": null,
@@ -255,6 +255,8 @@
       "buzzMs": null,
       "buzzes": [],
       "open": 1,
+      "liveAt": 12010,
+      "liveSeq": 1,
       "tried": []
     },
     "lastResult": null,

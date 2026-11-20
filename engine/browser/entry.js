@@ -87,11 +87,12 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
     }
     engine.archiveFailed(want.id);
   }
+  // Often enough that the buzzers open on the dot, and a buzz is settled the moment the wait for a slower phone is over.
   setInterval(() => {
     engine.tick();
     const want = engine.takeArchiveRequest();
     if (want) loadArchive(want);
-  }, 250);
+  }, 50);
   addEventListener('pagehide', () => { clearTimeout(saveTimer); if (leaving) return; try { put(KEYS.room, JSON.stringify(engine.room)); } catch { /* fine */ } });
 
   /** Forget this room's players and game, and start the page again. */

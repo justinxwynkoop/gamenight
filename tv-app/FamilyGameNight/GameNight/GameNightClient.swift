@@ -216,7 +216,9 @@ final class GameNightClient {
             host.receive("tv", #"{"t":"hello","role":"tv"}"#)
             tickTask = Task { [weak self] in
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(250))
+                    // Often enough that the buzzers open on the dot, and a buzz is settled the moment the
+                    // wait for a slower phone's press is over.
+                    try? await Task.sleep(for: .milliseconds(50))
                     self?.engine?.tick()
                 }
             }

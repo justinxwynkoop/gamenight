@@ -77,8 +77,8 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-clock.low { color: var(--jp-hot); }
 
 /* the buzzer */
-.jp .jp-buzzwrap { flex: 1; display: grid; place-items: center; min-height: 0; }
-.jp .jp-buzzer { width: min(80vw, 42vh, 330px); height: min(80vw, 42vh, 330px); border-radius: 50%; border: 0; font-family: var(--jp-display); font-weight: 900; font-size: min(14vw, 7vh, 60px); display: grid; place-items: center; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .06s, box-shadow .06s, background .2s; }
+.jp .jp-buzzwrap { flex: 1; display: grid; place-items: center; min-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+.jp .jp-buzzer { pointer-events: none; width: min(86vw, 46vh, 380px); height: min(86vw, 46vh, 380px); border-radius: 50%; border: 0; font-family: var(--jp-display); font-weight: 900; font-size: min(14vw, 7vh, 60px); display: grid; place-items: center; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .06s, box-shadow .06s, background .2s; }
 .jp .jp-buzzer.wait { background: var(--jp-panel); color: #4A5080; box-shadow: inset 0 0 0 10px var(--jp-panel2); font-size: min(11vw, 5.5vh, 48px); }
 .jp .jp-buzzer.live { background: radial-gradient(circle at 50% 35%, var(--jp-sun-hi), var(--jp-sun) 55%, var(--jp-sun-deep)); color: var(--jp-ink); box-shadow: 0 14px 0 #8A5A00, 0 0 60px rgba(255, 201, 64, .55); animation: jp-pulse .7s ease-in-out infinite alternate; }
 .jp .jp-buzzer.live:active { transform: translateY(12px); box-shadow: 0 2px 0 #8A5A00, 0 0 40px rgba(255, 201, 64, .55); animation: none; }
@@ -87,6 +87,8 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-buzzer.other.good { box-shadow: inset 0 0 0 10px var(--jp-good); }
 .jp .jp-buzzer.other.bad { box-shadow: inset 0 0 0 10px var(--jp-hot); }
 .jp .jp-buzzer.out { background: var(--jp-panel); color: #4A5080; box-shadow: inset 0 0 0 10px var(--jp-panel2); opacity: .7; font-size: min(11vw, 5.5vh, 48px); }
+.jp .jp-buzzer.locked { background: color-mix(in srgb, var(--jp-hot) 30%, var(--jp-panel)); color: #fff; box-shadow: inset 0 0 0 10px var(--jp-hot), 0 0 50px color-mix(in srgb, var(--jp-hot) 50%, transparent); font-size: min(10vw, 5vh, 42px); animation: jp-shake .25s linear; }
+@keyframes jp-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes jp-pulse { to { box-shadow: 0 14px 0 #8A5A00, 0 0 90px rgba(255, 201, 64, .75); } }
 
 /* the answer box: always in the page (so the buzzer can open the keyboard), shown when it is your turn */

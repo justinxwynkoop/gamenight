@@ -51,6 +51,22 @@ export class Realtime {
     socket.onerror = () => { this.lastIssue = 'could not reach Supabase'; };
   }
 
+  /**
+   * The page came back to the front (a phone woke up, or the player switched back from another app): a socket that
+   * slept may be dead without knowing it, so reconnect at once if it is down, or check it with a heartbeat that must
+   * be answered quickly, instead of waiting up to half a minute for the next one.
+   */
+  checkNow(timeoutMs = 2500) {
+    if (this.closed) return;
+    if (!this.socket || this.socket.readyState > 1) { this.retry = 0; this.connect(); return; }
+    if (this.socket.readyState !== 1) return;   // still connecting
+    const ref = this.#nextRef();
+    this.pendingHeartbeat = ref;
+    this.#write({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref });
+    const socket = this.socket;
+    this.setTimer(() => { if (this.socket === socket && this.pendingHeartbeat === ref) { this.retry = 0; this.#dropped(); } }, timeoutMs);
+  }
+
   close() {
     this.closed = true;
     this.clearTimer(this.reconnectTimer); this.clearTimer(this.heartbeatTimer);
