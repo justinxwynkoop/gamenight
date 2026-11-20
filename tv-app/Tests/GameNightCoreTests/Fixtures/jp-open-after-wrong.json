@@ -268,7 +268,7 @@
         }
       ],
       "open": 2,
-      "liveAt": 14800,
+      "liveAt": 16580,
       "liveSeq": 2,
       "tried": [
         "p2"
@@ -286,6 +286,8 @@
     },
     "answerTime": 10,
     "finalForAll": true,
+    "readAloud": true,
+    "readsAloud": true,
     "answerTimes": [
       5,
       10,

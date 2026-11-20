@@ -131,6 +131,12 @@ export function finalControl(v, run) {
     v.finalForAll ? 'On: players at $0 or below play too, and can bet up to $1,000.' : 'Off: only players with money play, as on the show.');
 }
 
+export function readAloudControl(v, run) {
+  if (v.hostJudges) return null;   // the host reads the clues
+  return btn([v.readAloud ? '✓ ' : '', '🗣️ The TV reads clues out loud'], () => run('setReadAloud', { on: !v.readAloud }), `${v.readAloud ? '' : 'ghost'} left`,
+    v.readAloud ? 'On: the TV reads each clue, and the buzzers open when it finishes.' : 'Off: everyone reads the clue on the TV; the buzzers open after a few seconds.');
+}
+
 export function answerTimeControl(v, run) {
   return h('div', { class: 'jp-stack', style: { maxWidth: 'none' } },
     h('div', { class: 'jp-muted' }, 'Answer clock (a host judging out loud)'),
@@ -144,5 +150,6 @@ export function lobbyControls(v, run, opts = {}) {
     h('div', { class: 'jp-eyebrow', style: { marginTop: '8px' } }, 'How you play'),
     judgeControl(v, run),
     v.hostJudges && answerTimeControl(v, run),
+    readAloudControl(v, run),
     finalControl(v, run));
 }

@@ -251,6 +251,8 @@
     },
     "answerTime": 10,
     "finalForAll": true,
+    "readAloud": true,
+    "readsAloud": true,
     "answerTimes": [
       5,
       10,

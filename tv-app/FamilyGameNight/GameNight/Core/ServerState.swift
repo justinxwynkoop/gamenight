@@ -159,6 +159,8 @@ struct JeopardyState: Decodable, Equatable {
     var captainId: String?
     /// A host judges spoken answers (so players do not type them).
     var hostJudges: Bool
+    /// The TV reads each clue out loud and says when it is done (never with a host, who reads them).
+    var readsAloud: Bool?
     /// Who picks the next clue (and, in a Daily Double, who is playing it).
     var controllerId: String?
     var players: [JeoPlayer]
@@ -203,7 +205,7 @@ struct JeopardyState: Decodable, Equatable {
         case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
-        case draftFresh, freshCount, seenCount
+        case draftFresh, freshCount, seenCount, readsAloud
         case finalRound = "final"
     }
 }

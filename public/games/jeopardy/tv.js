@@ -92,6 +92,32 @@ function drainBar(timer, after) {
   return h('div', { class: 'drain' }, h('div', { class: 'track' }, fill), h('span', {}, label, ` ${after}`));
 }
 
+// ---------- reading clues out loud ----------
+let spokenKey = '';
+/**
+ * The TV reads each clue out loud (unless a host is reading them, or it is switched off in the lobby). When the voice
+ * finishes a normal clue, the TV tells the game, which opens the buzzers a moment later.
+ */
+function speakClue(p, g, now, was, newClue, sound) {
+  if (!sound.speak) return;
+  const clueOn = ['reading', 'dd-answer'].includes(now);
+  if (!clueOn) {
+    if (spokenKey && !['open', 'answering', 'ruling', 'reveal', 'final-answer'].includes(now)) { sound.stopSpeaking(); spokenKey = ''; }
+    return;
+  }
+  const key = `${g.round}:${clueKey(g.clue)}:${now === 'dd-answer' ? 'dd' : 'q'}`;
+  if (!g.readsAloud || !g.clue?.q || key === spokenKey) return;
+  if (!(newClue || was !== now)) return;
+  spokenKey = key;
+  const { ci, ri } = g.clue;
+  const isReading = now === 'reading';
+  // A beat after the pick sound, so the two do not talk over each other.
+  setTimeout(() => {
+    if (spokenKey !== key) return;
+    sound.speak(g.clue.q, () => { if (isReading && spokenKey === key && phaseNow === 'reading') act?.('readDone', { ci, ri }); });
+  }, 450);
+}
+
 // ---------- sounds ----------
 const clueKey = (c) => (c ? `${c.ci}:${c.ri}` : '');
 /** Sound cues for a change of state. prev and view are the whole { room, game } views. */
@@ -122,9 +148,12 @@ export function onChange(prev, view, sound) {
   // Each Final Jeopardy wager and answer locking in (the last answer goes straight on to the reveal, which has its own sound).
   if (['final-wager', 'final-answer'].includes(now) && g.final && p.final && ((g.final.wagered?.length ?? 0) > (p.final.wagered?.length ?? 0)
     || (g.final.answered?.length ?? 0) > (p.final.answered?.length ?? 0))) sound.play('lock');
-  // Final Jeopardy's "think" music runs while answers are typed.
-  if (now === 'final-answer' && was !== 'final-answer') sound.music('think', { owner: 'final', loop: false });
-  else if (now !== 'final-answer') sound.stopMusic('final');
+  // Final Jeopardy's "think" music runs while answers are typed (after the voice reads the clue, when it does).
+  if (now === 'final-answer' && was !== 'final-answer') {
+    const think = () => { if (phaseNow === 'final-answer') sound.music('think', { owner: 'final', loop: false }); };
+    if (g.readsAloud && g.final?.q && sound.speak?.(g.final.q, think)) spokenKey = `final:${g.round}`; else think();
+  } else if (now !== 'final-answer') sound.stopMusic('final');
+  speakClue(p, g, now, was, newClue, sound);
   if (now === 'final-reveal') {
     const f = g.final; const pf = p.final;
     if (f?.stage === 'answer' && (pf?.stage !== 'answer' || pf?.revealIndex !== f.revealIndex)) sound.play('reveal');

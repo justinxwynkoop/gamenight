@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
-import { T, readingTime } from '../games/jeopardy/game.js';
+import { T, readingTime, speakingTime } from '../games/jeopardy/game.js';
 
 const out = path.resolve(process.argv[2] ?? 'fixtures-out');
 mkdirSync(out, { recursive: true });
@@ -22,6 +22,8 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
 
 room.chooseGame('jeopardy');
 const g = room.game;
+// The buzzers open after the reading time, or with the TV reading clues aloud and never saying it is done, the longer one.
+const waitFor = (q) => (g.readsAloud() ? speakingTime(q) : readingTime(q));
 const ps = ['Leo', 'Maya', 'Dad'].map((n) => room.join({ name: n }));
 ps.forEach((p) => room.setConnected(p.id, true));
 g.takeArchiveRequest();
@@ -52,7 +54,7 @@ save('board');
 const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
 g.pick(first.ci, first.ri);
 save('reading');
-advance(readingTime(first.cl.q) + 10);
+advance(waitFor(first.cl.q) + 10);
 save('open');
 advance(300); g.buzz(ps[1].id); advance(80); g.buzz(ps[0].id);
 save('answering');
@@ -72,7 +74,7 @@ advance(T.reveal + 10);
 // Nobody buzzes.
 const second = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd && !x.cl.used);
 g.pick(second.ci, second.ri);
-advance(readingTime(second.cl.q) + 10);
+advance(waitFor(second.cl.q) + 10);
 advance(T.buzzWindow + 10);
 save('reveal-nobody');
 advance(T.reveal + 10);
@@ -94,7 +96,7 @@ const playOut = () => {
     const spot = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.used);
     g.pick(spot.ci, spot.ri);
     if (spot.cl.dd) { g.ddWager(g.controllerId, 5); g.answer(g.controllerId, spot.cl.a); } else {
-      advance(readingTime(spot.cl.q) + 10);
+      advance(waitFor(spot.cl.q) + 10);
       g.buzz(ps[0].id); g.answer(ps[0].id, spot.cl.a);
     }
     advance(T.ruling + 10);

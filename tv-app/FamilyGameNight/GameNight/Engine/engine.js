@@ -434,6 +434,8 @@
   var MAX_PLAYERS2 = 10;
   var FINAL_FLOOR = 1e3;
   var readingTime = (text) => Math.max(4e3, Math.min(1e4, 1500 + String(text).length * 55));
+  var speakingTime = (text) => Math.max(5e3, Math.min(18e3, 2500 + String(text).length * 80));
+  var AFTER_SPEECH = 600;
   function validateSet(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
     if (!cleanName(set.title, 80)) fail("Question set needs a title");
@@ -492,7 +494,7 @@
       this.ownPacks = [];
       this.packs = [];
       this.selected = /* @__PURE__ */ new Set();
-      this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true };
+      this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: true };
       this.era = "any";
       this.archiveSeason = null;
       this.archiveRequest = null;
@@ -784,7 +786,7 @@
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 5), "wager");
       } else {
         this.phase = "reading";
-        const ms = this.hostJudges() ? T.hostRead : readingTime(cl.q);
+        const ms = this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q);
         const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
       }
@@ -792,6 +794,23 @@
     }
     openNow() {
       if (this.phase === "reading") __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
+    }
+    /** The TV reads clues out loud (never with a host, who reads them). */
+    readsAloud() {
+      return !!this.settings.readAloud && !this.hostJudges();
+    }
+    setReadAloud(on) {
+      __privateMethod(this, _JeopardyGame_instances, lobbyOnly_fn).call(this);
+      this.settings.readAloud = !!on;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
+    /** The TV's voice finished reading clue (ci, ri): open the buzzers a moment from now, a time every phone is told. */
+    readDone(ci, ri) {
+      if (this.phase !== "reading" || !this.readsAloud() || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
+      const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + AFTER_SPEECH;
+      if (__privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this) != null && __privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this) <= at) return;
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, AFTER_SPEECH, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     /**
      * A buzz. Returns what to tell the phone: { result: 'won' | 'wait' | 'late' | 'early' | 'tried' | 'ignored', ms }.
@@ -1120,6 +1139,10 @@
           return this.judgeNow(a.correct === true);
         case "openNow":
           return this.openNow();
+        case "readDone":
+          return this.readDone(Number(a.ci), Number(a.ri));
+        case "setReadAloud":
+          return this.setReadAloud(a.on);
         case "advance":
           return this.advance();
         case "skip":
@@ -1252,6 +1275,8 @@
         lastResult: this.lastResult,
         answerTime: this.settings.answerTime,
         finalForAll: !!this.settings.finalForAll,
+        readAloud: !!this.settings.readAloud,
+        readsAloud: this.readsAloud(),
         answerTimes: ANSWER_TIMES,
         hotStreak: STREAK_HOT,
         reactions: this.reactions.filter((r) => now - r.at < REACT_LIFE).map((r) => ({ id: r.id, pid: r.pid, e: r.e })),
@@ -1993,7 +2018,7 @@
     }
   };
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "playBoard", "setAllPacks", "resetHistory"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js

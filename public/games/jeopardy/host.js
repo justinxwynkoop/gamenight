@@ -4,7 +4,7 @@
 // switched on the host opens the buzzers, taps the picks and rules on each answer.
 import { h, money } from '../../common.js';
 import { icon, button, card, eyebrow, pill, timerPill } from '../../ui.js';
-import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl } from './setup.js';
+import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl, readAloudControl } from './setup.js';
 
 let v = null;          // the game's view (with the host's secrets)
 let C = null;          // helpers from the page: act, openSheet, confirm, go, ...
@@ -212,9 +212,9 @@ const f_final = () => (v.final ? card(eyebrow('Final Jeopardy'), h('p', { class:
 function settingsCards() {
   const lobby = v.phase === 'lobby';
   return [card(eyebrow('How answers work'),
-    lobby ? jp(judgeControl(v, act), v.hostJudges && answerTimeControl(v, act))
+    lobby ? jp(judgeControl(v, act), v.hostJudges && answerTimeControl(v, act), readAloudControl(v, act))
       : h('p', { class: 'dim' }, v.hostJudges ? 'A host judges spoken answers. This can only be changed before the game starts.' : 'Players type their answers and the game checks them. This can only be changed before the game starts.'),
-    h('p', { class: 'dim' }, 'Buzzers open a few seconds after the clue appears, stay open for seven seconds, and a wrong answer opens them again for everyone who has not tried.')),
+    h('p', { class: 'dim' }, v.readsAloud ? 'The TV reads each clue out loud; the buzzers open when it finishes,' : 'Buzzers open a few seconds after the clue appears, stay open for seven seconds, and a wrong answer opens them again for everyone who has not tried.')),
   card(eyebrow('Final Jeopardy'), !(v.phase.startsWith('final') || v.phase === 'gameover')
     ? jp(finalControl(v, act))
     : h('p', { class: 'dim' }, v.finalForAll ? 'Everyone plays Final Jeopardy.' : 'Only players with money play Final Jeopardy.'))];

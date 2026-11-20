@@ -63,6 +63,11 @@ export const FINAL_FLOOR = 1000;   // the most a player with little or no money 
 
 // Long enough for a child or a grandparent to read the clue to the end.
 export const readingTime = (text) => Math.max(4000, Math.min(10000, 1500 + String(text).length * 55));
+/** With the TV reading the clue out loud: the longest the voice may take. The TV says when it is done (readDone),
+ * which opens the buzzers sooner; this is only the backstop for a TV whose voice never starts or never ends. */
+export const speakingTime = (text) => Math.max(5000, Math.min(18000, 2500 + String(text).length * 80));
+/** After the voice stops, the buzzers open this much later, a moment every phone is told in advance. */
+export const AFTER_SPEECH = 600;
 
 /** Checks one of our own boards (what the editor saves). A clue may list other words to accept in `alt`. */
 export function validateSet(set) {
@@ -128,7 +133,7 @@ export class JeopardyGame {
     this.ownPacks = [];
     this.packs = [];
     this.selected = new Set();
-    this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true };
+    this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: true };
     this.era = 'any';
     this.archiveSeason = null;
     this.archiveRequest = null;     // { id, era } while a new season is wanted; the app downloads it
@@ -603,13 +608,25 @@ export class JeopardyGame {
       this.phase = 'reading';
       // With a host judging, the buzzers open when the host finishes reading aloud. Otherwise they open at a moment
       // known in advance, which every phone is told, so they all turn gold together.
-      const ms = this.hostJudges() ? T.hostRead : readingTime(cl.q);
+      // With the TV reading it out loud, they open once the voice stops (readDone), or at the latest after speakingTime.
+      const ms = this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q);
       const at = this.#now() + ms;
       this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
     }
     this.#changed();
   }
   openNow() { if (this.phase === 'reading') this.#openBuzzers(T.buzzWindow); }
+  /** The TV reads clues out loud (never with a host, who reads them). */
+  readsAloud() { return !!this.settings.readAloud && !this.hostJudges(); }
+  setReadAloud(on) { this.#lobbyOnly(); this.settings.readAloud = !!on; this.#changed(); }
+  /** The TV's voice finished reading clue (ci, ri): open the buzzers a moment from now, a time every phone is told. */
+  readDone(ci, ri) {
+    if (this.phase !== 'reading' || !this.readsAloud() || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
+    const at = this.#now() + AFTER_SPEECH;
+    if (this.#liveAt() != null && this.#liveAt() <= at) return;
+    this.#setTimer(AFTER_SPEECH, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
+    this.#changed();
+  }
   /** Opens the buzzers. `at` is when they were due to open (the timer may be checked a moment later). */
   #openBuzzers(window, at = this.#now()) {
     this.phase = 'open';
@@ -1149,6 +1166,8 @@ export class JeopardyGame {
       case 'pick': return this.pick(Number(a.ci), Number(a.ri));
       case 'judge': return this.judgeNow(a.correct === true);
       case 'openNow': return this.openNow();
+      case 'readDone': return this.readDone(Number(a.ci), Number(a.ri));
+      case 'setReadAloud': return this.setReadAloud(a.on);
       case 'advance': return this.advance();
       case 'skip': return this.skipClue();
       case 'override': return this.override();
@@ -1174,7 +1193,7 @@ export class JeopardyGame {
     }
   }
   /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'playBoard', 'setAllPacks', 'resetHistory']);
+  static CAPTAIN_ACTIONS = new Set(['kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -1316,6 +1335,8 @@ export class JeopardyGame {
       lastResult: this.lastResult,
       answerTime: this.settings.answerTime,
       finalForAll: !!this.settings.finalForAll,
+      readAloud: !!this.settings.readAloud,
+      readsAloud: this.readsAloud(),
       answerTimes: ANSWER_TIMES,
       hotStreak: STREAK_HOT,
       reactions: this.reactions.filter((r) => now - r.at < REACT_LIFE).map((r) => ({ id: r.id, pid: r.pid, e: r.e })),

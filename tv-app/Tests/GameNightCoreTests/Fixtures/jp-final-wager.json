@@ -104,6 +104,8 @@
     },
     "answerTime": 10,
     "finalForAll": false,
+    "readAloud": true,
+    "readsAloud": true,
     "answerTimes": [
       5,
       10,
