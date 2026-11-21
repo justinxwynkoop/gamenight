@@ -96,7 +96,7 @@ test('a phone joins by room code, plays, and the host controls the room, all thr
     assert.equal(one.data.rounds.length, feudSet.rounds.length);
     assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'nope' })).error, 'No such set');
     assert.equal((await host.link.rpc('delete-everything', {})).error, 'Not available here');
-    assert.deepEqual((await host.link.rpc('games', {})).data.map((g) => g.id), ['jeopardy', 'feud']);
+    assert.deepEqual((await host.link.rpc('games', {})).data.map((g) => g.id), ['jeopardy', 'feud', 'spynight']);
     const doc = { ...feudSet, title: 'Saved from a phone' };
     assert.equal((await host.link.rpc('putSet', { game: 'feud', id: 'phone-made', doc })).ok, true);
     assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'phone-made' })).data.title, 'Saved from a phone');

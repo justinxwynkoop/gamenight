@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// The TV display: draws whatever the engine says is happening, for Jeopardy or Family Feud (both home-screen
+/// The TV display: draws whatever the engine says is happening, for Jeopardy, Family Feud or Spy Night (all home-screen
 /// tiles open this same display).
 ///
 /// Jeopardy's screens have buttons the Siri Remote can use (pick a clue, start, continue) and a game menu
@@ -68,7 +68,7 @@ struct JeopardyDisplayView: View {
                     phonesNote: phonesNote,
                     joinURL: client.joinURL,
                     onNewRoom: client.isLocal ? { showMenu = false; client.newRoom() } : nil,
-                    onEndGame: client.isLocal && (client.state?.jeopardy.map { $0.phase != .lobby } ?? false)
+                    onEndGame: client.isLocal && (client.state?.jeopardy.map { $0.phase != .lobby } ?? client.state?.spyNight.map { $0.phase != .lobby } ?? false)
                         ? { showMenu = false; client.act("endGame") } : nil,
                     onChangeServer: { showMenu = false; onChangeServer() },
                     onExit: { showMenu = false; onExit() },
@@ -178,6 +178,8 @@ struct JeopardyDisplayView: View {
             LobbyScreen(state: state, joinURL: client.joinURL)
         case .feudRound, .feudFastMoney, .feudWinner:
             FeudContent(state: state, joinURL: client.joinURL, receivedAt: client.stateReceivedAt)   // Feud/Display/FeudScreens.swift
+        case .spyNight:
+            SpyNightContent(state: state)   // SpyNight/SpyNightScreens.swift
         case .unsupported(let id):
             UnsupportedGameScreen(id: id)
         case .board, .clue, .dailyDouble, .roundEnd, .finalRound, .winner:

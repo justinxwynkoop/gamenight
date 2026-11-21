@@ -8,14 +8,20 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     case singo
     case jeopardy
     case feud
+    case spynight
 
     var id: String { rawValue }
+
+    /// The tiles are sized so that all of them fit in a row on a 1920-wide screen.
+    static var cardWidth: CGFloat { allCases.count > 3 ? 400 : 480 }
+    static var cardSpacing: CGFloat { allCases.count > 3 ? 40 : 56 }
 
     var title: String {
         switch self {
         case .singo: return "Singo Night"
         case .jeopardy: return "Jeopardy"
         case .feud: return "Family Feud"
+        case .spynight: return "Spy Night"
         }
     }
 
@@ -25,6 +31,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .singo: return "Name the song from a short clip. Plays from your Apple Music playlists."
         case .jeopardy: return "Trivia board with phone buzzers. The host runs it from a phone."
         case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
+        case .spynight: return "Most of you are the Resistance. A few are Spies. Your phone tells you which."
         }
     }
 
@@ -34,6 +41,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .singo: return "Bingo with songs, for the whole room"
         case .jeopardy: return "Players or teams buzz in from their phones"
         case .feud: return "Two teams, phones as buzzers"
+        case .spynight: return "Five to ten players, each on their own phone"
         }
     }
 
@@ -43,6 +51,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .singo: return [GameTag("music.note", "Apple Music"), GameTag("tv", "Plays on the TV")]
         case .jeopardy: return [GameTag("person.3.fill", "2+ players"), GameTag("iphone", "Phone buzzers")]
         case .feud: return [GameTag("person.2.fill", "Two teams"), GameTag("bolt.fill", "Fast Money")]
+        case .spynight: return [GameTag("person.3.fill", "5–10 players"), GameTag("eye.slash.fill", "Secret roles")]
         }
     }
 
@@ -52,6 +61,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .singo: return "Tile-Singo"
         case .jeopardy: return "Tile-Jeopardy"
         case .feud: return "Tile-Feud"
+        case .spynight: return "Tile-SpyNight"
         }
     }
 
@@ -61,6 +71,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .singo: return Color(red: 0.55, green: 0.22, blue: 0.85)
         case .jeopardy: return Color(red: 0.12, green: 0.30, blue: 0.85)
         case .feud: return Color(red: 0.92, green: 0.58, blue: 0.10)
+        case .spynight: return Color(red: 0.85, green: 0.18, blue: 0.27)
         }
     }
 }

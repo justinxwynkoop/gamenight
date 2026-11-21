@@ -4,5 +4,6 @@
 import jeopardy from './jeopardy/index.js';
 import feud from './feud/index.js';
 import singo from './singo/index.js';
+import spynight from './spynight/index.js';
 
-export const GAMES = Object.fromEntries([jeopardy, feud, singo].map((g) => [g.id, g]));
+export const GAMES = Object.fromEntries([jeopardy, feud, singo, spynight].map((g) => [g.id, g]));

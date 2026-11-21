@@ -188,7 +188,7 @@ try {
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const tv2 = await ctx2.newPage(); watch(tv2, 'tv2');
   await tv2.goto(`${base}/tv`);
-  await until(async () => (await tv2.locator('.gamepick button').count()) === 2, 'the game picker on a fresh TV');
+  await until(async () => (await tv2.locator('.gamepick button').count()) === 3, 'the game picker on a fresh TV');
   await until(async () => (await tv2.locator('.mn-join .roomcode').count()) > 0, 'the room code on the main menu');
   // A TV remote in a TV's browser sends arrow keys: they move the highlight (Enter opens the game).
   await until(async () => (await tv2.locator('.gamecard.sel').getAttribute('aria-label')) === 'Jeopardy', 'Jeopardy highlighted first');

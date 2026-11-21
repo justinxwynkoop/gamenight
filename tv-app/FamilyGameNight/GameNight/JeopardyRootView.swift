@@ -28,7 +28,7 @@ struct JeopardyRootView: View {
     @State private var runningHere = ServerSettings.runsHere
     /// The engine's id for the tile that was opened.
     private var gameId: String? {
-        switch title { case "Jeopardy": return "jeopardy"; case "Family Feud": return "feud"; default: return nil }
+        switch title { case "Jeopardy": return "jeopardy"; case "Family Feud": return "feud"; case "Spy Night": return "spynight"; default: return nil }
     }
 
     var body: some View {

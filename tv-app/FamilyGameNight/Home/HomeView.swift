@@ -38,7 +38,7 @@ struct HomeView: View {
 
                 Spacer(minLength: 30)
 
-                HStack(spacing: 56) {
+                HStack(spacing: FamilyGame.cardSpacing) {
                     ForEach(Array(FamilyGame.allCases.enumerated()), id: \.element) { index, game in
                         Button { open(game) } label: { GameCard(game: game) }
                             .buttonStyle(TileButtonStyle())
@@ -141,7 +141,7 @@ private struct GameCard: View {
             Image(game.tileImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 480, height: 288)
+                .frame(width: FamilyGame.cardWidth, height: FamilyGame.cardWidth * 0.6)
                 .clipped()
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -167,7 +167,7 @@ private struct GameCard: View {
                 }
             }
             .padding(.horizontal, 26)
-            .frame(width: 480, height: 128, alignment: .leading)
+            .frame(width: FamilyGame.cardWidth, height: 128, alignment: .leading)
             .background(game.accent.opacity(isFocused ? 0.95 : 0.55))
         }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
@@ -190,6 +190,7 @@ struct GameHost: View {
         case .jeopardy: JeopardyRootView(title: "Jeopardy", onExit: exit)
         // Same display: it shows whichever game the host has started, so Feud needs no screen of its own here.
         case .feud: JeopardyRootView(title: "Family Feud", onExit: exit)
+        case .spynight: JeopardyRootView(title: "Spy Night", onExit: exit)
         }
     }
 }

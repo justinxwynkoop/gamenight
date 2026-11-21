@@ -18,6 +18,11 @@ const CARDS = {
     tags: [['👨‍👩‍👧', 'Two teams'], ['⚡', 'Fast Money']],
     blurb: 'Two teams guess the top survey answers. Strikes, steals and Fast Money.',
   },
+  spynight: {
+    title: 'Spy Night', art: '/menu/spynight.webp', accent: '#ff4d5e',
+    tags: [['👥', '5 to 10 players'], ['🕶️', 'Secret roles']],
+    blurb: 'Most of you are the Resistance. A few are Spies. Your phone tells you which.',
+  },
 };
 
 let selected = 0;   // the highlighted card, kept across redraws (the page redraws on every update)

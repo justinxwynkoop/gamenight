@@ -3317,8 +3317,485 @@
     create: (room) => new SingoGame(room)
   };
 
+  // games/spynight/game.js
+  var GAME4 = "spynight";
+  var MIN_PLAYERS = 5;
+  var MAX_PLAYERS3 = 10;
+  var MISSIONS = 5;
+  var WINS = 3;
+  var MAX_REJECTS = 5;
+  var SPIES = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
+  var TEAM_SIZES = {
+    5: [2, 3, 2, 3, 3],
+    6: [2, 3, 4, 3, 4],
+    7: [2, 3, 3, 4, 4],
+    8: [3, 4, 4, 5, 5],
+    9: [3, 4, 4, 5, 5],
+    10: [3, 4, 4, 5, 5]
+  };
+  var failsNeeded = (players, mission) => players >= 7 && mission === 3 ? 2 : 1;
+  var T2 = {
+    voteResult: 7e3,
+    // everyone's vote, shown on the TV, before the game moves on
+    missionResult: 7e3
+    // the mission's result (how many Fail cards, never who), before the next team
+  };
+  var isRole = (r) => r === "spy" || r === "resistance";
+  var _SpyNightGame_instances, reset_fn, changed_fn4, now_fn2, player_fn2, connected_fn2, setTimer_fn2, shuffle_fn2, startTeam_fn, nextLeader_fn, revealVotes_fn, afterVotes_fn, finishMission_fn, afterMission_fn, end_fn, starter_fn, players_fn2, line_fn;
+  var SpyNightGame = class {
+    constructor(room) {
+      __privateAdd(this, _SpyNightGame_instances);
+      this.room = room;
+      __privateMethod(this, _SpyNightGame_instances, reset_fn).call(this);
+    }
+    // ---------- the room's side of the contract ----------
+    /** The roster is locked once the roles are dealt. */
+    inProgress() {
+      return this.phase !== "lobby";
+    }
+    tick() {
+      const t = this.timer;
+      if (t && __privateMethod(this, _SpyNightGame_instances, now_fn2).call(this) >= t.at) {
+        this.timer = null;
+        t.fire();
+        return;
+      }
+      const done = (ids, have) => ids.every((id) => have(id) || !__privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, id));
+      if (this.phase === "roles" && done(this.order, (id) => this.ready[id])) __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+      else if (this.phase === "vote" && done(this.order, (id) => id in this.votes)) __privateMethod(this, _SpyNightGame_instances, revealVotes_fn).call(this);
+      else if (this.phase === "mission" && done(this.team, (id) => this.cards[id])) __privateMethod(this, _SpyNightGame_instances, finishMission_fn).call(this);
+    }
+    size() {
+      return MISSIONS;
+    }
+    /** How many players go on this mission. */
+    teamSize() {
+      return TEAM_SIZES[this.order.length]?.[this.mission] ?? 0;
+    }
+    // ---------- starting ----------
+    start() {
+      if (this.phase !== "lobby") fail("The game is already under way");
+      const players = this.room.players;
+      if (players.length < MIN_PLAYERS) fail(`Spy Night needs at least ${MIN_PLAYERS} players (there are ${players.length})`);
+      if (players.length > MAX_PLAYERS3) fail(`Spy Night takes at most ${MAX_PLAYERS3} players`);
+      this.order = players.map((p) => p.id);
+      const spies = new Set(__privateMethod(this, _SpyNightGame_instances, shuffle_fn2).call(this, this.order).slice(0, SPIES[players.length]));
+      this.roles = Object.fromEntries(this.order.map((id) => [id, spies.has(id) ? "spy" : "resistance"]));
+      this.leaderId = this.order[Math.floor(this.room.rng() * this.order.length)];
+      this.mission = 0;
+      this.rejects = 0;
+      this.track = [];
+      this.history = [];
+      this.winner = null;
+      this.why = "";
+      this.ready = {};
+      this.phase = "roles";
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+    }
+    kick(id) {
+      if (this.phase !== "lobby") fail("Players can only be removed before the game starts");
+      this.room.removePlayer(id);
+    }
+    // ---------- one round ----------
+    /** In the roles phase each player taps "Got it" once they have seen their role; then the first team is picked. */
+    gotIt(pid) {
+      if (this.phase !== "roles" || !this.roles[pid]) return;
+      this.ready[pid] = true;
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+      if (this.order.every((id) => this.ready[id] || !__privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, id))) __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+    }
+    /** The leader adds or removes a player from the team. */
+    toggleMember(pid, target) {
+      if (this.phase !== "team") fail("It is not time to pick a team");
+      if (pid !== this.leaderId) fail("Only the leader picks the team");
+      if (!this.order.includes(target)) fail("No such player");
+      if (this.team.includes(target)) this.team = this.team.filter((id) => id !== target);
+      else {
+        if (this.team.length >= this.teamSize()) fail(`This mission takes ${this.teamSize()} players. Take someone off first.`);
+        this.team.push(target);
+      }
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+    }
+    /** The leader sends the team to a vote. */
+    propose(pid) {
+      if (this.phase !== "team") fail("It is not time to pick a team");
+      if (pid !== this.leaderId) fail("Only the leader can call the vote");
+      if (this.team.length !== this.teamSize()) fail(`Pick ${this.teamSize()} players for this mission`);
+      this.phase = "vote";
+      this.votes = {};
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+    }
+    /** Everyone votes in secret to approve or reject the team. Voting again before the reveal changes the vote. */
+    vote(pid, approve) {
+      if (this.phase !== "vote" || !this.roles[pid]) return;
+      this.votes[pid] = !!approve;
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+      if (this.order.every((id) => id in this.votes || !__privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, id))) __privateMethod(this, _SpyNightGame_instances, revealVotes_fn).call(this);
+    }
+    /** A team member plays a Success or Fail card in secret. The Resistance may only play Success. */
+    playCard(pid, card) {
+      if (this.phase !== "mission" || !this.team.includes(pid)) return;
+      if (card !== "success" && card !== "fail") fail("Play Success or Fail");
+      if (card === "fail" && this.roles[pid] !== "spy") fail("The Resistance can only play Success");
+      if (this.cards[pid]) return;
+      this.cards[pid] = card;
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+      if (this.team.every((id) => this.cards[id] || !__privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, id))) __privateMethod(this, _SpyNightGame_instances, finishMission_fn).call(this);
+    }
+    /** The TV or the host moves things along when the game waits (or someone has gone to sleep). */
+    advance() {
+      switch (this.phase) {
+        case "roles":
+          __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+          break;
+        case "vote":
+          __privateMethod(this, _SpyNightGame_instances, revealVotes_fn).call(this);
+          break;
+        case "vote-result":
+          this.timer = null;
+          __privateMethod(this, _SpyNightGame_instances, afterVotes_fn).call(this);
+          break;
+        case "mission":
+          __privateMethod(this, _SpyNightGame_instances, finishMission_fn).call(this);
+          break;
+        case "mission-result":
+          this.timer = null;
+          __privateMethod(this, _SpyNightGame_instances, afterMission_fn).call(this);
+          break;
+        default:
+          break;
+      }
+    }
+    /** Back to the lobby, everyone still in the room. */
+    endGame() {
+      __privateMethod(this, _SpyNightGame_instances, reset_fn).call(this);
+      this.room.resetScores();
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+    }
+    // ---------- who may do what ----------
+    /** Host and TV actions. */
+    act(action, a = {}) {
+      switch (action) {
+        case "start":
+          return this.start();
+        case "advance":
+          return this.advance();
+        case "endGame":
+        case "playAgain":
+          return this.endGame();
+        case "kick":
+          return this.kick(String(a.pid ?? a.id ?? ""));
+        default:
+          throw new GameError(`Unknown action ${action}`);
+      }
+    }
+    /** A message from a phone. */
+    onPlayer(player, msg) {
+      const pid = player.id;
+      switch (msg.t) {
+        case "start":
+        case "advance":
+        case "play-again":
+          if (!__privateMethod(this, _SpyNightGame_instances, starter_fn).call(this, pid)) fail("Only the host can do that");
+          this.act(msg.t === "play-again" ? "playAgain" : msg.t);
+          return void 0;
+        case "got-it":
+          this.gotIt(pid);
+          return void 0;
+        case "pick":
+          this.toggleMember(pid, String(msg.pid ?? ""));
+          return void 0;
+        case "propose":
+          this.propose(pid);
+          return void 0;
+        case "vote":
+          this.vote(pid, msg.approve === true);
+          return { t: "ack", what: "vote" };
+        case "card":
+          this.playCard(pid, String(msg.card ?? ""));
+          return { t: "ack", what: "card" };
+        default:
+          return void 0;
+      }
+    }
+    /** What the TV and every phone may see: never a role, a card, or a vote that is still secret. */
+    publicView() {
+      const n = this.order.length || this.room.players.length;
+      const sizes = TEAM_SIZES[n] ?? [];
+      const track = Array.from({ length: MISSIONS }, (_, i) => {
+        const m = this.track[i];
+        return { mission: i + 1, size: sizes[i] ?? null, needed: failsNeeded(n, i), result: m ? m.success ? "success" : "fail" : null, fails: m ? m.fails : null, team: m ? m.team : null, current: this.phase !== "lobby" && this.phase !== "gameover" && i === this.mission };
+      });
+      const v = {
+        game: GAME4,
+        scoreFormat: "none",
+        lobbyTitle: "Spy Night",
+        phase: this.phase,
+        status: this.phase,
+        minPlayers: MIN_PLAYERS,
+        maxPlayers: MAX_PLAYERS3,
+        hosted: this.room.hosts > 0,
+        players: __privateMethod(this, _SpyNightGame_instances, players_fn2).call(this),
+        spyCount: SPIES[n] ?? null,
+        resistanceCount: SPIES[n] ? n - SPIES[n] : null,
+        leaderId: this.phase === "lobby" ? null : this.leaderId,
+        mission: this.mission,
+        track,
+        wins: { resistance: this.track.filter((m) => m.success).length, spies: this.track.filter((m) => !m.success).length },
+        rejects: this.rejects,
+        maxRejects: MAX_REJECTS,
+        team: this.team.slice(),
+        teamSize: this.phase === "lobby" ? null : this.teamSize(),
+        line: __privateMethod(this, _SpyNightGame_instances, line_fn).call(this)
+      };
+      if (this.phase === "roles") v.readyIds = Object.keys(this.ready);
+      if (this.phase === "vote") v.votedIds = Object.keys(this.votes);
+      if (this.phase === "vote-result") {
+        v.votes = { ...this.votes };
+        v.approved = this.approved;
+      }
+      v.history = this.history.map((x) => ({ ...x }));
+      if (this.phase === "mission") v.playedIds = Object.keys(this.cards);
+      if (this.phase === "mission-result") v.result = this.lastMission;
+      if (this.phase === "gameover") {
+        v.winner = this.winner;
+        v.why = this.why;
+        v.roles = { ...this.roles };
+      }
+      return v;
+    }
+    /** One player's phone: the shared view and what only they may know. */
+    playerView(player) {
+      const v = this.publicView();
+      const role = this.roles[player.id];
+      const canStart = __privateMethod(this, _SpyNightGame_instances, starter_fn).call(this, player.id);
+      if (!role) {
+        v.me = { id: player.id, role: null, canStart };
+        return v;
+      }
+      v.me = {
+        id: player.id,
+        role,
+        canStart,
+        // A Spy knows the other Spies; the Resistance knows nothing more than their own side.
+        spies: role === "spy" ? this.order.filter((id) => this.roles[id] === "spy" && id !== player.id).map((id) => ({ id, name: __privateMethod(this, _SpyNightGame_instances, player_fn2).call(this, id)?.name ?? "?" })) : [],
+        isLeader: this.leaderId === player.id && this.phase !== "gameover",
+        onTeam: this.team.includes(player.id) && ["vote", "vote-result", "mission", "mission-result"].includes(this.phase),
+        myVote: this.phase === "vote" && player.id in this.votes ? this.votes[player.id] : null,
+        myCard: this.phase === "mission" ? this.cards[player.id] ?? null : null,
+        ready: !!this.ready[player.id]
+      };
+      return v;
+    }
+    /** The host sees the same as the TV: roles stay secret even from the host, who may be playing on another phone. */
+    hostView() {
+      return this.publicView();
+    }
+    // ---------- saving ----------
+    toJSON() {
+      return {
+        phase: this.phase,
+        roles: this.roles,
+        order: this.order,
+        leaderId: this.leaderId,
+        mission: this.mission,
+        rejects: this.rejects,
+        track: this.track,
+        team: this.team,
+        votes: this.votes,
+        approved: this.approved,
+        cards: this.cards,
+        ready: this.ready,
+        winner: this.winner,
+        why: this.why,
+        lastMission: this.lastMission,
+        history: this.history
+      };
+    }
+    restore(data) {
+      __privateMethod(this, _SpyNightGame_instances, reset_fn).call(this);
+      this.phase = data.phase ?? "lobby";
+      this.roles = Object.fromEntries(Object.entries(data.roles ?? {}).filter(([, r]) => isRole(r)));
+      this.order = data.order ?? [];
+      this.leaderId = data.leaderId ?? null;
+      this.mission = data.mission ?? 0;
+      this.rejects = data.rejects ?? 0;
+      this.track = data.track ?? [];
+      this.team = data.team ?? [];
+      this.votes = data.votes ?? {};
+      this.approved = data.approved ?? null;
+      this.cards = data.cards ?? {};
+      this.ready = data.ready ?? {};
+      this.winner = data.winner ?? null;
+      this.why = data.why ?? "";
+      this.lastMission = data.lastMission ?? null;
+      this.history = data.history ?? [];
+      if (this.phase === "vote-result") __privateMethod(this, _SpyNightGame_instances, setTimer_fn2).call(this, T2.voteResult, () => __privateMethod(this, _SpyNightGame_instances, afterVotes_fn).call(this));
+      if (this.phase === "mission-result") __privateMethod(this, _SpyNightGame_instances, setTimer_fn2).call(this, T2.missionResult, () => __privateMethod(this, _SpyNightGame_instances, afterMission_fn).call(this));
+    }
+  };
+  _SpyNightGame_instances = new WeakSet();
+  reset_fn = function() {
+    this.phase = "lobby";
+    this.roles = {};
+    this.order = [];
+    this.leaderId = null;
+    this.mission = 0;
+    this.rejects = 0;
+    this.track = [];
+    this.team = [];
+    this.votes = {};
+    this.approved = null;
+    this.cards = {};
+    this.ready = {};
+    this.winner = null;
+    this.why = "";
+    this.timer = null;
+    this.lastMission = null;
+    this.history = [];
+  };
+  changed_fn4 = function() {
+    this.room.changed();
+  };
+  now_fn2 = function() {
+    return this.room.now();
+  };
+  player_fn2 = function(id) {
+    return this.room.players.find((p) => p.id === id) ?? null;
+  };
+  connected_fn2 = function(id) {
+    return this.room.connected.has(id);
+  };
+  setTimer_fn2 = function(ms, fire) {
+    this.timer = { at: __privateMethod(this, _SpyNightGame_instances, now_fn2).call(this) + ms, fire };
+  };
+  shuffle_fn2 = function(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(this.room.rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  startTeam_fn = function() {
+    this.phase = "team";
+    this.team = [];
+    this.votes = {};
+    this.approved = null;
+    this.cards = {};
+    __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+  };
+  nextLeader_fn = function() {
+    const i = this.order.indexOf(this.leaderId);
+    this.leaderId = this.order[(i + 1) % this.order.length];
+  };
+  revealVotes_fn = function() {
+    if (this.phase !== "vote") return;
+    for (const id of this.order) if (!(id in this.votes)) this.votes[id] = false;
+    const yes = this.order.filter((id) => this.votes[id]).length;
+    this.approved = yes > this.order.length - yes;
+    this.history.push({ mission: this.mission + 1, leaderId: this.leaderId, team: this.team.slice(), votes: { ...this.votes }, approved: this.approved });
+    this.phase = "vote-result";
+    __privateMethod(this, _SpyNightGame_instances, setTimer_fn2).call(this, T2.voteResult, () => __privateMethod(this, _SpyNightGame_instances, afterVotes_fn).call(this));
+    __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+  };
+  afterVotes_fn = function() {
+    if (this.phase !== "vote-result") return;
+    if (this.approved) {
+      this.phase = "mission";
+      this.cards = {};
+      __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+      return;
+    }
+    this.rejects += 1;
+    if (this.rejects >= MAX_REJECTS) {
+      __privateMethod(this, _SpyNightGame_instances, end_fn).call(this, "spies", `${MAX_REJECTS} teams in a row were rejected`);
+      return;
+    }
+    __privateMethod(this, _SpyNightGame_instances, nextLeader_fn).call(this);
+    __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+  };
+  finishMission_fn = function() {
+    if (this.phase !== "mission") return;
+    const needed = failsNeeded(this.order.length, this.mission);
+    const fails = this.team.filter((id) => this.cards[id] === "fail").length;
+    const success = fails < needed;
+    const entry = { mission: this.mission + 1, size: this.team.length, team: this.team.slice(), leaderId: this.leaderId, success, fails, needed };
+    this.track.push(entry);
+    this.lastMission = { success, fails, needed };
+    this.phase = "mission-result";
+    __privateMethod(this, _SpyNightGame_instances, setTimer_fn2).call(this, T2.missionResult, () => __privateMethod(this, _SpyNightGame_instances, afterMission_fn).call(this));
+    __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+  };
+  afterMission_fn = function() {
+    if (this.phase !== "mission-result") return;
+    const good = this.track.filter((m) => m.success).length;
+    const bad = this.track.length - good;
+    if (good >= WINS) {
+      __privateMethod(this, _SpyNightGame_instances, end_fn).call(this, "resistance", `${WINS} missions succeeded`);
+      return;
+    }
+    if (bad >= WINS) {
+      __privateMethod(this, _SpyNightGame_instances, end_fn).call(this, "spies", `${WINS} missions failed`);
+      return;
+    }
+    this.mission += 1;
+    this.rejects = 0;
+    __privateMethod(this, _SpyNightGame_instances, nextLeader_fn).call(this);
+    __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+  };
+  end_fn = function(winner, why) {
+    this.winner = winner;
+    this.why = why;
+    this.phase = "gameover";
+    this.timer = null;
+    __privateMethod(this, _SpyNightGame_instances, changed_fn4).call(this);
+  };
+  /** With a host on the host page, the host starts and moves things along; without one, the first player to join does. */
+  starter_fn = function(pid) {
+    return !this.room.hosts && this.room.players[0]?.id === pid;
+  };
+  // ---------- views ----------
+  players_fn2 = function() {
+    return this.room.players.map((p) => ({ id: p.id, name: p.name, color: p.color, connected: __privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, p.id) }));
+  };
+  /** One line for the TV: what is going on and what happens next. */
+  line_fn = function() {
+    const name = (id) => __privateMethod(this, _SpyNightGame_instances, player_fn2).call(this, id)?.name ?? "Someone";
+    switch (this.phase) {
+      case "lobby":
+        return { text: "Waiting for players", next: `Spy Night needs ${MIN_PLAYERS} to ${MAX_PLAYERS3} players` };
+      case "roles":
+        return { text: "Look at your phone: you have a secret role", next: "Tap \u201CGot it\u201D when you have seen it" };
+      case "team":
+        return { text: `${name(this.leaderId)} is picking ${this.teamSize()} players for mission ${this.mission + 1}`, next: "Talk it over, then everyone votes" };
+      case "vote":
+        return { text: "Vote: approve or reject this team", next: "Votes stay secret until everyone has voted" };
+      case "vote-result":
+        return { text: this.approved ? "The team is approved" : "The team is rejected", next: this.approved ? "The team plays its mission cards" : `${name(this.order[(this.order.indexOf(this.leaderId) + 1) % this.order.length])} leads next` };
+      case "mission":
+        return { text: "The team is on the mission", next: "Each member plays a card in secret" };
+      case "mission-result":
+        return { text: this.lastMission?.success ? "The mission succeeded" : "The mission failed", next: "The next leader picks a team" };
+      default:
+        return { text: this.winner === "resistance" ? "The Resistance wins" : "The Spies win", next: this.why };
+    }
+  };
+
+  // games/spynight/index.js
+  var spynight_default = {
+    id: "spynight",
+    name: "Spy Night",
+    description: "A game of secret roles. Most of you are the Resistance, a few are Spies. Your phone tells you which you are; the Spies know each other.",
+    // Played by individuals, five to ten of them, each on their own phone. Nothing to load: no question sets.
+    needs: { individuals: true },
+    maxPlayers: MAX_PLAYERS3,
+    validateContent: () => fail("Spy Night has no question sets"),
+    create: (room) => new SpyNightGame(room)
+  };
+
   // games/index.js
-  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default].map((g) => [g.id, g]));
+  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default, spynight_default].map((g) => [g.id, g]));
 
   // room.js
   var VERSION = 2;

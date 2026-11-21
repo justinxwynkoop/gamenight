@@ -1,0 +1,174 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": true,
+    "maxPlayers": 10,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p4",
+        "name": "Mom",
+        "color": "#22c55e",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p5",
+        "name": "Sam",
+        "color": "#14b8a6",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "spynight",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "spynight",
+    "scoreFormat": "none",
+    "lobbyTitle": "Spy Night",
+    "phase": "roles",
+    "status": "roles",
+    "minPlayers": 5,
+    "maxPlayers": 10,
+    "hosted": false,
+    "players": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "connected": true
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "connected": true
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "connected": true
+      },
+      {
+        "id": "p4",
+        "name": "Mom",
+        "color": "#22c55e",
+        "connected": true
+      },
+      {
+        "id": "p5",
+        "name": "Sam",
+        "color": "#14b8a6",
+        "connected": true
+      }
+    ],
+    "spyCount": 2,
+    "resistanceCount": 3,
+    "leaderId": "p4",
+    "mission": 0,
+    "track": [
+      {
+        "mission": 1,
+        "size": 2,
+        "needed": 1,
+        "result": null,
+        "fails": null,
+        "team": null,
+        "current": true
+      },
+      {
+        "mission": 2,
+        "size": 3,
+        "needed": 1,
+        "result": null,
+        "fails": null,
+        "team": null,
+        "current": false
+      },
+      {
+        "mission": 3,
+        "size": 2,
+        "needed": 1,
+        "result": null,
+        "fails": null,
+        "team": null,
+        "current": false
+      },
+      {
+        "mission": 4,
+        "size": 3,
+        "needed": 1,
+        "result": null,
+        "fails": null,
+        "team": null,
+        "current": false
+      },
+      {
+        "mission": 5,
+        "size": 3,
+        "needed": 1,
+        "result": null,
+        "fails": null,
+        "team": null,
+        "current": false
+      }
+    ],
+    "wins": {
+      "resistance": 0,
+      "spies": 0
+    },
+    "rejects": 0,
+    "maxRejects": 5,
+    "team": [],
+    "teamSize": 2,
+    "line": {
+      "text": "Look at your phone: you have a secret role",
+      "next": "Tap “Got it” when you have seen it"
+    },
+    "readyIds": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "history": []
+  }
+}

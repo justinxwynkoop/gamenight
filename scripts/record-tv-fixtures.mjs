@@ -164,3 +164,50 @@ save('host-answering');
   sroom.playerMessage(leo.id, { t: 'singo' });
   saveSingo('claim');
 }
+
+// Spy Night: what the Apple TV reads at each step of a game (spy-*.json). The TV is never sent a role until the end.
+{
+  const pnames = ['Leo', 'Maya', 'Dad', 'Mom', 'Sam'];
+  const sroom = new Room({ games: GAMES, now: () => t, random });
+  sroom.chooseGame('spynight');
+  const sg = sroom.game;
+  const ps5 = pnames.map((n) => sroom.join({ name: n }));
+  ps5.forEach((p) => sroom.setConnected(p.id, true));
+  const saveSpy = (name) => { writeFileSync(path.join(out, `spy-${name}.json`), JSON.stringify(sroom.publicView(), null, 2)); console.log('recorded spy', name); };
+  const tickBy = (ms) => { t += ms; sroom.tick(); };
+  const idOf = (name) => ps5.find((p) => p.name === name).id;
+  saveSpy('lobby');
+  sg.start();
+  saveSpy('roles');
+  for (const p of ps5.slice(0, 3)) sroom.playerMessage(p.id, { t: 'got-it' });
+  saveSpy('roles-partial');
+  for (const p of ps5.slice(3)) sroom.playerMessage(p.id, { t: 'got-it' });
+  saveSpy('team');
+  const lead = () => ps5.find((p) => p.id === sg.leaderId);
+  const spies = ps5.filter((p) => sg.roles[p.id] === 'spy');
+  for (const id of [spies[0].id, ps5.find((p) => sg.roles[p.id] === 'resistance').id]) sroom.playerMessage(lead().id, { t: 'pick', pid: id });
+  saveSpy('team-picked');
+  sroom.playerMessage(lead().id, { t: 'propose' });
+  for (const p of ps5.slice(0, 3)) sroom.playerMessage(p.id, { t: 'vote', approve: true });
+  saveSpy('vote');
+  for (const p of ps5.slice(3)) sroom.playerMessage(p.id, { t: 'vote', approve: p.name === 'Sam' });
+  saveSpy('vote-result');
+  tickBy(8000);
+  saveSpy('mission');
+  for (const id of sg.team) sroom.playerMessage(id, { t: 'card', card: sg.roles[id] === 'spy' ? 'fail' : 'success' });
+  saveSpy('mission-result');
+  tickBy(8000);
+  // Play it out: every mission is sent with a Spy on it, all approve, and the Spies play Fail.
+  while (sg.phase !== 'gameover') {
+    const l = lead();
+    const spy = ps5.find((p) => sg.roles[p.id] === 'spy');
+    const rest = ps5.filter((p) => p !== spy);
+    for (const p of [spy, ...rest].slice(0, sg.teamSize())) sroom.playerMessage(l.id, { t: 'pick', pid: p.id });
+    sroom.playerMessage(l.id, { t: 'propose' });
+    for (const p of ps5) sroom.playerMessage(p.id, { t: 'vote', approve: true });
+    tickBy(8000);
+    for (const id of sg.team) sroom.playerMessage(id, { t: 'card', card: sg.roles[id] === 'spy' ? 'fail' : 'success' });
+    tickBy(8000);
+  }
+  saveSpy('gameover');
+}
