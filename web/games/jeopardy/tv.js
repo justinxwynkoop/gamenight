@@ -421,11 +421,12 @@ export function lobby(view, ctx = {}) {
   for (let i = n; i < 8; i++) seats.push(h('div', { class: 'seat open' }, h('span', { class: 'av' }, '+'), h('span', { class: 'who' }, h('small', {}, 'Open seat'))));
   const players = h('div', { class: 'lb-panel lb-players' },
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
-      h('span', { class: 'aside' }, cap ? `${cap.name} is captain${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
+      h('span', { class: 'aside' }, g.hostJudges ? 'A host is running this game' : cap ? `${cap.name} is captain${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
     h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
-  const packs = pickerPanel();
+  // With a host connected, the topics are the host's to choose (on the host page): the TV shows only who has joined.
+  const packs = g.hosted ? null : pickerPanel();
 
-  const lb = h('div', { class: `bwlobby ${choosing ? 'choosing' : ''}` },
+  const lb = h('div', { class: `bwlobby ${choosing && !g.hosted ? 'choosing' : ''}` },
     h('section', { class: 'lb-left' },
       h('div', { class: 'lb-hero' }, h('div', { class: 'eyebrow sun' }, 'Tonight’s trivia showdown'),
         h('h1', {}, 'Grab your phone.', h('br'), h('i', {}, 'It’s your buzzer.')),
@@ -434,14 +435,17 @@ export function lobby(view, ctx = {}) {
         step(1, 'Scan the code', 'with your phone camera'),
         step(2, 'Pick a name', 'and your colour'),
         step(3, 'Buzz in first', g.hostJudges ? 'and say your answer' : 'then type your answer')),
-      players, packs, boardLine()),
+      players, packs, g.hosted ? null : boardLine()),
     h('aside', { class: 'joinbox' },
       h('div', { class: 'eyebrow' }, 'Scan to join'),
       h('div', { class: 'qr-big' }, ctx.qr ? ctx.qr() : null),
       ctxInfo.code
         ? h('div', { class: 'url' }, 'or go to ', h('b', {}, site), h('br'), 'and enter ', h('b', { class: 'roomcode' }, ctxInfo.code))
         : h('div', { class: 'url' }, 'or go to ', h('b', {}, site)),
-      codeTiles));
+      codeTiles,
+      // Hosting? This code opens the host page already signed in. Once a host is connected it says so instead.
+      g.hosted ? h('div', { class: 'hostbox' }, h('div', { class: 'eyebrow' }, 'A host is running this game'))
+        : ctx.hostQr?.() ? h('div', { class: 'hostbox' }, h('div', { class: 'eyebrow' }, 'Hosting? Scan to host'), h('div', { class: 'qr-small' }, ctx.hostQr())) : null));
   function toggle(open) {
     packsOpen = open;
     lb.classList.toggle('choosing', !!g.draft || open);

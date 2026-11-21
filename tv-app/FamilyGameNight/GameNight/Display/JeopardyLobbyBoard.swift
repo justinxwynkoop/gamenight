@@ -7,6 +7,8 @@ import SwiftUI
 struct JeopardyContent: View {
     let game: JeopardyState
     let joinURL: URL?
+    /// The lobby's host code (the host page with the PIN built in), when this TV runs the game.
+    var hostURL: URL?
     let roomCode: String?
     let receivedAt: Date
     let act: JeoAct
@@ -22,7 +24,7 @@ struct JeopardyContent: View {
             backdrop
             if game.phase == .lobby {
                 VStack(spacing: 16) {
-                    JeoLobby(game: game, joinURL: joinURL, roomCode: roomCode)
+                    JeoLobby(game: game, joinURL: joinURL, hostURL: hostURL, roomCode: roomCode)
                     JeoRemoteBar(game: game, onNewRoom: onNewRoom)
                 }
                 .padding(.horizontal, 60)
@@ -434,12 +436,15 @@ struct JeoFloatingEmoji: View {
 struct JeoLobby: View {
     let game: JeopardyState
     let joinURL: URL?
+    var hostURL: URL?
     let roomCode: String?
     /// The question chooser is open in place of the players (the "Choose questions" button). A board preview opens it too.
     /// The CI screenshot job can open it on a shelf (DemoHooks).
     @State private var packsOpen = DemoHooks.shelf != nil
 
-    private var choosing: Bool { packsOpen || game.draft != nil }
+    /// With a host connected the topics are the host's to choose, on the host page: the TV shows only who has joined.
+    private var hosted: Bool { game.hosted == true }
+    private var choosing: Bool { !hosted && (packsOpen || game.draft != nil) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -455,12 +460,12 @@ struct JeoLobby: View {
                         packsPanel
                             .frame(maxHeight: .infinity, alignment: .top)
                     }
-                    JeoBoardLine(game: game, choosing: choosing) { packsOpen.toggle() }
+                    if !hosted { JeoBoardLine(game: game, choosing: choosing) { packsOpen.toggle() } }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .focusSection()
 
-                JeoJoinCard(joinURL: joinURL, roomCode: roomCode)
+                JeoJoinCard(joinURL: joinURL, hostURL: hostURL, hosted: hosted, roomCode: roomCode)
                     .frame(width: 560)
                     .frame(maxHeight: .infinity)
             }
@@ -620,6 +625,8 @@ struct JeoBoardLine: View {
 /// The QR code, the address and the room code as four colour blocks.
 struct JeoJoinCard: View {
     let joinURL: URL?
+    var hostURL: URL?
+    var hosted = false
     let roomCode: String?
 
     var body: some View {
@@ -627,7 +634,7 @@ struct JeoJoinCard: View {
             BWEyebrow(text: "Scan to join", size: 24)
             if let joinURL {
                 QRCodeView(text: joinURL.absoluteString)
-                    .frame(width: 340, height: 340)
+                    .frame(width: hostURL != nil || hosted ? 280 : 340, height: hostURL != nil || hosted ? 280 : 340)
                     .padding(24)
                     .background(RoundedRectangle(cornerRadius: 28).fill(Color.white))
             }
@@ -640,13 +647,36 @@ struct JeoJoinCard: View {
             .multilineTextAlignment(.center)
             .lineLimit(1)
             .minimumScaleFactor(0.6)
-            if let roomCode { BWCodeTiles(code: roomCode, size: 96) }
+            if let roomCode { BWCodeTiles(code: roomCode, size: hostURL != nil || hosted ? 80 : 96) }
+            hostCode
         }
         .padding(36)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(RoundedRectangle(cornerRadius: 40).fill(BW.surface))
         .overlay(RoundedRectangle(cornerRadius: 40).stroke(BW.line, lineWidth: 1))
         .shadow(color: .black.opacity(0.45), radius: 40, y: 24)
+    }
+
+    /// Hosting? This code opens the host page already signed in (nothing to type). Once a host is connected it says so instead.
+    @ViewBuilder private var hostCode: some View {
+        if hosted {
+            Label("A host is running this game", systemImage: "mic.fill")
+                .font(BW.body(24, .heavy))
+                .foregroundColor(BW.yellow)
+                .padding(.top, 4)
+        } else if let hostURL {
+            HStack(spacing: 20) {
+                QRCodeView(text: hostURL.absoluteString)
+                    .frame(width: 104, height: 104)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                VStack(alignment: .leading, spacing: 2) {
+                    BWEyebrow(text: "Hosting?", color: BW.yellow, size: 20)
+                    Text("Scan to host").font(BW.body(26, .heavy))
+                }
+            }
+            .padding(.top, 4)
+        }
     }
 }
 

@@ -157,6 +157,8 @@ struct JeopardyState: Decodable, Equatable {
     /// How many board rounds this game has (a single board you wrote has one).
     var rounds: Int
     var captainId: String?
+    /// A host page is connected: there is no captain, and the topics are the host's to choose (not shown on the TV).
+    var hosted: Bool?
     /// A host judges spoken answers (so players do not type them).
     var hostJudges: Bool
     /// The TV reads each clue out loud and says when it is done (never with a host, who reads them).
@@ -207,7 +209,7 @@ struct JeopardyState: Decodable, Equatable {
         case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
-        case draftFresh, freshCount, seenCount, readsAloud, hall
+        case draftFresh, freshCount, seenCount, readsAloud, hall, hosted
         case finalRound = "final"
     }
 }

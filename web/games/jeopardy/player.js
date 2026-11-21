@@ -197,7 +197,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
       nodes: center(
         h('div', { class: 'jp-logo' }, 'YOU’RE IN!'),
         h('div', { class: 'jp-msg' }, `${n} player${n === 1 ? '' : 's'} in the room`),
-        h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the captain. Choose the questions, then tap Start game when everyone has joined.' : 'Your phone is your buzzer. Waiting for the captain to start the game…'),
+        h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the captain. Choose the questions, then tap Start game when everyone has joined.' : v.hostJudges || v.hosted ? 'Your phone is your buzzer. The host starts the game when everyone has joined.' : 'Your phone is your buzzer. Waiting for the captain to start the game…'),
         me().isCaptain
           ? h('div', { class: 'jp-stack', style: { marginTop: '8px' } }, kickList(), lobbyControls(v, cap))
           : h('div', { class: 'jp-muted jp-small' }, v.draft ? `Board: ${v.draft.flat().join(', ')}` : `Questions: ${sel || '…'}`)),
@@ -499,7 +499,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
       eyebrow(place === 1 ? (tied ? 'IT’S A TIE!' : 'YOU WON!') : 'YOU FINISHED'),
       h('div', { class: 'jp-logo xl sun' }, place === 1 && !tied ? 'CHAMPION' : ordinal(place)),
       mine.map((a) => h('div', { class: 'jp-msg' }, h('b', { class: 'sun' }, a.title), `: ${a.detail}`))), scoreList({ champion: sorted[0]?.id }),
-    h('div', { class: 'jp-small jp-muted jp-center-t' }, starter ? `Waiting for ${starter.name} to start a new game` : 'Tap Play again for a new game')] };
+    h('div', { class: 'jp-small jp-muted jp-center-t' }, starter ? `Waiting for ${starter.name} to start a new game` : v.hostJudges || v.hosted ? 'Waiting for the host to start a new game' : 'Tap Play again for a new game')] };
   }
 
   function currentScreen() {
@@ -544,7 +544,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     cap('advance');
   }
   function renderCaptain() {
-    if (!me().isCaptain) { captainBar.style.display = 'none'; captainBar.replaceChildren(); return; }
+    if (!me().isCaptain) { captainBar.style.display = 'none'; captainBar.replaceChildren(); captainBar.dataset.key = ''; return; }   // forget what was drawn, so the bar is built again if the captain comes back
     const ph = v.phase; const items = [];
     if (ph === 'lobby') items.push(['Start game', () => cap('start'), '']);
     if (ph === 'round-intro') items.push(['Skip intro', () => cap('advance'), 'ghost']);

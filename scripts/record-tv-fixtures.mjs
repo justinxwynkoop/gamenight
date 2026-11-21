@@ -29,6 +29,9 @@ const ps = ['Leo', 'Maya', 'Dad'].map((n) => room.join({ name: n }));
 ps.forEach((p) => room.setConnected(p.id, true));
 g.takeArchiveRequest();
 save('lobby');
+room.setHosts(1);        // a host page connects: no captain, and the TV lobby shows only who has joined
+save('lobby-hosted');
+room.setHosts(0);
 
 // A season arrives: topic packs for the lobby.
 const header = 'round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes';

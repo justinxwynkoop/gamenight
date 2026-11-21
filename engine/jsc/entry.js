@@ -2,6 +2,7 @@
 // Everything crosses the boundary as strings (JSON), which is what Swift bridges best.
 import { GAMES } from '../../games/index.js';
 import { createEngine } from '../core.js';
+import { GameError } from '../../lib.js';
 
 let engine = null;
 const parse = (json) => (typeof json === 'string' ? JSON.parse(json) : json);
@@ -29,7 +30,11 @@ globalThis.Engine = {
       onMemory: (m) => { if (__native.saveMemory) __native.saveMemory(JSON.stringify(m)); },
       // The family's own sounds, kept by the app (sent from the host page, see engine/sounds.js).
       sounds: __native.saveSoundChunk ? {
-        save: (chunk) => !!__native.saveSoundChunk(JSON.stringify(chunk)),
+        save: (chunk) => {
+          const result = __native.saveSoundChunk(JSON.stringify(chunk));   // 'partial', 'done' or 'failed'
+          if (result === 'failed') throw new GameError('The Apple TV could not save that file. Try again, or a smaller file.');
+          return result === 'done';
+        },
         list: () => JSON.parse(__native.listSounds()),
         remove: (game, name) => __native.removeSound(game, name),
       } : null,

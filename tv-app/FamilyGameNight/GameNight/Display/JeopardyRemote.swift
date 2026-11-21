@@ -321,7 +321,7 @@ struct JeoGameMenu: View {
                 if item.confirm != nil { page = .confirm(item.id) } else { act(item.action, item.args); onClose() }
             }
         }
-        if !game.players.isEmpty {
+        if !game.players.isEmpty && !game.hostJudges {   // with a host there is no captain
             row("captain", "Change the captain", detail: captain.map { "\u{2605} \($0.name)" }, icon: "star.fill") { page = .captain }
         }
         Divider().overlay(BW.line).padding(.vertical, 6)

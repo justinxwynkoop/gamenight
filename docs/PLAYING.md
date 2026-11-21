@@ -5,9 +5,15 @@ This is what the host and players do in each game. Setup and running are in the 
 
 ## Jeopardy
 
+**Becoming the host.** The TV's lobby has a small **Hosting? Scan to host** code. Scanning it opens the host page already
+signed in (the PIN is built into the code and removed from the address bar at once), so there is nothing to type and no menu
+to open. Anyone who scans it becomes a host, the same as typing the PIN. The PIN is also in the Play/Pause menu.
+
 Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. It runs on the Apple TV, and the
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
-touching the host page. The first player to join is the **captain**.
+touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host connected (or
+**A host judges out loud** on) there is **no captain**, and the topics are the host's to choose on the host page. The TV lobby
+then shows only who has joined.
 
 1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV (**Choose questions**), the captain's
    phone or the host page chooses what to play, on three shelves:

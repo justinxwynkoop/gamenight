@@ -51,7 +51,8 @@
     "status": "answering",
     "round": 1,
     "rounds": 2,
-    "captainId": "p1",
+    "captainId": null,
+    "hosted": false,
     "hostJudges": true,
     "controllerId": "p2",
     "players": [

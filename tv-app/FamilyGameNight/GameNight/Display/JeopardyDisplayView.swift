@@ -137,6 +137,7 @@ struct JeopardyDisplayView: View {
                 JeopardyContent(
                     game: game,
                     joinURL: client.joinURL,
+                    hostURL: client.hostCodeURL,
                     roomCode: client.roomCode,
                     receivedAt: client.stateReceivedAt,
                     act: { action, args in client.act(action, args) },

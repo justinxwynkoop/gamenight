@@ -109,13 +109,18 @@ export async function hostTv({ config, game = null, onState, onStatus = () => {}
 
   const joinUrl = `${location.origin}/?r=${engine.code}`;
   let qrSvg = '';
-  try { qrSvg = await QRCode.toString(joinUrl, { type: 'svg', margin: 1, color: { dark: '#000000', light: '#ffffff' } }); } catch { /* no QR: the code is on screen */ }
+  let hostQrSvg = '';
+  const qrOptions = { type: 'svg', margin: 1, color: { dark: '#000000', light: '#ffffff' } };
+  try { qrSvg = await QRCode.toString(joinUrl, qrOptions); } catch { /* no QR: the code is on screen */ }
+  // The host code: opens the host page already signed in (the PIN is in the address, which the page then removes).
+  try { hostQrSvg = await QRCode.toString(`${location.origin}/host?r=${engine.code}&pin=${pin}`, qrOptions); } catch { /* the PIN is in the corner menu */ }
 
   return {
     code: engine.code,
     pin,
     joinUrl,
     qrSvg,
+    hostQrSvg,
     /** The TV acts on the game itself (Start, Continue, a clue it was clicked, ...), like the Apple TV's buttons. */
     act(action, args = {}) { engine.receive('tv', { t: 'act', action, args }); },
     chooseGame(id) { try { engine.room.chooseGame(id); } catch { /* under way */ } },

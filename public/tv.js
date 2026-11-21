@@ -3,7 +3,7 @@
 // On a home server it connects to the server like any other screen. On the website (online mode) there is no server:
 // the page runs the game engine itself (/tvhost.js, the same engine as the Apple TV app) and phones reach it through
 // the Supabase relay.
-import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg, keepAwake } from './common.js';
+import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg, setHostQrSvg, hostQrImg, keepAwake } from './common.js';
 import { audio } from './audio.js';
 import { menuScreen } from './menu.js';
 
@@ -76,6 +76,7 @@ async function startOnline() {
   }
   info = { joinUrl: hosted.joinUrl, code: hosted.code, site: location.host };
   setQrSvg(hosted.qrSvg);
+  setHostQrSvg(hosted.hostQrSvg);
   document.body.append(menu());
   if (last) render(last);
 }
@@ -161,7 +162,7 @@ async function render(v) {
   let el;
   // A game may draw its own lobby (Jeopardy shows its packs, era and board preview there).
   // ctx.act lets the TV act on the game itself, only when this page runs the game (the website's TV page).
-  const ctx = { info, sound, qr: qrImg, act: hosted ? (action, args) => hosted.act(action, args) : null };
+  const ctx = { info, sound, qr: qrImg, hostQr: hosted ? hostQrImg : null, act: hosted ? (action, args) => hosted.act(action, args) : null };
   const id = v.game?.game ?? null;
   if (shownGame && shownGame !== id) loaded[shownGame]?.leave?.();
   shownGame = id;
