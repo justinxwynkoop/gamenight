@@ -22,6 +22,7 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
 
 room.chooseGame('jeopardy');
 const g = room.game;
+g.act('setReadAloud', { on: true });   // the product has the voice off; the Apple TV's tests still cover what it does when on
 // The buzzers open after the reading time, or with the TV reading clues aloud and never saying it is done, the longer one.
 const waitFor = (q) => (g.readsAloud() ? speakingTime(q) : readingTime(q));
 const ps = ['Leo', 'Maya', 'Dad'].map((n) => room.join({ name: n }));

@@ -556,7 +556,7 @@
       this.ownPacks = [];
       this.packs = [];
       this.selected = /* @__PURE__ */ new Set();
-      this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: true };
+      this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: false };
       this.era = "any";
       this.archiveSeason = null;
       this.archiveRequest = null;
@@ -1475,7 +1475,7 @@
       };
     }
     restore(data) {
-      this.settings = { ...this.settings, ...data.settings ?? {} };
+      this.settings = { ...this.settings, ...data.settings ?? {}, readAloud: false };
       this.era = data.era ?? "any";
       this.played = new Set(data.played ?? []);
       this.selected = new Set(data.selected ?? []);
