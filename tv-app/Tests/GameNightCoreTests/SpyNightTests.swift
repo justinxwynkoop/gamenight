@@ -78,3 +78,30 @@ final class SpyNightTests: XCTestCase {
         XCTAssertEqual(state.spyNight?.phase, .unknown)
     }
 }
+
+/// Spy Night's sounds: the shared cue names, each meaning something of its own in this game.
+final class SpyNightSoundTests: XCTestCase {
+    private func cues(_ from: String, _ to: String) throws -> [SoundCue] {
+        SoundPlanner.plan(from: try Fixture.state(from), to: try Fixture.state(to)).cues
+    }
+
+    func testTheGameMomentsEachHaveASound() throws {
+        XCTAssertEqual(try cues("spy-lobby", "spy-roles"), [.roundstart])          // the roles are dealt
+        XCTAssertEqual(try cues("spy-roles-partial", "spy-team"), [.pick])          // a leader starts picking
+        XCTAssertEqual(try cues("spy-team-picked", "spy-vote"), [.open])            // the vote begins
+        XCTAssertEqual(try cues("spy-vote", "spy-vote-result"), [.correct])         // the recorded team was approved
+        XCTAssertEqual(try cues("spy-vote-result", "spy-mission"), [.lock])         // the mission begins
+        XCTAssertEqual(try cues("spy-mission", "spy-mission-result"), [.strike])    // a Fail card was played
+        XCTAssertEqual(try cues("spy-mission-result", "spy-gameover"), [.winner])   // the recorded game ends with the Spies winning
+    }
+
+    func testNothingPlaysWithinAPhase() throws {
+        XCTAssertEqual(try cues("spy-roles", "spy-roles-partial"), [])
+        XCTAssertEqual(try cues("spy-team", "spy-team-picked"), [])
+    }
+
+    func testSpyNightHasItsOwnFilesThatBundledAndKeptSoundsUnderstand() {
+        XCTAssertEqual(BundledSounds.parse(stem: "spynight__lobby")?.game, "spynight")
+        XCTAssertTrue(CustomSoundStore.games.contains("spynight"))
+    }
+}

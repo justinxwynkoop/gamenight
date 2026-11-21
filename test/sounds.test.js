@@ -38,7 +38,7 @@ test('the host can see which sounds a TV can keep, and what is there', () => {
   assert.equal(r.ok, true);
   assert.equal(r.data.available, true);
   assert.deepEqual(r.data.files, []);
-  assert.deepEqual(r.data.games.map((g) => g.id), ['shared', 'jeopardy', 'feud']);
+  assert.deepEqual(r.data.games.map((g) => g.id), ['shared', 'jeopardy', 'feud', 'spynight']);
   assert.ok(r.data.names.some((n) => n.name === 'lobby'));
 });
 
@@ -93,4 +93,18 @@ test('only the host can do this: a player or the TV page is turned away', () => 
   engine.receive('p', { t: 'hello', role: 'player' });
   engine.receive('p', { t: 'rpc', id: 9, op: 'putSound', args: { game: 'feud', name: 'ding', ext: 'mp3', index: 0, total: 1, data: 'AAAA' } });
   assert.equal(sent.some(([id, m]) => id === 'p' && m.t === 'rpc-reply'), false);
+});
+
+test('Spy Night has its own sounds, with names that say what they mean there', () => {
+  const { rpc } = setup();
+  const names = rpc('listSounds', {}).data.names;
+  const mine = names.filter((n) => n.games.includes('spynight'));
+  for (const n of ['lobby', 'roundstart', 'pick', 'open', 'correct', 'wrong', 'lock', 'ding', 'strike', 'fanfare', 'winner', 'join']) {
+    assert.ok(mine.some((m) => m.name === n), n);
+  }
+  assert.equal(names.find((n) => n.name === 'ding').labels.spynight, 'A mission succeeds');
+  assert.equal(names.find((n) => n.name === 'ding').label, 'A survey answer flips over');
+  const ok = rpc('putSound', { game: 'spynight', name: 'strike', ext: 'mp3', index: 0, total: 1, data: 'AAAA' });
+  assert.equal(ok.ok, true);
+  assert.equal(rpc('putSound', { game: 'spynight', name: 'buzz', ext: 'mp3', index: 0, total: 1, data: 'AAAA' }).ok, false);   // Spy Night has no buzzers
 });

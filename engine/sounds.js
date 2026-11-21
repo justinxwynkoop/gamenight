@@ -11,34 +11,36 @@ export const SOUND_GAMES = [
   { id: 'shared', label: 'Every game' },
   { id: 'jeopardy', label: 'Jeopardy' },
   { id: 'feud', label: 'Family Feud' },
+  { id: 'spynight', label: 'Spy Night' },
 ];
 
-/** The sounds the TV knows how to use (the same names as the Apple TV app's SoundCue, plus the two music tracks). */
+/** The sounds the TV knows how to use (the same names as the Apple TV app's SoundCue, plus the two music tracks).
+ *  `labels` says what a sound is called in a game where it means something else (Spy Night reuses Family Feud's "ding" for a mission that succeeds). */
 export const SOUND_NAMES = [
-  { name: 'lobby', label: 'Lobby music (loops while players join)', games: ['shared', 'jeopardy', 'feud'] },
+  { name: 'lobby', label: 'Lobby music (loops while players join)', games: ['shared', 'jeopardy', 'feud', 'spynight'] },
   { name: 'think', label: 'Final Jeopardy thinking music', games: ['shared', 'jeopardy'] },
-  { name: 'open', label: 'Buzzers open', games: ['shared', 'jeopardy', 'feud'] },
+  { name: 'open', label: 'Buzzers open', games: ['shared', 'jeopardy', 'feud', 'spynight'], labels: { spynight: 'The vote begins' } },
   { name: 'buzz', label: 'Someone buzzes in', games: ['shared', 'jeopardy'] },
-  { name: 'correct', label: 'Right answer', games: ['shared', 'jeopardy', 'feud'] },
-  { name: 'wrong', label: 'Wrong answer', games: ['shared', 'jeopardy'] },
+  { name: 'correct', label: 'Right answer', games: ['shared', 'jeopardy', 'feud', 'spynight'], labels: { spynight: 'A team is approved' } },
+  { name: 'wrong', label: 'Wrong answer', games: ['shared', 'jeopardy', 'spynight'], labels: { spynight: 'A team is rejected' } },
   { name: 'timeup', label: "Time's up", games: ['shared', 'jeopardy', 'feud'] },
   { name: 'tick', label: 'Countdown tick (last five seconds)', games: ['shared', 'jeopardy', 'feud'] },
   { name: 'reveal', label: 'Answer shown, nobody got it', games: ['shared', 'jeopardy'] },
   { name: 'dd', label: 'Daily Double', games: ['shared', 'jeopardy'] },
   { name: 'final', label: 'Final Jeopardy begins', games: ['shared', 'jeopardy'] },
-  { name: 'fanfare', label: 'The winner', games: ['shared', 'jeopardy'] },
-  { name: 'pick', label: 'A clue is picked', games: ['jeopardy'] },
+  { name: 'fanfare', label: 'The winner', games: ['shared', 'jeopardy', 'spynight'], labels: { spynight: 'The Resistance win' } },
+  { name: 'pick', label: 'A clue is picked', games: ['jeopardy', 'spynight'], labels: { spynight: 'A leader starts picking a team' } },
   { name: 'board', label: 'The board fills in', games: ['jeopardy'] },
-  { name: 'lock', label: 'A Final Jeopardy wager or answer locks in', games: ['jeopardy'] },
+  { name: 'lock', label: 'A Final Jeopardy wager or answer locks in', games: ['jeopardy', 'spynight'], labels: { spynight: 'The mission begins' } },
   { name: 'bet', label: 'A Daily Double wager is placed', games: ['jeopardy'] },
-  { name: 'join', label: 'A player joins', games: ['jeopardy'] },
+  { name: 'join', label: 'A player joins', games: ['jeopardy', 'spynight'] },
   { name: 'applause', label: 'End of a round, and the winner', games: ['jeopardy'] },
-  { name: 'roundstart', label: 'A new round begins', games: ['jeopardy', 'feud'] },
-  { name: 'ding', label: 'A survey answer flips over', games: ['feud'] },
-  { name: 'strike', label: 'A strike (the big X)', games: ['feud'] },
+  { name: 'roundstart', label: 'A new round begins', games: ['jeopardy', 'feud', 'spynight'], labels: { spynight: 'The roles are dealt' } },
+  { name: 'ding', label: 'A survey answer flips over', games: ['feud', 'spynight'], labels: { spynight: 'A mission succeeds' } },
+  { name: 'strike', label: 'A strike (the big X)', games: ['feud', 'spynight'], labels: { spynight: 'A mission fails' } },
   { name: 'strikeout', label: 'The third strike', games: ['feud'] },
   { name: 'faceoff', label: 'A face-off player buzzes in', games: ['feud'] },
-  { name: 'winner', label: 'The winning jingle', games: ['feud'] },
+  { name: 'winner', label: 'The winning jingle', games: ['feud', 'spynight'], labels: { spynight: 'The Spies win' } },
   { name: 'zero', label: 'A Fast Money answer worth nothing', games: ['feud'] },
   { name: 'fmpoints', label: 'Fast Money points are shown', games: ['feud'] },
   { name: 'fastmoney', label: 'Fast Money is about to begin', games: ['feud'] },
@@ -53,7 +55,7 @@ export const MAX_PIECES = 64;
 function check(args) {
   const game = String(args.game ?? '');
   const name = String(args.name ?? '');
-  if (!SOUND_GAMES.some((g) => g.id === game)) throw new GameError('Choose Every game, Jeopardy or Family Feud');
+  if (!SOUND_GAMES.some((g) => g.id === game)) throw new GameError('Choose Every game, Jeopardy, Family Feud or Spy Night');
   if (!SOUND_NAMES.some((n) => n.name === name && n.games.includes(game))) throw new GameError(`${game} has no sound called "${name}"`);
   return { game, name };
 }

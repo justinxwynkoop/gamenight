@@ -76,3 +76,21 @@ export function render(v, ctx) {
     h('div', { class: 'sn-foot' }, h('span', {}, g.phase === 'gameover' ? 'The host starts another game.' : `${g.spyCount} Spies among ${g.players.length} players`),
       h('span', {}, g.phase === 'team' || g.phase === 'vote' ? `Rejected teams in a row: ${g.rejects} of ${g.maxRejects}` : '')));
 }
+
+/** Sound cues, from what changed since the last view. The names are the shared ones (see engine/sounds.js for what each means here). */
+export function onChange(prev, view, sound) {
+  const p = prev.game; const g = view.game;
+  if (!p || !g) return;
+  if (g.phase === 'lobby' && p.phase === 'lobby' && g.players.length > p.players.length) sound.play('join');
+  if (g.phase === p.phase) return;
+  switch (g.phase) {
+    case 'roles': sound.play('roundstart'); break;                          // the roles are dealt
+    case 'team': sound.play('pick'); break;                                 // a leader starts picking
+    case 'vote': sound.play('open'); break;
+    case 'vote-result': sound.play(g.approved ? 'correct' : 'wrong'); break;
+    case 'mission': sound.play('lock'); break;
+    case 'mission-result': sound.play(g.result?.success ? 'ding' : 'strike'); break;
+    case 'gameover': sound.play(g.winner === 'spies' ? 'winner' : 'fanfare'); break;
+    default: break;
+  }
+}

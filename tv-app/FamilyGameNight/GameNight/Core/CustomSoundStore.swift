@@ -29,7 +29,7 @@ public final class CustomSoundStore {
         case partial, done, failed
     }
 
-    public static let games = ["shared", "jeopardy", "feud"]
+    public static let games = ["shared", "jeopardy", "feud", "spynight"]
     public static let extensions = ["mp3", "m4a", "wav"]
     /// A file may be at most this big (about 7 MB), and at most this many pieces.
     public static let maxBytes = 8 * 1024 * 1024
