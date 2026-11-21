@@ -3,6 +3,7 @@
 // { save, remove, canDelete, dirty, label }. `api` loads and saves sets, `ui` says when something changed.
 import { h, setKids } from '../../common.js';
 import { field, row, btn, accordionGroup, slug } from '../../editkit.js';
+import { mediaField } from './mediapick.js';
 
 function blank() {
   return {
@@ -82,7 +83,8 @@ export function mount(container, api, ui) {
         h('div', { class: 'clue-top' }, field('input', cl, 'value', { type: 'number', inputMode: 'numeric', min: 1, step: 100, 'aria-label': 'Value' }, touch), h('div', { class: 'grow' }), dd),
         field('textarea', cl, 'clue', { rows: 2, placeholder: 'Clue (what the host reads)' }, () => { touch(); after(); }),
         field('input', cl, 'answer', { placeholder: 'Answer (checked against what players type)', autocomplete: 'off' }, () => { touch(); after(); }),
-        altField(cl, touch));
+        altField(cl, touch),
+        mediaField(cl, touch));
     });
     const body = h('div', { style: { display: 'contents' } },
       row('Category name', field('input', cat, 'name', { maxLength: 40, placeholder: `Category ${c + 1}`, autocomplete: 'off' }, () => { touch(); after(); })),

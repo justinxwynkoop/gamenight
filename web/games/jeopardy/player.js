@@ -15,6 +15,21 @@ const LOCKOUT = 250;          // ms locked out for pressing before the buzzer tu
 const RESEND = 350;           // ms between tries while the TV has not confirmed a press
 const RESEND_FOR = 3000;      // ...for this long
 
+/** A clue's picture on the phone, or a button to hear its sound again here (a video plays on the TV only). */
+let phoneClip = null;
+function clueMedia(m) {
+  if (!m) return null;
+  if (m.kind === 'image') return h('img', { class: 'jp-cluepic', src: m.url, alt: '' });
+  if (m.kind === 'video') return h('div', { class: 'jp-cluenote' }, '🎬 Watch the TV');
+  return h('button', { type: 'button', class: 'jp-cluenote', onclick: (e) => {
+    e.stopPropagation();
+    try { phoneClip?.pause(); } catch { /* gone */ }
+    const start = m.start ?? 0;
+    phoneClip = new Audio(`${m.url}#t=${start},${Math.min(m.end ?? start + 30, start + 30)}`);
+    phoneClip.play()?.catch?.(() => {});
+  } }, '🔊 Hear it again');
+}
+
 export function mount(container, { send, flash, clock: roomClock = null }) {
   loadStyles();
   document.body.classList.add('jp-phone');
@@ -141,7 +156,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   const dot = (p, size = 30) => h('span', { class: 'jp-dot', style: { '--c': p?.color ?? '#AEB3D6', width: `${size}px`, height: `${size}px`, fontSize: `${Math.round(size * 0.42)}px` } }, String(p?.name ?? '?').trim().slice(0, 1).toUpperCase());
   const named = (p) => h('b', { style: { color: p?.color } }, p?.name ?? 'Someone');
   const meta = (cat, value) => h('div', { class: 'jp-meta' }, h('span', {}, cat), value != null && h('b', {}, value));
-  const clueCard = (q, dim = false) => h('div', { class: `jp-clue ${dim ? 'dim' : ''}` }, q);
+  const clueCard = (q, dim = false) => h('div', { class: `jp-clue ${dim ? 'dim' : ''}` }, clueMedia(v.clue?.media), q);
   const bar = (fill = false) => h('div', { class: 'jp-bar' }, h('i', { [fill ? 'data-jp-fill' : 'data-jp-bar']: '' }));
   const clock = () => h('div', { class: 'jp-clock', 'data-jp-clock': '' });
   const eyebrow = (t) => h('div', { class: 'jp-eyebrow' }, t);

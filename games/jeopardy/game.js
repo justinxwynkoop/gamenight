@@ -68,6 +68,43 @@ export const readingTime = (text) => Math.max(4000, Math.min(10000, 1500 + Strin
 export const speakingTime = (text) => Math.max(5000, Math.min(16000, 2000 + String(text).length * 70));
 /** After the voice stops, the buzzers open this much later, a moment every phone is told in advance. */
 export const AFTER_SPEECH = 600;
+/**
+ * A picture, sound or video that goes with a clue: { kind: 'image' | 'audio' | 'video', url, start?, end?, credit? }.
+ * The url must be https and point straight at the file (a page such as YouTube cannot be played on the Apple TV).
+ * start and end (seconds) play only part of a long recording. Returns null for nothing, and throws for a bad one.
+ */
+export const MEDIA_MAX_SECONDS = 30;
+const MEDIA_EXT = { image: /\.(jpe?g|png|gif|webp)$/i, audio: /\.(mp3|m4a|aac|wav)$/i, video: /\.(mp4|m4v|mov)$/i };
+export function cleanMedia(m) {
+  if (m == null || m === '') return null;
+  if (typeof m !== 'object') fail('A picture, sound or video needs a link');
+  const url = String(m.url ?? '').trim();
+  if (!url) return null;
+  // No URL class here: the Apple TV runs this in JavaScriptCore, which has none.
+  const parts = url.match(/^https:\/\/([a-z0-9.-]+\.[a-z]{2,})(\/[^?#\s]*)?(\?[^#\s]*)?$/i);
+  if (!parts || url.length > 800) fail('Picture, sound and video links must be a full web address starting with https://');
+  let path = parts[2] ?? '/';
+  try { path = decodeURIComponent(path); } catch { /* keep it as it is */ }
+  const kind = ['image', 'audio', 'video'].includes(m.kind) ? m.kind : Object.keys(MEDIA_EXT).find((k) => MEDIA_EXT[k].test(path));
+  if (!kind) fail('Link straight to a picture (.jpg, .png), a sound (.mp3, .m4a) or a video (.mp4)');
+  const out = { kind, url };
+  const sec = (x) => (x === undefined || x === null || x === '' ? null : Number(x));
+  const start = sec(m.start), end = sec(m.end);
+  if (start !== null && (!Number.isFinite(start) || start < 0)) fail('The start time must be a number of seconds');
+  if (end !== null && (!Number.isFinite(end) || end <= (start ?? 0))) fail('The end time must come after the start');
+  if (kind !== 'image') { if (start) out.start = start; if (end !== null) out.end = end; }
+  const credit = String(m.credit ?? '').replace(/\s+/g, ' ').trim().slice(0, 160);
+  if (credit) out.credit = credit;
+  return out;
+}
+/** How long the TV may take to play a clue's sound or video before the buzzers open anyway (it says when it is done). */
+export function mediaTime(media) {
+  if (!media) return 0;
+  if (media.kind === 'image') return 1500;
+  const span = media.end != null ? media.end - (media.start ?? 0) : MEDIA_MAX_SECONDS;
+  return Math.round(Math.min(MEDIA_MAX_SECONDS, span) * 1000) + 3000;   // + time to load
+}
+
 /** The family scoreboard keeps this many players (those who played least are forgotten first). */
 const HALL_MAX = 40;
 const hallKey = (name) => String(name ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -97,6 +134,7 @@ export function validateSet(set) {
       if (!String(cl?.answer ?? '').trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its answer`);
       if (!(int(cl.value) > 0) || !Number.isInteger(Number(cl.value))) fail(`Category ${c + 1}, clue ${r + 1} needs a positive whole-dollar value`);
       altOk(cl.alt, `Category ${c + 1}, clue ${r + 1}`);
+      try { cleanMedia(cl.media); } catch (e) { fail(`Category ${c + 1}, clue ${r + 1}: ${e.message}`); }
     });
   });
   const f = set.final;
@@ -116,10 +154,12 @@ export function normalizePack(id, data) {
     selected: data.selected !== false,
     easy: data.easy === true,
     own: data.own === true,
-    categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5),
+    categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5)
+      .map((c) => (c.clues.some((cl) => cl.media) ? { ...c, clues: c.clues.map((cl) => ({ ...cl, media: safeMedia(cl.media) })) } : c)),
     finals: (data.finals || []).filter((fin) => fin.q && fin.a),
   };
 }
+const safeMedia = (m) => { try { return cleanMedia(m); } catch { return null; } };
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
@@ -377,7 +417,7 @@ export class JeopardyGame {
         title: set.title, description: 'A full board from the question editor (Questions on the host page)', selected: false, own: true,
         categories: set.categories.map((c) => ({
           name: c.name,
-          clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble })),
+          clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble, media: cleanMedia(cl.media) })),
         })),
         finals: [{ category: set.final.category, q: set.final.clue, a: set.final.answer, alt: set.final.alt ?? [] }],
       }));
@@ -577,7 +617,7 @@ export class JeopardyGame {
       clues: c.clues.slice(0, 5).map((cl, i) => ({
         // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
         value: Number(cl.v) > 0 ? Math.round(Number(cl.v)) : (i + 1) * 200 * r,
-        q: cl.q, a: cl.a, alt: cl.alt || [], used: false, dd: !!cl.dd,
+        q: cl.q, a: cl.a, alt: cl.alt || [], used: false, dd: !!cl.dd, ...(cl.media ? { media: cl.media } : {}),
       })),
     }));
     // Daily Doubles you marked in a board you wrote are kept; otherwise they are placed at random.
@@ -676,7 +716,7 @@ export class JeopardyGame {
     this.#markSeen(cl.q);
     this.lastResult = null;
     this.collecting = null;
-    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
+    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
       // A wager nobody places (a phone that went to sleep) is the minimum, so the game never stalls.
@@ -687,7 +727,8 @@ export class JeopardyGame {
       // With a host judging, the buzzers open when the host finishes reading aloud. Otherwise they open at a moment
       // known in advance, which every phone is told, so they all turn gold together.
       // With the TV reading it out loud, they open once the voice stops (readDone), or at the latest after speakingTime.
-      const ms = this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q);
+      // A picture, sound or video plays first: the TV says when it is done (readDone), with mediaTime as the backstop.
+      const ms = (this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q)) + mediaTime(cl.media);
       const at = this.#now() + ms;
       this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
     }
@@ -697,9 +738,12 @@ export class JeopardyGame {
   /** The TV reads clues out loud (never with a host, who reads them). */
   readsAloud() { return !!this.settings.readAloud && !this.hostJudges(); }
   setReadAloud(on) { this.#lobbyOnly(); this.settings.readAloud = !!on; this.#changed(); }
-  /** The TV's voice finished reading clue (ci, ri): open the buzzers a moment from now, a time every phone is told. */
+  /**
+   * The TV finished clue (ci, ri): its sound or video has played and its voice has read it. Open the buzzers a moment
+   * from now, a time every phone is told.
+   */
   readDone(ci, ri) {
-    if (this.phase !== 'reading' || !this.readsAloud() || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
+    if (this.phase !== 'reading' || this.hostJudges() || !(this.readsAloud() || this.clue?.media) || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
     const at = this.#now() + AFTER_SPEECH;
     if (this.#liveAt() != null && this.#liveAt() <= at) return;
     this.#setTimer(AFTER_SPEECH, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
@@ -937,7 +981,7 @@ export class JeopardyGame {
     w = clamp(w, 5, max);
     this.clue.wager = w;
     this.phase = 'dd-answer';
-    this.#setTimer(T.ddSplash + readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');
+    this.#setTimer(T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');
     this.#changed();
   }
   /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
@@ -1399,6 +1443,7 @@ export class JeopardyGame {
       clue: this.clue && {
         ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
         q: this.phase === 'dd-wager' ? null : this.clue.q,
+        media: this.phase === 'dd-wager' ? null : this.clue.media ?? null,
         answer: showAnswer ? this.clue.a : null,
         buzzedId: this.clue.buzzedId,
         buzzMs: this.clue.buzzMs,

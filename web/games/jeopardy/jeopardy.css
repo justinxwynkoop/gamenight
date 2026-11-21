@@ -69,6 +69,8 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-meta.center { justify-content: center; color: var(--jp-soft); }
 .jp .jp-clue { background: linear-gradient(180deg, var(--jp-blue), var(--jp-blue-lo)); border-radius: 18px; padding: 14px 16px; font-weight: 700; font-size: 18px; line-height: 1.32; transition: opacity .3s; }
 .jp .jp-clue.dim { opacity: .75; }
+.jp .jp-clue .jp-cluepic { display: block; max-width: 100%; max-height: 22vh; margin: 0 auto 10px; border-radius: 12px; object-fit: contain; }
+.jp .jp-clue .jp-cluenote { display: block; margin: 0 0 10px; padding: 8px 12px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .14); color: inherit; font: inherit; font-weight: 800; }
 
 /* timers */
 .jp .jp-bar { height: 10px; border-radius: 5px; background: var(--jp-panel2); overflow: hidden; width: 100%; flex: none; }
@@ -79,6 +81,7 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 /* the buzzer */
 .jp .jp-buzzwrap { flex: 1; display: grid; place-items: center; min-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
 .jp .jp-buzzer { pointer-events: none; width: min(86vw, 46vh, 380px); height: min(86vw, 46vh, 380px); border-radius: 50%; border: 0; font-family: var(--jp-display); font-weight: 900; font-size: min(14vw, 7vh, 60px); display: grid; place-items: center; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: transform .06s, box-shadow .06s, background .2s; }
+.jp:has(.jp-cluepic) .jp-buzzer { width: min(70vw, 30vh, 300px); height: min(70vw, 30vh, 300px); }
 .jp .jp-buzzer.wait { background: var(--jp-panel); color: #4A5080; box-shadow: inset 0 0 0 10px var(--jp-panel2); font-size: min(11vw, 5.5vh, 48px); }
 .jp .jp-buzzer.live { background: radial-gradient(circle at 50% 35%, var(--jp-sun-hi), var(--jp-sun) 55%, var(--jp-sun-deep)); color: var(--jp-ink); box-shadow: 0 14px 0 #8A5A00, 0 0 60px rgba(255, 201, 64, .55); animation: jp-pulse .7s ease-in-out infinite alternate; }
 .jp .jp-buzzer.live:active { transform: translateY(12px); box-shadow: 0 2px 0 #8A5A00, 0 0 40px rgba(255, 201, 64, .55); animation: none; }

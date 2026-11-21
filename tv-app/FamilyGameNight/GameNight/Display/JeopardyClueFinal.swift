@@ -149,6 +149,47 @@ struct JeoQuestion: View {
     }
 }
 
+/// The clue's text, with its picture beside it, or a line saying a sound or video goes with it.
+struct JeoClueBody: View {
+    let clue: JeoClue
+    var size: CGFloat = 84
+    var opacity: Double = 1
+
+    var body: some View {
+        if let media = clue.media, media.isImage, let url = URL(string: media.url) {
+            HStack(spacing: 20) {
+                JeoQuestion(text: clue.q ?? "", size: size * 0.78, opacity: opacity)
+                VStack(spacing: 10) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFit()
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    .frame(maxWidth: 760, maxHeight: 520)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: .black.opacity(0.4), radius: 14, y: 6)
+                    if let credit = media.credit {
+                        Text(credit).font(BW.body(18)).foregroundColor(BW.soft).lineLimit(1)
+                    }
+                }
+                .padding(.trailing, 40)
+            }
+            .frame(maxHeight: .infinity)
+        } else if let media = clue.media, media.plays {
+            VStack(spacing: 14) {
+                JeoQuestion(text: clue.q ?? "", size: size, opacity: opacity)
+                Text(media.kind == "video" ? "\u{1F3AC} A video clue" : "\u{1F50A} A sound clue: listen")
+                    .font(BW.body(30, .semibold)).foregroundColor(BW.gold)
+                if let credit = media.credit {
+                    Text(credit).font(BW.body(18)).foregroundColor(BW.soft).lineLimit(1)
+                }
+            }
+        } else {
+            JeoQuestion(text: clue.q ?? "", size: size, opacity: opacity)
+        }
+    }
+}
+
 /// The strip along the foot of the card: a line on top, 150 points tall.
 struct JeoBand<Content: View>: View {
     @ViewBuilder let content: () -> Content
@@ -339,7 +380,7 @@ struct JeoClueScreen: View {
         let color = player.map { Color(playerHex: $0.color) }
         let edge: Color? = game.phase == .open ? BW.gold : answering ? (color ?? BW.gold) : nil
         return JeoCard(category: clue.cat, value: value, edge: edge, glow: game.phase == .open) {
-            JeoQuestion(text: clue.q ?? "", size: answering ? 72 : 84, opacity: answering ? 0.9 : 1)
+            JeoClueBody(clue: clue, size: answering ? 72 : 84, opacity: answering ? 0.9 : 1)
             JeoBand { band(clue, player: player, color: color, dd: dd) }
         }
     }

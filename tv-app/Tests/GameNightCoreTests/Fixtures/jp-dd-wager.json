@@ -250,6 +250,7 @@
       "dd": true,
       "wager": null,
       "q": null,
+      "media": null,
       "answer": null,
       "buzzedId": null,
       "buzzMs": null,

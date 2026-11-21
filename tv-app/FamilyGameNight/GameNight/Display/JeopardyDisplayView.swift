@@ -25,6 +25,7 @@ struct JeopardyDisplayView: View {
             if client.state?.jeopardy != nil { BWStage() } else { JeopardyBackground() }
             content
                 .animation(.easeInOut(duration: 0.25), value: client.state)
+            ClipOverlay()
 
             if client.state != nil, let note = client.bannerNote {
                 VStack {

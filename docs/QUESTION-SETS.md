@@ -53,7 +53,9 @@ the bottom and says when you have unsaved changes (it also warns before you leav
 - **Jeopardy:** each category is a collapsible row showing how many of its five clues are filled in. Each clue has its
   value, a ★ Daily Double switch, the clue, the answer and **Also accept** (other wordings that count as right, since players type
   their answers and the game checks them, forgiving small typos). Final Jeopardy is the last row. A board of your own is
-  played just as written when you switch it on alone (or two of them together) in the lobby.
+  played just as written when you switch it on alone (or two of them together) in the lobby. **Add a picture, sound or
+  video** under a clue searches free media (pictures and sounds from Wikimedia Commons, videos from NASA) or takes a
+  pasted link, with the part of a sound or video to play.
 - **Import sets** at the top takes files, links or pasted text (below).
 
 ## Importing
@@ -161,6 +163,22 @@ final | Category | The final clue | The answer
 
 Six categories of five clues each. The exact rules are `validateSet` in `games/jeopardy/game.js` and
 `games/feud/game.js`.
+
+### Picture, sound and video clues
+
+A Jeopardy clue can carry `"media": { "url": "https://…", "start": 5, "end": 20, "credit": "…" }`. The link must go
+straight to a file on the web: a picture (`.jpg`, `.png`, `.gif`, `.webp`), a sound (`.mp3`, `.m4a`, `.aac`, `.wav`)
+or a video (`.mp4`, `.m4v`, `.mov`); give `"kind": "image" | "audio" | "video"` when the link has no such ending.
+`start` and `end` (seconds) pick the part of a sound or video to play, at most 30 seconds. The TV shows a picture beside
+the clue; it plays a sound or video before reading the clue, and the buzzers open once it is done. Phones show the
+picture, and can play the sound again.
+
+The files are not stored in this repository: use free media you may share, and put its source and licence in `credit`.
+Good sources: [Wikimedia Commons](https://commons.wikimedia.org) (pictures, and sounds as Commons' own `.mp3` copies;
+its videos are WebM, which the Apple TV cannot play), [NASA's library](https://images.nasa.gov) (public-domain
+`~medium.mp4` videos), the [Library of Congress](https://www.loc.gov/free-to-use/) and the
+[Internet Archive](https://archive.org). The **Sights & Sounds** pack (`games/jeopardy/packs/media.json`) is all built
+this way.
 
 ## Boards built from public data (kept out of GitHub)
 

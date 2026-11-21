@@ -363,6 +363,9 @@
   // games/jeopardy/packs/sports.json
   var sports_default = { title: "Sports Fan", description: "Teams, legends, and every sport in between", selected: false, categories: [{ name: "Hoops", clues: [{ q: "A basket made from behind the arc is worth this many points.", a: "3" }, { q: "A regulation basketball hoop is this many feet high.", a: "10" }, { q: "The Hall of Famer nicknamed His Airness.", a: "Michael Jordan", alt: ["Jordan", "MJ"] }, { q: "In 2023 he passed Kareem Abdul-Jabbar as the NBA's all-time leading scorer.", a: "LeBron James", alt: ["LeBron", "James"] }, { q: "Wilt Chamberlain scored this many points in one game in 1962.", a: "100" }] }, { name: "Gridiron", clues: [{ q: "A touchdown is worth this many points.", a: "6" }, { q: "The NFL's championship game.", a: "Super Bowl" }, { q: "A football field is this many yards between the goal lines.", a: "100" }, { q: "This quarterback won seven Super Bowls.", a: "Tom Brady", alt: ["Brady"] }, { q: "This team had the NFL's only perfect season, in 1972.", a: "Miami Dolphins", alt: ["Dolphins", "Miami"] }] }, { name: "Soccer", clues: [{ q: "Only this player may handle the ball inside the penalty area.", a: "Goalkeeper", alt: ["goalie", "keeper"] }, { q: "Lionel Messi plays for this national team.", a: "Argentina" }, { q: "The 2026 World Cup is hosted by the U.S., Mexico, and this country.", a: "Canada" }, { q: "The English club nicknamed the Red Devils.", a: "Manchester United", alt: ["Man United", "Man Utd", "Man U"] }, { q: "This country won the very first World Cup in 1930.", a: "Uruguay" }] }, { name: "Baseball", clues: [{ q: "This many strikes and you're out.", a: "3" }, { q: "Each team has this many players in the field.", a: "9" }, { q: "He broke baseball's color barrier in 1947.", a: "Jackie Robinson", alt: ["Robinson"] }, { q: "In 2004 this team broke an 86-year championship drought.", a: "Boston Red Sox", alt: ["Red Sox", "Boston"] }, { q: "Babe Ruth was nicknamed the Sultan of this.", a: "Swat" }] }, { name: "The Olympics", clues: [{ q: "The number of rings on the Olympic flag.", a: "5" }, { q: "This city hosted the 2024 Summer Olympics.", a: "Paris" }, { q: "This swimmer has 23 Olympic gold medals.", a: "Michael Phelps", alt: ["Phelps"] }, { q: "He set the 100-meter world record of 9.58 seconds.", a: "Usain Bolt", alt: ["Bolt"] }, { q: "The ancient Games were held at this site in Greece.", a: "Olympia" }] }, { name: "Tennis", clues: [{ q: "A score of zero in tennis.", a: "Love" }, { q: "The Grand Slam played on grass in London.", a: "Wimbledon" }, { q: "She won 23 Grand Slam singles titles.", a: "Serena Williams", alt: ["Serena"] }, { q: "The French Open is played on this surface.", a: "Clay", alt: ["red clay"] }, { q: "He holds the men's record with 24 Grand Slam singles titles.", a: "Novak Djokovic", alt: ["Djokovic", "Novak"] }] }, { name: "Hockey", clues: [{ q: "The hard rubber disc used in hockey.", a: "Puck" }, { q: "Players serve their penalties here.", a: "Penalty box", alt: ["sin bin", "box", "the box"] }, { q: "Each team has this many players on the ice, including the goalie.", a: "6" }, { q: "Wayne Gretzky's nickname.", a: "The Great One", alt: ["Great One"] }, { q: "The NHL team with the most Stanley Cups.", a: "Montreal Canadiens", alt: ["Canadiens", "Habs", "Montreal"] }] }, { name: "Golf", clues: [{ q: "One stroke under par on a hole.", a: "Birdie" }, { q: "Two strokes under par on a hole.", a: "Eagle" }, { q: "Winners of this tournament get a green jacket.", a: "The Masters", alt: ["Masters"] }, { q: "This Scottish town is known as the Home of Golf.", a: "St Andrews", alt: ["Saint Andrews"] }, { q: "In 1971 astronaut Alan Shepard hit golf balls here.", a: "The Moon", alt: ["moon"] }] }, { name: "Famous Venues", clues: [{ q: "This Boston ballpark has a wall called the Green Monster.", a: "Fenway Park", alt: ["Fenway"] }, { q: "New York's arena billed as the world's most famous.", a: "Madison Square Garden", alt: ["MSG", "the garden"] }, { q: "The Chicago Cubs play in this ivy-covered ballpark.", a: "Wrigley Field", alt: ["Wrigley"] }, { q: "The Green Bay Packers' home field.", a: "Lambeau Field", alt: ["Lambeau"] }, { q: "England's national soccer team plays home games at this London stadium.", a: "Wembley", alt: ["Wembley Stadium"] }] }, { name: "Racing", clues: [{ q: "This flag waves when the winner crosses the line.", a: "Checkered flag", alt: ["checkered", "chequered flag"] }, { q: "The famous 500-mile race in Indiana.", a: "Indianapolis 500", alt: ["Indy 500", "Indy"] }, { q: "The leader of the Tour de France wears a jersey of this color.", a: "Yellow" }, { q: "NASCAR's biggest race is held in this Florida city.", a: "Daytona", alt: ["Daytona 500", "Daytona Beach"] }, { q: "This British driver won seven Formula 1 world titles, tying Michael Schumacher.", a: "Lewis Hamilton", alt: ["Hamilton"] }] }, { name: "Fight Night", clues: [{ q: "A knockout is abbreviated as this.", a: "KO" }, { q: "Muhammad Ali said float like a butterfly, sting like this.", a: "Bee", alt: ["a bee"] }, { q: "Japan's traditional wrestling sport.", a: "Sumo" }, { q: "This Korean martial art became an Olympic sport in 2000.", a: "Taekwondo", alt: ["tae kwon do"] }, { q: "Ali beat him in the 1974 Rumble in the Jungle.", a: "George Foreman", alt: ["Foreman"] }] }, { name: "Sports Lingo", clues: [{ q: "In bowling, knocking down all the pins with your first ball.", a: "Strike" }, { q: "Three goals by one player in a game.", a: "Hat trick" }, { q: "In volleyball, a hard downward hit over the net.", a: "Spike", alt: ["kill"] }, { q: "In tennis, a serve the opponent can't touch.", a: "Ace" }, { q: "In cricket, a batter out for zero runs scores this.", a: "Duck" }] }, { name: "Team Names", clues: [{ q: "The New York baseball team famous for pinstripes.", a: "Yankees" }, { q: "Los Angeles' purple and gold NBA team.", a: "Lakers" }, { q: "Green Bay's NFL team.", a: "Packers" }, { q: "Toronto's NBA team.", a: "Raptors" }, { q: "Seattle's NHL team, which started playing in 2021.", a: "Kraken" }] }, { name: "Legends", clues: [{ q: "Jesse Owens won this many gold medals at the 1936 Olympics.", a: "4" }, { q: "Babe Ruth hit this many home runs in 1927.", a: "60" }, { q: "She beat Bobby Riggs in 1973's Battle of the Sexes.", a: "Billie Jean King", alt: ["King"] }, { q: "At the 1976 Olympics she scored gymnastics' first perfect 10.", a: "Nadia Comaneci", alt: ["Comaneci", "Nadia"] }, { q: "In 2025 he passed Wayne Gretzky as the NHL's all-time goal scorer.", a: "Alex Ovechkin", alt: ["Ovechkin"] }] }], finals: [{ category: "Olympic History", q: "This city hosted the first modern Olympic Games in 1896.", a: "Athens" }, { category: "Baseball Legends", q: "Known as the Iron Horse, he called himself the luckiest man on the face of the earth in 1939.", a: "Lou Gehrig", alt: ["Gehrig"] }, { category: "Basketball", q: "He invented basketball in 1891, using peach baskets as hoops.", a: "James Naismith", alt: ["Naismith"] }, { category: "World Cup", q: "Diego Maradona's 1986 Hand of God goal came against this country.", a: "England" }, { category: "Super Bowl", q: "This team won the very first Super Bowl in January 1967.", a: "Green Bay Packers", alt: ["Packers", "Green Bay"] }] };
 
+  // games/jeopardy/packs/media.json
+  var media_default = { title: "Sights & Sounds", description: "Picture, sound and video clues: animal calls, famous voices, flags, landmarks, paintings and space launches (free public-domain and Creative Commons media from Wikimedia Commons and NASA)", selected: false, media: true, categories: [{ name: "Who's Making That Noise?", clues: [{ q: "Cock-a-doodle-doo! This farm bird is the one sounding off.", a: "Rooster", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0d/Medium_rooster_crowing.ogg/Medium_rooster_crowing.ogg.mp3", credit: "Wikimedia Commons, public domain, alys" }, alt: ["chicken", "cockerel"] }, { q: "This farm animal that gives us milk sounds just like this.", a: "Cow", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a5/Single_Cow_Moo.ogg/Single_Cow_Moo.ogg.mp3", credit: "Wikimedia Commons, CC BY-SA 4.0, MichaeltheFox8621" }, alt: ["cattle"] }, { q: "Woof! Man's best friend is making this racket.", a: "Dog", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a2/Barking_of_a_dog.ogg/Barking_of_a_dog.ogg.mp3", credit: "Wikimedia Commons, CC BY-SA 3.0, Amada44" }, alt: ["puppy"] }, { q: "This wild cousin of the dog howls to its pack at night.", a: "Wolf", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/8/87/Wolf_howls.ogg/Wolf_howls.ogg.mp3", credit: "Wikimedia Commons, public domain" }, alt: ["wolves"] }, { q: "The largest animal on land makes this trumpeting call.", a: "Elephant", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/40/Elephant_voice_-_trumpeting.ogg/Elephant_voice_-_trumpeting.ogg.mp3", credit: "Wikimedia Commons, CC0" } }] }, { name: "Famous Voices", clues: [{ q: "In 1927 this inventor of the phonograph recited the rhyme he had first recorded 50 years before.", a: "Thomas Edison", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/63/Thomas_Edison_Mary_had_lamb.ogg/Thomas_Edison_Mary_had_lamb.ogg.mp3", credit: "Wikimedia Commons, public domain" }, alt: ["Edison"] }, { q: "This astronaut said these words as he stepped onto the Moon in 1969.", a: "Neil Armstrong", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/e0/Phrase_de_Neil_Armstrong.oga/Phrase_de_Neil_Armstrong.oga.mp3", credit: "Wikimedia Commons, public domain, NASA" }, alt: ["Armstrong"] }, { q: 'This president called December 7, 1941, "a date which will live in infamy."', a: "Franklin D. Roosevelt", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/46/1941_Roosevelt_speech_pearlharbor_p1.ogg/1941_Roosevelt_speech_pearlharbor_p1.ogg.mp3", credit: "Wikimedia Commons, public domain" }, alt: ["FDR", "Roosevelt", "Franklin Roosevelt"] }, { q: `"Houston, we've had a problem" was radioed from this Apollo mission in 1970.`, a: "Apollo 13", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/28/Apollo13problem.ogg/Apollo13problem.ogg.mp3", credit: "Wikimedia Commons, public domain, NASA" }, alt: ["13"] }, { q: "In 1958 this president's Christmas message became the first voice broadcast from a satellite in space.", a: "Dwight D. Eisenhower", media: { kind: "audio", url: "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cf/SCORE_Audio.ogg/SCORE_Audio.ogg.mp3", credit: "Wikimedia Commons, public domain" }, alt: ["Eisenhower", "Ike", "Dwight Eisenhower"] }] }, { name: "Name That Flag", clues: [{ q: "A red circle on white flies for this island nation.", a: "Japan", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Flag_of_Japan.svg/1280px-Flag_of_Japan.svg.png", credit: "Wikimedia Commons, public domain" } }, { q: "A red maple leaf marks the flag of this country.", a: "Canada", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Canada_%28Pantone%29.svg/1280px-Flag_of_Canada_%28Pantone%29.svg.png", credit: "Wikimedia Commons, public domain" } }, { q: `The motto "Ordem e Progresso" crosses the starry globe on this South American country's flag.`, a: "Brazil", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/1280px-Flag_of_Brazil.svg.png", credit: "Wikimedia Commons, public domain" } }, { q: "A red and blue taegeuk sits in the middle of this Asian country's flag.", a: "South Korea", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/1280px-Flag_of_South_Korea.svg.png", credit: "Wikimedia Commons, public domain" }, alt: ["Korea", "Republic of Korea"] }, { q: "A Maasai shield and two spears appear on the flag of this East African country.", a: "Kenya", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/Flag_of_Kenya.svg/1280px-Flag_of_Kenya.svg.png", credit: "Wikimedia Commons, public domain" } }] }, { name: "Famous Landmarks", clues: [{ q: "This Paris tower was built for the World's Fair of 1889.", a: "Eiffel Tower", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg/1280px-Tour_Eiffel_Wikimedia_Commons.jpg", credit: "Wikimedia Commons, public domain, Benh LIEU SONG" }, alt: ["Eiffel", "Tour Eiffel"] }, { q: "A gift from France, she has stood in New York Harbor since 1886.", a: "Statue of Liberty", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Statue_of_Liberty_7.jpg/1280px-Statue_of_Liberty_7.jpg", credit: "Wikimedia Commons, public domain, Elcobbola" }, alt: ["Lady Liberty", "Liberty"] }, { q: "The only one of the Seven Wonders of the Ancient World still standing.", a: "Great Pyramid of Giza", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Kheops-Pyramid.jpg/1280px-Kheops-Pyramid.jpg", credit: "Wikimedia Commons, CC BY 2.5, Nina" }, alt: ["Great Pyramid", "pyramid of Giza", "pyramids", "pyramid of Khufu"] }, { q: "Shah Jahan built this white marble tomb in Agra for his wife.", a: "Taj Mahal", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/1280px-Taj_Mahal_%28Edited%29.jpeg", credit: "Wikimedia Commons, CC BY-SA 4.0, Yann; edited by Jim Carter" } }, { q: "This 15th-century Inca citadel sits high in the Andes of Peru.", a: "Machu Picchu", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Machu_Picchu%2C_Peru.jpg/1280px-Machu_Picchu%2C_Peru.jpg", credit: "Wikimedia Commons, CC BY-SA 2.0, Pedro Szekely" } }] }, { name: "Masterpieces", clues: [{ q: "Leonardo da Vinci painted this famous smile.", a: "Mona Lisa", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/1280px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg", credit: "Wikimedia Commons, public domain" }, alt: ["La Gioconda", "Gioconda"] }, { q: "Vincent van Gogh painted this swirling night sky in 1889.", a: "The Starry Night", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg", credit: "Wikimedia Commons, public domain" }, alt: ["Starry Night"] }, { q: "Hokusai's giant wave rolls in front of this snowy Japanese mountain.", a: "Mount Fuji", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/1280px-Tsunami_by_hokusai_19th_century.jpg", credit: "Wikimedia Commons, public domain" }, alt: ["Fuji", "Fujiyama"] }, { q: 'This Dutch painter from Delft gave us "Girl with a Pearl Earring."', a: "Johannes Vermeer", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/1280px-1665_Girl_with_a_Pearl_Earring.jpg", credit: "Wikimedia Commons, public domain" }, alt: ["Vermeer"] }, { q: 'This Norwegian artist painted "The Scream."', a: "Edvard Munch", media: { kind: "image", url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg/1280px-Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg", credit: "Wikimedia Commons, public domain" }, alt: ["Munch"] }] }, { name: "Space Videos", clues: [{ q: "In July 1969 this NASA mission landed the first people on the Moon.", a: "Apollo 11", media: { kind: "video", url: "https://images-assets.nasa.gov/video/Apollo_11_Intro_720p/Apollo_11_Intro_720p~medium.mp4", start: 0, end: 25, credit: "NASA (public domain)" } }, { q: "Released from the space shuttle in 1990, this telescope is named for an American astronomer.", a: "Hubble Space Telescope", media: { kind: "video", url: "https://images-assets.nasa.gov/video/GSFC_20080822_HST_m10235_Deploy/GSFC_20080822_HST_m10235_Deploy~medium.mp4", start: 0, end: 23, credit: "NASA (public domain)" }, alt: ["Hubble"] }, { q: "This NASA rover touched down in Mars's Jezero Crater in February 2021.", a: "Perseverance", media: { kind: "video", url: "https://images-assets.nasa.gov/video/JPL-20210218-M2020f-0003-Perseverance%20Landing%20Wrap%20v2/JPL-20210218-M2020f-0003-Perseverance%20Landing%20Wrap%20v2~medium.mp4", start: 10, end: 40, credit: "NASA (public domain)" }, alt: ["Percy", "Perseverance rover"] }, { q: "NASA's new Moon program is named for this Greek goddess, Apollo's twin sister.", a: "Artemis", media: { kind: "video", url: "https://images-assets.nasa.gov/video/Artemis%20I%20Launch%202022%20CU%20tracking%20from%20Press%20Site_compressed/Artemis%20I%20Launch%202022%20CU%20tracking%20from%20Press%20Site_compressed~medium.mp4", start: 45, end: 75, credit: "NASA (public domain)" } }, { q: "NASA's three-letter abbreviation for a spacewalk.", a: "EVA", media: { kind: "video", url: "https://images-assets.nasa.gov/video/jsc2022m000280_US_EVA_82_Animation_221203/jsc2022m000280_US_EVA_82_Animation_221203~medium.mp4", start: 0, end: 25, credit: "NASA (public domain)" }, alt: ["extravehicular activity"] }] }], finals: [{ category: "Space Sounds", q: "Launched in 1977 and now beyond the Sun's bubble, this NASA probe carries a golden record of Earth's sounds.", a: "Voyager 1", alt: ["Voyager", "Voyager 2", "Voyager I"] }] };
+
   // games/jeopardy/packs/index.js
   var HOUSE_PACKS = [
     ["easy", easy_default],
@@ -370,7 +373,8 @@
     ["general", general_default],
     ["movies", movies_default],
     ["nineties", nineties_default],
-    ["sports", sports_default]
+    ["sports", sports_default],
+    ["media", media_default]
   ].map(([id, data]) => ({ id: `house-${id}`, data }));
 
   // games/jeopardy/game.js
@@ -436,6 +440,41 @@
   var readingTime = (text) => Math.max(4e3, Math.min(1e4, 1500 + String(text).length * 55));
   var speakingTime = (text) => Math.max(5e3, Math.min(16e3, 2e3 + String(text).length * 70));
   var AFTER_SPEECH = 600;
+  var MEDIA_MAX_SECONDS = 30;
+  var MEDIA_EXT = { image: /\.(jpe?g|png|gif|webp)$/i, audio: /\.(mp3|m4a|aac|wav)$/i, video: /\.(mp4|m4v|mov)$/i };
+  function cleanMedia(m) {
+    if (m == null || m === "") return null;
+    if (typeof m !== "object") fail("A picture, sound or video needs a link");
+    const url = String(m.url ?? "").trim();
+    if (!url) return null;
+    const parts = url.match(/^https:\/\/([a-z0-9.-]+\.[a-z]{2,})(\/[^?#\s]*)?(\?[^#\s]*)?$/i);
+    if (!parts || url.length > 800) fail("Picture, sound and video links must be a full web address starting with https://");
+    let path = parts[2] ?? "/";
+    try {
+      path = decodeURIComponent(path);
+    } catch {
+    }
+    const kind = ["image", "audio", "video"].includes(m.kind) ? m.kind : Object.keys(MEDIA_EXT).find((k) => MEDIA_EXT[k].test(path));
+    if (!kind) fail("Link straight to a picture (.jpg, .png), a sound (.mp3, .m4a) or a video (.mp4)");
+    const out = { kind, url };
+    const sec = (x) => x === void 0 || x === null || x === "" ? null : Number(x);
+    const start = sec(m.start), end = sec(m.end);
+    if (start !== null && (!Number.isFinite(start) || start < 0)) fail("The start time must be a number of seconds");
+    if (end !== null && (!Number.isFinite(end) || end <= (start ?? 0))) fail("The end time must come after the start");
+    if (kind !== "image") {
+      if (start) out.start = start;
+      if (end !== null) out.end = end;
+    }
+    const credit = String(m.credit ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+    if (credit) out.credit = credit;
+    return out;
+  }
+  function mediaTime(media) {
+    if (!media) return 0;
+    if (media.kind === "image") return 1500;
+    const span = media.end != null ? media.end - (media.start ?? 0) : MEDIA_MAX_SECONDS;
+    return Math.round(Math.min(MEDIA_MAX_SECONDS, span) * 1e3) + 3e3;
+  }
   var HALL_MAX = 40;
   var hallKey = (name) => String(name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   function cleanHall(h) {
@@ -462,6 +501,11 @@
         if (!String(cl?.answer ?? "").trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its answer`);
         if (!(int(cl.value) > 0) || !Number.isInteger(Number(cl.value))) fail(`Category ${c + 1}, clue ${r + 1} needs a positive whole-dollar value`);
         altOk(cl.alt, `Category ${c + 1}, clue ${r + 1}`);
+        try {
+          cleanMedia(cl.media);
+        } catch (e) {
+          fail(`Category ${c + 1}, clue ${r + 1}: ${e.message}`);
+        }
       });
     });
     const f = set.final;
@@ -479,10 +523,17 @@
       selected: data.selected !== false,
       easy: data.easy === true,
       own: data.own === true,
-      categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5),
+      categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5).map((c) => c.clues.some((cl) => cl.media) ? { ...c, clues: c.clues.map((cl) => ({ ...cl, media: safeMedia(cl.media) })) } : c),
       finals: (data.finals || []).filter((fin) => fin.q && fin.a)
     };
   }
+  var safeMedia = (m) => {
+    try {
+      return cleanMedia(m);
+    } catch {
+      return null;
+    }
+  };
   var clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   function clueKey(q) {
     const text = String(q ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -798,14 +849,14 @@
       __privateMethod(this, _JeopardyGame_instances, markSeen_fn).call(this, cl.q);
       this.lastResult = null;
       this.collecting = null;
-      this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
+      this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
       if (cl.dd) {
         this.phase = "dd-wager";
         const who = this.controllerId;
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 5), "wager");
       } else {
         this.phase = "reading";
-        const ms = this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q);
+        const ms = (this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q)) + mediaTime(cl.media);
         const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
         __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
       }
@@ -823,9 +874,12 @@
       this.settings.readAloud = !!on;
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
-    /** The TV's voice finished reading clue (ci, ri): open the buzzers a moment from now, a time every phone is told. */
+    /**
+     * The TV finished clue (ci, ri): its sound or video has played and its voice has read it. Open the buzzers a moment
+     * from now, a time every phone is told.
+     */
     readDone(ci, ri) {
-      if (this.phase !== "reading" || !this.readsAloud() || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
+      if (this.phase !== "reading" || this.hostJudges() || !(this.readsAloud() || this.clue?.media) || this.clue?.ci !== ci || this.clue?.ri !== ri) return;
       const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + AFTER_SPEECH;
       if (__privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this) != null && __privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this) <= at) return;
       __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, AFTER_SPEECH, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
@@ -944,7 +998,7 @@
       w = clamp(w, 5, max);
       this.clue.wager = w;
       this.phase = "dd-answer";
-      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddSplash + readingTime(this.clue.q) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
+      __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
     /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
@@ -1281,6 +1335,7 @@
           dd: this.clue.dd,
           wager: this.clue.wager,
           q: this.phase === "dd-wager" ? null : this.clue.q,
+          media: this.phase === "dd-wager" ? null : this.clue.media ?? null,
           answer: showAnswer ? this.clue.a : null,
           buzzedId: this.clue.buzzedId,
           buzzMs: this.clue.buzzMs,
@@ -1630,7 +1685,7 @@
         own: true,
         categories: set.categories.map((c) => ({
           name: c.name,
-          clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble }))
+          clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble, media: cleanMedia(cl.media) }))
         })),
         finals: [{ category: set.final.category, q: set.final.clue, a: set.final.answer, alt: set.final.alt ?? [] }]
       }));
@@ -1708,7 +1763,8 @@
         a: cl.a,
         alt: cl.alt || [],
         used: false,
-        dd: !!cl.dd
+        dd: !!cl.dd,
+        ...cl.media ? { media: cl.media } : {}
       }))
     }));
     const flagged = board.reduce((n, c) => n + c.clues.filter((cl) => cl.dd).length, 0);

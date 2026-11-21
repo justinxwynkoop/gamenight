@@ -250,6 +250,7 @@
       "dd": false,
       "wager": null,
       "q": "The capital of Japan.",
+      "media": null,
       "answer": null,
       "buzzedId": "p1",
       "buzzMs": 200,
