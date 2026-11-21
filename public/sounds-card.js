@@ -102,7 +102,7 @@ function draw() {
     kids.push(h('p', { class: 'dim' }, info.error ?? 'This TV cannot keep your own sounds. The Apple TV app can.'));
   } else {
     kids.push(h('p', { class: 'dim' }, 'Add music and sounds here and the TV keeps them. They stay on the TV, not on the internet, and they stay through app updates. (If the Apple TV runs short of space it can clear them; the list below then shows what is left, and you can add them again.)'));
-    const label = (game, name) => `${info.games.find((g) => g.id === game)?.label ?? game}: ${info.names.find((n) => n.name === name)?.label ?? name}`;
+    const label = (game, name) => `${info.games.find((g) => g.id === game)?.label ?? game}: ${(() => { const n = info.names.find((x) => x.name === name); return n?.labels?.[game] ?? n?.label ?? name; })()}`;
     if (info.files.length) {
       kids.push(h('div', { class: 'list' }, info.files.map((f) => h('div', { class: 'rowi' },
         h('div', { class: 'grow' }, h('div', { class: 't' }, label(f.game, f.name)), h('div', { class: 's' }, `${f.name}.${f.ext} · ${kb(f.bytes)}`)),
@@ -115,7 +115,7 @@ function draw() {
       draw();
     } }, info.games.map((g) => h('option', { value: g.id, selected: g.id === choice.game }, g.label)));
     const nameSel = h('select', { 'aria-label': 'Which sound', onchange: (e) => { choice.name = e.target.value; } },
-      info.names.filter((n) => n.games.includes(choice.game)).map((n) => h('option', { value: n.name, selected: n.name === choice.name }, n.label)));
+      info.names.filter((n) => n.games.includes(choice.game)).map((n) => h('option', { value: n.name, selected: n.name === choice.name }, n.labels?.[choice.game] ?? n.label)));
     const file = h('input', { type: 'file', accept: 'audio/*,.mp3,.m4a,.wav', 'aria-label': 'Sound file', disabled: busy });
     const many = h('input', { type: 'file', multiple: true, accept: 'audio/*,.mp3,.m4a,.wav', 'aria-label': 'Several sound files', disabled: busy,
       onchange: (e) => { if (e.target.files.length) pickMany(e.target.files); } });

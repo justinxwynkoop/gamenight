@@ -24,9 +24,34 @@ enum SoundPlanner {
             feudPlan(from: before, to: after, into: &plan)   // Feud/Core/FeudSounds.swift
             return plan
         }
+        if let before = previous.spyNight, let after = next.spyNight {
+            spyNightPlan(from: before, to: after, into: &plan)
+            return plan
+        }
         guard let before = previous.jeopardy, let after = next.jeopardy else { return plan }
         jeopardyPlan(from: before, to: after, into: &plan)
         return plan
+    }
+
+    /// Spy Night: the shared cue names, each meaning something of its own here (see games/spynight/ and
+    /// public/games/spynight/tv.js, onChange): the roles are dealt (roundstart), a team is being picked (pick), the vote
+    /// begins (open), a team is approved or rejected (correct, wrong), the mission begins (lock), it succeeds or fails
+    /// (ding, strike), and the Resistance (fanfare) or the Spies (winner) win.
+    static func spyNightPlan(from before: SpyNightState, to after: SpyNightState, into plan: inout SoundPlan) {
+        if after.phase == .lobby, before.phase == .lobby, after.players.count > before.players.count {
+            plan.cues.append(.join)
+        }
+        guard after.phase != before.phase else { return }
+        switch after.phase {
+        case .roles: plan.cues.append(.roundstart)
+        case .team: plan.cues.append(.pick)
+        case .vote: plan.cues.append(.open)
+        case .voteResult: plan.cues.append(after.approved == true ? .correct : .wrong)
+        case .mission: plan.cues.append(.lock)
+        case .missionResult: plan.cues.append(after.result?.success == true ? .ding : .strike)
+        case .gameover: plan.cues.append(after.spiesWon ? .winner : .fanfare)
+        case .lobby, .unknown: break
+        }
     }
 
     /// Jeopardy: what the change between two views means in sound. The names are the same ones the family's own

@@ -30,7 +30,7 @@ cannot keep files). Please only add sounds you have the right to use.
 Tools/install-sounds.sh <folder with your sounds>
 ```
 
-The folder holds the sound files: files directly in it are used by every game; files in its `jeopardy/` and `feud/`
+The folder holds the sound files: files directly in it are used by every game; files in its `jeopardy/`, `feud/` and `spynight/`
 folders are used by that game only (and win over a shared file of the same name). The script copies `.mp3`, `.m4a` and
 `.wav` files into `FamilyGameNight/GameNight/Sounds/` as `<game>__<name>.<ext>` (for example `feud__strike.mp3`,
 `shared__think.mp3`) and skips anything the Apple TV cannot play, such as `.ogg`. The file names carry the game because
@@ -50,6 +50,12 @@ A sound with no file falls back to the built-in tone. Names that are used:
 - **Family Feud:** `ding` (an answer flips), `strike`, `strikeout`, `faceoff`, `fastmoney`, `fmpoints`, `roundstart`,
   `winner`, `zero` (plus `open`, `tick`, `timeup`, `correct`). `strikeout` and `zero` use your `strike` file if they
   have none of their own.
+- **Spy Night:** it ships with its own sounds and lobby music (original, CC0: `Sounds/spynight__*.m4a`, made by
+  `Tools/make_spynight_sounds.py`), so it works with nothing installed. They use these names, each meaning something of
+  its own: `lobby` (music while players join), `roundstart` (the roles are dealt), `pick` (a leader starts picking a team),
+  `open` (the vote begins), `correct` (a team is approved), `wrong` (rejected), `lock` (the mission begins), `ding` (a
+  mission succeeds), `strike` (it fails), `fanfare` (the Resistance win), `winner` (the Spies win), `join`. Your own
+  `spynight/<name>` file (or a shared one) replaces any of them; the host page's "Your own sounds" lists them as Spy Night.
 - **Music, any game:** `lobby` loops while players join (`think` is used if there is no `lobby`), and `think` loops
   during the Final Jeopardy countdown. Music only plays if you provide a file.
 
