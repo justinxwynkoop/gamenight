@@ -55,6 +55,8 @@ function clueCard() {
   const c = v.clue; const s = v.secret;
   return card(
     eyebrow(`${c.cat} · ${c.dd ? `Daily Double${c.wager ? ` · wager ${money(c.wager)}` : ''}` : money(c.value)}`),
+    c.media?.kind === 'image' ? h('img', { src: c.media.url, alt: '', style: { display: 'block', maxWidth: '100%', maxHeight: '28vh', margin: '8px auto', borderRadius: '10px' } })
+      : c.media ? h('p', { class: 'dim' }, c.media.kind === 'audio' ? '🔊 The TV plays a sound first.' : '🎬 The TV plays a video first.') : null,
     h('div', { class: 'card-title' }, s.q ?? c.q ?? ''),
     answerBox(s.answer, s.alt));
 }

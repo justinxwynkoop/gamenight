@@ -250,6 +250,7 @@
       "dd": true,
       "wager": 300,
       "q": "This dinosaur had plates on its back and a spiked tail.",
+      "media": null,
       "answer": null,
       "buzzedId": null,
       "buzzMs": null,

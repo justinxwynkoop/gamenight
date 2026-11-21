@@ -67,6 +67,7 @@ final class SoundDirector {
     /// Called when the display goes away: silence everything.
     func deactivate() {
         voice.stop()
+        ClipStage.shared.stop()
         spokenKey = nil
         tickTask?.cancel()
         tickTask = nil
@@ -101,18 +102,22 @@ final class SoundDirector {
         }
     }
 
-    /// Reads the clue out loud when CluePlanner says so. True when Final Jeopardy's music waits for the voice.
+    /// Plays the clue's sound or video, then reads the clue out loud, when CluePlanner says so. True when Final
+    /// Jeopardy's music waits for the voice.
     private func speak(from before: JeopardyState?, to after: JeopardyState?) -> Bool {
         guard let after else {
             if spokenKey != nil { voice.stop(); spokenKey = nil }
+            ClipStage.shared.stop()
             return false
         }
         let speech = CluePlanner.plan(from: before, to: after, spoken: spokenKey)
         if speech.stop { voice.stop(); spokenKey = nil }
-        // With the sound off nothing is said, and the game opens the buzzers after its own (longer) reading time.
-        guard let say = speech.speak, enabled, volume > 0 else { return false }
+        if speech.stopClip { ClipStage.shared.stop() }
+        guard let say = speech.speak else { return false }
+        // With the sound off nothing plays or is said, and the game opens the buzzers after its own (longer) wait.
+        guard enabled, volume > 0 else { return false }
         spokenKey = say.key
-        voice.speak(CluePlanner.spoken(say.text), volume: Float(volume), after: say.thenFinalMusic ? 0 : 0.45) { [weak self] in
+        let ready: () -> Void = { [weak self] in
             guard let self, self.spokenKey == say.key else { return }
             let phase = self.lastState?.jeopardy?.phase
             if let ci = say.doneColumn, let ri = say.doneRow, phase == .reading {
@@ -120,13 +125,36 @@ final class SoundDirector {
             }
             if say.thenFinalMusic, phase == .finalAnswer { self.startMusic(.finalRound, restart: true) }
         }
+        let read: () -> Void = { [weak self] in
+            guard let self, self.spokenKey == say.key else { return }
+            if say.speaks {
+                self.voice.speak(CluePlanner.spoken(say.text), volume: Float(self.volume), after: say.media == nil && !say.thenFinalMusic ? 0.45 : 0, done: ready)
+            } else {
+                // Nobody reads it out: give everyone the time to read it on screen.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(CluePlanner.readingPause(say.text)))
+                    ready()
+                }
+            }
+        }
+        if let media = say.media {
+            let key = say.key
+            Task { @MainActor [weak self] in
+                // A beat after the pick sound, so the two do not talk over each other.
+                try? await Task.sleep(for: .seconds(0.45))
+                guard let self, self.spokenKey == key else { return }
+                ClipStage.shared.play(media, volume: Float(self.volume), done: read)
+            }
+        } else {
+            read()
+        }
         return say.thenFinalMusic
     }
 
     private func configure(_ settings: RoomSettings) {
         enabled = settings.sound
         volume = min(1, max(0, Double(settings.volume) / 100))
-        if !enabled { stopMusic(); voice.stop(); spokenKey = nil }
+        if !enabled { stopMusic(); voice.stop(); ClipStage.shared.stop(); spokenKey = nil }
         music?.volume = Float(volume * Self.musicGain)
     }
 
@@ -325,5 +353,75 @@ final class ClueVoice: NSObject, AVSpeechSynthesizerDelegate {
             self.pending = nil
             pending.done()
         }
+    }
+}
+
+/// A clue's sound or video, played from its link before the buzzers open. A video is shown over the clue
+/// (JeopardyDisplayView watches `video`). `done` runs once, when the clip ends, fails, or runs out of time; a clip that
+/// is stopped or replaced never calls it.
+@MainActor
+final class ClipStage: ObservableObject {
+    static let shared = ClipStage()
+
+    /// The video playing now, if any, and its credit line.
+    @Published private(set) var video: AVPlayer?
+    @Published private(set) var credit: String?
+
+    private var player: AVPlayer?
+    private var endObserver: Any?
+    private var failObserver: NSObjectProtocol?
+    private var backstop: Task<Void, Never>?
+
+    func play(_ media: JeoMedia, volume: Float, done: @escaping () -> Void) {
+        stop()
+        guard let url = URL(string: media.url) else { done(); return }
+        let span = media.span
+        let item = AVPlayerItem(url: url)
+        item.forwardPlaybackEndTime = CMTime(seconds: span.end, preferredTimescale: 600)
+        let player = AVPlayer(playerItem: item)
+        player.volume = min(1, max(0, volume))
+        player.preventsDisplaySleepDuringVideoPlayback = true
+        self.player = player
+        var called = false
+        let finish = { [weak self] in
+            guard !called else { return }
+            called = true
+            self?.stop()
+            done()
+        }
+        // Ends at forwardPlaybackEndTime too.
+        endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { _ in
+            Task { @MainActor in finish() }
+        }
+        failObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main) { _ in
+            Task { @MainActor in finish() }
+        }
+        // Loading may take a moment; a clip that never starts or never ends does not hold up the game.
+        backstop = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(span.end - span.start + 8))
+            if !Task.isCancelled { finish() }
+        }
+        if media.kind == "video" {
+            video = player
+            credit = media.credit
+        }
+        if span.start > 0 {
+            player.seek(to: CMTime(seconds: span.start, preferredTimescale: 600)) { _ in Task { @MainActor in player.play() } }
+        } else {
+            player.play()
+        }
+    }
+
+    func stop() {
+        backstop?.cancel()
+        backstop = nil
+        if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
+        if let failObserver { NotificationCenter.default.removeObserver(failObserver) }
+        endObserver = nil
+        failObserver = nil
+        player?.pause()
+        player = nil
+        if video != nil { video = nil }
+        if credit != nil { credit = nil }
     }
 }

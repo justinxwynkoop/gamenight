@@ -92,29 +92,76 @@ function drainBar(timer, after) {
   return h('div', { class: 'drain' }, h('div', { class: 'track' }, fill), h('span', {}, label, ` ${after}`));
 }
 
-// ---------- reading clues out loud ----------
+// ---------- a clue's sound or video, then the voice ----------
 let spokenKey = '';
+let clip = null;        // the <audio> or <video> playing a clue's sound or video (kept outside the redrawn screen)
+let clipTimer = null;
+
+function stopClip() {
+  clearTimeout(clipTimer); clipTimer = null;
+  if (clip) { try { clip.pause(); } catch { /* gone */ } clip.removeAttribute('src'); clip.load?.(); clip = null; }
+  document.querySelector('.bw-video')?.remove();
+}
+
 /**
- * The TV reads each clue out loud (unless a host is reading them, or it is switched off in the lobby). When the voice
- * finishes a normal clue, the TV tells the game, which opens the buzzers a moment later.
+ * Plays a clue's sound or video, from `start` to `end` seconds (30 at most), and calls `done` once, when it ends or
+ * cannot play (a broken link, or a browser that will not play sound before a click). A video fills the screen.
+ */
+function playClip(media, volume, done) {
+  stopClip();
+  let called = false;
+  const finish = () => { if (called) return; called = true; stopClip(); done(); };
+  const el = document.createElement(media.kind === 'video' ? 'video' : 'audio');
+  el.preload = 'auto';
+  el.playsInline = true;
+  el.volume = Math.max(0, Math.min(1, volume));
+  const start = media.start ?? 0;
+  const end = Math.min(media.end ?? start + 30, start + 30);
+  el.src = `${media.url}#t=${start},${end}`;
+  el.addEventListener('timeupdate', () => { if (el.currentTime >= end - 0.05) finish(); });
+  el.addEventListener('ended', finish);
+  el.addEventListener('error', finish);
+  if (media.kind === 'video') {
+    const box = h('div', { class: 'bw-video' }, el, media.credit ? h('div', { class: 'credit' }, media.credit) : null);
+    document.body.append(box);
+  }
+  clip = el;
+  // Loading may take a moment; a clip that never starts or never ends does not hold up the game.
+  clipTimer = setTimeout(finish, (end - start) * 1000 + 8000);
+  el.play()?.catch?.(() => finish());
+}
+
+/**
+ * When a clue comes up, the TV plays its sound or video (if it has one), then reads it out loud (unless a host is
+ * reading them, or reading aloud is switched off in the lobby). Then it tells the game, which opens the buzzers a
+ * moment later.
  */
 function speakClue(p, g, now, was, newClue, sound) {
-  if (!sound.speak) return;
   const clueOn = ['reading', 'dd-answer'].includes(now);
   if (!clueOn) {
-    if (spokenKey && !['open', 'answering', 'ruling', 'reveal', 'final-answer'].includes(now)) { sound.stopSpeaking(); spokenKey = ''; }
+    if (spokenKey && !['open', 'answering', 'ruling', 'reveal', 'final-answer'].includes(now)) { sound.stopSpeaking?.(); spokenKey = ''; }
+    if (!['dd-answer'].includes(now)) stopClip();
     return;
   }
   const key = `${g.round}:${clueKey(g.clue)}:${now === 'dd-answer' ? 'dd' : 'q'}`;
-  if (!g.readsAloud || !g.clue?.q || key === spokenKey) return;
-  if (!(newClue || was !== now)) return;
+  const media = g.clue?.media;
+  const plays = media && (media.kind === 'audio' || media.kind === 'video');
+  if (key === spokenKey || !(newClue || was !== now)) return;
+  if (!(g.readsAloud && g.clue?.q) && !plays) return;
   spokenKey = key;
   const { ci, ri } = g.clue;
-  const isReading = now === 'reading';
+  const isReading = now === 'reading' && !g.hostJudges;
+  const ready = () => { if (isReading && spokenKey === key && phaseNow === 'reading') act?.('readDone', { ci, ri }); };
+  const read = () => {
+    if (spokenKey !== key) return;
+    if (g.readsAloud && sound.speak?.(g.clue.q, ready)) return;
+    // Nobody reads it out: give everyone the time to read it on screen.
+    if (plays) setTimeout(ready, Math.min(8000, 1500 + String(g.clue.q ?? '').length * 55));
+  };
   // A beat after the pick sound, so the two do not talk over each other.
   setTimeout(() => {
     if (spokenKey !== key) return;
-    sound.speak(g.clue.q, () => { if (isReading && spokenKey === key && phaseNow === 'reading') act?.('readDone', { ci, ri }); });
+    if (plays) playClip(media, sound.volume?.() ?? 0.7, read); else read();
   }, 450);
 }
 
@@ -599,10 +646,20 @@ function card(c, { q, band, edge = null, cls = '' }) {
     band);
 }
 
+/** The clue's text, with its picture beside it (or a note that a sound or video goes with it). */
+function clueText(c, cls = '') {
+  const m = c.media;
+  if (!m) return h('div', { class: `q ${cls}` }, c.q ?? '');
+  const side = m.kind === 'image'
+    ? h('figure', { class: 'pic' }, h('img', { src: m.url, alt: '' }), m.credit ? h('figcaption', {}, m.credit) : null)
+    : h('figure', { class: 'pic note' }, h('div', { class: 'ic' }, m.kind === 'audio' ? '🔊' : '🎬'), h('figcaption', {}, m.kind === 'audio' ? 'Listen' : 'Watch', m.credit ? h('small', {}, m.credit) : null));
+  return h('div', { class: `q withpic ${cls}` }, side, h('div', { class: 'qt' }, c.q ?? ''));
+}
+
 function clue() {
   const c = g.clue;
   if (g.phase === 'dd-wager') return ddSplash(c, null);
-  const q = h('div', { class: 'q' }, c.q ?? '');
+  const q = clueText(c);
   if (g.phase === 'reading') {
     const band = g.hostJudges
       ? h('div', { class: 'band' }, h('div', { class: 'grow' }, h('div', { class: 'hint' }, 'The host is reading the clue. Thumbs ready.')))
@@ -626,7 +683,7 @@ function clue() {
         h('div', { class: 'buzzer' }, h('span', { class: 'big', style: { color: p?.color } }, (p?.name ?? 'Someone').toUpperCase()), h('span', {}, doing)),
         dd ? null : buzzChips(c, { open: c.open || 1 })),
       ring(g.timer, g.hostJudges ? 'TIME' : '0'));
-    const el = frame(card(c, { q: h('div', { class: 'q small' }, c.q ?? ''), band, edge: p?.color ?? '#FFC940' }));
+    const el = frame(card(c, { q: clueText(c, 'small'), band, edge: p?.color ?? '#FFC940' }));
     // The bet, full screen, for a moment before the clue.
     if (dd) el.querySelector('main').append(ddSplash(c, c.wager, true));
     return el;
@@ -823,4 +880,4 @@ export function render(view, ctx) {
 }
 
 /** The TV page calls this when another game takes over the screen. */
-export function leave() { live = null; confetti(false); document.querySelector('.bw-reacts')?.remove(); }
+export function leave() { live = null; confetti(false); stopClip(); document.querySelector('.bw-reacts')?.remove(); }

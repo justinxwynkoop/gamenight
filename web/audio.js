@@ -151,6 +151,8 @@ export const audio = {
   /** True while the browser is still holding audio back (waiting for a click or key press). */
   get blocked() { return !!ctx && ctx.state !== 'running'; },
   get enabled() { return cfg.enabled; },
+  /** The host's volume (0 to 1), or 0 with the sound off: for a clue's sound or video. */
+  get level() { return cfg.enabled ? cfg.volume : 0; },
   play(name) {
     if (!cfg.enabled || cfg.volume <= 0) return;
     const c = ensure();

@@ -19,7 +19,7 @@ const modules = {};
 const loaded = {};   // id -> module, once it has loaded (so sound cues can run without waiting)
 const load = (id) => (modules[id] ??= import(`/games/${id}/tv.js`).then((m) => (loaded[id] = m)));
 const sound = { play: (n) => audio.play(n), music: (n, o) => audio.music(n, o), stopMusic: (owner) => audio.stopMusic(owner), musicPlaying: () => audio.musicPlaying,
-  speak: (text, done) => audio.speak(text, done), stopSpeaking: () => audio.stopSpeaking() };
+  speak: (text, done) => audio.speak(text, done), stopSpeaking: () => audio.stopSpeaking(), volume: () => audio.level };
 const badge = h('div', { class: 'soundbadge hidden' }, '🔇 Click or press any key to turn sound on');
 document.body.append(badge);
 audio.init();

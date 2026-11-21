@@ -305,6 +305,29 @@ struct JeoClue: Decodable, Equatable {
     var open: Int?
     /// Players who already took a shot at this clue.
     var tried: [String]
+    /// A picture, sound or video that goes with the clue.
+    var media: JeoMedia?
+}
+
+/// A clue's picture, sound or video: a link to a free file on the web (games/jeopardy/game.js, cleanMedia).
+struct JeoMedia: Decodable, Equatable {
+    /// "image", "audio" or "video".
+    var kind: String
+    var url: String
+    /// The part of a sound or video to play, in seconds.
+    var start: Double?
+    var end: Double?
+    /// Who made it, and its licence.
+    var credit: String?
+
+    var isImage: Bool { kind == "image" }
+    /// A sound or video, which the TV plays before the buzzers open.
+    var plays: Bool { kind == "audio" || kind == "video" }
+    /// Never more than 30 seconds, like the web TV.
+    var span: (start: Double, end: Double) {
+        let from = max(0, start ?? 0)
+        return (from, min(end ?? from + 30, from + 30))
+    }
 }
 
 struct JeoBuzz: Decodable, Equatable, Identifiable {

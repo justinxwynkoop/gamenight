@@ -1,6 +1,7 @@
 // Drives the real phone and host pages in a real browser (Chromium via Playwright) against a stand-in for Supabase
 // Realtime, with the engine playing the TV. Catches things Node tests cannot, such as browser-only errors.
 //   node scripts/e2e-phone.mjs          (needs Playwright: it is preinstalled in the cloud sandbox)
+import assert from 'node:assert/strict';
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
@@ -42,7 +43,8 @@ const sounds = {
   list: () => [...soundFiles].filter(([, f]) => f.pieces.filter(Boolean).length === f.total).map(([k, f]) => { const [game, name] = k.split('__'); return { game, name, ext: f.ext, bytes: Buffer.from(f.pieces.join(''), 'base64').length }; }),
   remove: (game, name) => { soundFiles.delete(`${game}__${name}`); },
 };
-engine = createEngine({ games: GAMES, pin: '4321', sounds, code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud }, jeopardy: { 'family-night': jeo } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p) });
+let savedSets = {};
+engine = createEngine({ games: GAMES, pin: '4321', sounds, code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud }, jeopardy: { 'family-night': jeo } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p), onSetsChanged: (c) => { savedSets = c; } });
 tv.join(engine.relayTopic); tv.connect();
 const ticker = setInterval(() => engine.tick(), 250);
 
@@ -200,6 +202,21 @@ Fall - 25`),
   });
   await until(() => engine.listSets('feud').some((x) => x.id === 'dropped-set'), 'the dropped file to be imported');
   console.log('editor: a file dropped on the folded import card was imported');
+
+  // A picture added to a Jeopardy clue by pasting its link, then saved: the set keeps it, and the TV can show it.
+  await editor.route('https://pictures.example.com/**', (r) => r.fulfill({ contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
+  await editor.goto(`${base}/editor?game=jeopardy&r=ABCD`);
+  await editor.locator('select[aria-label="Question set"]').waitFor();
+  await editor.locator('select[aria-label="Question set"]').selectOption({ label: jeo.title });
+  await editor.getByRole('button', { name: 'Paste a link' }).first().click();
+  await editor.locator('input[aria-label="Media link"]').fill('https://pictures.example.com/flag.png');
+  await editor.locator('input[aria-label="Credit"]').fill('Test picture, CC0');
+  await until(async () => (await editor.locator('img.media-prev').count()) === 1, 'the picture preview');
+  await editor.getByRole('button', { name: 'Save' }).click();
+  await until(() => savedSets.jeopardy?.['family-night']?.categories?.[0]?.clues?.[0]?.media?.url === 'https://pictures.example.com/flag.png', 'the set to be saved with the picture');
+  assert.equal(savedSets.jeopardy['family-night'].categories[0].clues[0].media.credit, 'Test picture, CC0');
+  console.log('editor: a picture link was added to a Jeopardy clue and saved');
 
   if (process.env.SHOT_DIR) {   // pictures of the editors at phone size, for a look
     const shot = (name) => editor.screenshot({ path: `${process.env.SHOT_DIR}/${name}.png` });
