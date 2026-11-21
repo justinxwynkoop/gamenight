@@ -6,7 +6,10 @@ A build made on GitHub's machines (which is how every TestFlight build is made) 
 
 ## Your own sounds, from the host page (the easy way)
 
-Open the host page, then **Settings → Your own sounds**. Choose the game, which sound it is (the lobby music, a strike, the
+Open the host page, then **Settings → Your own sounds**. To add a whole folder of files, use **Add several at once**: choose
+all the files together and the page guesses the game and sound from each name (`family_feud_wrong_answer.mp3` is Family Feud's
+strike, `jeopardy_main_theme.mp3` is Jeopardy's lobby music). Check the guesses, change any that are wrong, set a file
+you do not want to "Skip", and tap **Add to the TV**. Or add one at a time: choose the game, which sound it is (the lobby music, a strike, the
 Daily Double...), pick the file on your phone or computer and tap **Add to the TV**. The Apple TV keeps it in its Caches
 folder (the one place an Apple TV app may write; the Apple TV only clears it when it is nearly out of space, and the list
 then shows empty so you can add the sound again), so:

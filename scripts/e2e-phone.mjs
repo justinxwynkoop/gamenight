@@ -174,6 +174,19 @@ try {
   console.log(`host page → Settings → sent a ${audio.length / 1024} KB sound to the TV in pieces, and it is listed`);
   await host.getByRole('button', { name: 'Remove', exact: true }).click();
   await until(() => sounds.list().length === 0, 'the sound to be removed');
+  // Several at once: the page guesses the game and sound from each file name; a file with no clue is skipped.
+  const clip = (name) => ({ name, mimeType: 'audio/mpeg', buffer: Buffer.alloc(30 * 1024, 3) });
+  await host.locator('input[type=file][aria-label="Several sound files"]').setInputFiles([clip('jeopardy_main_theme.mp3'), clip('family_fued_wrong_answer.mp3'), clip('mystery.mp3')]);
+  await until(async () => (await host.locator('select[aria-label^="Sound for"]').count()) === 3, 'a row for each of the three files');
+  const guessed = await host.locator('select[aria-label^="Sound for"]').evaluateAll((els) => els.map((e) => `${e.getAttribute('aria-label')}=${e.value}`));
+  if (!guessed.includes('Sound for jeopardy_main_theme.mp3=lobby') || !guessed.includes('Sound for family_fued_wrong_answer.mp3=strike') || !guessed.includes('Sound for mystery.mp3=')) fail(`the guesses are ${JSON.stringify(guessed)}`);
+  await host.getByRole('button', { name: 'Add 2 to the TV' }).click();
+  await until(() => sounds.list().length === 2, 'the two guessed sounds to reach the TV');
+  const got = sounds.list().map((f) => `${f.game}/${f.name}`).sort();
+  if (got.join() !== 'feud/strike,jeopardy/lobby') fail(`the TV kept ${got}`);
+  console.log('host page → several files at once: guessed Jeopardy lobby and Feud strike from their names, skipped the unknown one');
+  for (const f of sounds.list()) await host.getByRole('button', { name: 'Remove', exact: true }).first().click();
+  await until(() => sounds.list().length === 0, 'the two sounds to be removed');
   await host.getByRole('button', { name: /^Game$/ }).click();
 
   // From the host page, the Questions tab opens the editor with the PIN and room already known (one address to remember).
