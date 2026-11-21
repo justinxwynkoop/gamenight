@@ -144,7 +144,15 @@ struct JeoRemoteBar: View {
     @Environment(\.jeoOpenMenu) private var openMenu
     let game: JeopardyState
     var onNewRoom: (() -> Void)?
+    /// Called when Left is pressed on the first button of the bar, so the remote can go back up into the screen above
+    /// instead of stopping at the corner. (Up is handled by the focus sections of the screens.)
+    var goBack: (() -> Void)?
     @FocusState private var focus: String?
+
+    /// The button at the left end of the bar.
+    private var firstButton: String {
+        JeoRemote.bar(game).first?.id ?? (game.phase == .lobby && onNewRoom != nil ? "newroom" : "menu")
+    }
 
     var body: some View {
         let items = JeoRemote.bar(game)
@@ -174,6 +182,9 @@ struct JeoRemoteBar: View {
         }
         .frame(height: 84)
         .focusSection()
+        .onMoveCommand { direction in
+            if direction == .left, focus == firstButton { goBack?() }
+        }
         .onAppear { claim() }
         .onChange(of: JeoRemote.barKey(game)) { _, _ in claim() }
     }
