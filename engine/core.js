@@ -12,14 +12,16 @@
 // saved                     the text save() last gave (or null)
 // memory                    what the games keep between rooms on this TV (which clues it has shown), as onMemory last gave it
 // onMemory(data)            the games' memory changed: keep this object (it is plain JSON) and pass it back as `memory`
+// sounds                    where the family's own sound files are kept (see engine/sounds.js), or null if this host cannot keep any
 import { Room, memoryStore } from '../room.js';
 import { createHub } from './hub.js';
 import { createRelayHost, newRoomCode } from './relay.js';
 import { GameError } from '../lib.js';
+import { soundOps } from './sounds.js';
 
 const SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
 
-export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, userSets = {}, onSetsChanged = () => {}, memory = null, onMemory = () => {}, onError, code = newRoomCode(), broadcast = null }) {
+export function createEngine({ games, pin, now, send, save = () => {}, saved = null, content = {}, userSets = {}, onSetsChanged = () => {}, memory = null, onMemory = () => {}, sounds = null, onError, code = newRoomCode(), broadcast = null }) {
   // sets[gameId][setId] = set: the sets that came with the app, then what the family saved or deleted (userSets,
   // { game: { id: set | null } }, where null means deleted). onSetsChanged(changes) gets the family's changes to keep.
   const sets = {};
@@ -60,6 +62,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
   const clock = now ?? (() => room.now());
   let relay = null;
   // What the host page asks for besides room actions (a home server answers these over HTTP; here they go through the hub).
+  const sound = soundOps(sounds);
   const rpc = (op, args) => {
     switch (op) {
       case 'listSets': return games[args.game] ? room.listContent(args.game) : [];
@@ -89,6 +92,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
         onSetsChanged(changes);
         return { ok: true };
       }
+      case 'listSounds': case 'putSound': case 'deleteSound': return sound[op](args);
       default: throw new GameError('Not available here');
     }
   };

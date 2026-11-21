@@ -3,6 +3,7 @@
 // come from the active game's module (/games/<id>/host.js).
 import { h, money, scoreText, connect, store, unitById, apiFetch, keepAwake } from './common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow } from './ui.js';
+import { soundsCard } from './sounds-card.js';
 
 keepAwake();
 
@@ -348,6 +349,7 @@ function settingsTab(game) {
     toggle({ label: 'Sound effects', sub: 'Buzzers, right and wrong answers, countdown ticks', checked: settings.sound, onchange: (on) => act('setRoomSettings', { sound: on }) }),
     h('label', { class: 'field' }, h('span', {}, `Volume ${settings.volume}%`), vol),
     button({ label: 'Play a test sound on the TV', icon: 'volume', onclick: () => act('testSound') })));
+  cards.push(soundsCard());
   cards.push(card(eyebrow('Players'),
     toggle({ label: 'Let new players join during a game', sub: 'Off: once a game starts, only the players already in can come back', checked: !!settings.lateJoin, onchange: (on) => act('setRoomSettings', { lateJoin: on }) })));
   cards.push(card(eyebrow('Questions'), h('p', { class: 'dim' }, 'Write your own boards, or edit the ones that came with the game.'),

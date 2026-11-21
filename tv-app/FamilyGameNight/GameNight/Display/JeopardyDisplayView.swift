@@ -109,6 +109,10 @@ struct JeopardyDisplayView: View {
         .task(id: client.address) {
             await sound.loadCustomSounds(from: client.address)
         }
+        // The host added or removed one of the family's own sounds from the host page.
+        .onChange(of: client.soundsVersion) { _, _ in
+            Task { await sound.loadCustomSounds(from: client.address) }
+        }
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
             sound.activate(state: client.state, receivedAt: client.stateReceivedAt)

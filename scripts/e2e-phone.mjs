@@ -36,8 +36,15 @@ const relay = { url: `http://127.0.0.1:${sb.address().port}`, key: 'sb_publishab
 // --- the TV: the engine, on the relay ---
 let engine;
 const tv = new Realtime({ ...relay, WebSocketImpl: WebSocket, onBroadcast: (t, e, p) => engine.onBroadcast(t, e, p) });
+// A stand-in for the Apple TV's store of the family's own sounds.
+const soundFiles = new Map();
+const sounds = {
+  save: ({ game, name, ext, index, total, data }) => { const k = `${game}__${name}`; const f = soundFiles.get(k)?.total === total ? soundFiles.get(k) : { ext, total, pieces: [] }; f.pieces[index] = data; soundFiles.set(k, f); return f.pieces.filter(Boolean).length === total; },
+  list: () => [...soundFiles].filter(([, f]) => f.pieces.filter(Boolean).length === f.total).map(([k, f]) => { const [game, name] = k.split('__'); return { game, name, ext: f.ext, bytes: Buffer.from(f.pieces.join(''), 'base64').length }; }),
+  remove: (game, name) => { soundFiles.delete(`${game}__${name}`); },
+};
 let savedSets = {};
-engine = createEngine({ games: GAMES, pin: '4321', code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud }, jeopardy: { 'family-night': jeo } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p), onSetsChanged: (c) => { savedSets = c; } });
+engine = createEngine({ games: GAMES, pin: '4321', sounds, code: 'ABCD', now: () => performance.now(), content: { feud: { basics: feud }, jeopardy: { 'family-night': jeo } }, send: () => {}, broadcast: (t, e, p) => tv.send(t, e, p), onSetsChanged: (c) => { savedSets = c; } });
 tv.join(engine.relayTopic); tv.connect();
 const ticker = setInterval(() => engine.tick(), 250);
 
@@ -127,6 +134,21 @@ try {
   await host.getByText(/family feud/i).first().click();
   await until(() => engine.room.gameId === 'feud', 'the host to choose Family Feud');
   console.log('host chose Family Feud through the relay');
+
+  // The Settings tab has a card to send your own sounds to the TV: pick a file and it is kept there, in pieces if it is big.
+  await host.getByRole('button', { name: 'Settings', exact: true }).click();
+  await until(async () => /your own sounds/i.test(await host.locator('body').innerText()), 'the sounds card on the host page');
+  const audio = Buffer.alloc(200 * 1024, 7);   // bigger than one piece, so it travels in three
+  await host.locator('input[type=file][aria-label="Sound file"]').setInputFiles({ name: 'my-theme.mp3', mimeType: 'audio/mpeg', buffer: audio });
+  await host.getByRole('button', { name: 'Add to the TV' }).click();
+  await until(() => sounds.list().length === 1, 'the sound to reach the TV');
+  const kept = sounds.list()[0];
+  if (kept.game !== 'shared' || kept.name !== 'lobby' || kept.ext !== 'mp3' || kept.bytes !== audio.length) fail(`the TV kept ${JSON.stringify(kept)}`);
+  await until(async () => /lobby\.mp3/i.test(await host.locator('body').innerText()), 'the new sound to be listed on the host page');
+  console.log(`host page → Settings → sent a ${audio.length / 1024} KB sound to the TV in pieces, and it is listed`);
+  await host.getByRole('button', { name: 'Remove', exact: true }).click();
+  await until(() => sounds.list().length === 0, 'the sound to be removed');
+  await host.getByRole('button', { name: /^Game$/ }).click();
 
   // From the host page, the Questions tab opens the editor with the PIN and room already known (one address to remember).
   await host.getByRole('button', { name: 'Questions', exact: true }).click();

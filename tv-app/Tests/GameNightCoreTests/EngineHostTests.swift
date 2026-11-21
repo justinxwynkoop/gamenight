@@ -167,6 +167,45 @@ final class EngineHostTests: XCTestCase {
         XCTAssertEqual(game.archiveLoading, false)
     }
 
+    func testTheHostPageSendsASoundToTheTVAndItIsKept() throws {
+        let wire = Wire()
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tv-sounds-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = CustomSoundStore(directory: directory)
+        var changed = 0
+        let host = try EngineHost(script: Self.script, pin: "4321", onSend: { wire.sent.append(($0, $1)) }, sounds: store, onSounds: { changed += 1 })
+        say(host, "h", #"{"t":"hello","role":"host","pin":"4321"}"#)
+
+        func ask(_ id: Int, _ op: String, _ args: String) throws -> [String: Any] {
+            say(host, "h", #"{"t":"rpc","id":\#(id),"op":"\#(op)","args":\#(args)}"#)
+            let reply = wire.messages(to: "h").last { ($0["t"] as? String) == "rpc-reply" && ($0["id"] as? Int) == id }
+            return try XCTUnwrap(reply)
+        }
+        let listed = try ask(1, "listSounds", "{}")
+        XCTAssertEqual((listed["data"] as? [String: Any])?["available"] as? Bool, true)
+
+        // "AQID" is the bytes 1, 2, 3 and "BAUG" is 4, 5, 6.
+        let first = try ask(2, "putSound", #"{"game":"jeopardy","name":"lobby","ext":"mp3","index":0,"total":2,"data":"AQID"}"#)
+        XCTAssertEqual((first["data"] as? [String: Any])?["done"] as? Bool, false)
+        XCTAssertEqual(changed, 0)
+        let last = try ask(3, "putSound", #"{"game":"jeopardy","name":"lobby","ext":"mp3","index":1,"total":2,"data":"BAUG"}"#)
+        XCTAssertEqual((last["data"] as? [String: Any])?["done"] as? Bool, true)
+        XCTAssertEqual(changed, 1, "the player is told to load the sounds again")
+        XCTAssertEqual(store.loadAll()["jeopardy/lobby"], Data([1, 2, 3, 4, 5, 6]))
+
+        let again = try ask(4, "listSounds", "{}")
+        let files = (again["data"] as? [String: Any])?["files"] as? [[String: Any]]
+        XCTAssertEqual(files?.first?["name"] as? String, "lobby")
+
+        let refused = try ask(5, "putSound", #"{"game":"jeopardy","name":"bogus","ext":"mp3","index":0,"total":1,"data":"AQID"}"#)
+        XCTAssertEqual(refused["ok"] as? Bool, false)
+
+        let removed = try ask(6, "deleteSound", #"{"game":"jeopardy","name":"lobby"}"#)
+        XCTAssertEqual(removed["ok"] as? Bool, true)
+        XCTAssertEqual(store.list(), [])
+        XCTAssertEqual(host.errors, [])
+    }
+
     func testTheRoomIsSavedAndComesBack() throws {
         let wire = Wire()
         let host = try makeHost(wire)

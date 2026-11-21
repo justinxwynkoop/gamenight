@@ -4,7 +4,23 @@ Sound files and some question sets are not ours to publish, so they are **never 
 are copied into the app on your Mac, where git ignores them, and Xcode packs them into the app the next time you run it.
 A build made on GitHub's machines (the cloud build, including the GitHub route to TestFlight) will not contain them, so archive from your Mac when you want them ([TESTFLIGHT.md](TESTFLIGHT.md)).
 
-## Your own sounds
+## Your own sounds, from the host page (the easy way)
+
+Open the host page, then **Settings → Your own sounds**. Choose the game, which sound it is (the lobby music, a strike, the
+Daily Double...), pick the file on your phone or computer and tap **Add to the TV**. The Apple TV keeps it in its own
+storage, so:
+
+- it works in **every build**, including the ones GitHub makes by itself, and it stays through app updates;
+- the file goes **only to your TV**, over the same link the phones use. It is not put on GitHub or any server;
+- you do not need a Mac, Xcode or a new TestFlight build, and a new sound plays straight away;
+- adding the same sound again replaces it, and **Remove** goes back to the built-in one.
+
+Files can be `.mp3`, `.m4a` or `.wav` (about 7 MB at most). A file for one game beats an "Every game" file of the same name,
+and a sound added here beats one packed into the app with the Mac script below. Needs the Apple TV app (the website's TV page
+cannot keep files). Please only add sounds you have the right to use.
+
+## Your own sounds, from your Mac (packed into the app)
+
 
 ```bash
 Tools/install-sounds.sh <folder with your sounds>

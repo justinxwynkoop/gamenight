@@ -3922,12 +3922,84 @@
     };
   }
 
+  // engine/sounds.js
+  var SOUND_GAMES = [
+    { id: "shared", label: "Every game" },
+    { id: "jeopardy", label: "Jeopardy" },
+    { id: "feud", label: "Family Feud" }
+  ];
+  var SOUND_NAMES = [
+    { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud"] },
+    { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy"] },
+    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud"] },
+    { name: "buzz", label: "Someone buzzes in", games: ["shared", "jeopardy"] },
+    { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud"] },
+    { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy"] },
+    { name: "timeup", label: "Time's up", games: ["shared", "jeopardy", "feud"] },
+    { name: "tick", label: "Countdown tick (last five seconds)", games: ["shared", "jeopardy", "feud"] },
+    { name: "reveal", label: "Answer shown, nobody got it", games: ["shared", "jeopardy"] },
+    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy"] },
+    { name: "final", label: "Final Jeopardy begins", games: ["shared", "jeopardy"] },
+    { name: "fanfare", label: "The winner", games: ["shared", "jeopardy"] },
+    { name: "pick", label: "A clue is picked", games: ["jeopardy"] },
+    { name: "board", label: "The board fills in", games: ["jeopardy"] },
+    { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy"] },
+    { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy"] },
+    { name: "join", label: "A player joins", games: ["jeopardy"] },
+    { name: "applause", label: "End of a round, and the winner", games: ["jeopardy"] },
+    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud"] },
+    { name: "ding", label: "A survey answer flips over", games: ["feud"] },
+    { name: "strike", label: "A strike (the big X)", games: ["feud"] },
+    { name: "strikeout", label: "The third strike", games: ["feud"] },
+    { name: "faceoff", label: "A face-off player buzzes in", games: ["feud"] },
+    { name: "winner", label: "The winning jingle", games: ["feud"] },
+    { name: "zero", label: "A Fast Money answer worth nothing", games: ["feud"] },
+    { name: "fmpoints", label: "Fast Money points are shown", games: ["feud"] },
+    { name: "fastmoney", label: "Fast Money is about to begin", games: ["feud"] }
+  ];
+  var SOUND_EXTENSIONS = ["mp3", "m4a", "wav"];
+  var MAX_PIECE = 17e4;
+  var MAX_PIECES = 64;
+  function check(args) {
+    const game = String(args.game ?? "");
+    const name = String(args.name ?? "");
+    if (!SOUND_GAMES.some((g) => g.id === game)) throw new GameError("Choose Every game, Jeopardy or Family Feud");
+    if (!SOUND_NAMES.some((n) => n.name === name && n.games.includes(game))) throw new GameError(`${game} has no sound called "${name}"`);
+    return { game, name };
+  }
+  function soundOps(sounds) {
+    return {
+      listSounds() {
+        return { available: !!sounds, files: sounds ? sounds.list() : [], games: SOUND_GAMES, names: SOUND_NAMES, extensions: SOUND_EXTENSIONS };
+      },
+      putSound(args) {
+        if (!sounds) throw new GameError("This TV cannot keep your own sounds");
+        const { game, name } = check(args);
+        const ext = String(args.ext ?? "").toLowerCase();
+        if (!SOUND_EXTENSIONS.includes(ext)) throw new GameError("The Apple TV plays .mp3, .m4a and .wav files");
+        const index = Number(args.index);
+        const total = Number(args.total);
+        if (!Number.isInteger(total) || total < 1 || total > MAX_PIECES) throw new GameError("That file is too big (the limit is about 7 MB)");
+        if (!Number.isInteger(index) || index < 0 || index >= total) throw new GameError("Bad piece number");
+        const data = String(args.data ?? "");
+        if (!data || data.length > MAX_PIECE || /[^A-Za-z0-9+/=]/.test(data)) throw new GameError("Bad piece of the file");
+        return { ok: true, done: !!sounds.save({ game, name, ext, index, total, data }) };
+      },
+      deleteSound(args) {
+        if (!sounds) throw new GameError("This TV cannot keep your own sounds");
+        const { game, name } = check(args);
+        sounds.remove(game, name);
+        return { ok: true };
+      }
+    };
+  }
+
   // engine/core.js
   var SET_ID = /^[a-z0-9][a-z0-9-]{0,60}$/;
   function createEngine({ games, pin, now, send, save = () => {
   }, saved = null, content = {}, userSets = {}, onSetsChanged = () => {
   }, memory = null, onMemory = () => {
-  }, onError, code = newRoomCode(), broadcast = null }) {
+  }, sounds = null, onError, code = newRoomCode(), broadcast = null }) {
     const sets = {};
     for (const [gameId, byId] of Object.entries(content)) sets[gameId] = { ...byId };
     const changes = {};
@@ -3978,6 +4050,7 @@
     const pinOk = (given) => String(given ?? "") === String(pin);
     const clock = now ?? (() => room.now());
     let relay = null;
+    const sound = soundOps(sounds);
     const rpc = (op, args) => {
       var _a, _b, _c;
       switch (op) {
@@ -4012,6 +4085,10 @@
           onSetsChanged(changes);
           return { ok: true };
         }
+        case "listSounds":
+        case "putSound":
+        case "deleteSound":
+          return sound[op](args);
         default:
           throw new GameError("Not available here");
       }
@@ -4090,6 +4167,12 @@
         onMemory: (m) => {
           if (__native.saveMemory) __native.saveMemory(JSON.stringify(m));
         },
+        // The family's own sounds, kept by the app (sent from the host page, see engine/sounds.js).
+        sounds: __native.saveSoundChunk ? {
+          save: (chunk) => !!__native.saveSoundChunk(JSON.stringify(chunk)),
+          list: () => JSON.parse(__native.listSounds()),
+          remove: (game, name) => __native.removeSound(game, name)
+        } : null,
         now: () => performance.now(),
         code: o.code || void 0,
         broadcast: (topic, event, payload) => __native.broadcast(topic, event, JSON.stringify(payload)),

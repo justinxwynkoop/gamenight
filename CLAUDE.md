@@ -34,7 +34,7 @@ the TV, played from phones. Everything is in this one repository. Read `README.m
   browser TV (`public/games/<game>/tv.js`); record new fixtures with `scripts/record-tv-fixtures.mjs` when it changes.
 - The Supabase key in `relay.config.json` and `RelayConfig.swift` is the publishable one and is public by design. Never
   commit a secret key, and never write the App Store Connect secrets anywhere but GitHub's repository secrets.
-- No copyrighted show audio or branding goes into the repository; families can add their own sound files locally
+- No copyrighted show audio or branding goes into the repository; families can add their own sound files, from the host page (kept on the TV, `engine/sounds.js`) or locally on a Mac
   (`tv-app/docs/CUSTOM-FILES.md`). The only audio committed is the CC0 set (`public/builtin-sounds/{jeopardy,shared}/`
   and `tv-app/.../Sounds/{jeopardy,shared}__*.m4a`, credits beside them); keep the two copies in step.
 - TestFlight build numbers are `100 + run number` of the "Send to TestFlight" workflow; they only ever go up.
