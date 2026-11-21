@@ -101,7 +101,7 @@ function draw() {
   else if (!info.available) {
     kids.push(h('p', { class: 'dim' }, info.error ?? 'This TV cannot keep your own sounds. The Apple TV app can.'));
   } else {
-    kids.push(h('p', { class: 'dim' }, 'Add music and sounds here and the TV keeps them. They stay on the TV, not on the internet, and they stay through app updates.'));
+    kids.push(h('p', { class: 'dim' }, 'Add music and sounds here and the TV keeps them. They stay on the TV, not on the internet, and they stay through app updates. (If the Apple TV runs short of space it can clear them; the list below then shows what is left, and you can add them again.)'));
     const label = (game, name) => `${info.games.find((g) => g.id === game)?.label ?? game}: ${info.names.find((n) => n.name === name)?.label ?? name}`;
     if (info.files.length) {
       kids.push(h('div', { class: 'list' }, info.files.map((f) => h('div', { class: 'rowi' },
