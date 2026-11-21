@@ -154,7 +154,14 @@ test('server end to end', async (t) => {
     await host.until((c) => c.view?.game?.secret?.answer, 'host sees the answer');
     const answer = host.view.game.secret.answer;
     assert.equal(tv.view.game.clue.answer, null);
-    for (const c of [tv, ann, bo]) assert.ok(!c.raw.some((r) => r.includes(JSON.stringify(answer))), 'answer leaked');
+    // Look at where an answer would be (the clue's own fields, the Final, the host's secret), not anywhere in the text: a short
+    // answer such as "Mars" can also be a category name or a pack title on the TV, which is not a leak.
+    const leaks = (c) => c.raw.some((r) => {
+      const m = JSON.parse(r);
+      const g = m.t === 'state' ? m.view?.game : null;
+      return !!g && (g.secret != null || Object.values(g.clue ?? {}).includes(answer) || g.final?.answer === answer);
+    });
+    for (const c of [tv, ann, bo]) assert.ok(!leaks(c), 'answer leaked');
   });
 
   await t.test('simultaneous buzzes produce exactly one winner, and the other is timed too', async () => {
