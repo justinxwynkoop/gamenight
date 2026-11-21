@@ -967,8 +967,22 @@ test('real-show clues that need a picture or a sound are left out; harmless stag
   assert.ok(names.length >= 14 && !names.includes('MAPS'), 'the column with a picture clue is not played');
 });
 
-test('the TV reads the clue out loud and the buzzers open a moment after its voice stops', () => {
+test('the TV does not talk: reading aloud is off by default, and a room saved with it on comes back off', () => {
+  const { room, g } = setup();
+  assert.equal(g.publicView().readAloud, false);
+  assert.equal(g.readsAloud(), false);
+  assert.equal(g.publicView().readsAloud, false);
+  g.act('setReadAloud', { on: true });
+  const saved = JSON.parse(JSON.stringify(room));
+  assert.equal(saved.game.settings.readAloud, true, 'the old saves have it on');
+  const again = new Room({ games: GAMES, now: () => 5000, loadContent: (x, id) => sets[id] ?? null, listContent: () => [] });
+  assert.ok(again.restore(saved));
+  assert.equal(again.game.readsAloud(), false);
+});
+
+test('if the voice is switched on (the engine still supports it, the lobby has no switch), the buzzers open a moment after it stops', () => {
   const { g, clock } = setup();
+  g.act('setReadAloud', { on: true });
   assert.equal(g.publicView().readAloud, true);
   begin(g);
   const b = g.board();

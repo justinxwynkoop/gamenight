@@ -185,7 +185,7 @@ export class JeopardyGame {
     this.ownPacks = [];
     this.packs = [];
     this.selected = new Set();
-    this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: true };
+    this.settings = { answerTime: 10, hostJudges: false, asWritten: null, finalForAll: true, readAloud: false };   // the TV does not read clues out loud (no text-to-speech); the option stays in the engine, off
     this.era = 'any';
     this.archiveSeason = null;
     this.archiveRequest = null;     // { id, era } while a new season is wanted; the app downloads it
@@ -1563,7 +1563,7 @@ export class JeopardyGame {
     };
   }
   restore(data) {
-    this.settings = { ...this.settings, ...(data.settings ?? {}) };
+    this.settings = { ...this.settings, ...(data.settings ?? {}), readAloud: false };   // a room saved while the voice was on does not bring it back
     this.era = data.era ?? 'any';
     this.played = new Set(data.played ?? []);
     this.selected = new Set(data.selected ?? []);
