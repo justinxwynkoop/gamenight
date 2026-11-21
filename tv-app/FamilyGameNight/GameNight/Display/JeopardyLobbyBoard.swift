@@ -619,6 +619,7 @@ struct JeoBoardLine: View {
         .padding(.horizontal, 26).padding(.vertical, 18)
         .background(RoundedRectangle(cornerRadius: 24).fill(BW.surface))
         .overlay(RoundedRectangle(cornerRadius: 24).stroke(BW.line, lineWidth: 1))
+        .focusSection()
     }
 }
 
@@ -707,6 +708,9 @@ struct JeoSeats: View {
                 }
                 .buttonStyle(BWButtonStyle(fill: game.hostJudges ? BW.yellow : BW.surface2, text: game.hostJudges ? BW.ink : BW.muted, corner: 30))
             }
+            // Each row is a focus section as wide as the panel, so the remote can go up or down from anywhere in a row
+            // to the nearest button in the next one (the setting at the right end must not be the only way across).
+            .focusSection()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4), alignment: .leading, spacing: 16) {
                 ForEach(0..<seats, id: \.self) { index in
                     if index < count {
@@ -747,6 +751,7 @@ struct JeoSeats: View {
                 }
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.75), value: count)
+            .focusSection()
         }
         .task {
             // The CI screenshot job can pick a seat (DemoHooks).
@@ -910,6 +915,7 @@ struct JeoTopicShelf: View {
                     .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: 30))
                 }
             }
+            .focusSection()
             if packs.isEmpty {
                 Text(game.archiveLoading == true ? "Loading a season of the show\u{2026}" : "Nothing here yet")
                     .font(BW.body(22)).foregroundColor(BW.muted)
@@ -939,6 +945,7 @@ struct JeoTopicShelf: View {
                     .buttonStyle(BWButtonStyle(fill: pack.selected ? BW.blue : BW.surface2, text: pack.selected ? BW.text : BW.muted, corner: 20))
                 }
             }
+            .focusSection()
         }
     }
 }
@@ -998,6 +1005,7 @@ struct JeoOwnShelf: View {
                 .frame(width: 540, alignment: .leading)
                 .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 2, dash: [8, 8])))
             }
+            .focusSection()
         }
     }
 }
@@ -1034,6 +1042,8 @@ struct JeoEraPicker: View {
             }
             .font(BW.body(18)).lineLimit(1).minimumScaleFactor(0.6)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .focusSection()
     }
 }
 
@@ -1053,6 +1063,7 @@ struct JeoBoardBuilder: View {
                 small("Shuffle all", icon: "shuffle") { act("previewBoard", [:]) }
                 small("Back to topics", icon: "chevron.left") { act("clearPreview", [:]) }
             }
+            .focusSection()
             ForEach(0..<2, id: \.self) { round in
                 HStack(alignment: .top, spacing: 12) {
                     Text("R\(round + 1)").font(BW.body(20, .heavy)).foregroundColor(BW.yellow)
@@ -1077,6 +1088,8 @@ struct JeoBoardBuilder: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .focusSection()
             }
         }
     }
