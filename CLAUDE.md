@@ -3,6 +3,24 @@
 Family game night for two brothers (Jason and Justin) and their families: Jeopardy, Family Feud and Singo Night on
 the TV, played from phones. Everything is in this one repository. Read `README.md` for the layout.
 
+## Always start from a fresh pull
+
+- **Before starting any new feature or fix, pull first**: `git fetch`, check out the latest `main`, and branch from it. Jason
+  and Justin both merge into `main`, often within minutes of each other, and a stale copy is how one brother's work gets
+  overwritten by the other's.
+- **Before every merge, pull again.** If `main` has moved since the branch was last tested, merge `main` into the branch,
+  run `npm run build` and the tests, and wait for every check to pass again before merging. Never merge a branch that is
+  behind `main`.
+
+## Builds and TestFlight
+
+- **GitHub makes the Apple TV builds, from `main`, and uploads them to TestFlight by itself** (the "Send to TestFlight"
+  workflow, on every merge that changes the app, rules, engine or shipped question sets). That is the only way builds are
+  made. Do not make or upload a build from a Mac (`tv-app/Tools/upload-testflight.sh`, Xcode Archive): a Mac build from an older
+  copy of the code lands on top in TestFlight and replaces the other brother's work.
+- Sounds and music of the family's own are not part of any build. They are added from the host page (Settings → Your own
+  sounds) and kept on the TV, so they survive every build. Never commit them.
+
 ## How changes go in
 
 - Work on a branch and open a pull request into `main`. Nearly every PR is written by Claude.

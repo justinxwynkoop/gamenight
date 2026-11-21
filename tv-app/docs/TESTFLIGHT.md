@@ -1,8 +1,12 @@
 # TestFlight
 
-TestFlight installs the app on the family's Apple TVs without Xcode or a cable, and updates it by itself. This page covers
-two ways to get a build there: **from Xcode on your Mac** (simplest; includes your own sounds and extra sets) or **from
-GitHub** (a button in the Actions tab; no Mac needed, but no sounds or extra sets).
+TestFlight installs the app on the family's Apple TVs without Xcode or a cable, and updates it by itself.
+
+> **GitHub makes the builds.** Every merge to `main` that changes the app, rules, engine or question sets builds the app on
+> GitHub and uploads it to TestFlight by itself (the "Send to TestFlight" workflow). That is the way to ship. Your own sounds
+> are added from the host page (Settings → Your own sounds) and kept on the TV, so they are in every build. **Don't upload
+> from a Mac** unless GitHub's build is broken: a build from an older copy of the code lands on top in TestFlight and replaces
+> the other person's work. If you must, run `git pull` first. The two ways are described below for that case.
 
 ## What you need
 
