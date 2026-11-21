@@ -4,6 +4,14 @@ import SwiftUI
 /// 1920 x 1080 stage: a header (the wordmark, the round, the TV's own buttons and how to join), the screen for the
 /// current step of the show, and a podium for each player along the bottom. The Siri Remote can use the buttons
 /// (start, pick a clue, continue).
+/// Where the remote can be sent in the lobby panel above the bottom buttons (see `JeoRemoteBar.goBack`).
+enum JeoLobbyFocus: Hashable {
+    /// "Answers typed on phones" / "A host judges out loud".
+    case judges
+    /// "Choose questions" / "Done".
+    case boardLine
+}
+
 struct JeopardyContent: View {
     let game: JeopardyState
     let joinURL: URL?
@@ -13,6 +21,15 @@ struct JeopardyContent: View {
     let receivedAt: Date
     let act: JeoAct
     var onNewRoom: (() -> Void)?
+
+    @FocusState private var lobbyFocus: JeoLobbyFocus?
+
+    /// Left at the end of the bottom buttons goes back up into the lobby, like going backwards through a list: to
+    /// "Choose questions", or the setting above it when that button is not there.
+    private func backUpIntoLobby() {
+        lobbyFocus = .boardLine
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { if lobbyFocus == nil { lobbyFocus = .judges } }
+    }
 
     /// The opening titles, the Daily Double, the end of a round and the champion fill the screen without podiums.
     private var showPodiums: Bool {
@@ -24,8 +41,8 @@ struct JeopardyContent: View {
             backdrop
             if game.phase == .lobby {
                 VStack(spacing: 16) {
-                    JeoLobby(game: game, joinURL: joinURL, hostURL: hostURL, roomCode: roomCode)
-                    JeoRemoteBar(game: game, onNewRoom: onNewRoom)
+                    JeoLobby(game: game, joinURL: joinURL, hostURL: hostURL, roomCode: roomCode, focus: $lobbyFocus)
+                    JeoRemoteBar(game: game, onNewRoom: onNewRoom, goBack: backUpIntoLobby)
                 }
                 .padding(.horizontal, 60)
                 .padding(.vertical, 40)
@@ -438,6 +455,7 @@ struct JeoLobby: View {
     let joinURL: URL?
     var hostURL: URL?
     let roomCode: String?
+    let focus: FocusState<JeoLobbyFocus?>.Binding
     /// The question chooser is open in place of the players (the "Choose questions" button). A board preview opens it too.
     /// The CI screenshot job can open it on a shelf (DemoHooks).
     @State private var packsOpen = DemoHooks.shelf != nil
@@ -454,13 +472,13 @@ struct JeoLobby: View {
                     if !choosing {
                         hero
                         JeoLobbySteps(hostJudges: game.hostJudges)
-                        JeoSeats(game: game)
+                        JeoSeats(game: game, focus: focus)
                             .frame(maxHeight: .infinity, alignment: .top)
                     } else {
                         packsPanel
                             .frame(maxHeight: .infinity, alignment: .top)
                     }
-                    if !hosted { JeoBoardLine(game: game, choosing: choosing) { packsOpen.toggle() } }
+                    if !hosted { JeoBoardLine(game: game, choosing: choosing, focus: focus) { packsOpen.toggle() } }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .focusSection()
@@ -470,6 +488,9 @@ struct JeoLobby: View {
                     .frame(maxHeight: .infinity)
             }
             .frame(maxHeight: .infinity)
+            // The whole panel, QR code side included, is one focus section. The bottom buttons (New room code, Menu)
+            // sit under the QR code, where there are no buttons, so without this "up" from them found nothing.
+            .focusSection()
         }
         .animation(.easeInOut(duration: 0.25), value: choosing)
     }
@@ -560,6 +581,7 @@ struct JeoLobbySteps: View {
 struct JeoBoardLine: View {
     let game: JeopardyState
     let choosing: Bool
+    let focus: FocusState<JeoLobbyFocus?>.Binding
     let toggle: () -> Void
 
     private var what: String {
@@ -614,6 +636,7 @@ struct JeoBoardLine: View {
                     .padding(.horizontal, 22).padding(.vertical, 12)
                 }
                 .buttonStyle(BWButtonStyle(fill: BW.surface2, text: BW.text, corner: 30))
+                .focused(focus, equals: .boardLine)
             }
         }
         .padding(.horizontal, 26).padding(.vertical, 18)
@@ -685,6 +708,7 @@ struct JeoJoinCard: View {
 struct JeoSeats: View {
     @Environment(\.jeoAct) private var act
     let game: JeopardyState
+    let focus: FocusState<JeoLobbyFocus?>.Binding
     /// The seat picked with the remote: make that player captain, or remove them.
     @State private var chosen: JeoPlayer?
 
@@ -707,6 +731,7 @@ struct JeoSeats: View {
                     .padding(.horizontal, 16).padding(.vertical, 8)
                 }
                 .buttonStyle(BWButtonStyle(fill: game.hostJudges ? BW.yellow : BW.surface2, text: game.hostJudges ? BW.ink : BW.muted, corner: 30))
+                .focused(focus, equals: .judges)
             }
             // Each row is a focus section as wide as the panel, so the remote can go up or down from anywhere in a row
             // to the nearest button in the next one (the setting at the right end must not be the only way across).
