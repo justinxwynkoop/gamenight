@@ -322,7 +322,8 @@ struct JeoBuzzNow: View {
     }
 }
 
-/// Everyone who buzzed at one opening of the buzzers, fastest first, with their time.
+/// Everyone who buzzed at one opening of the buzzers, fastest first: a ranked list, in two columns once there are more
+/// than four players, with each time to the thousandth of a second and how far behind the fastest it was.
 struct JeoBuzzChips: View {
     let game: JeopardyState
     let clue: JeoClue
@@ -332,21 +333,30 @@ struct JeoBuzzChips: View {
     var body: some View {
         let list = (clue.buzzes ?? []).filter { ($0.open ?? 1) == opening }
         if !list.isEmpty {
-            HStack(spacing: 12) {
+            let best = list[0].ms
+            VStack(spacing: 10) {
                 if label {
-                    Text("BUZZ TIMES").font(BW.body(24, .heavy)).kerning(3.8).foregroundColor(BW.soft).padding(.trailing, 8)
+                    Text("BUZZ TIMES").font(BW.body(22, .heavy)).kerning(3.5).foregroundColor(BW.soft)
                 }
-                ForEach(Array(list.prefix(6).enumerated()), id: \.element.id) { index, buzz in
-                    let player = game.player(buzz.pid)
-                    HStack(spacing: 10) {
-                        BWAvatar(name: player?.name ?? "?", color: Color(playerHex: player?.color ?? "#AEB3D6"), size: 36)
-                        Text(player?.name ?? "Someone").font(BW.body(26, .semibold)).lineLimit(1)
-                        Text(String(format: "%.2fs", buzz.ms / 1000)).font(BW.title(24))
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(540), spacing: 22), count: list.count > 4 ? 2 : 1), spacing: 6) {
+                    ForEach(Array(list.prefix(8).enumerated()), id: \.element.id) { index, buzz in
+                        let player = game.player(buzz.pid)
+                        HStack(spacing: 10) {
+                            Text("\(index + 1)").font(BW.title(20)).frame(width: 28)
+                            BWAvatar(name: player?.name ?? "?", color: Color(playerHex: player?.color ?? "#AEB3D6"), size: 38)
+                            Text(player?.name ?? "Someone").font(BW.body(26, .semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                            Spacer(minLength: 4)
+                            Text(BW.seconds(buzz.ms)).font(BW.title(24)).monospacedDigit()
+                            Text(index == 0 ? "" : "+" + String(format: "%.3f", (buzz.ms - best).rounded() / 1000))
+                                .font(BW.body(21, .semibold)).monospacedDigit()
+                                .frame(width: 96, alignment: .trailing)
+                        }
+                        .foregroundColor(index == 0 ? BW.ink : BW.text)
+                        .padding(.horizontal, 12).padding(.vertical, 4)
+                        .frame(width: 540)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(index == 0 ? BW.gold : Color.black.opacity(0.3)))
+                        .bwRise()
                     }
-                    .foregroundColor(index == 0 ? BW.ink : BW.text)
-                    .padding(.leading, 6).padding(.trailing, 18).padding(.vertical, 4)
-                    .background(Capsule().fill(index == 0 ? BW.gold : Color.black.opacity(0.3)))
-                    .bwRise()
                 }
             }
         }

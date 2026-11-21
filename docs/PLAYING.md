@@ -38,10 +38,11 @@ then shows only who has joined.
    who pressed is timed, and the times are shown after the clue.
 4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
    articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
-   gives that player control. **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
+   gives that player control. (With a host judging, Correct goes straight back to the board; the score count-up carries on in
+   the podiums along the bottom.) **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
    for everyone who has not tried.
-5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone. The wager is at most their
-   score or the round's top value, whichever is higher.
+5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone. The wager is from **$0** up to their
+   score or the round's top value, whichever is higher: quick buttons for $0, half and all in, and a box to type any amount.
 6. **Final Jeopardy.** Players with a positive score wager, then type an answer in 35 seconds. The answers are shown
    one at a time on the TV, lowest score first.
 7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).

@@ -205,3 +205,9 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-draftcat em.old { color: var(--jp-muted); }
 .jp .jp-draftcat i { position: absolute; top: 4px; right: 6px; font-style: normal; color: var(--jp-sun); font-size: 13px; }
 .jp .jp-picker { text-align: left; }
+
+/* the host page: who buzzed in first, large */
+.jp-first { display: grid; gap: 2px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--c) 22%, #0e0f1a); border: 3px solid var(--c); text-align: center; }
+.jp-first small { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+.jp-first b { font-family: 'Unbounded', system-ui, sans-serif; font-weight: 900; font-size: 1.9rem; line-height: 1.1; color: var(--c); }
+.jp-first span { font-family: 'Unbounded', system-ui, sans-serif; font-weight: 700; font-size: 1.15rem; }
