@@ -322,8 +322,10 @@ test('host judges mode: players say the answer out loud and the host rules', () 
   assert.throws(() => g.answer(ps[0].id, 'typed'), /host/);
   g.act('judge', { correct: true });
   rule(clock);
-  assert.equal(g.phase, 'reveal');
+  assert.equal(g.phase, 'board', 'a right answer with a host goes straight back to the board (no answer screen)');
   assert.ok(ps[0].score > 0);
+  assert.equal(g.controllerId, ps[0].id);
+  assert.equal(g.publicView().lastResult.correct, true, 'the ruling is still there for the score count-up at the bottom');
   assert.throws(() => g.onPlayer(ps[0], { t: 'pick', ci: 0, ri: 1 }), /host/);
 });
 
@@ -338,7 +340,25 @@ test('host mode answer clock runs out, then the host still has a few seconds to 
   assert.equal(g.phase, 'answering');                      // still ruling
   g.act('judge', { correct: true });
   rule(clock);
-  assert.equal(g.phase, 'reveal');
+  assert.equal(g.phase, 'board');
+});
+
+test('with a host a wrong answer still shows the answer when nobody is left, and a Daily Double can be bet at $0', () => {
+  const { g, ps, clock } = setup({ players: ['Ann'] });
+  g.setHostJudges(true);
+  begin(g); g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd)); g.openNow();
+  g.buzz(ps[0].id);
+  g.act('judge', { correct: false });
+  rule(clock);
+  assert.equal(g.phase, 'reveal', 'a miss with nobody left still shows the answer');
+  clock.advance(T.reveal + 10);
+  assert.equal(g.phase, 'board');
+  const dd = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => x.cl.dd);
+  g.pick(dd.ci, dd.ri);
+  assert.equal(g.phase, 'dd-wager');
+  g.ddWager(g.controllerId, 0);
+  assert.equal(g.clue.wager, 0, 'a bet of $0 is allowed');
+  g.ddWager(g.controllerId, -50);                       // ignored once placed; the minimum is $0, never below
 });
 
 test('with a host there is no captain, and the captain comes back when the host goes', () => {

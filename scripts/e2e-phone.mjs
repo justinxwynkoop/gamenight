@@ -121,6 +121,23 @@ try {
   await until(async () => (await player.locator('.jp').innerText()).includes(first.cl.a), 'the reveal to show the answer');
   await shotJ(player, 'reveal');
   console.log('buzzed on a phone, typed the answer, the game accepted it and showed the reveal');
+  // A Daily Double: quick bets ($0, Half, All in) and a box to type any amount in between.
+  engine.room.act('advance', {});
+  await until(() => g.phase === 'board', 'the board after the reveal');
+  const dd = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => x.cl.dd);
+  engine.room.act('pick', { ci: dd.ci, ri: dd.ri });
+  await until(() => g.phase === 'dd-wager', 'the Daily Double wager');
+  const better = phones[g.controllerId];
+  await until(async () => (await better.locator('.jp-quick button').count()) === 3, 'the quick bets on the Daily Double phone');
+  const quick = (await better.locator('.jp-quick button').allInnerTexts()).map((t) => t.trim());
+  if (quick[0] !== '$0' || quick[1] !== 'Half' || quick[2] !== 'All in') fail(`the quick bets are ${JSON.stringify(quick)}`);
+  if (!(await better.locator('input[aria-label="Type your own amount"]').isVisible())) fail('there is no box to type an amount');
+  await shotJ(better, 'wager');
+  await better.locator('input[aria-label="Type your own amount"]').fill('123');
+  await until(async () => /Bet \$123/.test(await better.locator('.jp-btn.huge').innerText()), 'the bet button to show the typed amount');
+  await better.locator('.jp-btn.huge').click();
+  await until(() => g.phase === 'dd-answer' && g.clue.wager === 123, 'the typed bet of $123 to be placed');
+  console.log('Daily Double: quick bets ($0, Half, All in) and a typed amount of $123 were placed from the phone');
   engine.room.act('endGame', {});
   await bo.close();
 

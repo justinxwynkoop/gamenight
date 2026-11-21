@@ -225,6 +225,7 @@ let ctxInfo = {};      // { joinUrl, code, site }
 let lastReact = 0;
 let screenKey = '';
 let scores = new Map(); // id -> the score last drawn, for the "+$1,000" that floats up from a podium
+const gains = new Map(); // id -> { delta, at }: a float still going when the screen changes (a right answer with a host goes straight to the board)
 let introKey = '';
 let cardKey = '';       // the clue (or Final) whose card is on screen: the card zooms in only when it changes
 /** ' enter' the first time a card for this clue is drawn, so its entrance plays once per clue, not at every step. */
@@ -235,7 +236,8 @@ const nameOf = (id) => player(id)?.name ?? 'Someone';
 const initial = (name) => String(name || '?').trim().slice(0, 1).toUpperCase();
 const av = (p, size) => h('span', { class: 'av', style: { '--c': p ? p.color : '#AEB3D6', ...(size ? { width: `${size}px`, height: `${size}px`, fontSize: `${Math.round(size * 0.43)}px` } : {}) } }, initial(p?.name));
 const byScore = () => g.players.slice().sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-const secs = (ms) => (ms / 1000).toFixed(2);
+/** Seconds to the thousandth: 0.312 */
+const secs = (ms) => (Math.round(ms) / 1000).toFixed(3);
 const isFinal = () => g.phase.startsWith('final');
 const hot = (n) => n >= (g.hotStreak ?? 3);
 const named = (p, text = p?.name ?? 'Someone') => h('b', { class: 'pname', style: { color: p ? p.color : 'inherit' } }, text);
@@ -292,7 +294,7 @@ function podiumStrip() {
   const changed = new Map();
   for (const p of g.players) {
     const before = scores.get(p.id);
-    if (before != null && before !== p.score) changed.set(p.id, p.score - before);
+    if (before != null && before !== p.score) { changed.set(p.id, p.score - before); gains.set(p.id, { delta: p.score - before, at: performance.now() }); }
     scores.set(p.id, p.score);
   }
   const current = ph === 'final-reveal' && f && f.stage !== 'done' ? f.order?.[f.revealIndex] : null;
@@ -317,14 +319,18 @@ function podiumStrip() {
       else if (r && !r.pending) { cls = f.stage === 'done' ? '' : 'dim'; mark = h('span', { class: `mk ${r.correct ? 'good' : 'bad'}` }, r.wager ? signed(r.correct ? r.wager : -r.wager) : 'KEPT IT'); }
       else if (!f.eligible.includes(p.id)) cls = 'out';
     }
-    const delta = changed.get(p.id);
+    // A float that started on the previous screen carries on here from where it was (the board comes straight back after a right answer).
+    const gain = gains.get(p.id);
+    const age = gain ? performance.now() - gain.at : Infinity;
+    const delta = changed.get(p.id) ?? (age < 2200 ? gain.delta : 0);
+    const floating = changed.has(p.id) ? 0 : age;
     return h('div', { class: `pod ${cls} ${p.connected ? '' : 'off'}`, style: { '--c': p.color } },
       tag && h('span', { class: 'tag' }, tag),
       av(p),
       h('div', { class: 'who' }, h('div', { class: 'nm' }, p.name), h('div', { class: `sc ${p.score < 0 ? 'neg' : ''}` }, minus(p.score))),
       mark,
       hot(p.streak) && !mark && h('span', { class: 'flame', title: `${p.streak} right in a row` }, `🔥${p.streak}`),
-      delta ? h('span', { class: `delta ${delta > 0 ? 'good' : 'bad'}` }, signed(delta)) : null);
+      delta ? h('span', { class: `delta ${delta > 0 ? 'good' : 'bad'}`, style: floating ? { animationDelay: `-${Math.round(floating)}ms` } : null }, signed(delta)) : null);
   }));
 }
 
@@ -404,6 +410,7 @@ export function lobby(view, ctx = {}) {
   live = null;
   confetti(false);
   scores = new Map();
+  gains.clear();
   const site = ctxInfo.site || (ctxInfo.joinUrl || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
   const codeTiles = ctxInfo.code ? h('div', { class: 'codetiles' }, [...ctxInfo.code].map((ch) => h('span', {}, ch))) : null;
   const n = g.players.length;
@@ -633,13 +640,16 @@ function board() {
 }
 
 // ---------- a clue ----------
-/** Everyone who buzzed on this clue, fastest first, with their time. */
+/** Everyone who buzzed on this clue, fastest first: a ranked list (two columns once there are more than four), to the thousandth. */
 function buzzChips(c, { label = false, open = 1 } = {}) {
   // One opening at a time: after a miss the buzzers open again and everyone is timed afresh.
   const list = (c.buzzes ?? []).filter((b) => (b.open ?? 1) === open);
   if (!list.length) return null;
-  return h('div', { class: 'buzzes' }, label && h('span', { class: 'lbl' }, 'BUZZ TIMES'), list.slice(0, 6).map((b, i) => h('span', { class: `chip ${i === 0 ? 'first' : ''}` },
-    av(player(b.pid)), nameOf(b.pid), ' ', h('b', {}, `${secs(b.ms)}s`))));
+  const best = list[0].ms;
+  return h('div', { class: `buzzes ${list.length > 4 ? 'two' : ''}` }, label && h('div', { class: 'lbl' }, 'BUZZ TIMES'),
+    h('div', { class: 'brows' }, list.map((b, i) => h('div', { class: `brow ${i === 0 ? 'first' : ''}`, style: { '--c': player(b.pid)?.color ?? '#AEB3D6' } },
+      h('span', { class: 'rk' }, String(i + 1)), av(player(b.pid), 40), h('span', { class: 'nm' }, nameOf(b.pid)),
+      h('b', {}, `${secs(b.ms)}s`), h('small', {}, i ? `+${secs(b.ms - best)}` : '')))));
 }
 
 function card(c, { q, band, edge = null, cls = '' }) {

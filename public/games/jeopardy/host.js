@@ -124,6 +124,23 @@ function introView() {
 }
 
 // ---------- a clue ----------
+/** Seconds to the thousandth: 0.312s. */
+const secs = (ms) => `${(Math.round(ms) / 1000).toFixed(3)}s`;
+
+/** Who buzzed in first, large, then everyone's time in order (the host opened the buzzers and wants to see it at a glance). */
+function buzzCard(c) {
+  const list = c?.buzzes ?? [];
+  const winner = c?.buzzedId ? list.filter((b) => b.pid === c.buzzedId).pop() ?? list[0] : list[0];
+  if (!winner) return null;
+  const color = v.players.find((p) => p.id === winner.pid)?.color ?? '#ffd23f';
+  const best = list[0].ms;
+  return card(
+    h('div', { class: 'jp-first', style: { '--c': color } }, h('small', {}, 'Buzzed in first'), h('b', {}, nameOf(winner.pid)), h('span', {}, secs(winner.ms))),
+    list.length > 1 && h('div', { class: 'list' }, list.map((b, i) => h('div', { class: 'rowi' },
+      h('span', { class: 'rank' }, String(i + 1)), dot(v.players.find((p) => p.id === b.pid)?.color ?? '#fff', 16),
+      h('div', { class: 'grow t' }, nameOf(b.pid)), h('span', { class: 's' }, i ? `+${secs(b.ms - best)}` : ''), h('span', { class: 'pts' }, secs(b.ms))))));
+}
+
 function clueView() {
   const ph = v.phase; const c = v.clue;
   const body = [clueCard()];
@@ -138,12 +155,14 @@ function clueView() {
     dock.push(button({ label: 'Nobody. Show the answer', size: 'lg', block: true, onclick: () => act('skip') }));
   } else if (ph === 'answering' || ph === 'dd-answer') {
     const who = ph === 'answering' ? c.buzzedId : v.controllerId;
+    if (ph === 'answering') body.unshift(buzzCard(c));   // above the clue: who has it, at a glance
     body.push(card(eyebrow('Answering'), h('div', { class: 'card-title' }, `${nameOf(who)} is answering`), clockPill(),
       h('p', { class: 'dim' }, v.hostJudges ? 'Listen to the answer, then rule on it below.' : 'They type their answer and the game checks it. Use “Flip the ruling” afterwards if it got one wrong.')));
     if (v.hostJudges) dock.push(dockRow(button({ label: 'Correct', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('judge', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('judge', { correct: false }) })));
     dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'ruling') {
     const r = v.lastResult;
+    body.unshift(buzzCard(c));
     body.push(card(eyebrow('Ruling'), h('div', { class: 'card-title' }, r ? `${nameOf(r.pid)} said “${r.answer || '…'}”` : '…'),
       r && pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), h('p', { class: 'dim' }, 'Shown on the TV for a moment. Flip it if the game got it wrong.')));
     dock.push(dockRow(button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }), button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
@@ -156,7 +175,7 @@ function clueView() {
       h('p', { class: 'dim' }, 'Back to the board in a moment.')));
     dock.push(button({ label: 'Back to the board', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }), dockRow(flip));
   }
-  return { body, dock };
+  return { body: body.filter(Boolean), dock };
 }
 
 function roundEndView() {
@@ -188,10 +207,15 @@ function finalView() {
   const dock = [];
   // Moving on before everyone has locked in skips them, so it asks first.
   const early = (missing, title, message, label) => (missing ? () => C.confirm({ title, message, confirmLabel: label, onConfirm: () => act('advance') }) : () => act('advance'));
-  if (ph === 'final-wager') dock.push(button({ label: 'Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, onclick: early(f.wagered.length < f.eligible.length, 'Show the clue now?', 'Not everyone has locked in a wager. Missing wagers count as $0.', 'Show the clue') }));
+  if (ph === 'final-wager') {
+    // Only when everyone who is here has locked in a wager (a player who has gone away does not hold the game up).
+    const waiting = f.eligible.filter((id) => !f.wagered.includes(id) && v.players.find((p) => p.id === id)?.connected);
+    dock.push(waiting.length ? h('div', { class: 'dock-note' }, `Waiting for ${waiting.map(nameOf).join(', ')} to lock in a wager`) : null,
+      button({ label: waiting.length ? `${f.wagered.length} of ${f.eligible.length} locked in` : 'Everyone is locked in. Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, disabled: waiting.length > 0, onclick: () => act('advance') }));
+  }
   if (ph === 'final-answer') dock.push(button({ label: 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: early(f.answered.length < f.eligible.length, 'Reveal now?', 'Not everyone has locked in an answer. Anything they typed still counts.', 'Reveal') }));
   if (ph === 'final-reveal') dock.push(button({ label: 'Next reveal', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
-  return { body, dock };
+  return { body, dock: dock.filter(Boolean) };
 }
 
 function doneView() {

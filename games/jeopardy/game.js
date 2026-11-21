@@ -723,9 +723,9 @@ export class JeopardyGame {
     this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
-      // A wager nobody places (a phone that went to sleep) is the minimum, so the game never stalls.
+      // A wager nobody places (a phone that went to sleep) is $0, so the game never stalls.
       const who = this.controllerId;
-      this.#setTimer(T.ddWager, () => this.ddWager(who, 5), 'wager');
+      this.#setTimer(T.ddWager, () => this.ddWager(who, 0), 'wager');
     } else {
       this.phase = 'reading';
       // With a host judging, the buzzers open when the host finishes reading aloud. Otherwise they open at a moment
@@ -965,6 +965,9 @@ export class JeopardyGame {
   #afterRuling(at) {
     if (this.phase !== 'ruling') return;
     const r = this.lastResult;
+    // With a host judging, a right answer goes straight back to the board: the host said the answer, and the score count-up
+    // carries on in the podiums along the bottom.
+    if (r && r.correct && this.hostJudges()) { this.#afterReveal(); return; }
     if (!r || r.dd || r.correct) { this.#revealClue(); return; }
     const remaining = this.#order().filter((id) => this.#connected(id) && !this.clue.tried.includes(id));
     if (remaining.length === 0) this.#revealClue();
@@ -982,7 +985,7 @@ export class JeopardyGame {
     const max = this.maxDDWager(pid);
     let w = Math.round(Number(amount));
     if (!Number.isFinite(w)) fail('Enter a number');
-    w = clamp(w, 5, max);
+    w = clamp(w, 0, max);   // from $0 up to the most they can bet
     this.clue.wager = w;
     this.phase = 'dd-answer';
     this.#setTimer(T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');

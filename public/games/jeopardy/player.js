@@ -8,7 +8,7 @@ import { loadStyles, lobbyControls } from './setup.js';
 
 const minus = (n) => money(n).replace('-', '−');
 const signed = (n) => (n >= 0 ? '+' : '−') + money(Math.abs(n));
-const secs = (ms) => (ms / 1000).toFixed(2);
+const secs = (ms) => (Math.round(ms) / 1000).toFixed(3);   // to the thousandth: 0.312
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 const LOCKOUT = 250;          // ms locked out for pressing before the buzzer turns gold, as on the show
@@ -169,22 +169,26 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   }
 
   /** The wager stepper: −/+ with your thumbs, quick picks, or type an amount. */
+  /** The wager: quick buttons ($0 or the minimum, half, all in) and a box to type any amount in between. */
   function wagerForm(type, min, max, head) {
     if (wager == null || wager < min || wager > max) wager = Math.min(max, Math.max(min, Math.round(max / 2 / 100) * 100 || min));
     const amount = h('div', { class: 'jp-amount' }, money(wager));
     const go = h('button', { type: 'button', class: 'jp-btn huge', onclick: () => send({ t: type, amount: wager }) }, `Bet ${money(wager)}`);
-    const stepBy = max >= 2000 ? 200 : 100;
-    const set = (n) => { wager = Math.min(max, Math.max(min, Math.round(n))); amount.textContent = money(wager); go.textContent = `Bet ${money(wager)}`; navigator.vibrate?.(8); };
-    const typed = h('input', { class: 'jp-in num', type: 'number', inputMode: 'numeric', min, max, placeholder: 'Amount', value: String(wager) });
-    typed.addEventListener('input', () => { const n = Number(typed.value); if (Number.isFinite(n) && typed.value !== '') set(n); });
+    const typed = h('input', { class: 'jp-in num', type: 'number', inputMode: 'numeric', min, max, placeholder: 'Type an amount', 'aria-label': 'Type your own amount', value: String(wager) });
+    const set = (n, fromTyped = false) => {
+      wager = Math.min(max, Math.max(min, Math.round(n)));
+      amount.textContent = money(wager); go.textContent = `Bet ${money(wager)}`;
+      if (!fromTyped) typed.value = String(wager);
+      navigator.vibrate?.(8);
+    };
+    typed.addEventListener('input', () => { const n = Number(typed.value); if (typed.value !== '' && Number.isFinite(n)) set(n, true); });
+    typed.addEventListener('change', () => { typed.value = String(wager); });   // out of range: show what will actually be bet
     return h('div', { class: 'jp-wager' }, head,
       h('div', { class: 'jp-small jp-muted' }, `Bet from ${money(min)} to ${money(max)}`),
-      typing ? typed : h('div', { class: 'jp-stepper' },
-        h('button', { type: 'button', class: 'round', 'aria-label': 'Less', onclick: () => set(wager - stepBy) }, '−'), amount,
-        h('button', { type: 'button', class: 'round', 'aria-label': 'More', onclick: () => set(wager + stepBy) }, '+')),
-      h('div', { class: 'jp-quick' }, btn(`Min ${money(min)}`, () => { set(min); typed.value = String(wager); }, 'ghost'), btn('Half', () => { set(Math.round(max / 2)); typed.value = String(wager); }, 'ghost'), btn('All in', () => { set(max); typed.value = String(wager); }, 'ghost')),
+      amount,
+      h('div', { class: 'jp-quick' }, btn(money(min), () => set(min), 'ghost'), btn('Half', () => set(max / 2), 'ghost'), btn('All in', () => set(max), 'ghost')),
+      h('label', { class: 'jp-small jp-muted', style: { textAlign: 'center' } }, 'or type your own amount', typed),
       h('div', { class: 'grow' }),
-      h('button', { type: 'button', class: 'jp-link', onclick: () => { typing = !typing; screenKey = ''; render(); } }, typing ? 'Use the buttons' : 'Type an amount'),
       go);
   }
 
@@ -415,7 +419,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function ddWagerScreen() {
     const c = v.clue;
     const head = [h('div', { class: 'jp-logo dd' }, 'DAILY DOUBLE'), h('div', { class: 'jp-meta center' }, c.cat)];
-    if (v.controllerId === me().id) return { key: `ddw-${c.ci}${c.ri}-${typing}`, nodes: wagerForm('dd-wager', 5, me().maxDD ?? 1000, head) };
+    if (v.controllerId === me().id) return { key: `ddw-${c.ci}${c.ri}-${typing}`, nodes: wagerForm('dd-wager', 0, me().maxDD ?? 1000, head) };
     return { key: `ddww-${c.ci}${c.ri}`, nodes: center(head, dot(player(v.controllerId), 56), h('div', { class: 'jp-msg' }, [named(player(v.controllerId)), ' is placing a bet…'])) };
   }
 

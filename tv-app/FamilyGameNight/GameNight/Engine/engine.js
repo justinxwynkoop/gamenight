@@ -859,7 +859,7 @@
       if (cl.dd) {
         this.phase = "dd-wager";
         const who = this.controllerId;
-        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 5), "wager");
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddWager, () => this.ddWager(who, 0), "wager");
       } else {
         this.phase = "reading";
         const ms = (this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q)) + mediaTime(cl.media);
@@ -1001,7 +1001,7 @@
       const max = this.maxDDWager(pid);
       let w = Math.round(Number(amount));
       if (!Number.isFinite(w)) fail("Enter a number");
-      w = clamp(w, 5, max);
+      w = clamp(w, 0, max);
       this.clue.wager = w;
       this.phase = "dd-answer";
       __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => __privateMethod(this, _JeopardyGame_instances, timeUp_fn).call(this, pid), "answer");
@@ -1965,6 +1965,10 @@
   afterRuling_fn = function(at) {
     if (this.phase !== "ruling") return;
     const r = this.lastResult;
+    if (r && r.correct && this.hostJudges()) {
+      __privateMethod(this, _JeopardyGame_instances, afterReveal_fn).call(this);
+      return;
+    }
     if (!r || r.dd || r.correct) {
       __privateMethod(this, _JeopardyGame_instances, revealClue_fn).call(this);
       return;

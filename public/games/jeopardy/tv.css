@@ -157,8 +157,18 @@
 .bw .ring span { width: 96px; height: 96px; border-radius: 50%; background: var(--blue-mid); display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 44px; }
 .bw .buzzer { display: flex; align-items: baseline; gap: 20px; font-size: 34px; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .bw .buzzer .big { font-family: var(--display); font-weight: 900; font-size: 64px; line-height: 1; }
-.bw .buzzes { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.bw .buzzes .lbl { font-weight: 800; font-size: 24px; letter-spacing: .16em; color: var(--soft); margin-right: 8px; }
+.bw .buzzes { display: grid; gap: 10px; justify-items: center; width: 100%; }
+.bw .buzzes .lbl { font-weight: 800; font-size: 22px; letter-spacing: .16em; color: var(--soft); }
+/* the buzz times, ranked: with eight players they sit in two columns, each row readable on its own */
+.bw .buzzes .brows { display: grid; grid-template-columns: minmax(0, 560px); gap: 6px; }
+.bw .buzzes.two .brows { grid-template-columns: repeat(2, minmax(0, 560px)); column-gap: 22px; }
+.bw .brow { display: grid; grid-template-columns: 30px 40px minmax(0, 1fr) auto 96px; align-items: center; gap: 12px; padding: 4px 16px 4px 10px; border-radius: 14px; background: rgba(0, 0, 0, .32); border-left: 6px solid var(--c); font-size: 27px; font-weight: 600; animation: bw-rise .25s ease backwards; }
+.bw .brow .rk { color: var(--soft); font-family: var(--display); font-weight: 900; font-size: 22px; text-align: center; }
+.bw .brow .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bw .brow b { font-family: var(--display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.bw .brow small { font-size: 21px; color: var(--soft); font-variant-numeric: tabular-nums; text-align: right; }
+.bw .brow.first { background: var(--sun); color: var(--ink); border-left-color: var(--ink); }
+.bw .brow.first .rk, .bw .brow.first small { color: var(--ink); }
 .bw .chip { display: inline-flex; align-items: center; gap: 10px; background: rgba(0, 0, 0, .3); border-radius: 24px; padding: 4px 18px 4px 6px; font-size: 26px; font-weight: 600; animation: bw-rise .25s ease backwards; }
 .bw .bw-stage .chip .av { width: 36px; height: 36px; font-size: 16px; }
 .bw .chip b { font-family: var(--display); font-weight: 700; font-size: 24px; }

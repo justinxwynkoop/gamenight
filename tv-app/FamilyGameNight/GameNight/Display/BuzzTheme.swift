@@ -101,7 +101,8 @@ enum BW {
     static func signed(_ amount: Int) -> String { (amount >= 0 ? "+" : "\u{2212}") + Money.format(abs(amount)) }
 
     /// "0.31s"
-    static func seconds(_ ms: Double) -> String { String(format: "%.2fs", ms / 1000) }
+    /// To the thousandth of a second: "0.312s".
+    static func seconds(_ ms: Double) -> String { String(format: "%.3fs", ms.rounded() / 1000) }
 }
 
 /// The stage behind every Jeopardy screen: near black, a blue spotlight from above and a softer one from below.
