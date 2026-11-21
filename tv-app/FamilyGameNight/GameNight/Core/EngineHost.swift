@@ -99,10 +99,10 @@ public final class EngineHost {
         set("loadArchive", unsafeBitCast(loadArchive, to: AnyObject.self))
         // The family's own sounds, kept on this TV: the host page sends them through the engine (engine/sounds.js).
         if let sounds {
-            let saveChunk: @convention(block) (String) -> Bool = { json in
-                let finished = sounds.save(pieceJSON: json)
-                if finished { onSounds() }
-                return finished
+            let saveChunk: @convention(block) (String) -> String = { json in
+                let result = sounds.save(pieceJSON: json)
+                if result == .done { onSounds() }
+                return result.rawValue   // "partial", "done" or "failed"
             }
             let listSounds: @convention(block) () -> String = { sounds.listJSON() }
             let removeSound: @convention(block) (String, String) -> Void = { game, name in

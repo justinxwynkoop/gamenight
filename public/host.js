@@ -11,6 +11,16 @@ const app = document.getElementById('app');
 const offline = document.getElementById('offline');
 let view = null;          // { room, game }
 let pin = store('gn-pin') ?? '';
+// Scanning the host code on the TV opens this page with the PIN in the address: use it, then take it out of the address bar.
+{
+  const q = new URLSearchParams(location.search);
+  const given = (q.get('pin') ?? '').trim();
+  if (given) {
+    pin = given; store('gn-pin', pin);
+    q.delete('pin');
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? `?${q}` : '')); } catch { /* fine */ }
+  }
+}
 let authed = false;
 let loginError = '';
 let sets = [];            // question sets for the active game: [{ id, title }]

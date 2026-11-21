@@ -52,6 +52,7 @@
     "round": 0,
     "rounds": 2,
     "captainId": "p1",
+    "hosted": false,
     "hostJudges": false,
     "controllerId": null,
     "players": [

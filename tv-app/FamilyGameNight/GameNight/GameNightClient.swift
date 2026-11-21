@@ -161,6 +161,12 @@ final class GameNightClient {
         return text
     }
 
+    /// What the lobby's host code encodes: the host page for this room with the PIN built in (nil unless the game runs on this TV).
+    var hostCodeURL: URL? {
+        guard isLocal, let roomCode, let hostPin else { return nil }
+        return RelayConfig.hostURL(code: roomCode, pin: hostPin)
+    }
+
     /// A note for the corner of the screen when something is not right, or nil.
     var bannerNote: String? {
         if state != nil, connection != .connected { return "Reconnecting…" }

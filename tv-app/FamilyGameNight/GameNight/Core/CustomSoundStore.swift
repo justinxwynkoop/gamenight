@@ -2,8 +2,10 @@ import Foundation
 
 /// Keeps the family's own sound files on this Apple TV. The host page sends a file in pieces (see engine/sounds.js in the
 /// gamenight repo); this puts the pieces together and keeps the finished file as `<game>__<name>.<ext>`, the same names
-/// `Tools/install-sounds.sh` uses, in the app's own storage. That storage survives app updates, so a sound added once stays,
-/// whatever build is installed. Nothing here is ever uploaded anywhere.
+/// `Tools/install-sounds.sh` uses, in the app's Caches folder (the one place an Apple TV app may write to: tvOS has no
+/// Documents or Application Support folder to save into). Caches survive app updates and builds; the Apple TV only clears
+/// them when it is nearly out of space, and the host page then shows the list empty so a sound can be added again.
+/// Nothing here is ever uploaded anywhere.
 public final class CustomSoundStore {
     public struct Piece: Decodable, Equatable {
         public var game: String
@@ -22,15 +24,20 @@ public final class CustomSoundStore {
         public var bytes: Int
     }
 
+    /// What became of a piece: kept and waiting for the rest, the file is now complete, or it could not be kept.
+    public enum Result: String, Equatable {
+        case partial, done, failed
+    }
+
     public static let games = ["shared", "jeopardy", "feud"]
     public static let extensions = ["mp3", "m4a", "wav"]
     /// A file may be at most this big (about 7 MB), and at most this many pieces.
     public static let maxBytes = 8 * 1024 * 1024
     public static let maxPieces = 64
 
-    /// Where the app keeps them: Application Support/CustomSounds.
+    /// Where the app keeps them: Caches/CustomSounds.
     public static let standard: CustomSoundStore = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return CustomSoundStore(directory: base.appendingPathComponent("CustomSounds", isDirectory: true))
     }()
@@ -54,18 +61,18 @@ public final class CustomSoundStore {
             && SoundCue.customNames.contains(name)
     }
 
-    /// Takes one piece, as the JSON text the engine passes. Returns true when it was the last piece and the file is now
-    /// kept. A bad piece is ignored (false).
-    public func save(pieceJSON: String) -> Bool {
-        guard let piece = try? JSONDecoder().decode(Piece.self, from: Data(pieceJSON.utf8)) else { return false }
+    /// Takes one piece, as the JSON text the engine passes. `.done` when it was the last piece and the file is now kept,
+    /// `.partial` while pieces are still missing, `.failed` for a bad piece or a disk that would not take it.
+    public func save(pieceJSON: String) -> Result {
+        guard let piece = try? JSONDecoder().decode(Piece.self, from: Data(pieceJSON.utf8)) else { return .failed }
         return save(piece)
     }
 
-    public func save(_ piece: Piece) -> Bool {
+    public func save(_ piece: Piece) -> Result {
         let ext = piece.ext.lowercased()
         guard valid(game: piece.game, name: piece.name, ext: ext),
               piece.total >= 1, piece.total <= Self.maxPieces, piece.index >= 0, piece.index < piece.total,
-              let bytes = Data(base64Encoded: piece.data), !bytes.isEmpty else { return false }
+              let bytes = Data(base64Encoded: piece.data), !bytes.isEmpty else { return .failed }
         let key = fileName(piece.game, piece.name, ext)
         let parts = partsDirectory.appendingPathComponent(key, isDirectory: true)
         do {
@@ -74,12 +81,12 @@ public final class CustomSoundStore {
             // Have all the pieces arrived?
             var whole = Data()
             for index in 0..<piece.total {
-                guard let part = try? Data(contentsOf: parts.appendingPathComponent(String(index))) else { return false }
+                guard let part = try? Data(contentsOf: parts.appendingPathComponent(String(index))) else { return .partial }
                 whole.append(part)
             }
             guard whole.count <= Self.maxBytes else {
                 try? fileManager.removeItem(at: parts)
-                return false
+                return .failed
             }
             // Another version of the same sound (a different file type) is replaced.
             for other in Self.extensions where other != ext {
@@ -87,9 +94,9 @@ public final class CustomSoundStore {
             }
             try whole.write(to: directory.appendingPathComponent(key), options: .atomic)
             try? fileManager.removeItem(at: parts)
-            return true
+            return .done
         } catch {
-            return false
+            return .failed
         }
     }
 

@@ -7,8 +7,9 @@ A build made on GitHub's machines (which is how every TestFlight build is made) 
 ## Your own sounds, from the host page (the easy way)
 
 Open the host page, then **Settings → Your own sounds**. Choose the game, which sound it is (the lobby music, a strike, the
-Daily Double...), pick the file on your phone or computer and tap **Add to the TV**. The Apple TV keeps it in its own
-storage, so:
+Daily Double...), pick the file on your phone or computer and tap **Add to the TV**. The Apple TV keeps it in its Caches
+folder (the one place an Apple TV app may write; the Apple TV only clears it when it is nearly out of space, and the list
+then shows empty so you can add the sound again), so:
 
 - it works in **every build**, including the ones GitHub makes by itself, and it stays through app updates;
 - the file goes **only to your TV**, over the same link the phones use. It is not put on GitHub or any server;

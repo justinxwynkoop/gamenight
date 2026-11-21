@@ -95,7 +95,17 @@ try {
   await until(async () => /jeopardy/i.test(await host.locator('body').innerText()), 'the host controls');
   console.log('host page unlocked with the PIN from the TV menu');
 
-  await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain lobby on the first phone');
+  // With a host connected there is no captain, and the TV lobby shows only who has joined: the topics are the host's to choose.
+  await until(async () => /host starts the game/i.test(await ann.locator('.jp').innerText()), 'the phones to say the host runs the game');
+  await until(async () => /host is running this game/i.test(await tv.locator('body').innerText()), 'the TV lobby to say a host is running the game');
+  if (await tv.getByRole('button', { name: 'Choose questions' }).count()) fail('the TV lobby still offers the topics with a host connected');
+  if (/captain/i.test(await ann.locator('.jp').innerText())) fail('a phone still shows a captain with a host connected');
+  console.log('with a host connected: no captain, and the TV lobby shows only who has joined');
+  // Once the host page goes away (the relay drops a quiet client after about 25 seconds) the captain and the chooser come back.
+  await host.close();
+  await until(async () => /captain/i.test(await ann.locator('.jp').innerText()), 'the captain to come back once the host is gone', 60000);
+  await until(async () => (await tv.getByRole('button', { name: 'Choose questions' }).count()) > 0, 'the TV to offer the topics again', 10000);
+  console.log('host gone: the captain and the TV\'s question chooser are back');
   // The TV lobby's question chooser: three shelves (real show, family packs, your games), and the website's TV can
   // switch a pack on or off itself.
   await tv.getByRole('button', { name: 'Choose questions' }).click();

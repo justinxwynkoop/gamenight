@@ -8,7 +8,7 @@ final class DisplayScreenTests: XCTestCase {
 
     func testLobbyUntilTheGameStarts() throws {
         XCTAssertEqual(try screen("no-game-chosen"), .lobby)
-        for name in ["jp-lobby", "jp-lobby-loading", "jp-lobby-archive", "jp-lobby-draft", "jp-lobby-easy"] {
+        for name in ["jp-lobby", "jp-lobby-hosted", "jp-lobby-loading", "jp-lobby-archive", "jp-lobby-draft", "jp-lobby-easy"] {
             XCTAssertEqual(try screen(name), .lobby, name)
         }
     }

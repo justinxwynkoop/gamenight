@@ -94,6 +94,21 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertNil(game.roundLabel)
     }
 
+    func testWithAHostThereIsNoCaptainAndTheTVShowsOnlyWhoHasJoined() throws {
+        let plain = try Fixture.jeopardy("jp-lobby")
+        XCTAssertEqual(plain.hosted, false)
+        XCTAssertEqual(plain.captainId, "p1")
+
+        let hosted = try Fixture.jeopardy("jp-lobby-hosted")
+        XCTAssertEqual(hosted.hosted, true)
+        XCTAssertNil(hosted.captainId, "with a host connected nobody has the captain's controls")
+        XCTAssertEqual(hosted.players.count, 3)
+        XCTAssertEqual(hosted.phase, .lobby)
+
+        // A host who judges out loud has no captain either.
+        XCTAssertNil(try Fixture.jeopardy("jp-host-reading").captainId)
+    }
+
     func testLobbyPacks() throws {
         let game = try Fixture.jeopardy("jp-lobby")
         let packs = try XCTUnwrap(game.packs)

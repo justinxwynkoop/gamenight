@@ -28,6 +28,8 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
     const pub = (cache.pub ??= room.publicView());
     return client.role === 'player' ? room.playerView(client.playerId, pub) : pub;
   }
+  /** Tells the room how many hosts are connected, so a game can step aside for them (Jeopardy has no captain with a host). */
+  const syncHosts = () => room.setHosts?.([...clients.values()].filter((c) => c.role === 'host').length);
   function sendState(id) {
     const client = clients.get(id);
     if (client?.role) send(id, { t: 'state', view: viewFor(client, {}) });
@@ -56,6 +58,7 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
         else if (msg.role === 'host') {
           if (!pinOk(msg.pin)) { send(id, { t: 'bad-pin' }); return; }
           client.role = 'host';
+          syncHosts();
         } else if (msg.role === 'player') {
           client.role = 'player';
           const p = room.playerByToken(msg.token);
@@ -111,6 +114,7 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
     close(id) {
       const client = clients.get(id);
       clients.delete(id);
+      if (client?.role === 'host') syncHosts();
       if (client?.playerId && !liveCount(client.playerId)) room.setConnected(client.playerId, false);
     },
     /** A message arrived from a client. Unknown clients are opened automatically. */

@@ -341,6 +341,40 @@ test('host mode answer clock runs out, then the host still has a few seconds to 
   assert.equal(g.phase, 'reveal');
 });
 
+test('with a host there is no captain, and the captain comes back when the host goes', () => {
+  const { g, ps } = setup();
+  assert.equal(g.publicView().captainId, ps[0].id);
+  g.setHostJudges(true);
+  const v = g.publicView();
+  assert.equal(v.captainId, null);
+  assert.equal(g.playerView(ps[0]).me.isCaptain, false);
+  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'start' }), /captain/);   // the first player has no controls now
+  assert.match(v.guide.text, /host is running/i);
+  g.act('start');                                                                       // the host (or the TV's remote) starts it
+  assert.notEqual(g.phase, 'lobby');
+  g.endGame();
+  g.setHostJudges(false);
+  assert.equal(g.publicView().captainId, ps[0].id, 'without a host the first player is captain again');
+});
+
+test('a connected host page takes the captain away and brings it back when it goes', () => {
+  const { room, g, ps } = setup();
+  const sent = [];
+  const hub = createHub({ room, pinOk: (p) => p === '4321', send: (id, m) => sent.push([id, m]) });
+  assert.equal(g.publicView().hosted, false);
+  assert.equal(g.publicView().captainId, ps[0].id);
+  hub.receive('h', { t: 'hello', role: 'host', pin: 'wrong' });
+  assert.equal(g.publicView().hosted, false, 'a wrong PIN is not a host');
+  hub.receive('h', { t: 'hello', role: 'host', pin: '4321' });
+  assert.equal(g.publicView().hosted, true);
+  assert.equal(g.publicView().captainId, null);
+  assert.equal(g.playerView(ps[0]).me.isCaptain, false);
+  assert.match(g.publicView().guide.text, /host is running/i);
+  hub.close('h');
+  assert.equal(g.publicView().hosted, false);
+  assert.equal(g.publicView().captainId, ps[0].id, 'the first player is captain again');
+});
+
 test('the captain can drive; other players cannot', () => {
   const { g, ps } = setup();
   assert.equal(g.captain(), ps[0].id);

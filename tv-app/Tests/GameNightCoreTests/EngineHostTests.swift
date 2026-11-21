@@ -206,6 +206,22 @@ final class EngineHostTests: XCTestCase {
         XCTAssertEqual(host.errors, [])
     }
 
+    func testASoundTheTVCannotSaveIsReportedToTheHostNotSilentlyDropped() throws {
+        let wire = Wire()
+        let blocked = FileManager.default.temporaryDirectory.appendingPathComponent("blocked-\(UUID().uuidString)")
+        try Data([0]).write(to: blocked)   // a file where the folder should be
+        defer { try? FileManager.default.removeItem(at: blocked) }
+        var changed = 0
+        let host = try EngineHost(script: Self.script, pin: "4321", onSend: { wire.sent.append(($0, $1)) },
+                                  sounds: CustomSoundStore(directory: blocked), onSounds: { changed += 1 })
+        say(host, "h", #"{"t":"hello","role":"host","pin":"4321"}"#)
+        say(host, "h", #"{"t":"rpc","id":1,"op":"putSound","args":{"game":"jeopardy","name":"lobby","ext":"mp3","index":0,"total":1,"data":"AQID"}}"#)
+        let reply = try XCTUnwrap(wire.messages(to: "h").last { ($0["t"] as? String) == "rpc-reply" })
+        XCTAssertEqual(reply["ok"] as? Bool, false)
+        XCTAssertTrue((reply["error"] as? String ?? "").contains("could not save"))
+        XCTAssertEqual(changed, 0)
+    }
+
     func testTheRoomIsSavedAndComesBack() throws {
         let wire = Wire()
         let host = try makeHost(wire)

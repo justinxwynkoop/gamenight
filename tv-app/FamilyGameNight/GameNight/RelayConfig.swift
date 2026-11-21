@@ -12,4 +12,10 @@ enum RelayConfig {
     static func joinURL(code: String) -> URL? {
         URL(string: "\(webBase)/?r=\(code)")
     }
+
+    /// The host code on the lobby: opens the host page already signed in (the PIN is in the address, and the page removes it
+    /// from the address bar at once). Whoever scans it is a host, the same as typing the PIN.
+    static func hostURL(code: String, pin: String) -> URL? {
+        URL(string: "\(webBase)/host?r=\(code)&pin=\(pin)")
+    }
 }

@@ -221,6 +221,9 @@ let qrKey = '';
 export const setQrKey = (key) => { qrKey = key; };
 let qrSvg = null;   // online, the TV page draws its own QR code (there is no server to ask)
 export const setQrSvg = (svg) => { qrSvg = svg || null; };
+let hostQrSvg = null;   // the browser TV's host code (opens the host page already signed in)
+export const setHostQrSvg = (svg) => { hostQrSvg = svg || null; };
+export const hostQrImg = () => (hostQrSvg ? h('img', { src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(hostQrSvg)}`, alt: 'Host QR code' }) : null);
 export const qrImg = () => h('img', {
   src: qrSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}` : `/api/qr.svg?for=${encodeURIComponent(qrKey)}`,
   alt: 'Join QR code',

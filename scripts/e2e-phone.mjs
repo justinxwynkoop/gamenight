@@ -131,6 +131,15 @@ try {
   await host.keyboard.press('Enter');
   await until(async () => /feud|jeopardy|game/i.test(await host.locator('body').innerText()), 'the host controls');
   console.log('host page unlocked with the PIN');
+  // The host code on the TV opens the host page with the PIN in the address: signed in at once, and the PIN leaves the address bar.
+  const scanned = await browser.newPage({ viewport: { width: 390, height: 780 } }); watch(scanned, 'scanned host');
+  await scanned.goto(`${base}/host?r=ABCD&pin=4321`);
+  await until(async () => (await scanned.getByRole('button', { name: 'Settings', exact: true }).count()) > 0, 'the host page to open signed in from the TV\'s host code');
+  if (/pin=/.test(scanned.url())) fail(`the PIN is still in the address: ${scanned.url()}`);
+  await until(() => engine.room.hosts >= 1, 'the room to know a host is connected');
+  console.log('host code: the host page opened signed in, the PIN left the address, and the room knows there is a host');
+  await scanned.close();
+
   await host.getByText(/family feud/i).first().click();
   await until(() => engine.room.gameId === 'feud', 'the host to choose Family Feud');
   console.log('host chose Family Feud through the relay');

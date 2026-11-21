@@ -56,6 +56,7 @@ export class Room {
     this.settings = { sound: true, volume: 70, lateJoin: false }; // sound plays on the TV; lateJoin lets new players in mid-game
     this.soundPing = 0; // bumped by the host's "test sound" so the TV can play one
     this.connected = new Set(); // runtime only: player ids with a live socket
+    this.hosts = 0;             // runtime only: how many host pages are connected right now
     this.lags = new Map(); // runtime only: player id -> how long their messages usually take to reach the room (ms)
   }
 
@@ -148,6 +149,12 @@ export class Room {
     this.lags.set(playerId, was == null ? lag : lag > was ? (was + lag) / 2 : was * 0.85 + lag * 0.15);
   }
   lagOf(playerId) { return this.lags.get(playerId); }
+  /** How many host pages are connected (the hub tells the room). A game may step aside for a host. */
+  setHosts(n) {
+    if (n === this.hosts) return;
+    this.hosts = n;
+    this.changed();
+  }
   setConnected(playerId, on) {
     on ? this.connected.add(playerId) : this.connected.delete(playerId);
     this.changed();

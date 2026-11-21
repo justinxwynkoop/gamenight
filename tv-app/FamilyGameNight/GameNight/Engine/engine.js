@@ -821,8 +821,14 @@
       this.room.removePlayer(id);
       if (this.captainId === id) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
     }
-    /** Who gets the captain controls: whoever joined first, and someone else if they stay away. */
+    /** A host page is connected (someone scanned the host code on the TV, or typed the PIN). */
+    hosted() {
+      return (this.room.hosts ?? 0) > 0;
+    }
+    /** Who gets the captain controls: whoever joined first, and someone else if they stay away. With a host there is no captain:
+     *  the host (and the TV's remote) run the game, so nobody on a phone has the controls. */
     captain() {
+      if (this.hostJudges() || this.hosted()) return null;
       if (!this.captainId || !__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.captainId)) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
       return this.captainId;
     }
@@ -1321,6 +1327,7 @@
         round: this.round,
         rounds: this.rounds.length || (__privateMethod(this, _JeopardyGame_instances, asWrittenPacks_fn).call(this)?.length ?? 2),
         captainId: this.captain(),
+        hosted: this.hosted(),
         hostJudges: this.hostJudges(),
         controllerId: this.controllerId,
         players: __privateMethod(this, _JeopardyGame_instances, players_fn).call(this),
@@ -2102,8 +2109,9 @@
     const name = (id) => __privateMethod(this, _JeopardyGame_instances, player_fn).call(this, id)?.name ?? "Someone";
     const signed = (n) => `${n < 0 ? "-" : "+"}$${Math.abs(n).toLocaleString("en-US")}`;
     const host = this.hostJudges();
+    const hosted = this.hosted();
     const cap = this.captain();
-    const mover = host ? "The host" : cap ? `${name(cap)} (captain)` : "The captain";
+    const mover = host || hosted ? "The host" : cap ? `${name(cap)} (captain)` : "The captain";
     const ctrl = this.controllerId;
     const r = this.lastResult;
     const c = this.clue;
@@ -2111,7 +2119,8 @@
     const locked = (o) => `${Object.keys(o ?? {}).length} of ${f?.eligible.length ?? 0} locked in`;
     switch (this.phase) {
       case "lobby":
-        if (!this.room.players.length) return { pid: null, text: "Scan the code with your phone to join", next: "The first to join is captain" };
+        if (!this.room.players.length) return { pid: null, text: "Scan the code with your phone to join", next: host || hosted ? "The host starts the game when everyone is in" : "The first to join is captain" };
+        if (host || hosted) return { pid: null, text: "A host is running this game", next: "The host starts the game when everyone is in" };
         return { pid: cap, text: `${name(cap)} is captain`, next: host ? "The host starts the game when everyone is in" : `${name(cap)} starts the game when everyone is in` };
       case "round-intro":
         return { pid: ctrl, text: this.round === 2 ? "Round 2: every value is doubled" : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
@@ -3339,6 +3348,7 @@
       this.settings = { sound: true, volume: 70, lateJoin: false };
       this.soundPing = 0;
       this.connected = /* @__PURE__ */ new Set();
+      this.hosts = 0;
       this.lags = /* @__PURE__ */ new Map();
     }
     now() {
@@ -3447,6 +3457,12 @@
     }
     lagOf(playerId) {
       return this.lags.get(playerId);
+    }
+    /** How many host pages are connected (the hub tells the room). A game may step aside for a host. */
+    setHosts(n) {
+      if (n === this.hosts) return;
+      this.hosts = n;
+      this.changed();
     }
     setConnected(playerId, on) {
       on ? this.connected.add(playerId) : this.connected.delete(playerId);
@@ -3767,6 +3783,7 @@
       const pub = cache.pub ?? (cache.pub = room.publicView());
       return client.role === "player" ? room.playerView(client.playerId, pub) : pub;
     }
+    const syncHosts = () => room.setHosts?.([...clients.values()].filter((c) => c.role === "host").length);
     function sendState(id) {
       const client = clients.get(id);
       if (client?.role) send(id, { t: "state", view: viewFor(client, {}) });
@@ -3797,6 +3814,7 @@
               return;
             }
             client.role = "host";
+            syncHosts();
           } else if (msg.role === "player") {
             client.role = "player";
             const p = room.playerByToken(msg.token);
@@ -3849,6 +3867,7 @@
       close(id) {
         const client = clients.get(id);
         clients.delete(id);
+        if (client?.role === "host") syncHosts();
         if (client?.playerId && !liveCount(client.playerId)) room.setConnected(client.playerId, false);
       },
       /** A message arrived from a client. Unknown clients are opened automatically. */
@@ -4169,7 +4188,11 @@
         },
         // The family's own sounds, kept by the app (sent from the host page, see engine/sounds.js).
         sounds: __native.saveSoundChunk ? {
-          save: (chunk) => !!__native.saveSoundChunk(JSON.stringify(chunk)),
+          save: (chunk) => {
+            const result = __native.saveSoundChunk(JSON.stringify(chunk));
+            if (result === "failed") throw new GameError("The Apple TV could not save that file. Try again, or a smaller file.");
+            return result === "done";
+          },
           list: () => JSON.parse(__native.listSounds()),
           remove: (game, name) => __native.removeSound(game, name)
         } : null,
