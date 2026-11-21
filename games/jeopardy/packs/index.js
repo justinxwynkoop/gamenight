@@ -6,7 +6,8 @@ import general from './general.json' with { type: 'json' };
 import movies from './movies.json' with { type: 'json' };
 import nineties from './nineties.json' with { type: 'json' };
 import sports from './sports.json' with { type: 'json' };
+import media from './media.json' with { type: 'json' };
 
 export const HOUSE_PACKS = [
-  ['easy', easy], ['classic', classic], ['general', general], ['movies', movies], ['nineties', nineties], ['sports', sports],
+  ['easy', easy], ['classic', classic], ['general', general], ['movies', movies], ['nineties', nineties], ['sports', sports], ['media', media],
 ].map(([id, data]) => ({ id: `house-${id}`, data }));

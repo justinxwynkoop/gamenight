@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
 import { GameError } from '../lib.js';
-import { validateSet, T, readingTime, speakingTime, AFTER_SPEECH, FINAL_FLOOR } from '../games/jeopardy/game.js';
+import { validateSet, T, readingTime, speakingTime, AFTER_SPEECH, FINAL_FLOOR, cleanMedia, mediaTime } from '../games/jeopardy/game.js';
+import { HOUSE_PACKS } from '../games/jeopardy/packs/index.js';
 import { judge, asksForPerson } from '../games/jeopardy/judge.js';
 import { createHub } from '../engine/hub.js';
 
@@ -1033,4 +1034,62 @@ test('the family scoreboard counts every finished game on this TV, by name, and 
   g.playAgain();
   g.resetHall();
   assert.equal(g.publicView().hall.games, 0);
+});
+
+test('a clue can carry a picture, sound or video link, checked and cleaned', () => {
+  assert.equal(cleanMedia(null), null);
+  assert.equal(cleanMedia({ url: '' }), null);
+  assert.deepEqual(cleanMedia({ url: 'https://upload.wikimedia.org/a/Cow.ogg.mp3', start: 2, end: 9, credit: '  Jane   Doe ' }),
+    { kind: 'audio', url: 'https://upload.wikimedia.org/a/Cow.ogg.mp3', start: 2, end: 9, credit: 'Jane Doe' });
+  assert.deepEqual(cleanMedia({ url: 'https://example.com/flag.png', start: 3 }), { kind: 'image', url: 'https://example.com/flag.png' });
+  assert.equal(cleanMedia({ url: 'https://images-assets.nasa.gov/video/x/x~medium.mp4' }).kind, 'video');
+  assert.equal(cleanMedia({ url: 'https://example.com/clip', kind: 'video' }).kind, 'video');
+  assert.throws(() => cleanMedia({ url: 'http://example.com/a.mp3' }), /https/);
+  assert.throws(() => cleanMedia({ url: 'https://example.com/page.html' }), /Link straight/);
+  assert.throws(() => cleanMedia({ url: 'https://example.com/a.mp3', start: 5, end: 4 }), /after the start/);
+  assert.equal(mediaTime(null), 0);
+  assert.equal(mediaTime({ kind: 'image' }), 1500);
+  assert.equal(mediaTime({ kind: 'audio', start: 10, end: 20 }), 13000);
+  assert.equal(mediaTime({ kind: 'video' }), 33000, 'an open-ended clip is cut off after 30 seconds');
+  const set = structuredClone(own);
+  set.categories[0].clues[0].media = { url: 'nope' };
+  assert.throws(() => validateSet(set), /Category 1, clue 1/);
+});
+
+test('the Sights & Sounds pack is all free https media of a kind the Apple TV can play', () => {
+  const pack = HOUSE_PACKS.find((p) => p.id === 'house-media').data;
+  assert.equal(pack.categories.length, 6);
+  for (const c of pack.categories) {
+    assert.equal(c.clues.length, 5, c.name);
+    for (const cl of c.clues) {
+      const m = cleanMedia(cl.media);
+      assert.ok(m, `${c.name}: ${cl.q}`);
+      assert.ok(m.credit, `${cl.q} credits its source`);
+      assert.ok(!/\.(ogg|oga|ogv|webm)$/i.test(m.url), `${m.url} would not play on the Apple TV`);
+    }
+  }
+});
+
+test('a picture or sound clue waits for the TV to finish it, then opens the buzzers', () => {
+  const { g, clock } = setup();
+  const marked = structuredClone(own);
+  for (const cl of marked.categories[0].clues) cl.media = { url: 'https://example.com/moo.mp3', credit: 'CC0' };
+  sets['family-night'] = marked;
+  g.contentChanged();
+  g.act('setReadAloud', { on: false });
+  for (const p of g.publicView().packs) if (p.selected) g.togglePack(p.id);
+  g.togglePack('own-family-night');
+  begin(g);
+  sets['family-night'] = own;
+  const b = g.board();
+  let ci = 0, ri = 0;
+  while (b[ci].clues[ri].dd || b[ci].clues[ri].media?.kind !== 'audio') { ri++; if (ri === 5) { ri = 0; ci++; } }
+  g.pick(ci, ri);
+  const clue = g.publicView().clue;
+  assert.equal(clue.media.kind, 'audio');
+  clock.advance(readingTime(b[ci].clues[ri].q) + 10);
+  assert.equal(g.phase, 'reading', 'the sound gets its time to play');
+  g.act('readDone', { ci, ri });
+  clock.advance(AFTER_SPEECH + 10);
+  assert.equal(g.phase, 'open');
 });

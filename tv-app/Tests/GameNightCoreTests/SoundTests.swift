@@ -347,6 +347,25 @@ final class CluePlannerTests: XCTestCase {
         XCTAssertEqual(try jeopardy("jp-host-reading").readsAloud, false)
     }
 
+    func testASoundClueIsPlayedFirstEvenWithReadingAloudOff() throws {
+        var reading = try jeopardy("jp-reading")
+        reading.readsAloud = false
+        reading.clue?.media = JeoMedia(kind: "audio", url: "https://example.com/moo.mp3", start: 2, end: 60, credit: "CC0")
+        let say = try XCTUnwrap(CluePlanner.plan(from: try jeopardy("jp-board"), to: reading, spoken: nil).speak)
+        XCTAssertEqual(say.media?.url, "https://example.com/moo.mp3")
+        XCTAssertFalse(say.speaks, "only the sound plays; the voice stays quiet")
+        XCTAssertEqual(say.doneColumn, reading.clue?.ci)
+        XCTAssertEqual(say.media?.span.end, 32, "never more than 30 seconds")
+        // A picture does not play, so with reading aloud off there is nothing to do.
+        reading.clue?.media = JeoMedia(kind: "image", url: "https://example.com/flag.png")
+        XCTAssertNil(CluePlanner.plan(from: try jeopardy("jp-board"), to: reading, spoken: nil).speak)
+    }
+
+    func testTheClipStopsOnceTheClueLeavesTheScreen() throws {
+        XCTAssertFalse(CluePlanner.plan(from: try jeopardy("jp-board"), to: try jeopardy("jp-reading"), spoken: nil).stopClip)
+        XCTAssertTrue(CluePlanner.plan(from: try jeopardy("jp-reading"), to: try jeopardy("jp-open"), spoken: "x").stopClip)
+    }
+
     func testBlanksAreReadAsBlank() {
         XCTAssertEqual(CluePlanner.spoken("Fill in the ____ please"), "Fill in the blank please")
     }

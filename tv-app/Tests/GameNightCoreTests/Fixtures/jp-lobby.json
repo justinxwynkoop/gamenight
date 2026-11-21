@@ -200,6 +200,17 @@
         "own": false,
         "archive": false,
         "fresh": 14
+      },
+      {
+        "id": "house-media",
+        "title": "Sights & Sounds",
+        "description": "Picture, sound and video clues: animal calls, famous voices, flags, landmarks, paintings and space launches (free public-domain and Creative Commons media from Wikimedia Commons and NASA)",
+        "count": 6,
+        "selected": false,
+        "easy": false,
+        "own": false,
+        "archive": false,
+        "fresh": 6
       }
     ],
     "categoryCount": 52,

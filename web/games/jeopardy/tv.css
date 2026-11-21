@@ -412,3 +412,19 @@
 /* The family scoreboard line (lobby and the champion's screen). */
 .bw .hall { font-size: 2.4vh; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .bw .champ .hall { margin-top: .6vh; }
+
+/* A clue with a picture (or a sound or video): the picture beside the text. */
+.bw .card .q.withpic { display: grid; grid-template-columns: minmax(0, 46%) minmax(0, 1fr); gap: 56px; align-items: center; justify-content: stretch; text-align: left; font-size: 64px; }
+.bw .card .q.withpic .qt { min-width: 0; }
+.bw .card .q.withpic.small { grid-template-columns: minmax(0, 30%) minmax(0, 1fr); font-size: 56px; }
+.bw .card .pic { margin: 0; display: grid; gap: 10px; justify-items: center; min-width: 0; }
+.bw .card .pic img { max-width: 100%; max-height: 330px; object-fit: contain; border-radius: 18px; box-shadow: 0 12px 40px rgba(0, 0, 0, .45); background: rgba(255, 255, 255, .06); }
+.bw .card .q.small .pic img { max-height: 240px; }
+.bw .card .pic figcaption { font-size: 18px; font-weight: 600; color: var(--muted); line-height: 1.3; text-align: center; text-shadow: none; }
+.bw .card .pic.note .ic { font-size: 170px; line-height: 1; }
+.bw .card .pic.note figcaption { font-size: 34px; font-weight: 800; color: var(--sun); }
+.bw .card .pic.note small { display: block; font-size: 18px; font-weight: 600; color: var(--muted); }
+/* A clue's video plays over the whole screen, then the clue comes back. */
+.bw-video { position: fixed; inset: 0; z-index: 40; background: #000; display: grid; place-items: center; }
+.bw-video video { width: 100%; height: 100%; object-fit: contain; }
+.bw-video .credit { position: absolute; right: 2vw; bottom: 2vh; font: 600 1.6vh system-ui, sans-serif; color: rgba(255, 255, 255, .7); }

@@ -246,6 +246,7 @@
       "dd": false,
       "wager": null,
       "q": "He came up with the theory of relativity.",
+      "media": null,
       "answer": "Albert Einstein",
       "buzzedId": "p3",
       "buzzMs": 260,

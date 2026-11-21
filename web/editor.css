@@ -122,3 +122,23 @@ input[type=checkbox] { width: 22px; min-height: 22px; accent-color: var(--accent
 .toast.good { background: #14532d; }
 
 @media (min-width: 900px) { .ed-content { padding-top: 22px; } }
+
+/* A clue's picture, sound or video (games/jeopardy/mediapick.js). */
+.media { display: grid; gap: 8px; }
+.media-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.media-row input:not([type=number]) { flex: 1 1 200px; min-width: 0; }
+.media-row input[type=number] { width: 84px; flex: none; }
+.media-row select { flex: none; width: auto; }
+.media-kind { font-weight: 800; color: var(--gold); white-space: nowrap; }
+.media-note { font-size: 13px; color: var(--dim); }
+.media-warn { font-size: 13px; color: var(--warn); }
+.media-prev { display: block; max-width: 100%; max-height: 220px; border-radius: 10px; }
+audio.media-prev { width: 100%; }
+.media-search { display: grid; gap: 8px; padding: 10px; border-radius: 12px; border: 1px dashed var(--line); }
+.media-results { display: grid; gap: 6px; max-height: 360px; overflow-y: auto; }
+.media-hit { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: var(--s1); }
+.media-hit img, .media-icon { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; flex: none; display: grid; place-items: center; font-size: 24px; background: var(--s3); }
+.media-hit .grow { flex: 1; min-width: 0; }
+.media-hit .t { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-hit .s { font-size: 12px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-hit audio { width: 100%; height: 32px; margin-top: 4px; }
