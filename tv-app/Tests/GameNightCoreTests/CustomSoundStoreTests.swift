@@ -96,4 +96,15 @@ final class CustomSoundStoreTests: XCTestCase {
             XCTAssertTrue(SoundCue.customNames.contains(name), name)
         }
     }
+
+    func testTheListSaysWhetherTheTVCanPlayEachFile() {
+        let store = CustomSoundStore(directory: directory, canPlay: { $0.count > 2 })
+        XCTAssertEqual(store.save(piece(name: "lobby", index: 0, total: 1, bytes: [1, 2, 3])), .done)
+        XCTAssertEqual(store.save(piece(name: "think", index: 0, total: 1, bytes: [1])), .done)
+        let byName = Dictionary(uniqueKeysWithValues: store.list().map { ($0.name, $0.playable) })
+        XCTAssertEqual(byName["lobby"], true)
+        XCTAssertEqual(byName["think"], false, "a file the player rejects is flagged, not silently ignored")
+        let unchecked = CustomSoundStore(directory: directory)
+        XCTAssertNil(unchecked.list().first?.playable, "no check, no claim")
+    }
 }

@@ -14,7 +14,11 @@ Daily Double...), pick the file on your phone or computer and tap **Add to the T
 folder (the one place an Apple TV app may write; the Apple TV only clears it when it is nearly out of space, and the list
 then shows empty so you can add the sound again), so:
 
-- it works in **every build**, including the ones GitHub makes by itself, and it stays through app updates;
+- it works in **every build**, including the ones GitHub makes by itself, and it normally stays through app updates;
+- the Apple TV can clear its storage when it runs short of space, so **the host page keeps a copy of every file you add in
+  that browser** (only in that browser, never uploaded). If the TV loses them, the page puts them back by itself the next
+  time you open Settings (or shows a **Put them back on the TV** button if only some are missing). **Remove** forgets the copy too;
+- a file the Apple TV cannot play (some odd encodings) is flagged with a warning in the list instead of staying silent;
 - the file goes **only to your TV**, over the same link the phones use. It is not put on GitHub or any server;
 - you do not need a Mac, Xcode or a new TestFlight build, and a new sound plays straight away;
 - adding the same sound again replaces it, and **Remove** goes back to the built-in one.

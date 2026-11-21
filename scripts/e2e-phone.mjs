@@ -187,6 +187,19 @@ try {
   console.log('host page → several files at once: guessed Jeopardy lobby and Feud strike from their names, skipped the unknown one');
   for (const f of sounds.list()) await host.getByRole('button', { name: 'Remove', exact: true }).first().click();
   await until(() => sounds.list().length === 0, 'the two sounds to be removed');
+  // The Apple TV can clear its storage. This browser keeps a copy of what it sent, and puts it back by itself.
+  await until(async () => /Nothing added yet/.test(await host.locator('body').innerText()), 'the sounds list to show it is empty again');   // the card redraws after a removal, and would drop a file picked too early
+  await host.locator('input[type=file][aria-label="Sound file"]').setInputFiles({ name: 'theme.mp3', mimeType: 'audio/mpeg', buffer: Buffer.alloc(40 * 1024, 5) });
+  await host.getByRole('button', { name: 'Add to the TV' }).click();
+  await until(() => sounds.list().length === 1, 'the sound to reach the TV');
+  soundFiles.clear();   // the Apple TV cleared its storage
+  await host.reload();
+  await host.getByRole('button', { name: 'Settings', exact: true }).click();
+  await until(() => sounds.list().length === 1, 'the host page to put the cleared sound back', 20000);
+  if (sounds.list()[0].bytes !== 40 * 1024) fail(`the sound put back is ${sounds.list()[0].bytes} bytes`);
+  console.log('the TV lost its sounds, and the host page put its saved copy back by itself');
+  await host.getByRole('button', { name: 'Remove', exact: true }).first().click();
+  await until(() => sounds.list().length === 0, 'the restored sound to be removed');
   await host.getByRole('button', { name: /^Game$/ }).click();
 
   // From the host page, the Questions tab opens the editor with the PIN and room already known (one address to remember).
