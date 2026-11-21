@@ -1,5 +1,7 @@
 """Draws the Family Game Night app icon, Top Shelf images and the two home
-screen tiles (Singo Night, Jeopardy, Family Feud).
+screen tiles (Singo Night, Jeopardy, Family Feud, Spy Night).
+
+`python3 Tools/make_app_art.py <Assets.xcassets> spynight [menu.webp]` draws only the Spy Night tile (and the website's menu picture).
 
 Usage: python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
 
@@ -403,6 +405,79 @@ def feud_tile(w, h):
     return img.convert("RGB")
 
 
+def spy_tile(w, h):
+    """Spy Night: a night-time silhouette in a fedora and dark glasses, teal on one side and red on the other (the two sides of the game)."""
+    import math
+    img = vgrad(w, h, (20, 28, 62), (6, 8, 22))
+    img.alpha_composite(radial(w, h, w * 0.12, h * 0.55, h * 0.9, (56, 214, 196), 0.34))
+    img.alpha_composite(radial(w, h, w * 0.88, h * 0.55, h * 0.9, (255, 77, 94), 0.36))
+
+    # City skyline, far away.
+    sky = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(sky)
+    import random
+    rng = random.Random(7)
+    x = 0
+    while x < w:
+        bw = rng.uniform(0.04, 0.09) * w
+        bh = rng.uniform(0.12, 0.34) * h
+        sd.rectangle([x, h * 0.72 - bh, x + bw, h], fill=(10, 14, 34, 255))
+        for wy in range(int(h * 0.72 - bh + h * 0.03), int(h * 0.72), int(h * 0.05)):
+            for wx in range(int(x + bw * 0.15), int(x + bw * 0.85), int(w * 0.018)):
+                if rng.random() < 0.22:
+                    sd.rectangle([wx, wy, wx + w * 0.008, wy + h * 0.02], fill=(255, 214, 120, 150))
+        x += bw + w * 0.004
+    img.alpha_composite(sky)
+
+    # A spotlight cone down onto the figure.
+    cone = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(cone).polygon([(w * 0.47, -h * 0.05), (w * 0.53, -h * 0.05), (w * 0.72, h * 0.8), (w * 0.28, h * 0.8)], fill=(255, 255, 255, 34))
+    img.alpha_composite(cone.filter(ImageFilter.GaussianBlur(radius=h * 0.02)))
+
+    fig = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(fig)
+    cx = w / 2
+    ink = (4, 6, 16, 255)
+    # Coat and shoulders, a pale shirt collar and a tie.
+    fd.polygon([(cx - w * 0.19, h * 0.74), (cx - w * 0.15, h * 0.52), (cx - w * 0.06, h * 0.45), (cx + w * 0.06, h * 0.45), (cx + w * 0.15, h * 0.52), (cx + w * 0.19, h * 0.74)], fill=ink)
+    fd.polygon([(cx - w * 0.06, h * 0.45), (cx, h * 0.62), (cx + w * 0.06, h * 0.45), (cx + w * 0.025, h * 0.43), (cx - w * 0.025, h * 0.43)], fill=(226, 232, 248, 255))
+    fd.polygon([(cx - w * 0.012, h * 0.5), (cx + w * 0.012, h * 0.5), (cx + w * 0.02, h * 0.68), (cx, h * 0.72), (cx - w * 0.02, h * 0.68)], fill=(214, 36, 56, 255))
+    fd.polygon([(cx - w * 0.06, h * 0.45), (cx - w * 0.015, h * 0.55), (cx - w * 0.13, h * 0.6), (cx - w * 0.15, h * 0.52)], fill=ink)
+    fd.polygon([(cx + w * 0.06, h * 0.45), (cx + w * 0.015, h * 0.55), (cx + w * 0.13, h * 0.6), (cx + w * 0.15, h * 0.52)], fill=ink)
+    # Head: a plain dark oval, because nobody should know who this is.
+    fd.ellipse([cx - w * 0.075, h * 0.2, cx + w * 0.075, h * 0.46], fill=(14, 18, 40, 255))
+    # Dark glasses with a glint.
+    gy = h * 0.335
+    for gx in (cx - w * 0.036, cx + w * 0.036):
+        fd.rounded_rectangle([gx - w * 0.03, gy - h * 0.026, gx + w * 0.03, gy + h * 0.03], radius=h * 0.014, fill=(0, 0, 0, 255), outline=(120, 140, 200, 255), width=max(2, int(h * 0.004)))
+        fd.line([(gx - w * 0.02, gy - h * 0.012), (gx - w * 0.006, gy - h * 0.012)], fill=(190, 210, 255, 220), width=max(2, int(h * 0.006)))
+    fd.line([(cx - w * 0.006, gy - h * 0.005), (cx + w * 0.006, gy - h * 0.005)], fill=(120, 140, 200, 255), width=max(2, int(h * 0.004)))
+    # The fedora: crown, band and a wide brim tilted a little.
+    fd.polygon([(cx - w * 0.07, h * 0.255), (cx - w * 0.055, h * 0.1), (cx + w * 0.055, h * 0.1), (cx + w * 0.07, h * 0.255)], fill=ink)
+    fd.polygon([(cx - w * 0.069, h * 0.235), (cx + w * 0.069, h * 0.235), (cx + w * 0.07, h * 0.255), (cx - w * 0.07, h * 0.255)], fill=(214, 36, 56, 255))
+    fd.ellipse([cx - w * 0.13, h * 0.235, cx + w * 0.13, h * 0.285], fill=ink)
+    img.alpha_composite(fig.rotate(-3, center=(cx, h * 0.5), resample=Image.BICUBIC))
+
+    # Question marks drifting around: who is the Spy?
+    q = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    qf = ImageFont.truetype(BEBAS, int(h * 0.26))
+    gradient_text(q, (w * 0.14, h * 0.3), "?", qf, (150, 255, 236), (56, 214, 196), shadow=0.02, glow=(56, 214, 196, 130))
+    gradient_text(q, (w * 0.86, h * 0.27), "?", qf, (255, 170, 178), (255, 77, 94), shadow=0.02, glow=(255, 77, 94, 130))
+    img.alpha_composite(q)
+
+    front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.66, w * 1.02, h * 1.02], radius=h * 0.1, fill=(3, 5, 18, 225))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.04)))
+    title_font = ImageFont.truetype(BEBAS, int(h * 0.30))
+    gradient_text(front, (w / 2, h * 0.77), "SPY NIGHT", title_font, (255, 255, 255), (196, 208, 240),
+                  stroke=int(h * 0.01), stroke_fill=(10, 12, 40, 255), shadow=0.03, glow=(120, 150, 255, 130), spacing=h * 0.012)
+    tag_font = ImageFont.truetype(mi.SUB_FONT, int(h * 0.055))
+    gradient_text(front, (w / 2, h * 0.92), "WHO CAN YOU TRUST?", tag_font, (255, 224, 110), (255, 178, 40), shadow=0.06, spacing=h * 0.03)
+    img.alpha_composite(front)
+    return img.convert("RGB")
+
+
 # ---------- Writing the asset catalog ----------
 
 def save_stack(root, name, size, scales):
@@ -450,6 +525,12 @@ def save_tile(assets, name, make, size=(560, 336)):
 def main():
     assets = sys.argv[1]
     os.makedirs(assets, exist_ok=True)
+    if len(sys.argv) > 2 and sys.argv[2] == "spynight":
+        # Only the Spy Night tile (and its picture for the website's menu), leaving the other art untouched.
+        save_tile(assets, "Tile-SpyNight", spy_tile)
+        if len(sys.argv) > 3:
+            spy_tile(840, 504).save(sys.argv[3], quality=88)
+        return
     mi.write_json(os.path.join(assets, "Contents.json"), {"info": {"author": "xcode", "version": 1}})
     brand = os.path.join(assets, "App Icon & Top Shelf Image.brandassets")
     os.makedirs(brand, exist_ok=True)

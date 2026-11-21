@@ -126,6 +126,30 @@ rounds of a question with 3 to 8 ranked answers (points are how many out of 100 
 repo; their survey numbers are made up, not real survey results.
 
 
+## Spy Night
+
+A game of secret roles for **five to ten players**, each on their own phone. It is the same kind of game as the
+board game *The Resistance* and *Werewolf*, with its own name and look (base game only: no extra modules).
+
+**Roles.** When the game starts every phone shows a secret card. Most players are the **Resistance**; the rest are
+**Spies**: 2 Spies with 5 or 6 players, 3 with 7, 8 or 9, and 4 with 10. The Spies' phones list the other Spies; the
+Resistance learn nothing. The role card stays hidden until you tap it, and a **My role** button lets you look again.
+Neither the TV nor the host page ever shows a role while the game is running, so the host can play too.
+
+**Five missions.** The Resistance win by completing three; the Spies win by failing three.
+1. The **leader** (it passes clockwise after every vote) picks a team, which may include themselves. The mission
+   sizes are 2/3/2/3/3 with 5 players, 2/3/4/3/4 with 6, 2/3/3/4/4 with 7, and 3/4/4/5/5 with 8, 9 or 10.
+2. Everyone votes **Approve** or **Reject** on their phone. Votes show together when the last one is in. More than
+   half approving sends the team; a tie rejects. Five rejected teams in a row and the Spies win.
+3. The team members each play **Success** or **Fail** in secret. The Resistance can only play Success; a Spy may play
+   either. One Fail card fails the mission (two are needed on the fourth mission with 7 or more players). Everyone
+   sees how many Fail cards there were, never who played them.
+
+**Who starts it.** With a host page open, the host presses **Deal the roles**. Without one, the first player to join
+does, from their phone. Anyone who goes away does not hold things up: their vote counts as Reject, and their mission
+card as Success. The host (or the first player) can also **Move on without waiting**. Past votes are public, so the
+phones keep a "Who voted for what" list to argue over. When the game ends everyone's role is shown.
+
 ## Players and teams
 
 - **Jeopardy** is always individuals, up to ten players.
