@@ -43,9 +43,9 @@ final class EngineHostTests: XCTestCase {
 
     private func say(_ host: EngineHost, _ id: String, _ json: String) { host.receive(id, json) }
 
-    func testStartsAndListsBothGames() throws {
+    func testStartsAndListsTheGames() throws {
         let host = try makeHost(Wire())
-        XCTAssertEqual(host.games().map(\.id), ["jeopardy", "feud"])
+        XCTAssertEqual(host.games().map(\.id), ["jeopardy", "feud", "spynight"])
         XCTAssertEqual(host.errors, [])
     }
 
