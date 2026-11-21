@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(AVFoundation)
+import AVFoundation
+#endif
 
 /// Keeps the family's own sound files on this Apple TV. The host page sends a file in pieces (see engine/sounds.js in the
 /// gamenight repo); this puts the pieces together and keeps the finished file as `<game>__<name>.<ext>`, the same names
@@ -22,6 +25,9 @@ public final class CustomSoundStore {
         public var name: String
         public var ext: String
         public var bytes: Int
+        /// Whether this Apple TV can play the file (nil when that was not checked). The host page warns when it is false,
+        /// so a file the TV cannot decode does not just stay silent.
+        public var playable: Bool? = nil
     }
 
     /// What became of a piece: kept and waiting for the rest, the file is now complete, or it could not be kept.
@@ -39,14 +45,26 @@ public final class CustomSoundStore {
     public static let standard: CustomSoundStore = {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        return CustomSoundStore(directory: base.appendingPathComponent("CustomSounds", isDirectory: true))
+        return CustomSoundStore(directory: base.appendingPathComponent("CustomSounds", isDirectory: true), canPlay: CustomSoundStore.systemCanPlay)
     }()
 
     private let directory: URL
     private let fileManager = FileManager.default
+    /// Says whether a file's bytes can be played; `list()` reports it. The app's own store checks with AVAudioPlayer.
+    private let canPlay: ((Data) -> Bool)?
 
-    public init(directory: URL) {
+    public init(directory: URL, canPlay: ((Data) -> Bool)? = nil) {
         self.directory = directory
+        self.canPlay = canPlay
+    }
+
+    /// Whether the system's audio player accepts these bytes (always true where there is no audio player to ask).
+    public static func systemCanPlay(_ data: Data) -> Bool {
+        #if canImport(AVFoundation)
+        return (try? AVAudioPlayer(data: data)) != nil
+        #else
+        return true
+        #endif
     }
 
     private var partsDirectory: URL { directory.appendingPathComponent(".parts", isDirectory: true) }
@@ -111,7 +129,8 @@ public final class CustomSoundStore {
             guard Self.extensions.contains(ext), let parsed = BundledSounds.parse(stem: stem),
                   SoundCue.customNames.contains(parsed.name),
                   let size = (try? fileManager.attributesOfItem(atPath: url.path))?[.size] as? Int else { continue }
-            entries.append(Entry(game: parsed.game ?? "shared", name: parsed.name, ext: ext, bytes: size))
+            let playable = canPlay.map { check in (try? Data(contentsOf: url)).map(check) ?? false }
+            entries.append(Entry(game: parsed.game ?? "shared", name: parsed.name, ext: ext, bytes: size, playable: playable))
         }
         return entries
     }

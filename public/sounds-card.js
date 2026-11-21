@@ -4,6 +4,7 @@
 import { h, hostRpc } from './common.js';
 import { button, card, eyebrow } from './ui.js';
 import { guessSounds } from './sound-guess.js';
+import { library } from './sound-library.js';
 
 const PIECE_BYTES = 90 * 1024;   // raw bytes per piece; about 120 KB once it is base64
 
@@ -13,6 +14,8 @@ let loading = false;
 let status = '';        // progress or an error under the form
 let busy = false;
 const choice = { game: 'shared', name: 'lobby' };
+let kept = [];          // copies of the files this browser has sent (see sound-library.js), to put back if the TV loses them
+let autoTried = false;  // the automatic put-back is tried once per page load
 let bulk = [];          // files picked together, each with the game and sound it is for ({ file, game, name | null, note? })
 
 const base64 = (bytes) => {
@@ -28,17 +31,43 @@ async function refresh() {
   const r = await hostRpc('listSounds', {});
   loading = false;
   info = r.ok ? r.data : { available: false, files: [], error: r.error };
+  kept = await library.all();
   draw();
+  // A TV with no files of its own at all, when this browser has sent some, has had them cleared: put them back by itself.
+  if (info.available && kept.length && !info.files.length && !autoTried && !busy) { autoTried = true; await restoreKept(); }
+}
+
+/** The files this browser has sent that the TV no longer lists. */
+const missing = () => kept.filter((k) => !info.files.some((f) => f.game === k.game && f.name === k.name));
+
+async function restoreKept() {
+  const todo = missing();
+  if (!todo.length) return;
+  busy = true;
+  const failed = [];
+  for (const [i, k] of todo.entries()) {
+    const error = await sendBytes(`${k.name}.${k.ext}`, k.bytes, { game: k.game, name: k.name }, `(${i + 1} of ${todo.length}) `);
+    if (error) failed.push(`${k.name}: ${error}`);
+  }
+  busy = false;
+  status = failed.length ? `${todo.length - failed.length} of ${todo.length} put back. Not put back: ${failed.join('; ')}` : `Put ${todo.length} of your sounds back on the TV.`;
+  await refresh();
 }
 
 /** Sends one file to the TV a piece at a time, so each message stays small. Resolves with an error message, or null once the TV has it. */
 async function sendFile(file, target, prefix = '') {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!info.extensions.includes(ext)) return 'The Apple TV plays .mp3, .m4a and .wav files.';
   const bytes = new Uint8Array(await file.arrayBuffer());
+  const error = await sendBytes(file.name, bytes, target, prefix);
+  if (!error) await library.remember(target.game, target.name, file.name.split('.').pop().toLowerCase(), bytes);   // this browser keeps a copy
+  return error;
+}
+
+async function sendBytes(fileName, bytes, target, prefix = '') {
+  const ext = fileName.split('.').pop().toLowerCase();
+  if (!info.extensions.includes(ext)) return 'The Apple TV plays .mp3, .m4a and .wav files.';
   const total = Math.max(1, Math.ceil(bytes.length / PIECE_BYTES));
   for (let index = 0; index < total; index++) {
-    status = `${prefix}Sending ${file.name}… ${Math.round((index / total) * 100)}%`; draw();
+    status = `${prefix}Sending ${fileName}… ${Math.round((index / total) * 100)}%`; draw();
     const r = await hostRpc('putSound', { ...target, ext, index, total, data: base64(bytes.subarray(index * PIECE_BYTES, (index + 1) * PIECE_BYTES)) });
     if (!r.ok) return r.error ?? 'The TV did not take it';
   }
@@ -101,13 +130,18 @@ function draw() {
   else if (!info.available) {
     kids.push(h('p', { class: 'dim' }, info.error ?? 'This TV cannot keep your own sounds. The Apple TV app can.'));
   } else {
-    kids.push(h('p', { class: 'dim' }, 'Add music and sounds here and the TV keeps them. They stay on the TV, not on the internet, and they stay through app updates. (If the Apple TV runs short of space it can clear them; the list below then shows what is left, and you can add them again.)'));
+    kids.push(h('p', { class: 'dim' }, 'Add music and sounds here and the TV keeps them. They stay on the TV, not on the internet. This browser also keeps a copy of each file you add (only in this browser), so if the Apple TV clears its storage the page can put them back.'));
     const label = (game, name) => `${info.games.find((g) => g.id === game)?.label ?? game}: ${(() => { const n = info.names.find((x) => x.name === name); return n?.labels?.[game] ?? n?.label ?? name; })()}`;
     if (info.files.length) {
       kids.push(h('div', { class: 'list' }, info.files.map((f) => h('div', { class: 'rowi' },
-        h('div', { class: 'grow' }, h('div', { class: 't' }, label(f.game, f.name)), h('div', { class: 's' }, `${f.name}.${f.ext} · ${kb(f.bytes)}`)),
-        button({ label: 'Remove', kind: 'ghost', size: 'sm', disabled: busy, onclick: async () => { const r = await hostRpc('deleteSound', { game: f.game, name: f.name }); status = r.ok ? '' : r.error; await refresh(); } })))));
+        h('div', { class: 'grow' }, h('div', { class: 't' }, label(f.game, f.name)), h('div', { class: 's' }, `${f.name}.${f.ext} · ${kb(f.bytes)}`),
+          f.playable === false ? h('div', { class: 's', style: { color: '#fca5a5' }, role: 'alert' }, '⚠ The Apple TV can’t play this file, so it stays silent. Try the same sound as an .mp3 or .m4a.') : null),
+        button({ label: 'Remove', kind: 'ghost', size: 'sm', disabled: busy, onclick: async () => { const r = await hostRpc('deleteSound', { game: f.game, name: f.name }); if (r.ok) await library.forget(f.game, f.name); status = r.ok ? '' : r.error; await refresh(); } })))));
     } else kids.push(h('p', { class: 'dim' }, 'Nothing added yet. The built-in sounds are used.'));
+    if (missing().length) {
+      kids.push(h('p', { class: 'dim' }, `This browser sent ${missing().length === 1 ? 'a sound' : `${missing().length} sounds`} to the TV before that it no longer has (the Apple TV clears its storage when it runs short of space).`),
+        button({ label: busy ? 'Sending…' : `Put ${missing().length === 1 ? 'it' : 'them'} back on the TV`, kind: 'primary', block: true, disabled: busy, onclick: restoreKept }));
+    }
 
     const gameSel = h('select', { 'aria-label': 'Which game', onchange: (e) => {
       choice.game = e.target.value;
