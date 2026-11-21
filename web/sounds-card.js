@@ -3,6 +3,7 @@
 // on every update and would otherwise throw away a half-finished choice.
 import { h, hostRpc } from './common.js';
 import { button, card, eyebrow } from './ui.js';
+import { guessSounds } from './sound-guess.js';
 
 const PIECE_BYTES = 90 * 1024;   // raw bytes per piece; about 120 KB once it is base64
 
@@ -12,6 +13,7 @@ let loading = false;
 let status = '';        // progress or an error under the form
 let busy = false;
 const choice = { game: 'shared', name: 'lobby' };
+let bulk = [];          // files picked together, each with the game and sound it is for ({ file, game, name | null, note? })
 
 const base64 = (bytes) => {
   let text = '';
@@ -29,21 +31,67 @@ async function refresh() {
   draw();
 }
 
-/** Sends one file to the TV a piece at a time, so each message stays small. */
-async function send(file) {
+/** Sends one file to the TV a piece at a time, so each message stays small. Resolves with an error message, or null once the TV has it. */
+async function sendFile(file, target, prefix = '') {
   const ext = file.name.split('.').pop().toLowerCase();
-  if (!info.extensions.includes(ext)) { status = 'The Apple TV plays .mp3, .m4a and .wav files.'; draw(); return; }
+  if (!info.extensions.includes(ext)) return 'The Apple TV plays .mp3, .m4a and .wav files.';
   const bytes = new Uint8Array(await file.arrayBuffer());
   const total = Math.max(1, Math.ceil(bytes.length / PIECE_BYTES));
-  busy = true;
   for (let index = 0; index < total; index++) {
-    status = `Sending ${file.name}… ${Math.round((index / total) * 100)}%`; draw();
-    const r = await hostRpc('putSound', { ...choice, ext, index, total, data: base64(bytes.subarray(index * PIECE_BYTES, (index + 1) * PIECE_BYTES)) });
-    if (!r.ok) { busy = false; status = r.error ?? 'The TV did not take it'; draw(); return; }
+    status = `${prefix}Sending ${file.name}… ${Math.round((index / total) * 100)}%`; draw();
+    const r = await hostRpc('putSound', { ...target, ext, index, total, data: base64(bytes.subarray(index * PIECE_BYTES, (index + 1) * PIECE_BYTES)) });
+    if (!r.ok) return r.error ?? 'The TV did not take it';
+  }
+  return null;
+}
+
+async function send(file) {
+  busy = true;
+  const error = await sendFile(file, { ...choice });
+  busy = false;
+  status = error ?? `Added. It is on the TV now (${kb(file.size)}).`;
+  if (error) draw(); else await refresh();
+}
+
+/** Sends every picked file that has a sound chosen, one after another, and says which went and which did not. */
+async function sendAll() {
+  const todo = bulk.filter((b) => b.name);
+  if (!todo.length) { status = 'Nothing to add: pick a sound for at least one file.'; draw(); return; }
+  busy = true;
+  const failed = [];
+  for (const [i, b] of todo.entries()) {
+    const error = await sendFile(b.file, { game: b.game, name: b.name }, `(${i + 1} of ${todo.length}) `);
+    if (error) failed.push(`${b.file.name}: ${error}`);
   }
   busy = false;
-  status = `Added. It is on the TV now (${kb(bytes.length)}).`;
+  bulk = bulk.filter((b) => failed.some((f) => f.startsWith(`${b.file.name}:`)));
+  status = failed.length ? `${todo.length - failed.length} of ${todo.length} added. Not added: ${failed.join('; ')}` : `All ${todo.length} added. They are on the TV now.`;
   await refresh();
+}
+
+function pickMany(files) {
+  const guesses = guessSounds([...files].map((f) => f.name), info.names);
+  const byName = new Map([...files].map((f) => [f.name, f]));
+  bulk = guesses.map((g) => ({ file: byName.get(g.file), game: g.game, name: g.name, note: g.duplicateOf ? `Same sound as ${g.duplicateOf}` : '' }));
+  status = '';
+  draw();
+}
+
+/** One row of the several-at-once list: the file, and the game and sound it will be added as. */
+function bulkRow(b) {
+  const soundsFor = (game) => info.names.filter((n) => n.games.includes(game));
+  const gameSel = h('select', { 'aria-label': `Game for ${b.file.name}`, disabled: busy, onchange: (e) => {
+    b.game = e.target.value;
+    if (b.name && !soundsFor(b.game).some((n) => n.name === b.name)) b.name = null;
+    draw();
+  } }, info.games.map((g) => h('option', { value: g.id, selected: g.id === b.game }, g.label)));
+  const nameSel = h('select', { 'aria-label': `Sound for ${b.file.name}`, disabled: busy, onchange: (e) => { b.name = e.target.value || null; b.note = ''; draw(); } },
+    h('option', { value: '', selected: !b.name }, '— Skip this one —'),
+    soundsFor(b.game).map((n) => h('option', { value: n.name, selected: n.name === b.name }, n.labels?.[b.game] ?? n.label)));
+  return h('div', { class: 'rowi', style: { display: 'grid', gap: '6px' } },
+    h('div', { class: 't' }, b.file.name, h('span', { class: 's' }, ` · ${kb(b.file.size)}`)),
+    b.note ? h('div', { class: 's' }, b.note) : null,
+    h('div', { class: 'inline' }, gameSel, nameSel));
 }
 
 function draw() {
@@ -69,7 +117,15 @@ function draw() {
     const nameSel = h('select', { 'aria-label': 'Which sound', onchange: (e) => { choice.name = e.target.value; } },
       info.names.filter((n) => n.games.includes(choice.game)).map((n) => h('option', { value: n.name, selected: n.name === choice.name }, n.label)));
     const file = h('input', { type: 'file', accept: 'audio/*,.mp3,.m4a,.wav', 'aria-label': 'Sound file', disabled: busy });
+    const many = h('input', { type: 'file', multiple: true, accept: 'audio/*,.mp3,.m4a,.wav', 'aria-label': 'Several sound files', disabled: busy,
+      onchange: (e) => { if (e.target.files.length) pickMany(e.target.files); } });
     kids.push(
+      h('div', { class: 'eyebrow' }, 'Add several at once'),
+      h('p', { class: 'dim' }, 'Choose all your files together. The page guesses the game and sound from each file’s name, and you can change any guess.'),
+      h('label', { class: 'field' }, h('span', {}, 'Files (.mp3, .m4a or .wav)'), many),
+      ...(bulk.length ? [h('div', { class: 'list' }, bulk.map(bulkRow)),
+        button({ label: busy ? 'Sending…' : `Add ${bulk.filter((b) => b.name).length} to the TV`, kind: 'primary', block: true, disabled: busy, onclick: sendAll })] : []),
+      h('div', { class: 'eyebrow' }, 'Or add one'),
       h('label', { class: 'field' }, h('span', {}, 'Game'), gameSel),
       h('label', { class: 'field' }, h('span', {}, 'Sound'), nameSel),
       h('label', { class: 'field' }, h('span', {}, 'File (.mp3, .m4a or .wav)'), file),
