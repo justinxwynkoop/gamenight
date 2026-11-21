@@ -27,6 +27,12 @@ globalThis.Engine = {
       // Which clues this Apple TV has shown (kept by the app between rooms), so the next game deals new ones.
       memory: o.memory ?? null,
       onMemory: (m) => { if (__native.saveMemory) __native.saveMemory(JSON.stringify(m)); },
+      // The family's own sounds, kept by the app (sent from the host page, see engine/sounds.js).
+      sounds: __native.saveSoundChunk ? {
+        save: (chunk) => !!__native.saveSoundChunk(JSON.stringify(chunk)),
+        list: () => JSON.parse(__native.listSounds()),
+        remove: (game, name) => __native.removeSound(game, name),
+      } : null,
       now: () => performance.now(),
       code: o.code || undefined,
       broadcast: (topic, event, payload) => __native.broadcast(topic, event, JSON.stringify(payload)),

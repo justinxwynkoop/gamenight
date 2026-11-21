@@ -248,11 +248,15 @@ final class SoundDirector {
 
     // MARK: - Files from the server
 
-    /// Downloads the family's own sound files from the server. Anything that can't be
+    /// Loads the family's own sound files (inside the app, and added from the host page), then any from a server. Anything that can't be
     /// played (an .ogg, say) is skipped and the built-in sound is used instead.
     func loadCustomSounds(from address: ServerAddress?) async {
         // The family's own files inside the app first (see BundledSounds); a server's files replace them.
-        custom = BundledSounds.load().filter { (try? AVAudioPlayer(data: $0.value)) != nil }
+        // Then the sounds the host added from the host page (kept on this TV), which replace the ones in the app.
+        var own = BundledSounds.load()
+        own.merge(CustomSoundStore.standard.loadAll()) { _, added in added }
+        custom = own.filter { (try? AVAudioPlayer(data: $0.value)) != nil }
+        stopMusic(owner: .lobby)   // a lobby tune that was just added or replaced starts over (refreshLobbyMusic below)
         defer { refreshLobbyMusic() }
         guard let address, let base = URL(string: "http://\(address.host):\(address.port)/") else { return }
         do {

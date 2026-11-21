@@ -146,6 +146,9 @@ function connectOnline({ hello, onState, onMessage, onStatus }) {
 let onlineConnection = null;
 let onlineHostPin = null;
 
+/** Asks the TV something that is not an action (host only), through the relay. Resolves with { ok, data | error }. */
+export const hostRpc = (op, args = {}) => (onlineConnection ? onlineConnection.rpc(op, args) : Promise.resolve({ ok: false, error: 'Not available here' }));
+
 /** Online, makes sure there is a host connection with this PIN (the editor page has none until it is given the PIN). */
 export async function onlineHostConnect(pin) {
   if (onlineConnection && onlineHostPin === pin) return;

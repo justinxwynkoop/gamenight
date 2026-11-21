@@ -36,6 +36,8 @@ final class GameNightClient {
     private(set) var relayIssue: String?
     /// Set when the server sent a state this app could not read.
     private(set) var readError: String?
+    /// Goes up whenever the host adds or removes one of the family's own sounds, so the display loads them again.
+    private(set) var soundsVersion = 0
     /// Singo Night's phone cards, while Singo is the game (ServerState sees it only as an unsupported game).
     private(set) var singo: SingoPhoneState?
 
@@ -198,7 +200,9 @@ final class GameNightClient {
                 onSave: { json in UserDefaults.standard.set(json, forKey: Self.savedRoomKey) },
                 onSets: { json in UserDefaults.standard.set(json, forKey: Self.userSetsKey) },
                 onMemory: { json in UserDefaults.standard.set(json, forKey: Self.memoryKey) },
-                onArchive: { [weak self] request in self?.loadArchive(request) }
+                onArchive: { [weak self] request in self?.loadArchive(request) },
+                sounds: CustomSoundStore.standard,
+                onSounds: { [weak self] in self?.soundsVersion += 1 }
             )
             engine = host
             realtime = relay

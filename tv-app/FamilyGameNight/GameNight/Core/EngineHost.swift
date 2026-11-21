@@ -48,6 +48,8 @@ public final class EngineHost {
     ///   - onSets: the family saved, imported or deleted a set (from the online editor): keep this text
     ///   - memory: what the games keep between rooms (which clues this TV has shown), as the last `onMemory` gave it
     ///   - onMemory: that memory changed: keep this text
+    ///   - sounds: where the family's own sounds are kept (sent from the host page); nil if this host keeps none
+    ///   - onSounds: a sound was added or removed, so the player should load the files again
     ///   - game: the game the TV's tile is for ("jeopardy" or "feud"). A saved room that was playing another game is not resumed.
     ///   - code: the room code phones type (four letters); the engine makes one if this is nil
     ///   - onBroadcast: the engine wants a message put on the online relay (Supabase Realtime)
@@ -65,7 +67,9 @@ public final class EngineHost {
         onSave: @escaping (_ json: String) -> Void = { _ in },
         onSets: @escaping (_ json: String) -> Void = { _ in },
         onMemory: @escaping (_ json: String) -> Void = { _ in },
-        onArchive: @escaping (_ request: ArchiveRequest) -> Void = { _ in }
+        onArchive: @escaping (_ request: ArchiveRequest) -> Void = { _ in },
+        sounds: CustomSoundStore? = nil,
+        onSounds: @escaping () -> Void = {}
     ) throws {
         guard let context = JSContext() else { throw EngineError.scriptFailed("no JavaScript context") }
         let problems = Problems()
@@ -93,6 +97,22 @@ public final class EngineHost {
             if let request = try? JSONDecoder().decode(ArchiveRequest.self, from: Data(json.utf8)) { onArchive(request) }
         }
         set("loadArchive", unsafeBitCast(loadArchive, to: AnyObject.self))
+        // The family's own sounds, kept on this TV: the host page sends them through the engine (engine/sounds.js).
+        if let sounds {
+            let saveChunk: @convention(block) (String) -> Bool = { json in
+                let finished = sounds.save(pieceJSON: json)
+                if finished { onSounds() }
+                return finished
+            }
+            let listSounds: @convention(block) () -> String = { sounds.listJSON() }
+            let removeSound: @convention(block) (String, String) -> Void = { game, name in
+                sounds.remove(game: game, name: name)
+                onSounds()
+            }
+            set("saveSoundChunk", unsafeBitCast(saveChunk, to: AnyObject.self))
+            set("listSounds", unsafeBitCast(listSounds, to: AnyObject.self))
+            set("removeSound", unsafeBitCast(removeSound, to: AnyObject.self))
+        }
         set("save", unsafeBitCast(save, to: AnyObject.self))
         set("now", unsafeBitCast(now, to: AnyObject.self))
         set("random", unsafeBitCast(random, to: AnyObject.self))
