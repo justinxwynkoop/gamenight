@@ -60,6 +60,8 @@ function subtitle() {
 }
 
 // ---------- the pieces ----------
+/** What a category asks for, ready to read out when someone does not get the name. */
+const aboutNote = (about) => (about ? h('p', { class: 'about-note' }, h('b', {}, 'About the category: '), about) : null);
 const answerBox = (a, alt) => h('div', { class: 'answer' }, h('small', {}, 'Answer (only you can see this)'), h('b', {}, a ?? ''),
   alt?.length ? h('small', { style: { color: '#bbf7d0', textTransform: 'none', letterSpacing: '0' } }, `Also accepted: ${alt.join(', ')}`) : null);
 
@@ -70,6 +72,7 @@ function clueCard() {
     c.media?.kind === 'image' ? h('img', { src: c.media.url, alt: '', style: { display: 'block', maxWidth: '100%', maxHeight: '28vh', margin: '8px auto', borderRadius: '10px' } })
       : c.media ? h('p', { class: 'dim' }, c.media.kind === 'audio' ? '🔊 The TV plays a sound first.' : '🎬 The TV plays a video first.') : null,
     h('div', { class: 'card-title' }, s.q ?? c.q ?? ''),
+    aboutNote(c.about),
     answerBox(s.answer, s.alt));
 }
 
@@ -215,13 +218,13 @@ function finalView() {
   const f = v.final; const s = v.secret; const ph = v.phase;
   const body = [];
   if (ph === 'final-wager') {
-    body.push(card(eyebrow('Final Jeopardy'), h('div', { class: 'card-title' }, f.category),
+    body.push(card(eyebrow('Final Jeopardy'), h('div', { class: 'card-title' }, f.category), aboutNote(f.about),
       h('p', { class: 'dim' }, 'Players are wagering on their phones.'),
       h('div', { class: 'list' }, f.eligible.map((id) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, nameOf(id)), pill(f.wagered.includes(id) ? 'locked in' : 'thinking…', f.wagered.includes(id) ? 'ok' : '')))),
       answerBox(s.finalAnswer)));
   } else if (ph === 'final-answer') {
     const got = s.finalAnswers ?? {};
-    body.push(card(eyebrow(`Final Jeopardy · ${f.category}`), h('div', { class: 'card-title' }, f.q), clockPill(), answerBox(s.finalAnswer),
+    body.push(card(eyebrow(`Final Jeopardy · ${f.category}`), h('div', { class: 'card-title' }, f.q), aboutNote(f.about), clockPill(), answerBox(s.finalAnswer),
       h('div', { class: 'list' }, f.eligible.map((id) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, nameOf(id)), h('span', { class: 's' }, id in got ? `🔒 ${got[id] || '(blank)'}` : 'typing…'))))));
   } else {
     body.push(card(eyebrow('Final Jeopardy results'), h('p', { class: 'dim' }, `The answer: ${f.answer ?? s.finalAnswer}. Typed answers are checked automatically. Flip one if it was judged wrong.`),

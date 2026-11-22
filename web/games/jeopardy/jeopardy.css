@@ -236,3 +236,9 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-pgo { position: sticky; bottom: 0; padding-top: 2px; }
 .jp .jp-go { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jp .jp-gohint { padding: 12px 0; }
+
+/* A category's note (what it asks for), for the host to read out: in the picker, under the clue, on the host page. */
+.jp .jp-pabout { margin: -3px 0 8px; font-size: 13px; line-height: 1.3; font-weight: 600; color: #c9d4ff; }
+.jp .jp-clue .jp-about { margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(255, 255, 255, .18); font-size: 14px; line-height: 1.3; font-weight: 600; color: #c9d4ff; }
+.jp .jp-clue .jp-about b, .about-note b { color: var(--jp-sun, #FFC940); font-weight: 800; }
+.about-note { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 201, 64, .1); border: 1px solid rgba(255, 201, 64, .35); font-size: 15px; line-height: 1.35; }

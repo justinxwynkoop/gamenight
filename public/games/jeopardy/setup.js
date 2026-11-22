@@ -162,6 +162,7 @@ export function cluePicker(board, { sel, onSelect, onOpen, dd = null }) {
     const left = c.clues.filter((cl) => !cl.used).length;
     return h('div', { class: `jp-pcat ${left ? '' : 'done'} ${sel?.ci === ci ? 'on' : ''}` },
       h('div', { class: 'jp-pname' }, h('span', {}, c.name), h('small', {}, left ? `${left} left` : 'All played')),
+      left && c.about ? h('div', { class: 'jp-pabout' }, c.about) : null,
       left ? h('div', { class: 'jp-pvals' }, c.clues.map((cl, ri) => (cl.used
         ? h('span', { class: 'jp-pval used' })
         : h('button', {

@@ -3,6 +3,8 @@
 // Nothing from the dataset is stored in this repository: the Apple TV downloads one random season when a room
 // starts (about 1 to 2.5 MB of tab-separated text), and parseArchive() turns it into topic packs the lobby can
 // switch on and off. This file only parses; it never touches the network.
+import { showComment } from './about.js';
+
 const SEASONS = 42;
 const PER_TOPIC = 40;
 const MAX_FINALS = 30;
@@ -97,10 +99,12 @@ export function parseArchive(tsv, season, rng = Math.random) {
       continue;
     }
     if (round !== '1' && round !== '2') continue;
-    // Categories with host comments often depend on them ("quotes indicate..."), so skip those.
-    if (clean(f[iM])) continue;
     const key = `${f[iD]}|${round}|${cat}`;
     if (!groups.has(key)) groups.set(key, { name: cat, round, clues: [] });
+    // The show's own note on a category ("Each response begins with I-N") is kept for the host to read out.
+    // A note that only introduces a presenter or a recording means the clues lean on it, so that column goes.
+    const said = clean(f[iM]);
+    if (said) { const about = showComment(said); if (about) groups.get(key).about = about; else groups.get(key).bad = true; }
     groups.get(key).clues.push({ v: Number(f[iV]) || 0, q: clue, ...response(resp) });
   }
   const categories = [];
@@ -108,7 +112,7 @@ export function parseArchive(tsv, season, rng = Math.random) {
     // Only full columns: five clues with five different dollar values.
     if (g.bad || g.clues.length !== 5 || new Set(g.clues.map((c) => c.v)).size !== 5) continue;
     g.clues.sort((x, y) => x.v - y.v);
-    categories.push({ name: g.name, clues: g.clues.map(({ q, a, alt }) => ({ q, a, alt })) });
+    categories.push({ name: g.name, ...(g.about ? { about: g.about } : {}), clues: g.clues.map(({ q, a, alt }) => ({ q, a, alt })) });
   }
   const seen = new Set();
   const byTopic = new Map([...Object.keys(TOPICS), ANY].map((t) => [t, []]));

@@ -1242,3 +1242,15 @@ test('with a host page connected, players say their pick out loud: only the host
   assert.notEqual(g.phase, 'board');
   assert.equal(g.publicView().peek, null, 'the glow goes once a clue is open');
 });
+
+test('each category carries a note for the host, on the board and with its clue', () => {
+  const { g } = setup();
+  begin(g);
+  const v = g.publicView();
+  assert.ok(v.board.every((c) => typeof c.about === 'string'));
+  const ci = v.board.findIndex((c) => c.about);
+  assert.ok(ci >= 0, 'some category has a note');
+  const ri = g.board()[ci].clues.findIndex((cl) => !cl.dd);
+  g.pick(ci, ri);
+  assert.equal(g.publicView().clue.about, v.board[ci].about);
+});

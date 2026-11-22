@@ -17,6 +17,7 @@ import { GameError, fail, cleanName, int } from '../../lib.js';
 import { judge, asksForPerson } from './judge.js';
 import { parseArchive, pickSeason, ERAS } from './archive.js';
 import { HOUSE_PACKS } from './packs/index.js';
+import { cleanAbout, explainCategory } from './about.js';
 
 export { GameError };
 export const COLS = 6;
@@ -129,6 +130,7 @@ export function validateSet(set) {
   };
   set.categories.forEach((cat, c) => {
     if (!cleanName(cat?.name, 40)) fail(`Category ${c + 1} needs a name`);
+    if (cat.about !== undefined && typeof cat.about !== 'string') fail(`Category ${c + 1}: the note for the host must be text`);
     if (!Array.isArray(cat.clues) || cat.clues.length !== ROWS) fail(`Category ${c + 1} needs exactly ${ROWS} clues`);
     cat.clues.forEach((cl, r) => {
       if (!String(cl?.clue ?? '').trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its clue text`);
@@ -420,7 +422,7 @@ export class JeopardyGame {
       own.push(normalizePack(`own-${id}`, {
         title: set.title, description: 'A full board from the question editor (Questions on the host page)', selected: false, own: true,
         categories: set.categories.map((c) => ({
-          name: c.name,
+          name: c.name, about: c.about,
           clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble, media: cleanMedia(cl.media) })),
         })),
         finals: [{ category: set.final.category, q: set.final.clue, a: set.final.answer, alt: set.final.alt ?? [] }],
@@ -618,6 +620,8 @@ export class JeopardyGame {
   #makeRound(r, cats, ddCount) {
     const board = cats.map((c) => ({
       name: c.name,
+      // What the category is asking for, for the host to read out: its own note, or one for a well-known kind of name.
+      about: cleanAbout(c.about) || explainCategory(c.name),
       clues: c.clues.slice(0, 5).map((cl, i) => ({
         // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
         value: Number(cl.v) > 0 ? Math.round(Number(cl.v)) : (i + 1) * 200 * r,
@@ -742,7 +746,7 @@ export class JeopardyGame {
     this.lastResult = null;
     this.collecting = null;
     this.recentBuzzes = null;
-    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
+    this.clue = { ci, ri, cat: b[ci].name, about: b[ci].about || '', value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
       // A wager nobody places (a phone that went to sleep) is $0, so the game never stalls.
@@ -1500,12 +1504,12 @@ export class JeopardyGame {
       players: this.#players(),
       timer: this.#timerView(),
       guide: this.#guide(),
-      board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+      board: b && b.map((c) => ({ name: c.name, about: c.about || '', clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
       // The clue the picker is looking at (the TV lights it up), and whether picks are said out loud to a host.
       peek: this.phase === 'board' ? this.peeking : null,
       picksAloud: this.picksAloud(),
       clue: this.clue && {
-        ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
+        ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, about: this.clue.about || '', value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
         q: this.phase === 'dd-wager' ? null : this.clue.q,
         media: this.phase === 'dd-wager' ? null : this.clue.media ?? null,
         answer: showAnswer ? this.clue.a : null,
@@ -1569,6 +1573,7 @@ export class JeopardyGame {
       const done = ['final-reveal', 'gameover'].includes(this.phase);
       v.final = {
         category: f.category,
+        about: explainCategory(f.category),
         q: showQ ? f.q : null,
         // The correct answer comes last, after every player's response.
         answer: this.phase === 'gameover' || (this.phase === 'final-reveal' && f.answerShown) ? f.a : null,

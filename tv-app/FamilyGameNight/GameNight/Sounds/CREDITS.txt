@@ -4,7 +4,7 @@ Thinking music: "Beginning 6" by HoliznaCC0 (album Title Screens), via https://g
 Theme music: "Happy Dance" by HoliznaCC0 (album Happy Pop Electronic, CC0), via https://github.com/seyedpouramir/alvana-audio, trimmed to loop.
 
 jeopardy__*.m4a are these recordings, named for the app's sound cues:
-open, buzz, correct, wrong, dd, fanfare as named; timeup and reveal = "timeout"; final = "dd";
+open, buzz, correct, wrong, dd, fanfare as named; timeup = "timeout";
 roundstart = "board" fanfare; think = thinking music.
 shared__lobby.m4a is the "Happy Dance" theme: it loops on the main menu and in every game's lobby.
 
@@ -12,6 +12,10 @@ Added for every game moment (all from SFX Kit, CC0): pick (a clue is picked; the
 board = "data-countup-medium" (the board fills in), lock = "mechanical-lock-light" (a Final wager or answer
 locks in), bet = "money-register" (a Daily Double bet), join = "notification-message-in-clear" (a player
 joins), applause = "celebration-applause-small" (the end of a round, and the winner). Levels raised to match.
+
+Nov 22 sound check: final = "sting-bold-long" (Final Jeopardy now has its own sting instead of the Daily Double one),
+reveal = "tone-ding-mid" (its own ding instead of the time-up sound). applause, bet, board and think were raised and
+wrong lowered, so every effect plays at about the same loudness (-18 LUFS; the thinking music -20).
 
 spynight__*.m4a are Spy Night's own sounds, original and CC0: synthesized by Tools/make_spynight_sounds.py (it also writes the
 website's copies in public/builtin-sounds/spynight/). lobby is the music that loops while players join and think the tenser loop under the game itself; the others are
