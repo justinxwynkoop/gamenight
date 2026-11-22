@@ -158,8 +158,9 @@ export function lobbyControls(v, run, opts = {}) {
  *   onSelect  (ci, ri) => void      onOpen (ci, ri) => void
  *   dd        optional [[bool]]: where the Daily Doubles are (only the host sees them)
  */
-export function cluePicker(board, { sel, onSelect, onOpen, dd = null }) {
+export function cluePicker(board, { sel, onSelect, onOpen, dd = null, grid = false }) {
   const money = (n) => `$${Number(n).toLocaleString('en-US')}`;
+  if (grid) return clueGrid(board, { sel, onSelect, onOpen, dd, money });
   const rows = board.map((c, ci) => {
     const left = c.clues.filter((cl) => !cl.used).length;
     const icon = { video: '🎬 ', audio: '🔊 ', image: '🖼️ ' }[c.media] ?? '';
@@ -179,4 +180,32 @@ export function cluePicker(board, { sel, onSelect, onOpen, dd = null }) {
       `Open ${board[chosen.ci].name} · ${money(board[chosen.ci].clues[chosen.ri].value)}`)
     : h('div', { class: 'jp-small jp-muted jp-center-t jp-gohint' }, 'Tap a value, then open it');
   return h('div', { class: 'jp-picker' }, h('div', { class: 'jp-plist' }, rows), h('div', { class: 'jp-pgo' }, go));
+}
+
+/**
+ * The host's board: the whole board on one screen, laid out like the show's (a column per category, five values
+ * down). Tap a value to light it up on the TV; its category note and the Open button show under the board.
+ */
+const longWord = (s) => Math.max(0, ...String(s).split(/\s+/).map((w) => w.length));
+function clueGrid(board, { sel, onSelect, onOpen, dd, money }) {
+  const cols = board.map((c, ci) => {
+    const left = c.clues.filter((cl) => !cl.used).length;
+    const icon = { video: '🎬 ', audio: '🔊 ', image: '🖼️ ' }[c.media] ?? '';
+    return h('div', { class: `jp-pcat jp-gcol ${left ? '' : 'done'} ${sel?.ci === ci ? 'on' : ''}`, ...(c.media ? { 'data-media': c.media } : {}) },
+      // Smaller type for a long word, so a name never breaks in the middle of a word.
+      h('div', { class: 'jp-ghead', style: { '--fs': `${Math.max(6.5, Math.min(11, 44 / (longWord(c.name) * 0.66))).toFixed(1)}px` } }, icon, c.name),
+      c.clues.map((cl, ri) => (cl.used
+        ? h('span', { class: 'jp-pval used' })
+        : h('button', {
+          type: 'button', class: `jp-pval ${sel?.ci === ci && sel?.ri === ri ? 'on' : ''} ${dd?.[ci]?.[ri] ? 'dd' : ''}`, 'data-ci': String(ci), 'data-ri': String(ri),
+          onclick: () => (sel?.ci === ci && sel?.ri === ri ? onOpen(ci, ri) : onSelect(ci, ri)),
+        }, money(cl.value).replace(',', '')))));
+  });
+  const chosen = sel && board[sel.ci]?.clues[sel.ri] && !board[sel.ci].clues[sel.ri].used ? sel : null;
+  const cat = chosen ? board[chosen.ci] : null;
+  const foot = chosen
+    ? [cat.about ? h('div', { class: 'jp-gnote' }, h('b', {}, `${cat.name}: `), cat.about) : null,
+      h('button', { type: 'button', class: 'jp-btn huge jp-go', onclick: () => onOpen(chosen.ci, chosen.ri) }, `Open ${cat.name} · ${money(cat.clues[chosen.ri].value)}`)]
+    : h('div', { class: 'jp-small jp-muted jp-center-t jp-gohint' }, 'Tap the value they say, then open it');
+  return h('div', { class: 'jp-picker jp-gridpick' }, h('div', { class: 'jp-grid', style: { '--n': String(board.length || 6) } }, cols), h('div', { class: 'jp-gfoot' }, foot));
 }

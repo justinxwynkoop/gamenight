@@ -244,6 +244,7 @@ try {
     // A Daily Double may sit in the picture or sound column: the bet comes first, so that is fine.
     const tiles = host.locator(dd ? 'button.jp-pval.dd' : '.jp-pcat:not([data-media]) button.jp-pval:not(.dd)');
     await until(async () => (await tiles.count()) > 0, `a ${dd ? 'Daily Double' : 'plain'} value on the host's picker`);
+    await shot(host, `host-board-${dd ? 'dd' : 'plain'}`);
     const ci = Number(await tiles.first().getAttribute('data-ci')); const ri = Number(await tiles.first().getAttribute('data-ri'));
     await tiles.first().click();
     // Choosing it lights it up on the TV before it opens.
@@ -266,6 +267,7 @@ try {
   // 1. Correct
   await pickTile(false);
   await phase('reading', 'the clue');
+  await shot(host, 'host-reading');
   await tap('Open buzzers');
   await buzz('Ann');
   await phase('answering', 'Ann answering');
@@ -299,6 +301,7 @@ try {
   await phase('open', 'the buzzers open');
   await tap('Nobody. Show the answer');
   await phase('reveal', 'the answer');
+  await shot(host, 'host-reveal');
   await tap('Back to the board');
   log('clue 3: nobody buzzed; the host showed the answer and went back to the board');
 
@@ -333,6 +336,7 @@ try {
   await tap('End the round now');
   await sure();
   await phase('round-end', 'the end of round 1');
+  await shot(host, 'host-round-end');
   await tap('Start the next round');
   await phase('round-intro', 'round 2 titles');
   await phase('board', 'round 2 board', 12000);
@@ -357,6 +361,7 @@ try {
   await phase('round-end', 'the end of round 2');
   await tap('On to Final Jeopardy');
   await phase('final-wager', 'Final Jeopardy wagers');
+  await shot(host, 'host-final-wager');
   for (const [name, p] of Object.entries(phones)) {
     const b = p.locator('.jp-wager .jp-btn.huge');
     await until(async () => (await b.count()) > 0, `${name}'s Final wager`);
@@ -364,6 +369,7 @@ try {
   }
   await tap('Show the clue');
   await phase('final-answer', 'the Final clue');
+  await shot(host, 'host-final-answer');
   const fa = hostView.secret.finalAnswer;
   for (const [name, p] of Object.entries(phones)) {
     const box = p.locator('.jp-answer.on input.jp-in');
@@ -372,8 +378,10 @@ try {
     await p.getByRole('button', { name: /lock it in/i }).click();
   }
   await phase('final-reveal', 'the Final reveal');
+  await shot(host, 'host-final-reveal');
   for (let i = 0; i < 12 && hostView.phase === 'final-reveal'; i++) { await tap('Next reveal'); await sleep(400); }
   await phase('gameover', 'the champion');
+  await shot(host, 'host-gameover');
   await shot(tv, 'tv-champion');
   log(`Final Jeopardy: wagers, the clue, answers, the reveal; scores ${hostView.players.map((p) => `${p.name} ${p.score}`).join(', ')}`);
   await tap('Play again');

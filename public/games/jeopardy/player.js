@@ -249,7 +249,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
       key: `board-pick-${boardId}-${sel ? `${sel.ci}.${sel.ri}` : ''}`,
       nodes: [h('div', { class: 'jp-pickhead' }, h('div', { class: 'jp-logo' }, head), h('div', { class: 'jp-small jp-muted' }, sub)),
         cluePicker(v.board, {
-          sel,
+          sel, grid: !!viaCap,   // the captain who hosts gets the whole board, like the host page
           onSelect: (ci, ri) => { navigator.vibrate?.(10); sel = { ci, ri }; if (viaCap) cap('peek', { ci, ri }); else send({ t: 'peek', ci, ri }); render(); },
           onOpen: (ci, ri) => { navigator.vibrate?.(15); if (viaCap) cap('pick', { ci, ri }); else send({ t: 'pick', ci, ri }); },
         })],
