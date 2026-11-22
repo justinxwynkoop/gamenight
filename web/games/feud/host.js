@@ -174,6 +174,14 @@ function roundView() {
   return { body, dock: roundDock(r) };
 }
 
+/** Who buzzed in the face-off, fastest first, to the thousandth of a second. */
+function buzzTimes(f) {
+  if (!f.buzzes?.length) return null;
+  const best = f.buzzes[0].ms;
+  return h('div', { class: 'list' }, f.buzzes.map((b, i) => h('div', { class: 'rowi' }, h('span', { class: 'tag' }, String(i + 1)), teamBadge(b.unitId, 16),
+    h('div', { class: 'grow t' }, b.name ?? nameOf(b.unitId)), h('b', {}, `${(b.ms / 1000).toFixed(3)}s`), h('span', { class: 'dim' }, i ? `+${((b.ms - best) / 1000).toFixed(3)}` : 'first'))));
+}
+
 function stepBanner(r) {
   const f = r.faceoff;
   if (r.step === 'faceoff') {
@@ -187,7 +195,7 @@ function stepBanner(r) {
       out.push(h('div', { class: 'banner', style: { background: unit(f.turn)?.color } }, teamBadge(f.turn, 14), h('div', { class: 'grow' }, `${rep?.name ?? nameOf(f.turn)} is answering`, h('small', {}, nameOf(f.turn)))));
     } else if (f.attempts.length >= 2) out.push(h('div', { class: 'banner' }, icon('x', 22), h('div', { class: 'grow' }, 'Both missed', h('small', {}, 'Replay the face-off, or pick a winner.'))));
     else out.push(h('div', { class: 'note' }, icon('user', 16), h('span', {}, 'One player from each team comes up. Read the question, then open the buzzers.')));
-    return [...out, reps];
+    return [...out, buzzTimes(f), reps];
   }
   if (r.step === 'choose') {
     return [h('div', { class: 'banner', style: { background: unit(f.winner)?.color } }, teamBadge(f.winner, 14), h('div', { class: 'grow' }, `${nameOf(f.winner)} won the face-off`, h('small', {}, 'Do they play, or pass to the other team?')))];
@@ -196,7 +204,11 @@ function stepBanner(r) {
     const u = unit(r.control);
     const steal = r.step === 'steal';
     return [h('div', { class: 'banner', style: { background: u?.color } }, teamBadge(r.control, 14),
-      h('div', { class: 'grow' }, steal ? `Steal! ${u?.name} gets one guess` : `${u?.name} is playing`, h('small', {}, steal ? `If they get it they take ${r.pot} points` : `${3 - r.strikes} strikes left`)))];
+      h('div', { class: 'grow' }, steal ? `Steal! ${u?.name} gets one guess` : `${u?.name} is playing`, h('small', {}, steal ? `If they get it they take ${r.pot} points` : `${3 - r.strikes} strikes left`)),
+      timerPill(r.timer)),
+      // Who on the team is up, so the host does not have to guess.
+      r.up && h('div', { class: 'banner up', style: { background: '#0e1540', border: `3px solid ${unit(r.control)?.color ?? '#fff'}` } }, icon('user', 22),
+        h('div', { class: 'grow' }, `${r.up.name} is up`, h('small', {}, steal ? 'The team talks it over; they say it' : 'Next in line on the team')))];
   }
   if (r.step === 'roundEnd') {
     const w = unit(r.result?.winner);
@@ -244,7 +256,8 @@ function roundDock(r) {
       button({ label: `Pass to ${other(f.winner)?.name}`, size: 'lg', onclick: () => act('choose', { play: false }) })), dockRow(undo)];
   }
   if (r.step === 'play' || r.step === 'steal') {
-    return [button({ label: r.step === 'steal' ? 'Steal failed' : `Strike ${r.strikes + 1}`, icon: 'x', kind: 'bad', size: 'lg', block: true, onclick: () => act('miss') }), dockRow(undo)];
+    return [button({ label: r.step === 'steal' ? 'Wrong: show the X (steal failed)' : `Strike ${r.strikes + 1}`, icon: 'x', kind: 'bad', size: 'lg', block: true, onclick: () => act('miss') }),
+      dockRow(button({ label: r.timer && !r.timer.timedOut ? `Restart the ${g.settings.answerSeconds ?? 10}s clock` : `Start the ${g.settings.answerSeconds ?? 10}s clock`, icon: 'clock', size: 'sm', onclick: () => act('startAnswerTimer') }), undo)];
   }
   const finishing = lastRound(r);
   const fm = g.settings.fastMoney && g.hasFastMoney;
@@ -407,7 +420,8 @@ function settingsCards() {
       toggle({ label: 'Players type answers on their phones', sub: 'The survey checks them; no host needed', checked: !!s.typed, onchange: (on) => act('setSettings', { typed: on }) })),
     card(eyebrow('Rules'),
       h('div', { class: 'field' }, h('span', {}, 'First team to reach (points)'), presets([200, 300, 400, 500], s.targetScore, 'targetScore')),
-      toggle({ label: 'Bigger rounds at the end', sub: 'Round 4 is worth double and round 5 triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) })),
+      toggle({ label: 'Bigger rounds at the end', sub: 'Round 4 is worth double and round 5 triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) }),
+      h('div', { class: 'field' }, h('span', {}, 'Answer clock (you start it when a player is up)'), presets([5, 10, 15, 20, 30], s.answerSeconds ?? 10, 'answerSeconds', (n) => `${n}s`))),
     card(eyebrow('Fast Money'),
       toggle({ label: 'Play Fast Money', sub: 'The leading team plays the bonus round', checked: s.fastMoney, onchange: (on) => act('setSettings', { fastMoney: on }) }),
       h('div', { class: 'field' }, h('span', {}, 'Points to win'), presets([100, 150, 200, 250], s.fastMoneyGoal, 'fastMoneyGoal')),

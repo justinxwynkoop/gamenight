@@ -2250,12 +2250,12 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var _FeudGame = class _FeudGame {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
       this.room = room;
-      this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false };
+      this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false, answerSeconds: 10 };
       this.setId = null;
       this.set = null;
       this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
@@ -2288,6 +2288,7 @@
       if (this.run.status !== "lobby" && !this.set) this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
       const fm0 = this.run.fm;
       if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => v === null ? 0 : 2), p2: fm0.points.p2.map((v) => v === null ? 0 : 2) };
+      if (this.run.answerTimer) this.run.answerTimer = null;
       const tm = this.run.fm?.timer;
       if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;
     }
@@ -2343,6 +2344,8 @@
           return this.fmShowAnswer(a.slot, int(a.q));
         case "fmShowPoints":
           return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
+        case "startAnswerTimer":
+          return this.startAnswerTimer();
         case "fmRestartTimer":
           return this.fmRestartTimer();
         case "finishGame":
@@ -2418,7 +2421,7 @@
       return { ok: true, hit: index !== -1, label: index === -1 ? null : answers[index].text };
     }
     // ---------- setup ----------
-    setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed }) {
+    setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed, answerSeconds }) {
       const inRange = (v, lo, hi, what) => {
         const n = int(v);
         if (!(n >= lo && n <= hi)) fail(`${what} must be ${lo} to ${hi}`);
@@ -2430,8 +2433,9 @@
       if (typeof typed === "boolean") {
         this.settings.typed = typed;
         const f = this.run.status === "round" && this.run.step === "faceoff" ? this.run.faceoff : null;
-        if (typed && f && !f.open && !f.turn && !f.winner && !f.attempts.length) f.open = true;
+        if (typed && f && !f.open && !f.turn && !f.winner && !f.attempts.length) __privateMethod(this, _FeudGame_instances, openFaceoff_fn).call(this, f);
       }
+      if (answerSeconds !== void 0) this.settings.answerSeconds = inRange(answerSeconds, 3, 120, "Answer timer");
       if (fastMoneyGoal !== void 0) this.settings.fastMoneyGoal = inRange(fastMoneyGoal, 10, 1e3, "Fast Money goal");
       if (fastMoneySeconds1 !== void 0) this.settings.fastMoneySeconds1 = inRange(fastMoneySeconds1, 5, 180, "First player's time");
       if (fastMoneySeconds2 !== void 0) this.settings.fastMoneySeconds2 = inRange(fastMoneySeconds2, 5, 180, "Second player's time");
@@ -2495,18 +2499,26 @@
     openBuzzers() {
       const f = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "faceoff").faceoff;
       if (f.winner) fail("The face-off is already decided");
-      f.open = true;
-      f.turn = null;
-      f.attempts = [];
+      __privateMethod(this, _FeudGame_instances, openFaceoff_fn).call(this, f);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     /** A press from a phone or a physical buzzer. Only the two face-off players count. */
     buzz(playerId) {
       const run = this.run;
       const f = run.faceoff;
-      if (run.status !== "round" || run.step !== "faceoff" || !f.open) return { ok: false, reason: "closed" };
+      if (run.status !== "round" || run.step !== "faceoff") return { ok: false, reason: "closed" };
       const unitId = Object.keys(f.reps).find((u) => f.reps[u] === playerId);
+      const now = this.room.now();
+      if (!f.open) {
+        const first = f.buzzes?.[0];
+        if (unitId && f.turn && first && f.openedAt != null && !f.buzzes.some((b) => b.unitId === unitId) && now - f.openedAt - first.ms <= 3e3) {
+          f.buzzes.push({ unitId, pid: playerId, ms: Math.max(0, Math.round(now - f.openedAt)), won: false });
+          __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+        }
+        return { ok: false, reason: "closed" };
+      }
       if (!unitId) return { ok: false, reason: "not-your-turn" };
+      f.buzzes = [...f.buzzes ?? [], { unitId, pid: playerId, ms: Math.max(0, Math.round(now - (f.openedAt ?? now))), won: true }];
       f.open = false;
       f.turn = unitId;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2525,9 +2537,7 @@
     replayFaceoff() {
       this.run.autoAt = null;
       const f = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "faceoff").faceoff;
-      f.open = true;
-      f.turn = null;
-      f.attempts = [];
+      __privateMethod(this, _FeudGame_instances, openFaceoff_fn).call(this, f);
       f.winner = null;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
@@ -2541,6 +2551,14 @@
       run.step = "choose";
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
+    /** The host starts the answer clock (10 seconds by default) when it is a player's turn on the team that is playing or stealing.
+     *  It only counts down and says "time's up": the host decides what to do about it. */
+    startAnswerTimer() {
+      const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "play", "steal");
+      const totalMs = Math.round(this.settings.answerSeconds * 1e3);
+      run.answerTimer = { kind: "answer", totalMs, deadline: this.room.now() + totalMs, timedOut: false };
+      __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+    }
     /** The winning team plays, or passes the board to the other team. */
     choose(play) {
       const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "choose");
@@ -2549,6 +2567,8 @@
       run.control = play ? winner : __privateMethod(this, _FeudGame_instances, other_fn).call(this, winner).id;
       run.step = "play";
       run.strikes = 0;
+      run.turns = 0;
+      run.answerTimer = null;
       if (__privateMethod(this, _FeudGame_instances, allRevealed_fn).call(this)) __privateMethod(this, _FeudGame_instances, endRound_fn).call(this, run.control);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
@@ -2558,6 +2578,8 @@
       if (run.step === "faceoff") return __privateMethod(this, _FeudGame_instances, faceoffAnswer_fn).call(this, i);
       __privateMethod(this, _FeudGame_instances, remember_fn).call(this);
       __privateMethod(this, _FeudGame_instances, reveal_fn).call(this, i);
+      run.turns = (run.turns ?? 0) + 1;
+      run.answerTimer = null;
       if (run.step === "steal") __privateMethod(this, _FeudGame_instances, endRound_fn).call(this, run.control);
       else if (__privateMethod(this, _FeudGame_instances, allRevealed_fn).call(this)) __privateMethod(this, _FeudGame_instances, endRound_fn).call(this, run.control);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2568,13 +2590,18 @@
       if (run.step === "faceoff") return __privateMethod(this, _FeudGame_instances, faceoffMiss_fn).call(this);
       __privateMethod(this, _FeudGame_instances, remember_fn).call(this);
       if (run.step === "steal") {
+        run.stealMissed = true;
+        run.answerTimer = null;
         __privateMethod(this, _FeudGame_instances, endRound_fn).call(this, run.stealFrom);
       } else {
         run.strikes += 1;
+        run.answerTimer = null;
+        run.turns = (run.turns ?? 0) + 1;
         if (run.strikes >= MAX_STRIKES) {
           run.step = "steal";
           run.stealFrom = run.control;
           run.control = __privateMethod(this, _FeudGame_instances, other_fn).call(this, run.control).id;
+          run.turns = 0;
         }
       }
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2756,6 +2783,10 @@
       const run = this.run;
       const now = this.room.now();
       const fm = run.status === "fastmoney" ? run.fm : null;
+      if (run.answerTimer && !run.answerTimer.timedOut && now >= run.answerTimer.deadline) {
+        run.answerTimer.timedOut = true;
+        __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+      }
       if (fm?.timer && !fm.timer.timedOut && now >= fm.timer.deadline) {
         fm.timer.timedOut = true;
         if (this.typed()) run.autoAt = now + AUTO.fmGrace;
@@ -2816,7 +2847,15 @@
     };
   };
   blankFaceoff_fn = function() {
-    return { reps: {}, open: false, turn: null, attempts: [], winner: null };
+    return { reps: {}, open: false, turn: null, attempts: [], winner: null, buzzes: [], openedAt: null };
+  };
+  /** Opens the face-off buzzers and starts the clock: each press is timed against this moment. */
+  openFaceoff_fn = function(f) {
+    f.open = true;
+    f.turn = null;
+    f.attempts = [];
+    f.openedAt = this.room.now();
+    f.buzzes = [];
   };
   changed_fn2 = function() {
     this.room.changed();
@@ -2859,8 +2898,10 @@
     run.awarded = 0;
     run.said = null;
     run.autoAt = null;
+    run.stealMissed = false;
+    run.answerTimer = null;
     run.faceoff = __privateMethod(this, _FeudGame_instances, blankFaceoff_fn).call(this);
-    if (this.typed()) run.faceoff.open = true;
+    if (this.typed()) __privateMethod(this, _FeudGame_instances, openFaceoff_fn).call(this, run.faceoff);
     for (const t of __privateMethod(this, _FeudGame_instances, teams_fn).call(this)) {
       const members = __privateMethod(this, _FeudGame_instances, members_fn).call(this, t.id);
       run.faceoff.reps[t.id] = members.length ? members[i % members.length].id : null;
@@ -2985,6 +3026,17 @@
     const tm = holder?.timer;
     return tm ? { kind: tm.kind, totalMs: tm.totalMs, leftMs: tm.timedOut ? 0 : Math.max(0, Math.round(tm.deadline - this.room.now())), timedOut: tm.timedOut } : null;
   };
+  /** Whose turn it is to answer on the team that is playing or stealing: the players take turns, starting with whoever
+   *  comes after the team's face-off player. The host sees it, so nobody has to guess. */
+  up_fn = function() {
+    const run = this.run;
+    if (!["play", "steal"].includes(run.step) || !run.control) return null;
+    const members = this.room.players.filter((p2) => p2.teamId === run.control);
+    if (!members.length) return null;
+    const start = Math.max(-1, members.findIndex((p2) => p2.id === run.faceoff?.reps?.[run.control])) + 1;
+    const p = members[(start + (run.turns ?? 0)) % members.length];
+    return { unitId: run.control, playerId: p.id, name: p.name };
+  };
   // ---------- views ----------
   playerName_fn = function(id) {
     return this.room.players.find((p) => p.id === id)?.name ?? null;
@@ -3035,13 +3087,21 @@
         const shown = up || run.showAll;
         return { n: i + 1, revealed: up, late: shown && !up, text: shown || host ? a.text : null, points: shown || host ? a.points : null };
       }),
+      // The player whose turn it is on the team playing or stealing (the host and the phones show it).
+      up: __privateMethod(this, _FeudGame_instances, up_fn).call(this),
+      // The answer clock the host started for the team that is playing or stealing.
+      timer: __privateMethod(this, _FeudGame_instances, timerView_fn2).call(this, { timer: run.answerTimer }),
       faceoff: {
         open: f.open,
         turn: f.turn,
         winner: f.winner,
         attempts: f.attempts,
+        // Everyone who buzzed in the face-off, fastest first, with how long after the buzzers opened (ms).
+        buzzes: (f.buzzes ?? []).slice().sort((a, b) => a.ms - b.ms).map((b) => ({ unitId: b.unitId, pid: b.pid, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, b.pid), ms: b.ms, won: !!b.won })),
         reps: Object.entries(f.reps).map(([unitId, playerId]) => ({ unitId, playerId, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, playerId) }))
       },
+      // The steal was tried and failed: the TV puts the big X up (the pot stays with the team that was stolen from).
+      stealMissed: run.step === "roundEnd" && !!run.stealMissed,
       result: run.step === "roundEnd" ? { winner: run.winner, awarded: run.awarded } : null,
       target: this.settings.targetScore,
       said: run.said
@@ -3101,6 +3161,7 @@
     "endRounds",
     "openBuzzers",
     "replayFaceoff",
+    "startAnswerTimer",
     "fmTeam",
     "fmPlayers",
     "fmStart",

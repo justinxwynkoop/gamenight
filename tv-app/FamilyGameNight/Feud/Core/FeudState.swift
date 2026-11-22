@@ -61,6 +61,12 @@ struct FeudRound: Decodable, Equatable {
     var answers: [FeudAnswer]
     var faceoff: FeudFaceoff
     var result: FeudRoundResult?
+    /// The steal was tried and failed: the TV puts the big X up for it.
+    var stealMissed: Bool?
+    /// Whose turn it is on the team that is playing or stealing.
+    var up: FeudUp?
+    /// The answer clock the host started (the team that is playing or stealing).
+    var timer: TimerState?
     var target: Int
     /// The last guess typed on a phone when nobody is hosting; nil with a host.
     var said: FeudSaid?
@@ -92,6 +98,25 @@ struct FeudFaceoff: Decodable, Equatable {
     var winner: String?
     var attempts: [FeudAttempt]
     var reps: [FeudRep]
+    /// Everyone who buzzed in the face-off, fastest first.
+    var buzzes: [FeudBuzz]?
+}
+
+/// A face-off buzz: who, and how long after the buzzers opened (ms).
+struct FeudBuzz: Decodable, Equatable, Identifiable {
+    var unitId: String
+    var pid: String
+    var name: String?
+    var ms: Double
+    var won: Bool
+    var id: String { pid }
+}
+
+/// The player whose turn it is on the team that is playing or stealing.
+struct FeudUp: Decodable, Equatable {
+    var unitId: String
+    var playerId: String
+    var name: String
 }
 
 struct FeudAttempt: Decodable, Equatable {

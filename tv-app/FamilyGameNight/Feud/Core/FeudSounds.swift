@@ -28,6 +28,10 @@ extension SoundPlanner {
                 if round.step == .roundEnd && was.step != .roundEnd {
                     plan.cues.append(.correct)
                 }
+                // The host's answer clock ran out.
+                if (round.timer?.timedOut ?? false) && !(was.timer?.timedOut ?? false) {
+                    plan.cues.append(.timeup)
+                }
             } else if before.round != nil || before.status != .round {
                 plan.cues.append(.roundstart)   // a new round begins
             }

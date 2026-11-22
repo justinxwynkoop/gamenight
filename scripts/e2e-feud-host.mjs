@@ -105,6 +105,32 @@ try {
   }
   console.log('host buttons, in order:', seen.join(' → '));
   if (!/Start game/.test(seen[0]) || !/Open buzzers/.test(seen[1])) fail(`the host's buttons are ${JSON.stringify(seen)}`);
+  // The phones: everyone sees the question, nobody sees the answer board.
+  const g = engine.room.game;
+  const round = g.publicView().round;
+  const answersText = g.set.rounds[round.number - 1].answers.map((a) => a.text);
+  await until(async () => (await text(phones[0])).includes(round.question), 'the question on a phone');
+  const phoneText = await text(phones[0]);
+  if (answersText.some((a) => phoneText.toLowerCase().includes(a.toLowerCase()))) fail('a phone shows the survey answers');
+  if (await phones[0].locator('.pm-slot').count()) fail('a phone shows the answer board');
+  console.log('phones show the question and not the answer board');
+  // The face-off buzz times, on the host page and the TV's view.
+  g.openBuzzers();
+  const reps = Object.values(g.run.faceoff.reps);
+  await new Promise((r) => setTimeout(r, 250));
+  engine.room.playerMessage(reps[1], { t: 'buzz' });
+  await new Promise((r) => setTimeout(r, 120));
+  engine.room.playerMessage(reps[0], { t: 'buzz' });
+  await until(async () => /1\s*\|?\s*\w+\s*\|?\s*0\.\d{3}s/.test(await text(host)) || /\d\.\d{3}s/.test(await text(host)), 'the buzz times on the host page');
+  console.log('the host page lists the face-off buzz times');
+  // Play: the host sees who is up and starts the answer clock.
+  g.awardBuzz(g.run.faceoff.reps ? engine.room.teams[0].id : null);
+  g.answer(0); g.choose(true);
+  await until(async () => / is up/.test(await text(host)), 'the host page to say who is up');
+  await host.getByRole('button', { name: /Start the 10s clock/ }).click();
+  await until(async () => (g.publicView().round.timer?.totalMs ?? 0) === 10000, 'the 10 second clock to start');
+  await until(async () => /\d+s/.test(await text(host)), 'the clock on the host page');
+  console.log('the host sees who is up and started the 10 second answer clock');
   // The tabs of the host page.
   for (const tab of ['Players', 'Scores', 'Settings', 'Game']) {
     await host.getByRole('button', { name: new RegExp(`^${tab}`) }).first().click();

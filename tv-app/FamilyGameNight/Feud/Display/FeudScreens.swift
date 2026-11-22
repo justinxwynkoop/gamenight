@@ -13,7 +13,7 @@ struct FeudContent: View {
         switch DisplayScreen.screen(for: state) {
         case .feudRound:
             if let round = state.feud?.round {
-                FeudRoundScreen(state: state, round: round, joinURL: joinURL)
+                FeudRoundScreen(state: state, round: round, joinURL: joinURL, receivedAt: receivedAt)
             }
         case .feudFastMoney:
             if let fm = state.feud?.fm {
@@ -35,12 +35,15 @@ struct StrikeFlight: Equatable {
     let id = UUID()
     var index: Int
     var phase: Phase = .hidden
+    /// A failed steal: the X comes up in the middle and fades away (there is no strike box for it to land in).
+    var miss = false
 }
 
 struct FeudRoundScreen: View {
     let state: ServerState
     let round: FeudRound
     let joinURL: URL?
+    let receivedAt: Date
 
     @State private var flight: StrikeFlight?
 
@@ -62,6 +65,26 @@ struct FeudRoundScreen: View {
         }
         .onChange(of: round.strikes) { old, new in
             if new > old { launchStrike(index: new - 1) }
+        }
+        .onChange(of: round.stealMissed) { old, new in
+            if new == true, old != true { launchMiss() }
+        }
+    }
+
+    /// The steal failed: the big X comes up in the middle, stays a moment, and fades.
+    private func launchMiss() {
+        let started = StrikeFlight(index: 0, miss: true)
+        flight = started
+        Task { @MainActor in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                if flight?.id == started.id { flight?.phase = .center }
+            }
+            try? await Task.sleep(for: .milliseconds(1900))
+            withAnimation(.easeOut(duration: 0.6)) {
+                if flight?.id == started.id { flight?.phase = .docked }
+            }
+            try? await Task.sleep(for: .milliseconds(700))
+            if flight?.id == started.id { flight = nil }
         }
     }
 
@@ -95,9 +118,9 @@ struct FeudRoundScreen: View {
                     .background(RoundedRectangle(cornerRadius: 64, style: .continuous).fill(Color(hex: 0xDC2626)))
                     .overlay(RoundedRectangle(cornerRadius: 64, style: .continuous).stroke(Color(hex: 0xFCA5A5), lineWidth: 14))
                     .shadow(color: Color(hex: 0xDC2626).opacity(0.7), radius: 80)
-                    .scaleEffect(flight.phase == .hidden ? 0.2 : (flight.phase == .center ? 1 : Self.box / size))
-                    .opacity(flight.phase == .hidden ? 0 : 1)
-                    .offset(x: flight.phase == .docked ? targetX : 0, y: flight.phase == .docked ? targetY : 0)
+                    .scaleEffect(flight.phase == .hidden ? 0.2 : (flight.phase == .center || flight.miss ? 1 : Self.box / size))
+                    .opacity(flight.phase == .hidden || (flight.miss && flight.phase == .docked) ? 0 : 1)
+                    .offset(x: flight.phase == .docked && !flight.miss ? targetX : 0, y: flight.phase == .docked && !flight.miss ? targetY : 0)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             }
             .allowsHitTesting(false)
@@ -129,9 +152,11 @@ struct FeudRoundScreen: View {
             board
                 .frame(maxHeight: .infinity)
 
+            FeudBuzzTimes(state: state, round: round)
+
             HStack(spacing: 28) {
-                FeudStrikes(strikes: round.strikes, max: round.maxStrikes, hiddenIndex: flight?.index)
-                FeudBanner(state: state, round: round)
+                FeudStrikes(strikes: round.strikes, max: round.maxStrikes, hiddenIndex: flight?.miss == true ? nil : flight?.index)
+                FeudBanner(state: state, round: round, receivedAt: receivedAt)
                 if let joinURL {
                     QRCodeView(text: joinURL.absoluteString)
                         .frame(width: 140, height: 140)
@@ -328,6 +353,7 @@ struct FeudStrikes: View {
 struct FeudBanner: View {
     let state: ServerState
     let round: FeudRound
+    let receivedAt: Date
 
     private func name(_ id: String?) -> String { state.room.unit(id)?.name ?? "" }
 
@@ -335,18 +361,28 @@ struct FeudBanner: View {
         let content = text
         let fill = content.color.map { Color(playerHex: $0) } ?? content.fill
         let ink = content.color.map { JP.inkColor(on: $0) } ?? Color.white
-        VStack(spacing: 2) {
-            Text(content.title)
-                .font(JP.display(56))
-                .tracking(2)
-                .textCase(.uppercase)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            if let sub = content.sub ?? saidLine {
-                Text(sub)
-                    .font(JP.text(30, .semibold))
-                    .opacity(0.9)
+        HStack(spacing: 24) {
+            VStack(spacing: 2) {
+                Text(content.title)
+                    .font(JP.display(56))
+                    .tracking(2)
+                    .textCase(.uppercase)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                if let sub = content.sub ?? saidLine {
+                    Text(sub)
+                        .font(JP.text(30, .semibold))
+                        .opacity(0.9)
+                        .lineLimit(1)
+                }
+            }
+            // The answer clock the host started for the player who is up.
+            if (round.step == .play || round.step == .steal), let timer = round.timer {
+                if timer.timedOut {
+                    Text("TIME’S UP").font(JP.display(56)).foregroundStyle(Color(hex: 0xFECACA))
+                } else {
+                    CountdownNumber(timer: timer, receivedAt: receivedAt, size: 96)
+                }
             }
         }
         .foregroundStyle(ink)
@@ -379,15 +415,48 @@ struct FeudBanner: View {
         case .choose:
             return ("\(name(faceoff.winner)) won the face-off!", "Play or pass?", state.room.unit(faceoff.winner)?.color, plain)
         case .play:
-            return ("\(name(round.control)) — name an answer", nil, state.room.unit(round.control)?.color, plain)
+            return ("\(name(round.control)) — name an answer", round.up.map { "\($0.name) is up" }, state.room.unit(round.control)?.color, plain)
         case .steal:
-            return ("Steal! \(name(round.control)), one guess", nil, nil, Color(hex: 0xB91C1C))
+            return ("Steal! \(name(round.control)), one guess", round.up.map { "\($0.name) is up" }, nil, Color(hex: 0xB91C1C))
         case .roundEnd:
             let awarded = round.result?.awarded ?? 0
             let extra = round.multiplier > 1 ? " (×\(round.multiplier))" : ""
             return ("\(name(round.result?.winner)) wins \(awarded)\(extra)", nil, state.room.unit(round.result?.winner)?.color, plain)
         case .unknown:
             return ("", nil, nil, plain)
+        }
+    }
+}
+
+/// Who buzzed in the face-off and how fast (to the thousandth), fastest first. It stays up until the team has played on.
+struct FeudBuzzTimes: View {
+    let state: ServerState
+    let round: FeudRound
+
+    var body: some View {
+        let list = round.faceoff.buzzes ?? []
+        if !list.isEmpty, round.step == .faceoff || round.step == .choose, let best = list.first?.ms {
+            HStack(spacing: 20) {
+                Text("BUZZ TIMES").font(JP.label(24)).tracking(3).foregroundStyle(JP.muted)
+                ForEach(Array(list.prefix(4).enumerated()), id: \.element.id) { index, buzz in
+                    let color = Color(playerHex: state.room.unit(buzz.unitId)?.color ?? "#AEB3D6")
+                    HStack(spacing: 10) {
+                        Text("\(index + 1)").font(JP.text(28, .heavy)).opacity(0.7)
+                        Text(buzz.name ?? state.room.unit(buzz.unitId)?.name ?? "Someone").font(JP.text(34, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                        Text(String(format: "%.3fs", buzz.ms / 1000)).font(JP.text(32, .bold)).monospacedDigit()
+                        if index > 0 {
+                            Text("+" + String(format: "%.3f", (buzz.ms - best) / 1000)).font(JP.text(24, .semibold)).monospacedDigit().opacity(0.8)
+                        }
+                    }
+                    .foregroundStyle(index == 0 ? JP.ink : Color.white)
+                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(index == 0 ? JP.gold : Color.black.opacity(0.4)))
+                    .overlay(alignment: .leading) { Rectangle().fill(color).frame(width: 6).clipShape(RoundedRectangle(cornerRadius: 3)) }
+                }
+            }
+            .padding(.horizontal, 24).padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color.black.opacity(0.3)))
         }
     }
 }

@@ -168,10 +168,24 @@ test('a failed steal leaves the pot with the team that struck out', () => {
   startAndWinFaceoff(g, red);
   const pot = g.pot();
   g.miss(); g.miss(); g.miss();
+  assert.equal(g.publicView().round.stealMissed, false, 'no X yet: the steal has not been tried');
   g.miss();
   assert.equal(g.run.winner, red.id);
   assert.equal(red.score, pot);
   assert.equal(blue.score, 0);
+  assert.equal(g.publicView().round.stealMissed, true, 'the TV is told to put the big X up for the failed steal');
+  g.undo();
+  assert.equal(g.publicView().round.stealMissed, false, 'undoing the miss takes it away');
+});
+
+test('a good steal does not show the failed-steal X', () => {
+  const { g, red, blue } = setup();
+  startAndWinFaceoff(g, red);
+  g.miss(); g.miss(); g.miss();
+  g.answer(answersOf(g).length - 1);
+  assert.equal(g.run.step, 'roundEnd');
+  assert.equal(g.run.winner, blue.id);
+  assert.equal(g.publicView().round.stealMissed, false);
 });
 
 test('clearing the board wins the round for the team playing', () => {
@@ -584,4 +598,75 @@ test('with a host connected there is no captain, and the captain comes back when
   assert.equal(g.captain(), ps[0].id);
   assert.equal(g.publicView().hosted, false);
   assert.equal(g.playerView(room.player(ps[0].id)).me.captain, true);
+});
+
+test('face-off buzz times are kept to the millisecond, fastest first, and the late presser is listed too', () => {
+  const { room, g, clock } = setup();
+  g.startGame();
+  g.openBuzzers();
+  const reps = Object.values(g.run.faceoff.reps);
+  clock.advance(412);
+  assert.equal(room.playerMessage(reps[1], { t: 'buzz' }).ok, true);          // the second team's player is first
+  clock.advance(130);
+  assert.equal(room.playerMessage(reps[0], { t: 'buzz' }).ok, false);         // too late: the turn is given
+  const times = g.publicView().round.faceoff.buzzes;
+  assert.deepEqual(times.map((b) => [b.pid, b.ms, b.won]), [[reps[1], 412, true], [reps[0], 542, false]]);
+  assert.ok(times.every((b) => typeof b.name === 'string'));
+  g.openBuzzers();                                                            // opening again times everyone afresh
+  assert.deepEqual(g.publicView().round.faceoff.buzzes, []);
+  clock.advance(3500);
+  room.playerMessage(reps[0], { t: 'buzz' });
+  clock.advance(5000);
+  room.playerMessage(reps[1], { t: 'buzz' });                                 // far too late to count
+  assert.deepEqual(g.publicView().round.faceoff.buzzes.map((b) => b.pid), [reps[0]]);
+});
+
+test('the host can see which player on the team is up, and it moves on after each guess', () => {
+  const { g, red, blue, room } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'] });
+  g.startGame();
+  g.openBuzzers(); g.awardBuzz(red.id);
+  g.answer(0);                                                                // red's player gets the top answer: red wins the face-off
+  g.choose(true);
+  const redPlayers = room.players.filter((p) => p.teamId === red.id).map((p) => p.id);
+  const rep = g.run.faceoff.reps[red.id];
+  const first = g.publicView().round.up;
+  assert.equal(first.unitId, red.id);
+  assert.notEqual(first.playerId, rep, 'the face-off player just answered: the next in line is up');
+  assert.ok(redPlayers.includes(first.playerId));
+  g.answer(1);
+  const second = g.publicView().round.up.playerId;
+  assert.notEqual(second, first.playerId, 'a right guess moves it on');
+  g.miss();
+  assert.notEqual(g.publicView().round.up.playerId, second, 'so does a strike');
+  g.miss(); g.miss();                                                         // three strikes: the other team steals
+  assert.equal(g.run.step, 'steal');
+  const stealer = g.publicView().round.up;
+  assert.equal(stealer.unitId, blue.id);
+  assert.ok(room.players.find((p) => p.id === stealer.playerId).teamId === blue.id);
+  g.undo();
+  assert.equal(g.publicView().round.up.unitId, red.id, 'undo puts it back');
+});
+
+test('the host starts a 10 second answer clock for the team that is playing; it runs out by itself and a guess clears it', () => {
+  const { g, red, clock } = setup();
+  startAndWinFaceoff(g, red);
+  assert.equal(g.publicView().round.timer, null, 'nothing runs until the host starts it');
+  g.startAnswerTimer();
+  let t = g.publicView().round.timer;
+  assert.equal(t.totalMs, 10000);
+  assert.equal(t.timedOut, false);
+  clock.advance(4000); g.tick();
+  assert.equal(g.publicView().round.timer.leftMs, 6000);
+  clock.advance(6100); g.tick();
+  t = g.publicView().round.timer;
+  assert.equal(t.timedOut, true);
+  assert.equal(g.run.strikes, 0, 'it does not strike by itself: the host decides');
+  g.startAnswerTimer();                                                       // the next player: a fresh clock
+  assert.equal(g.publicView().round.timer.timedOut, false);
+  g.answer(1);
+  assert.equal(g.publicView().round.timer, null, 'a guess stops the clock');
+  g.setSettings({ answerSeconds: 15 });
+  g.startAnswerTimer();
+  assert.equal(g.publicView().round.timer.totalMs, 15000);
+  assert.throws(() => g.setSettings({ answerSeconds: 1 }), /Answer timer/);
 });

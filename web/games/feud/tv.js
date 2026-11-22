@@ -51,6 +51,27 @@ function bigX(r) {
   return el;
 }
 
+/** A steal that failed: the big X comes up in the middle for a moment and goes (there is no strike box for it to land in). */
+const MISS_MS = FX_MS + 800;
+let stealFx = null; // { round, at }
+const missElapsed = (r) => (stealFx && stealFx.round === r.number ? performance.now() - stealFx.at : Infinity);
+function missX(r) {
+  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, '✕');
+  requestAnimationFrame(() => {
+    if (!el.isConnected) return;
+    const anim = el.animate([
+      { offset: 0, transform: 'scale(.2)', opacity: 0, easing: 'ease-out' },
+      { offset: 0.1, transform: 'scale(1.08)', opacity: 1, easing: 'ease-in-out' },
+      { offset: 0.15, transform: 'scale(1)', opacity: 1 },
+      { offset: 0.8, transform: 'scale(1)', opacity: 1 },
+      { offset: 1, transform: 'scale(1)', opacity: 0 },
+    ], { duration: MISS_MS, fill: 'forwards' });
+    anim.currentTime = Math.min(MISS_MS - 1, Math.max(0, missElapsed(r)));
+    anim.onfinish = () => el.remove();
+  });
+  return el;
+}
+
 // ---------- animations that must carry on through a redraw ----------
 // The page redraws everything on each update, so an animation's start time is kept here and a redraw
 // part-way through resumes it from the right point (a negative animation delay) instead of restarting.
@@ -91,6 +112,8 @@ export function onChange(prev, view, sound) {
     if (sameRound) {
       r.answers.forEach((a, i) => { if ((a.revealed || a.late) && !(pr.answers[i].revealed || pr.answers[i].late)) started.set(`flip:${r.number}:${a.n}`, performance.now()); });
       if (r.strikes > pr.strikes) strikeFx = { round: r.number, n: r.strikes, at: performance.now() };
+      if (r.stealMissed && !pr.stealMissed) stealFx = { round: r.number, at: performance.now() };
+      if (r.timer?.timedOut && !pr.timer?.timedOut) sound.play('timeup');
       if (up(r) > up(pr)) sound.play('ding');
       else if (r.strikes > pr.strikes) sound.play(r.strikes >= r.maxStrikes ? 'strikeout' : 'strike');
       else if (pr.step === 'steal' && r.step === 'roundEnd' && r.result?.winner === pr.stealFrom) sound.play('strike');
@@ -153,6 +176,16 @@ function slot(a, round) {
       h('div', { class: 'face back' }, h('div', { class: 'num' }, String(a.n)), h('div', { class: 'txt' }, a.text ?? ''), h('div', { class: 'pt' }, a.points !== null ? String(a.points) : ''))));
 }
 
+/** Who buzzed in the face-off and how fast (to the thousandth), fastest first: it stays up until the team has played on. */
+function faceoffTimes(v, r) {
+  const list = r.faceoff.buzzes ?? [];
+  if (!list.length || !['faceoff', 'choose'].includes(r.step)) return null;
+  const best = list[0].ms;
+  return h('div', { class: 'fd-buzzes' }, h('span', { class: 'lbl' }, 'BUZZ TIMES'),
+    list.map((b, i) => h('span', { class: `rb ${i === 0 ? 'first' : ''}`, style: { '--c': colorOf(v, b.unitId) } },
+      h('i', {}, String(i + 1)), b.name ?? nameOf(v, b.unitId), h('b', {}, `${(b.ms / 1000).toFixed(3)}s`), i ? h('small', {}, `+${((b.ms - best) / 1000).toFixed(3)}`) : null)));
+}
+
 function banner(v, r) {
   const f = r.faceoff;
   const cls = []; let text = ''; let sub = null; let color = null;
@@ -162,12 +195,14 @@ function banner(v, r) {
     else if (f.attempts.length >= 2) { text = 'Nobody got it. Face-off again!'; }
     else { text = 'Face-off'; sub = f.reps.map((p) => p.name).filter(Boolean).join('  vs  '); }
   } else if (r.step === 'choose') { text = `${nameOf(v, f.winner)} won the face-off!`; color = colorOf(v, f.winner); sub = 'Play or pass?'; }
-  else if (r.step === 'play') { text = `${nameOf(v, r.control)} — name an answer`; color = colorOf(v, r.control); }
-  else if (r.step === 'steal') { cls.push('steal'); text = `Steal! ${nameOf(v, r.control)}, one guess`; }
+  else if (r.step === 'play') { text = `${nameOf(v, r.control)} — name an answer`; color = colorOf(v, r.control); if (r.up) sub = `${r.up.name} is up`; }
+  else if (r.step === 'steal') { cls.push('steal'); text = `Steal! ${nameOf(v, r.control)}, one guess`; if (r.up) sub = `${r.up.name} is up`; }
   else if (r.step === 'roundEnd') { text = `${nameOf(v, r.result?.winner)} wins ${r.result?.awarded ?? 0}${r.multiplier > 1 ? ` (×${r.multiplier})` : ''}`; color = colorOf(v, r.result?.winner); cls.push('win'); }
   // With nobody hosting, the last typed guess shows under the banner, so the room sees what was said.
   if (!sub && r.said && r.step !== 'choose') sub = `${r.said.name}: “${r.said.text}”${r.said.index === -1 ? '  ✕' : ''}`;
-  return h('div', { class: `fd-banner ${cls.join(' ')}`, style: color ? { background: color, color: ink(color) } : {} }, h('span', {}, text), sub && h('small', {}, sub));
+  // The answer clock the host started: the seconds left, or TIME'S UP.
+  const clock = r.timer && ['play', 'steal'].includes(r.step) ? (r.timer.timedOut ? h('b', { class: 'fd-aclock out' }, 'TIME’S UP') : h('b', { class: 'fd-aclock' }, timerParts(r.timer).num)) : null;
+  return h('div', { class: `fd-banner ${cls.join(' ')}`, style: color ? { background: color, color: ink(color) } : {} }, h('span', {}, text), sub && h('small', {}, sub), clock);
 }
 
 function roundScreen(v) {
@@ -180,8 +215,10 @@ function roundScreen(v) {
       b && teamBox(v, b, r)),
     h('div', { class: 'fd-question' }, r.question),
     h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map((a) => slot(a, r.number))),
+    faceoffTimes(v, r),
     h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())),
-    fxActive(r) && bigX(r));
+    fxActive(r) && bigX(r),
+    r.stealMissed && missElapsed(r) < MISS_MS && missX(r));
 }
 
 // ---------- Fast Money ----------

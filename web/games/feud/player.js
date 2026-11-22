@@ -58,7 +58,8 @@ export function mount(container, { send, flash }) {
     if (r.step === 'choose') return { label: f.winner === me.unitId ? 'YOU WON' : 'WAIT', cls: f.winner === me.unitId ? 'won' : 'out', line: f.winner === me.unitId ? 'Your team won the face-off. Play or pass?' : `${unit(v, f.winner)?.name} won the face-off`, color: f.winner === me.unitId ? mine.color : null };
     if (r.step === 'play') {
       const ours = r.control === me.unitId;
-      return { label: ours ? 'YOUR TEAM' : 'WAIT', cls: ours ? 'won' : 'out', line: ours ? `Talk it over, then ${g.settings.typed ? 'type an answer' : 'answer out loud'} · ${3 - r.strikes} strikes left` : `${unit(v, r.control)?.name} is playing`, color: ours ? mine.color : null };
+      if (ours && r.up?.playerId === me.id) return { label: 'YOU’RE UP', cls: 'live', line: `Say your answer${r.timer && !r.timer.timedOut ? ': the clock is running!' : '. The host may start a clock.'}`, color: mine.color };
+      return { label: ours ? 'YOUR TEAM' : 'WAIT', cls: ours ? 'won' : 'out', line: ours ? `${r.up ? `${r.up.name} is up. ` : ''}Talk it over, then ${g.settings.typed ? 'type an answer' : 'answer out loud'} · ${3 - r.strikes} strikes left` : `${unit(v, r.control)?.name} is playing`, color: ours ? mine.color : null };
     }
     if (r.step === 'steal') {
       const ours = r.control === me.unitId;
@@ -82,12 +83,12 @@ export function mount(container, { send, flash }) {
     if (r) {
       peek.classList.remove('hidden');
       const said = r.said && h('div', { class: `fd-said ${r.said.index === -1 ? 'miss' : 'hit'}` }, `${r.said.name}: “${r.said.text}” `, r.said.index === -1 ? '✕' : '✓');
+      // The question, big, so everyone can read it on their own phone. The answer board is for the TV: it is not shown here.
       peek.replaceChildren(h('div', { class: 'tag' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''} · ${r.pot} on the board`),
-        h('div', { class: 'q' }, r.question), ...(said ? [said] : []));
-      boardEl.classList.remove('hidden');
-      boardEl.replaceChildren(...r.answers.map((a) => h('div', { class: `pm-slot ${a.revealed ? 'up' : a.late ? 'late' : ''}` },
-        h('span', { class: 'n' }, String(a.n)), h('span', { class: 't' }, a.text ?? ''), h('span', { class: 'p' }, a.points ?? ''))),
-      h('div', { class: 'pm-x' }, Array.from({ length: r.maxStrikes }, (_, i) => h('span', { class: i < r.strikes ? 'on' : '' }, '✕'))));
+        h('div', { class: 'q fd-question-phone' }, r.question), ...(said ? [said] : []),
+        h('div', { class: 'pm-x' }, Array.from({ length: r.maxStrikes }, (_, i) => h('span', { class: i < r.strikes ? 'on' : '' }, '✕'))));
+      boardEl.classList.add('hidden');
+      boardEl.replaceChildren();
     } else { peek.classList.add('hidden'); boardEl.classList.add('hidden'); }
     // Play or pass, for anyone on the team that won the face-off.
     actions.replaceChildren(...(g.me?.canChoose ? [
