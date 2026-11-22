@@ -51,6 +51,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   let buzzId = 0;
   let wonKey = '';         // the opening this phone was told it won, so the cue plays once
   let sheet = false;       // the "fix scores" sheet
+  let answerShown = false; // the captain who hosts tapped Show the answer
   let step = 200;
   let wager = null;        // the amount on the wager stepper
   let typing = false;      // "Type an amount" instead of the stepper
@@ -201,7 +202,10 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
       nodes: center(
         h('div', { class: 'jp-logo' }, 'YOU’RE IN!'),
         h('div', { class: 'jp-msg' }, `${n} player${n === 1 ? '' : 's'} in the room`),
-        h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the captain. Choose the questions, then tap Start game when everyone has joined.' : v.hostJudges || v.hosted ? 'Your phone is your buzzer. The host starts the game when everyone has joined.' : 'Your phone is your buzzer. Waiting for the captain to start the game…'),
+        h('div', { class: 'jp-muted' }, me().isCaptain
+          ? (v.hostJudges ? 'You’re the host. Choose the questions and tap Start game. During the game this phone opens the buzzers and has Correct and Wrong for every answer.' : 'You’re the captain. Choose the questions, then tap Start game when everyone has joined.')
+          : v.hosted ? 'Your phone is your buzzer. The host starts the game when everyone has joined.'
+            : `Your phone is your buzzer. Waiting for ${player(v.captainId)?.name ?? 'the captain'} to start the game…`),
         me().isCaptain
           ? h('div', { class: 'jp-stack', style: { marginTop: '8px' } }, kickList(), lobbyControls(v, cap))
           : h('div', { class: 'jp-muted jp-small' }, v.draft ? `Board: ${v.draft.flat().join(', ')}` : `Questions: ${sel || '…'}`)),
@@ -228,11 +232,20 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function boardScreen() {
     const meCtrl = v.controllerId === me().id;
     const ctrl = player(v.controllerId);
+    if (v.hostJudges && me().isCaptain) {
+      // The captain is the host: tap the clue the player in control says.
+      const used = v.board.map((c) => c.clues.map((x) => (x.used ? 1 : 0)).join('')).join('');
+      return {
+        key: `board-hostcap-${v.round}-${used}-${v.controllerId}`,
+        nodes: [h('div', { class: 'jp-pickhead' }, h('div', { class: 'jp-logo' }, meCtrl ? 'YOUR PICK' : `${(ctrl?.name ?? '').toUpperCase()}’S PICK`), h('div', { class: 'jp-small jp-muted' }, meCtrl ? 'Tap a value. It opens on the TV.' : 'They say a category and an amount. Tap it here.')),
+          miniBoard(v.board, (ci, ri) => { navigator.vibrate?.(15); cap('pick', { ci, ri }); })],
+      };
+    }
     if (v.hostJudges) {
       return {
         key: `board-host-${v.controllerId}-${meCtrl}`,
         nodes: center(meCtrl
-          ? [h('div', { class: 'jp-logo' }, 'YOUR PICK!'), h('div', { class: 'jp-msg' }, 'Tell the host a category and an amount.')]
+          ? [h('div', { class: 'jp-logo' }, 'YOUR PICK!'), h('div', { class: 'jp-msg' }, `Tell ${v.hosted ? 'the host' : player(v.captainId)?.name ?? 'the host'} a category and an amount.`)]
           : [dot(ctrl, 56), h('div', { class: 'jp-msg' }, [named(ctrl), ' is picking a clue…']), h('div', { class: 'jp-muted' }, 'Get your thumb ready.')]),
       };
     }
@@ -274,7 +287,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     if (ph === 'answering' && c.buzzedId === me().id) {
       if (v.hostJudges) {
         return { key: `say-${id}-${opening}`, nodes: [head, clueCard(c.q), center(h('div', { class: 'jp-logo good' }, 'YOU’RE UP!'), h('div', { class: 'jp-msg' }, 'Say your answer out loud.'),
-          v.timer && clock(), h('div', { class: 'jp-muted' }, 'The host will decide if you’re right.'))] };
+          v.timer && clock(), h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the host too: tap Correct or Wrong below.' : 'The host will decide if you’re right.'))] };
       }
       return { key: `ans-${id}-${opening}`, answer: { type: 'answer', for: `${id}-${opening}`, head: h('div', { class: 'jp-won' }, h('div', { class: 'jp-logo good' }, 'YOU’RE IN!'), clock()) }, nodes: [head, clueCard(c.q)] };
     }
@@ -427,7 +440,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     const c = v.clue;
     const head = meta(c.cat, `Bet ${money(c.wager)}`);
     const mineCtl = v.controllerId === me().id;
-    if (mineCtl && v.hostJudges) return { key: `ddsay-${c.ci}${c.ri}`, nodes: [head, clueCard(c.q), center(h('div', { class: 'jp-msg' }, 'Say your answer out loud.'), v.timer && clock(), h('div', { class: 'jp-muted' }, 'The host will decide if you’re right.'))] };
+    if (mineCtl && v.hostJudges) return { key: `ddsay-${c.ci}${c.ri}`, nodes: [head, clueCard(c.q), center(h('div', { class: 'jp-msg' }, 'Say your answer out loud.'), v.timer && clock(), h('div', { class: 'jp-muted' }, me().isCaptain ? 'You’re the host too: tap Correct or Wrong below.' : 'The host will decide if you’re right.'))] };
     if (mineCtl) return { key: `dda-${c.ci}${c.ri}`, answer: { type: 'answer', for: `dd-${c.ci}-${c.ri}-${v.round}`, head: h('div', { class: 'jp-won' }, h('div', { class: 'jp-logo dd' }, 'ONLY YOU'), clock()) }, nodes: [head, clueCard(c.q)] };
     return { key: `ddaw-${c.ci}${c.ri}`, nodes: [head, clueCard(c.q), center(h('div', { class: 'jp-msg' }, [named(player(v.controllerId)), ` bet ${money(c.wager)} and is answering…`]))] };
   }
@@ -550,6 +563,12 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function renderCaptain() {
     if (!me().isCaptain) { captainBar.style.display = 'none'; captainBar.replaceChildren(); captainBar.dataset.key = ''; return; }   // forget what was drawn, so the bar is built again if the captain comes back
     const ph = v.phase; const items = [];
+    // The captain is the host (a host judges out loud, and no host page): the judge's buttons come first, and big.
+    if (v.hostJudges && ph === 'reading') items.push(['Open buzzers', () => cap('openNow'), 'good judge']);
+    if (v.hostJudges && (ph === 'answering' || ph === 'dd-answer')) {
+      items.push(['✓ Correct', () => cap('judge', { correct: true }), 'good judge'], ['✗ Wrong', () => cap('judge', { correct: false }), 'bad judge']);
+      if (me().answer) items.push([answerShown ? `Answer: ${me().answer}` : 'Show the answer', () => { answerShown = !answerShown; captainBar.dataset.key = ''; renderCaptain(); }, 'ghost wide']);
+    }
     if (ph === 'lobby') items.push(['Start game', () => cap('start'), '']);
     if (ph === 'round-intro') items.push(['Skip intro', () => cap('advance'), 'ghost']);
     if (['reading', 'open', 'answering', 'dd-wager', 'dd-answer'].includes(ph)) items.push(['Skip clue', () => { if (confirm('Skip this clue? Nobody wins or loses money on it.')) cap('skip'); }, 'ghost']);
@@ -561,6 +580,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     if (ph !== 'lobby' && ph !== 'gameover') items.push(['End game', () => { if (confirm('End this game for everyone? Scores reset and everyone goes back to the lobby.')) cap('endGame'); }, 'ghost']);
     if (ph !== 'lobby' && v.players.length) items.push(['Fix scores', () => { sheet = true; renderSheet(); }, 'ghost']);
     const key = items.map((x) => x[0]).join('|');
+    captainBar.classList.toggle('hosting', !!v.hostJudges);
     captainBar.style.display = items.length ? 'flex' : 'none';
     if (captainBar.dataset.key === key) return;
     captainBar.dataset.key = key;
@@ -590,7 +610,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function renderStrip() {
     const meP = player(me().id);
     const round = v.phase === 'lobby' ? 'LOBBY' : v.phase.startsWith('final') || v.phase === 'gameover' ? 'FINAL' : `ROUND ${v.round}`;
-    strip.replaceChildren(h('b', {}, round), h('span', {}, [me().isCaptain ? '★ Captain' : '', meP && meP.streak >= v.hotStreak ? ` 🔥${meP.streak}` : ''].join('')));
+    strip.replaceChildren(h('b', {}, round), h('span', {}, [me().isCaptain ? (v.hostJudges ? '★ Host' : '★ Captain') : '', meP && meP.streak >= v.hotStreak ? ` 🔥${meP.streak}` : ''].join('')));
   }
 
   // ---------- drawing ----------
@@ -680,6 +700,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
         }
       }
       if (before !== v.phase && !['dd-wager', 'final-wager'].includes(v.phase)) { wager = null; typing = false; }
+      if (before !== v.phase) answerShown = false;
       render();
     },
     onMessage(m) {

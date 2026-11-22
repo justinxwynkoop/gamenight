@@ -144,6 +144,9 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-captain { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, .15); }
 .jp .jp-captain::before { content: 'Captain controls'; width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: var(--jp-muted); text-transform: uppercase; letter-spacing: .1em; }
 .jp .jp-captain .jp-btn { padding: 10px 14px; font-size: 15px; }
+.jp .jp-captain.hosting::before { content: 'Host controls'; }
+.jp .jp-captain .jp-btn.judge { flex: 1 1 40%; padding: 18px 14px; font-size: 20px; font-weight: 800; }
+.jp .jp-captain .jp-btn.wide { flex: 1 1 100%; }
 .jp .jp-sheet { position: fixed; inset: 0; background: rgba(8, 8, 16, .75); display: flex; align-items: flex-end; justify-content: center; z-index: 20; }
 .jp .jp-sheet-in { width: 100%; max-width: 480px; max-height: 88vh; overflow: auto; background: #12152c; border-radius: 20px 20px 0 0; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
 .jp .jp-sheet .hd { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 18px; }

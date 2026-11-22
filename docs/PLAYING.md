@@ -11,9 +11,11 @@ to open. Anyone who scans it becomes a host, the same as typing the PIN. The PIN
 
 Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. It runs on the Apple TV, and the
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
-touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host connected (or
-**A host judges out loud** on) there is **no captain** (in Jeopardy and in Family Feud alike), and the topics are the host's to choose on the host page. The TV lobby
-then shows only who has joined.
+touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host page
+connected there is **no captain** (in Jeopardy and in Family Feud alike), and the topics are the host's to choose on the host page. The TV lobby
+then shows only who has joined. With **A host judges out loud** on and no host page, the captain is the host: their
+phone gets **Open buzzers**, **Correct** and **Wrong** (and can peek at the answer), and taps the clue the player in control
+says.
 
 1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV (**Choose questions**), the captain's
    phone or the host page chooses what to play, on three shelves:
@@ -28,8 +30,8 @@ then shows only who has joined.
    - **No repeats.** The TV remembers every clue it has shown (on the Apple TV and in the browser, kept between rooms).
      Each topic says how many of its categories are still new, and the game deals new categories first, so a clue only
      comes back once every clue in its pack has been played. Then that pack starts over. **Start fresh** forgets it all.
-   - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page
-     or with the remote) taps Correct or Wrong.
+   - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page,
+     on the captain's phone when there is no host page, or with the remote) taps Correct or Wrong.
 2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote). Round 2 is worth
    double and has two Daily Doubles; the lowest score picks first.
 3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
@@ -189,7 +191,7 @@ phones keep a "Who voted for what" list to argue over. When the game ends everyo
 |---|---|
 | Buzz in (after the clue is read) | 7 seconds, 6 after a wrong answer |
 | Typed answer | 15 seconds; a Daily Double gets 20 after the clue is read |
-| Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 3 seconds to rule) |
+| Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 8 seconds to rule) |
 | Final Jeopardy answer | 35 seconds |
 
 **Early buzzes.** Pressing before the buzzers open locks that player out for 0.25 seconds, as on the show. The phone

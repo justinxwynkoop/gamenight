@@ -427,8 +427,8 @@
     // host mode: fallback if the host forgets to open buzzers
     hostAnswer: 3e4,
     // host mode: Daily Double fallback for the host to judge a spoken answer
-    hostGrace: 3e3,
-    // host mode: after the answer clock hits zero, the host still has this long to rule
+    hostGrace: 8e3,
+    // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
     captainGone: 15e3
     // how long the captain may be away before someone else takes over
   };
@@ -817,7 +817,9 @@
       __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
       this.round = 1;
       const order = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this);
-      this.controllerId = order[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * order.length)];
+      const here = order.filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
+      const from = here.length ? here : order;
+      this.controllerId = from[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * from.length)];
       this.captainId ?? (this.captainId = order[0]);
       __privateMethod(this, _JeopardyGame_instances, roundIntro_fn).call(this);
     }
@@ -831,10 +833,11 @@
     hosted() {
       return (this.room.hosts ?? 0) > 0;
     }
-    /** Who gets the captain controls: whoever joined first, and someone else if they stay away. With a host there is no captain:
-     *  the host (and the TV's remote) run the game, so nobody on a phone has the controls. */
+    /** Who gets the captain controls: whoever joined first, and someone else if they stay away. With a host page connected
+     *  there is no captain: the host (and the TV's remote) run the game. With "a host judges out loud" on and no host page,
+     *  the captain is the host: their phone gets Open buzzers, Correct and Wrong, so the game never waits on a judge nobody has. */
     captain() {
-      if (this.hostJudges() || this.hosted()) return null;
+      if (this.hosted()) return null;
       if (!this.captainId || !__privateMethod(this, _JeopardyGame_instances, player_fn).call(this, this.captainId)) this.captainId = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this)[0] ?? null;
       return this.captainId;
     }
@@ -1223,6 +1226,9 @@
           return this.pick(Number(a.ci), Number(a.ri));
         case "judge":
           return this.judgeNow(a.correct === true);
+        // The host types in the bet a player says out loud (or places it for a phone that is not answering).
+        case "ddWager":
+          return this.ddWager(this.controllerId, a.amount);
         case "openNow":
           return this.openNow();
         case "readDone":
@@ -1315,6 +1321,8 @@
         case "cap": {
           if (this.captain() !== pid) fail("Only the captain can do that");
           if (!_JeopardyGame.CAPTAIN_ACTIONS.has(msg.action)) fail("Not allowed");
+          if (["judge", "openNow", "ddWager"].includes(msg.action) && !this.hostJudges()) fail("The game checks typed answers");
+          if (msg.action === "pick" && !this.hostJudges() && pid !== this.controllerId && __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) fail("It is not your pick");
           return this.act(msg.action, msg.args ?? {}) ?? void 0;
         }
         default:
@@ -1449,7 +1457,9 @@
         maxDD: this.phase === "dd-wager" ? this.maxDDWager(p.id) : null,
         finalWager: this.final ? this.final.wagers[p.id] : void 0,
         maxFinal: this.phase === "final-wager" ? this.maxFinalWager(p.id) : null,
-        finalAnswer: this.final ? this.final.answers[p.id] : void 0
+        finalAnswer: this.final ? this.final.answers[p.id] : void 0,
+        // The captain who is also the host may peek at the answer while someone answers out loud.
+        answer: this.hostJudges() && this.captain() === p.id && ["answering", "dd-answer"].includes(this.phase) ? this.clue?.a ?? null : null
       } : null;
       return v;
     }
@@ -2133,7 +2143,8 @@
     const host = this.hostJudges();
     const hosted = this.hosted();
     const cap = this.captain();
-    const mover = host || hosted ? "The host" : cap ? `${name(cap)} (captain)` : "The captain";
+    const mover = hosted ? "The host" : cap ? `${name(cap)} (captain)` : host ? "The host" : "The captain";
+    const judge2 = !hosted && cap ? name(cap) : "the host";
     const ctrl = this.controllerId;
     const r = this.lastResult;
     const c = this.clue;
@@ -2143,21 +2154,22 @@
     switch (this.phase) {
       case "lobby":
         if (!this.room.players.length) return { pid: null, text: "Scan the code with your phone to join", next: host || hosted ? "The host starts the game when everyone is in" : "The first to join is captain" };
-        if (host || hosted) return { pid: null, text: "A host is running this game", next: "The host starts the game when everyone is in" };
+        if (hosted) return { pid: null, text: "A host is running this game", next: "The host starts the game when everyone is in" };
+        if (host) return { pid: cap, text: `${name(cap)} is the host`, next: `${name(cap)} starts the game and rules on every answer` };
         return { pid: cap, text: `${name(cap)} is captain`, next: host ? "The host starts the game when everyone is in" : `${name(cap)} starts the game when everyone is in` };
       case "round-intro":
         return { pid: ctrl, text: this.round === 2 ? "Round 2: every value is doubled" : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
       case "board": {
         const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it\u2019s their pick` : `${name(ctrl)}\u2019s pick`;
-        const next = host ? `${name(ctrl)}, tell the host a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so the captain picks for them`;
+        const next = host ? `${name(ctrl)}, tell ${judge2} a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so ${hosted ? "the host" : "the captain"} picks for them`;
         return { pid: ctrl, text, next };
       }
       case "reading":
-        return { pid: null, text: host ? "The host reads the clue out loud" : "Read the clue", next: host ? "Buzzers open when the host says go" : "Buzzers open when the bar fills. Buzz too early and you\u2019re locked out a moment" };
+        return { pid: null, text: host ? `${judge2 === "the host" ? "The host" : judge2} reads the clue out loud` : "Read the clue", next: host ? `Buzzers open when ${judge2} says go` : "Buzzers open when the bar fills. Buzz too early and you\u2019re locked out a moment" };
       case "open":
         return { pid: null, text: "Buzzers are open!", next: r && !r.correct ? `${name(r.pid)} missed it. Anyone else?` : "First to buzz on their phone answers" };
       case "answering":
-        return { pid: c?.buzzedId ?? null, text: `${name(c?.buzzedId)} buzzed in first`, next: host ? `${name(c?.buzzedId)}, say your answer. The host rules Correct or Wrong` : `${name(c?.buzzedId)} is typing an answer on their phone` };
+        return { pid: c?.buzzedId ?? null, text: `${name(c?.buzzedId)} buzzed in first`, next: host ? `${name(c?.buzzedId)}, say your answer. ${judge2 === "the host" ? "The host" : judge2} rules Correct or Wrong` : `${name(c?.buzzedId)} is typing an answer on their phone` };
       case "ruling":
         if (!r) return null;
         if (r.correct) return { pid: r.pid, text: `${name(r.pid)} is right! ${signed(r.delta)}`, next: r.dd ? "Here\u2019s the answer" : `${name(r.pid)} picks next` };
@@ -2165,11 +2177,11 @@
       case "reveal":
         return { pid: ctrl, text: r?.correct ? `${name(r.pid)} got it! ${signed(r.delta)}` : "Nobody got that one", next: `${name(ctrl)} picks next. The board is back in a moment` };
       case "dd-wager":
-        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)}, tell the host your bet` : `${name(ctrl)} is placing a bet on their phone` };
+        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)} bets on their phone` : `${name(ctrl)} is placing a bet on their phone` };
       case "dd-answer":
-        return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString("en-US")}`, next: host ? `${name(ctrl)}, say your answer. The host rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
+        return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString("en-US")}`, next: host ? `${name(ctrl)}, say your answer. ${judge2 === "the host" ? "The host" : judge2} rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
       case "round-end":
-        return { pid: host ? null : cap, text: `End of round ${this.round}`, next: `${mover} taps Continue for ${this.round >= this.rounds.length ? "Final Jeopardy" : `round ${this.round + 1}`}` };
+        return { pid: hosted ? null : cap, text: `End of round ${this.round}`, next: `${mover} taps Continue for ${this.round >= this.rounds.length ? "Final Jeopardy" : `round ${this.round + 1}`}` };
       case "final-wager":
         return { pid: null, text: `Final Jeopardy: ${f?.category ?? ""}`, next: allLocked(f) ? `Everyone is locked in. ${mover} shows the clue` : `Everyone bets on their phone. ${locked(f?.wagers)}` };
       case "final-answer":
@@ -2180,13 +2192,13 @@
         return { pid: id, text: `${name(id)}\u2019s response`, next: "Lowest score goes first" };
       }
       case "gameover":
-        return { pid: host ? null : cap, text: "Game over!", next: `${mover} can start a new game` };
+        return { pid: hosted ? null : cap, text: "Game over!", next: `${mover} can start a new game` };
       default:
         return null;
     }
   };
-  /** What the captain's phone may do (a subset of the host's powers; no host-judging ruling). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory", "resetHall"]));
+  /** What the captain's phone may do (with a host page connected there is no captain; without one the captain is the host). */
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["judge", "openNow", "pick", "ddWager", "kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory", "resetHall"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js
@@ -4510,14 +4522,25 @@
   function createRelayHost({ engine: engine2, code, broadcast, now, quietMs = 25e3 }) {
     const seen = /* @__PURE__ */ new Map();
     const lastSent = /* @__PURE__ */ new Map();
+    const sentNo = /* @__PURE__ */ new Map();
+    const lastMsg = /* @__PURE__ */ new Map();
     const topic = `gn:${code}`;
+    const run = Math.floor(Math.random() * 36 ** 4).toString(36);
     function toClient(id, message) {
-      const text = JSON.stringify(message);
       if (message?.t === "state") {
+        const text = JSON.stringify(message.view);
         if (lastSent.get(id) === text) return;
         lastSent.set(id, text);
+        const n = `${run}.${(Number(String(sentNo.get(id) ?? "").split(".")[1]) || 0) + 1}`;
+        sentNo.set(id, n);
+        message = { ...message, n };
+        lastMsg.set(id, message);
       }
       broadcast(`${topic}:${id}`, "m", message);
+    }
+    function forget(id) {
+      lastSent.delete(id);
+      lastMsg.delete(id);
     }
     return {
       topic,
@@ -4530,7 +4553,8 @@
         if (typeof id !== "string" || !CLIENT_ID.test(id) || id === "tv" || typeof payload.m !== "object" || payload.m === null) return;
         if (!seen.has(id)) engine2.open(id);
         seen.set(id, now());
-        if (payload.m.t === "hello") lastSent.delete(id);
+        if (payload.m.t === "hello") forget(id);
+        if (payload.m.t === "ping" && "n" in payload.m && lastMsg.has(id) && payload.m.n !== sentNo.get(id)) broadcast(`${topic}:${id}`, "m", lastMsg.get(id));
         engine2.receive(id, payload.m);
       },
       /** Drop clients that have gone quiet. Call a few times a second along with engine.tick(). */
@@ -4539,7 +4563,7 @@
         for (const [id, at] of seen) {
           if (t - at > quietMs) {
             seen.delete(id);
-            lastSent.delete(id);
+            forget(id);
             engine2.close(id);
           }
         }

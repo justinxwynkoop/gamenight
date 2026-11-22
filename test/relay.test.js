@@ -224,3 +224,47 @@ test('clock sync: a phone learns the room clock from the quickest answer, and tu
   clock.answer({ c: 'x', at: 1 });
   assert.equal(clock.synced(), false, 'nonsense is ignored');
 });
+
+test('a view lost on the way is sent again: each ping says the last view that arrived', async () => {
+  const { createRelayHost } = await import('../engine/relay.js');
+  const out = [];
+  const got = [];
+  const relay = createRelayHost({ engine: { open() {}, close() {}, receive: (id, m) => got.push(m) }, code: 'ABCD', broadcast: (topic, event, payload) => out.push({ topic, payload }), now: () => 0 });
+  const id = 'phone123';
+  relay.onBroadcast('gn:ABCD', 'm', { c: id, m: { t: 'hello', role: 'player' } });
+  relay.send(id, { t: 'state', view: { phase: 'open' } });
+  const first = out.at(-1).payload;
+  relay.send(id, { t: 'state', view: { phase: 'open' } });
+  assert.equal(out.length, 1, 'a view that has not changed is not sent again');
+  relay.send(id, { t: 'state', view: { phase: 'answering' } });
+  const second = out.at(-1).payload;
+  assert.notEqual(first.n, second.n, 'each new view has its own number');
+  // The phone only got the first one: its ping says so, and the newest view comes again.
+  relay.onBroadcast('gn:ABCD', 'm', { c: id, m: { t: 'ping', n: first.n } });
+  assert.equal(out.length, 3);
+  assert.deepEqual(out.at(-1).payload, second);
+  assert.equal(out.at(-1).topic, `gn:ABCD:${id}`);
+  // Up to date: nothing more. A ping from an older page (no number) gets nothing either.
+  relay.onBroadcast('gn:ABCD', 'm', { c: id, m: { t: 'ping', n: second.n } });
+  relay.onBroadcast('gn:ABCD', 'm', { c: id, m: { t: 'ping' } });
+  assert.equal(out.length, 3);
+  assert.equal(got.filter((m) => m.t === 'ping').length, 3, 'pings still reach the room');
+});
+
+test('a phone that pings the number of the last view it got: lost views come back, repeats are not shown twice', async () => {
+  const w = await world();
+  try {
+    // Lose the next state to this phone on the way.
+    const { link, got } = w.phone('lossy01', { t: 'hello', role: 'host', pin: '4321' });
+    await until(() => got.states.length >= 1, 'the first view');
+    const realSend = w.rt.send.bind(w.rt);
+    let lose = 1;
+    w.rt.send = (topic, event, payload) => { if (lose && topic.endsWith(':lossy01') && payload?.t === 'state') { lose--; return; } realSend(topic, event, payload); };
+    const before = got.states.length;
+    link.act('chooseGame', { id: 'feud' });
+    await until(() => got.states.length > before && got.states.at(-1).room.gameId === 'feud', 'the lost view, sent again after a ping');
+    const n = got.states.length;
+    await new Promise((r) => setTimeout(r, 300));
+    assert.equal(got.states.length, n, 'nothing more comes while nothing changes');
+  } finally { w.close(); }
+});

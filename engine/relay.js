@@ -20,19 +20,35 @@ export function newRoomCode(random = Math.random) {
  * code        the room code
  * broadcast   (topic, event, payload) => void, put a message on the relay
  * now         () => milliseconds
- * quietMs     how long a client may be silent before it is dropped (phones ping every 8 seconds)
+ * quietMs     how long a client may be silent before it is dropped (phones ping every 4 seconds)
  */
 export function createRelayHost({ engine, code, broadcast, now, quietMs = 25_000 }) {
   const seen = new Map();      // clientId -> last time we heard from it
-  const lastSent = new Map();  // clientId -> the last text we sent it (a view that has not changed is not sent again)
+  const lastSent = new Map();  // clientId -> the last view we sent it, as text (a view that has not changed is not sent again)
+  const sentNo = new Map();    // clientId -> the number of that view (each new one counts up)
+  const lastMsg = new Map();   // clientId -> that state message, to send again if it never arrived
 
   const topic = `gn:${code}`;
+  // View numbers start with a mark of this TV run, so a phone never mistakes a restarted TV's first views for ones it has.
+  const run = Math.floor(Math.random() * 36 ** 4).toString(36);
 
+  // A broadcast can be lost on the way (Supabase Realtime does not promise delivery), and a view that has not changed
+  // is not sent again, so a lost one would leave that phone (or the host page) on an old screen: the buzzers still
+  // shut, or the host with no Correct / Wrong. Each view carries a number, every ping says the last number that
+  // arrived, and a phone that is behind gets the latest view again at once.
   function toClient(id, message) {
-    const text = JSON.stringify(message);
-    if (message?.t === 'state') { if (lastSent.get(id) === text) return; lastSent.set(id, text); }
+    if (message?.t === 'state') {
+      const text = JSON.stringify(message.view);
+      if (lastSent.get(id) === text) return;
+      lastSent.set(id, text);
+      const n = `${run}.${(Number(String(sentNo.get(id) ?? '').split('.')[1]) || 0) + 1}`;
+      sentNo.set(id, n);
+      message = { ...message, n };
+      lastMsg.set(id, message);
+    }
     broadcast(`${topic}:${id}`, 'm', message);
   }
+  function forget(id) { lastSent.delete(id); lastMsg.delete(id); }
 
   return {
     topic,
@@ -45,14 +61,16 @@ export function createRelayHost({ engine, code, broadcast, now, quietMs = 25_000
       if (typeof id !== 'string' || !CLIENT_ID.test(id) || id === 'tv' || typeof payload.m !== 'object' || payload.m === null) return;
       if (!seen.has(id)) engine.open(id);
       seen.set(id, now());
-      if (payload.m.t === 'hello') lastSent.delete(id);   // a client that says hello wants the full view again
+      if (payload.m.t === 'hello') forget(id);   // a client that says hello wants the full view again
+      // A ping that says an older view (or none) arrived last: the newest one was lost on the way, so send it again.
+      if (payload.m.t === 'ping' && 'n' in payload.m && lastMsg.has(id) && payload.m.n !== sentNo.get(id)) broadcast(`${topic}:${id}`, 'm', lastMsg.get(id));
       engine.receive(id, payload.m);
     },
     /** Drop clients that have gone quiet. Call a few times a second along with engine.tick(). */
     sweep() {
       const t = now();
       for (const [id, at] of seen) {
-        if (t - at > quietMs) { seen.delete(id); lastSent.delete(id); engine.close(id); }
+        if (t - at > quietMs) { seen.delete(id); forget(id); engine.close(id); }
       }
     },
     /** Did this client arrive through the relay (so replies go back through it)? */

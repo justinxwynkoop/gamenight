@@ -428,7 +428,7 @@ export function lobby(view, ctx = {}) {
   for (let i = n; i < 8; i++) seats.push(h('div', { class: 'seat open' }, h('span', { class: 'av' }, '+'), h('span', { class: 'who' }, h('small', {}, 'Open seat'))));
   const players = h('div', { class: 'lb-panel lb-players' },
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
-      h('span', { class: 'aside' }, g.hostJudges ? 'A host is running this game' : cap ? `${cap.name} is captain${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
+      h('span', { class: 'aside' }, g.hosted ? 'A host is running this game' : cap ? `${cap.name} is ${g.hostJudges ? 'the host' : 'captain'}${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
     h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
   // With a host connected, the topics are the host's to choose (on the host page): the TV shows only who has joined.
   const packs = g.hosted ? null : pickerPanel();
@@ -465,7 +465,7 @@ export function lobby(view, ctx = {}) {
   return h('div', { class: `bw lobbyscreen ${act ? 'can-act' : ''}` },
     h('header', {}, h('div', { class: 'wm' }, h('i', {}, 'JEOP'), 'ARDY'), h('div', { class: 'roundtag' }, 'Lobby')),
     h('main', {}, lb, h('div', { class: 'lb-foot' },
-      cap ? [h('b', {}, cap.name), g.hostJudges ? ' or the host starts the game when everyone is in' : ' starts the game from their phone when everyone is in']
+      cap ? [h('b', {}, cap.name), g.hostJudges ? ' is the host: they start the game and rule on every answer from their phone' : ' starts the game from their phone when everyone is in']
         : 'Waiting for players to scan in')),
     controls());
 }
@@ -800,7 +800,7 @@ function roundEnd() {
     h('div', { class: 'title' }, more ? `NEXT: ROUND ${g.round + 1}` : 'NEXT: FINAL JEOPARDY'),
     h('div', { class: 'lead' }, more ? 'Every value doubles. Lowest score picks first.' : 'One clue. Everyone wagers in secret.'),
     standings(),
-    h('div', { class: 'lead small' }, `The ${g.hostJudges ? 'host' : 'captain'} taps Continue to keep going.`)), { podiums: false });
+    h('div', { class: 'lead small' }, `The ${g.hostJudges || g.hosted ? 'host' : 'captain'} taps Continue to keep going.`)), { podiums: false });
 }
 
 // ---------- Final Jeopardy ----------
@@ -887,7 +887,7 @@ function gameover() {
     h('div', { class: 'lead' }, h('span', { class: 'dot', style: { background: champColor } }), minus(top), g.final?.answer ? [' · the final answer was ', h('b', {}, g.final.answer)] : null),
     hallLine(g.hall) && h('div', { class: 'hall' }, '🏆 ', hallLine(g.hall)),
     h('div', { class: 'bottom' }, h('div', { class: 'podium' }, podium), awards.length ? h('div', { class: 'awards' }, awards) : null)),
-  { podiums: false, tag: null, right: h('div', { class: 'aside' }, `The ${g.hostJudges ? 'host' : 'captain'} can start a new game`), cls: 'gold' });
+  { podiums: false, tag: null, right: h('div', { class: 'aside' }, `The ${g.hostJudges || g.hosted ? 'host' : 'captain'} can start a new game`), cls: 'gold' });
 }
 
 function setup(view, ctx) {

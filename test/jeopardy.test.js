@@ -361,20 +361,34 @@ test('with a host a wrong answer still shows the answer when nobody is left, and
   g.ddWager(g.controllerId, -50);                       // ignored once placed; the minimum is $0, never below
 });
 
-test('with a host there is no captain, and the captain comes back when the host goes', () => {
-  const { g, ps } = setup();
-  assert.equal(g.publicView().captainId, ps[0].id);
+test('a host judging out loud with no host page: the captain is the host, with Open buzzers, Correct and Wrong on their phone', () => {
+  const { g, ps, clock } = setup();
   g.setHostJudges(true);
-  const v = g.publicView();
-  assert.equal(v.captainId, null);
-  assert.equal(g.playerView(ps[0]).me.isCaptain, false);
-  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'start' }), /captain/);   // the first player has no controls now
-  assert.match(v.guide.text, /host is running/i);
-  g.act('start');                                                                       // the host (or the TV's remote) starts it
-  assert.notEqual(g.phase, 'lobby');
-  g.endGame();
-  g.setHostJudges(false);
-  assert.equal(g.publicView().captainId, ps[0].id, 'without a host the first player is captain again');
+  const cap = ps[0];
+  assert.equal(g.publicView().captainId, cap.id, 'the captain stays: somebody has to rule');
+  assert.match(g.publicView().guide.text, /is the host/);
+  g.onPlayer(cap, { t: 'cap', action: 'start' });
+  g.onPlayer(cap, { t: 'cap', action: 'advance' });
+  assert.equal(g.phase, 'board');
+  assert.throws(() => g.onPlayer(ps[1], { t: 'cap', action: 'judge', args: { correct: true } }), /captain/);
+  // The captain taps the pick the player in control says, and opens the buzzers.
+  const b = g.board(); const ri = b[0].clues.findIndex((c) => !c.dd);
+  g.onPlayer(cap, { t: 'cap', action: 'pick', args: { ci: 0, ri } });
+  assert.equal(g.phase, 'reading');
+  g.onPlayer(cap, { t: 'cap', action: 'openNow' });
+  assert.equal(g.phase, 'open');
+  g.buzz(ps[1].id);
+  assert.equal(g.phase, 'answering');
+  assert.equal(g.playerView(cap).me.answer, g.clue.a, 'the captain who hosts can peek at the answer');
+  assert.equal(g.playerView(ps[1]).me.answer, null, 'nobody else can');
+  g.onPlayer(cap, { t: 'cap', action: 'judge', args: { correct: false } });
+  assert.equal(g.lastResult.correct, false);
+  assert.equal(g.lastResult.pid, ps[1].id);
+  rule(clock);
+  assert.equal(g.phase, 'open', 'the buzzers open again for the others');
+  // Without host judging the captain cannot rule: the game checks typed answers.
+  g.endGame(); g.setHostJudges(false);
+  assert.throws(() => g.onPlayer(cap, { t: 'cap', action: 'judge', args: { correct: true } }), /typed/);
 });
 
 test('a connected host page takes the captain away and brings it back when it goes', () => {
@@ -403,7 +417,8 @@ test('the captain can drive; other players cannot', () => {
   assert.equal(g.phase, 'round-intro');
   g.onPlayer(ps[0], { t: 'cap', action: 'advance' });     // skip the opening titles
   assert.equal(g.phase, 'board');
-  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'judge' }), /Not allowed/);
+  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'judge' }), /typed answers/);   // only a captain who hosts (host judging on) rules
+  assert.throws(() => g.onPlayer(ps[0], { t: 'cap', action: 'resetEverything' }), /Not allowed/);
 });
 
 test('the captain can end the game part way: back to the lobby, players kept, scores reset', () => {

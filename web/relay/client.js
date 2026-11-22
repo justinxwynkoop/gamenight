@@ -14,12 +14,13 @@ export const cleanCode = (text) => String(text ?? '').toUpperCase().replace(/[^A
  */
 export function connectRelay({
   config, room, clientId, hello, onState, onMessage = () => {}, onStatus = () => {},
-  WebSocketImpl, setTimer = setTimeout, clearTimer = clearTimeout, pingMs = 8000, quietMs = 20000, now = () => Date.now(),
+  WebSocketImpl, setTimer = setTimeout, clearTimer = clearTimeout, pingMs = 4000, quietMs = 20000, now = () => Date.now(),
   hires = () => globalThis.performance?.now?.() ?? Date.now(),
 }) {
   const toTv = `gn:${room}`;
   const mine = `gn:${room}:${clientId}`;
   const asking = new Map(); let nextAsk = 1;
+  let lastN = null;   // the number of the last view that arrived (the TV numbers them), said with each ping
   let lastHeard = 0; let connected = false; let ready = false; let closed = false; let timer = null;
 
   const setConnected = (value) => { if (connected !== value) { connected = value; onStatus(value); } };
@@ -38,7 +39,12 @@ export function connectRelay({
       lastHeard = now();
       setConnected(true);
       if (payload.t === 'rpc-reply') { const q = asking.get(payload.id); if (q) { asking.delete(payload.id); q(payload); } }
-      else if (payload.t === 'state') onState(payload.view);
+      else if (payload.t === 'state') {
+        // A view sent again (ours was lost, or arrived late) that we already have changes nothing.
+        if (payload.n != null && payload.n === lastN) return;
+        if (payload.n != null) lastN = payload.n;
+        onState(payload.view);
+      }
       else if (payload.t === 'sync') clock.answer(payload);
       else if (payload.t === 'who') {
         // The TV restarted and forgot us: introduce ourselves again, then repeat a tap it just dropped. Its clock
@@ -56,7 +62,8 @@ export function connectRelay({
     if (closed) return;
     if (ready) {
       if (connected && now() - lastHeard > quietMs) setConnected(false);
-      if (!connected) sayHello(); else say({ t: 'ping', ...(clock.lag() != null ? { lag: Math.round(clock.lag()) } : {}) });
+      // The ping says which view arrived last, so the TV can send the newest again if it was lost on the way.
+      if (!connected) sayHello(); else say({ t: 'ping', n: lastN, ...(clock.lag() != null ? { lag: Math.round(clock.lag()) } : {}) });
       clock.probeNow();
     }
     timer = setTimer(beat, pingMs);

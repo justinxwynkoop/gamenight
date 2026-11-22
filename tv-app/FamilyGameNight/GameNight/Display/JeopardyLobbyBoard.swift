@@ -141,7 +141,7 @@ struct JeoHeader: View {
             (Text("\(left)").font(BW.title(26)).foregroundColor(BW.text) + Text(left == 1 ? " clue left" : " clues left"))
                 .font(BW.body(26, .semibold)).foregroundColor(BW.muted)
         case .gameover:
-            Text("The \(game.hostJudges ? "host" : "captain") can start a new game").font(BW.body(26, .semibold)).foregroundColor(BW.muted)
+            Text("The \(game.hostJudges || game.hosted == true ? "host" : "captain") can start a new game").font(BW.body(26, .semibold)).foregroundColor(BW.muted)
         case .finalReveal where game.finalRound?.stage != "done" && !(game.finalRound?.order ?? []).isEmpty:
             let final = game.finalRound
             Text("Player \((final?.revealIndex ?? 0) + 1) of \(final?.order?.count ?? 0) \u{00B7} lowest score first")

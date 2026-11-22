@@ -48,7 +48,7 @@ function start() {
   net = connect({
     hello: () => ({ t: 'hello', role: 'host', pin }),
     onStatus: (up) => offline.classList.toggle('hidden', up),
-    onState: (v) => { view = v; authed = true; loginError = ''; ensureGame(); render(); },
+    onState: (v) => { view = v; authed = true; loginError = ''; ensureGame(); followGame(); render(); },
     onMessage: (m) => {
       if (m.t === 'bad-pin') { authed = false; loginError = pin ? 'Wrong PIN' : ''; store('gn-pin', null); render(); }
       else if (m.t === 'error') flash(m.message, true);
@@ -56,6 +56,20 @@ function start() {
   });
 }
 const act = (a, args) => net.act(a, args);
+
+/** Does the game need the host to do something right now (rule on an answer, open the buzzers...)? */
+const hostNeeded = () => {
+  const mod = view?.room?.gameId ? modules[view.room.gameId] : null;
+  if (!view?.game) return false;
+  try { return mod?.needsHost ? !!mod.needsHost(view.game) : ['clue', 'final'].includes(view.game.status); } catch { return false; }
+};
+let wasNeeded = false;
+/** The moment the game needs the host, the Game tab comes up by itself (its buttons are only on that tab). */
+function followGame() {
+  const need = hostNeeded();
+  if (need && !wasNeeded && ui.tab !== 'game' && !ui.sheet) ui.tab = 'game';
+  wasNeeded = need;
+}
 
 /** Load the active game's page module and its question sets the first time they're needed. */
 function ensureGame() {
@@ -157,7 +171,12 @@ function shell() {
   const { room } = view;
   const mod = room.gameId ? modules[room.gameId] : null;
   const ctx = makeCtx();
-  const game = mod ? mod.render(view, ctx) : null;
+  let game = null;
+  try { game = mod ? mod.render(view, ctx) : null; } catch (e) {
+    // A drawing bug must never leave the host with a blank page and no buttons: say so, and keep the basics.
+    console.error(e);
+    game = { title: 'Game Night', sub: 'Something went wrong drawing this screen', body: [card(h('p', { class: 'dim' }, `Something went wrong drawing this screen (${e?.message ?? e}). The game carries on; the TV shows where it is.`))], dock: null };
+  }
   let body; let dock = null;
   if (ui.tab === 'game') ({ body, dock } = gameTab(game, mod));
   else if (ui.tab === 'players') body = playersTab();
@@ -183,7 +202,7 @@ function topBar(game) {
 
 function tabsNav() {
   const { room } = view;
-  const live = view.game && ['clue', 'final'].includes(view.game.status);
+  const live = hostNeeded();
   return h('nav', { class: 'tabs', 'aria-label': 'Sections' }, TABS.map((t) => h('button', {
     type: 'button', class: 'tab', 'aria-current': ui.tab === t.id ? 'page' : null,
     onclick: () => { if (t.href) location.href = `/editor${view.room.gameId ? `?game=${view.room.gameId}` : ''}`; else goTab(t.id); },
