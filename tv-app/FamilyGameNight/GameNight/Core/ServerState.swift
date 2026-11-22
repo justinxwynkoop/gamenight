@@ -182,6 +182,8 @@ struct JeopardyState: Decodable, Equatable {
     var board: [JeoCategory]?
     var clue: JeoClue?
     var lastResult: JeoResult?
+    /// The last clue's buzz times, kept on the board for a few seconds after the clue ends.
+    var recentBuzzes: JeoRecentBuzzes?
     /// Seconds a host-judged answer may take (0 = no clock).
     var answerTime: Int?
     /// Correct answers in a row that put a player "on fire".
@@ -339,6 +341,13 @@ struct JeoMedia: Decodable, Equatable {
         let from = max(0, start ?? 0)
         return (from, min(end ?? from + 30, from + 30))
     }
+}
+
+/// Who buzzed on the clue that just ended, fastest first within each opening (shown under the board for a few seconds).
+struct JeoRecentBuzzes: Decodable, Equatable {
+    var cat: String
+    var value: Int?
+    var buzzes: [JeoBuzz]
 }
 
 struct JeoBuzz: Decodable, Equatable, Identifiable {

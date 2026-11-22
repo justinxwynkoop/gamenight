@@ -41,6 +41,7 @@ export const T = {
   ddWager: 45000,       // a Daily Double wager not placed by then is the minimum
   ddSplash: 2200,       // "Maya bets $1,000" on the TV before the clock starts counting
   finalWager: 60000,    // Final Jeopardy wagers not placed by then are $0
+  buzzLinger: 10000,    // after a clue, its buzz times stay at the bottom of the board this long
   finalAnswer: 35000,
   finalBeat: 2800,      // final reveal: a player's response, before right or wrong
   finalStep: 5000,      // final reveal: right or wrong and the wager, before the next player
@@ -217,6 +218,7 @@ export class JeopardyGame {
     this.rounds = [];
     this.controllerId = null;
     this.clue = null;
+    this.recentBuzzes = null;       // the last clue's buzz times, kept on screen for a few seconds after it ends: { cat, value, buzzes, until }
     this.lastResult = null;
     this.final = null;
     this.finalClue = null;
@@ -278,7 +280,8 @@ export class JeopardyGame {
       }
     } else this.captainGoneAt = null;
     // Someone who had not wagered or answered went away: carry on with everyone who is here.
-    if (this.phase === 'final-wager' || (this.phase === 'final-answer' && this.timer?.kind !== 'final-wait')) this.#checkFinalReady();
+    if (this.phase === 'final-answer' && this.timer?.kind !== 'final-wait') this.#checkFinalReady();
+    if (this.recentBuzzes && now >= this.recentBuzzes.until) { this.recentBuzzes = null; this.#changed(); }
     // Old reactions fade out of the view.
     if (this.reactions.length && now - this.reactions[0].at > REACT_LIFE) {
       this.reactions = this.reactions.filter((r) => now - r.at < REACT_LIFE);
@@ -720,6 +723,7 @@ export class JeopardyGame {
     this.#markSeen(cl.q);
     this.lastResult = null;
     this.collecting = null;
+    this.recentBuzzes = null;
     this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
@@ -1009,12 +1013,15 @@ export class JeopardyGame {
     this.#changed();
   }
   #afterReveal() {
+    const done = this.clue;
     this.clue = null;
     const left = this.board().some((c) => c.clues.some((cl) => !cl.used));
     this.#clearTimer();
     if (!left) this.phase = 'round-end';
     else {
       this.phase = 'board';
+      // Who buzzed, and how fast, stays up for a while: the board comes back quickly (at once after a right answer with a host).
+      this.recentBuzzes = done?.buzzes?.length ? { cat: done.cat, value: done.value, buzzes: done.buzzes.slice(), until: this.#now() + T.buzzLinger } : null;
       // If whoever is in control left, give control to someone who is here.
       if (!this.#connected(this.controllerId) || !this.#player(this.controllerId)) {
         const here = this.#order().filter((id) => this.#connected(id));
@@ -1097,8 +1104,15 @@ export class JeopardyGame {
     }
     this.final = { category: this.finalClue.category, q: this.finalClue.q, a: this.finalClue.a, alt: this.finalClue.alt, eligible, wagers: {}, answers: {}, drafts: {}, results: {}, revealOrder: [], revealIndex: -1, stage: null, answerShown: false };
     this.phase = 'final-wager';
-    // Wagers have a clock too, so one sleeping phone can't hold up the final.
-    this.#setTimer(T.finalWager, () => this.#beginFinalClue(), 'wager');
+    // Wagers have a clock too, so one sleeping phone can't hold up the final: when it runs out, anyone who has not
+    // bet bets nothing. Even then the clue is not shown until the host (or the captain) starts it.
+    this.#setTimer(T.finalWager, () => this.#lockFinalWagers(), 'wager');
+    this.#changed();
+  }
+  /** The wager clock ran out: whoever has not bet bets $0, and the game waits for the host to show the clue. */
+  #lockFinalWagers() {
+    if (this.phase !== 'final-wager') return;
+    for (const id of this.final.eligible) if (!(id in this.final.wagers)) this.final.wagers[id] = 0;
     this.#changed();
   }
   finalWager(pid, amount) {
@@ -1111,13 +1125,13 @@ export class JeopardyGame {
     this.#changed();
     this.#checkFinalReady();
   }
-  /** Everyone who is here has wagered (or answered): go on without waiting for the clock. */
+  /** Everyone who is here has answered: go on to the reveal without waiting for the clock. (Wagers never start the clue by
+   *  themselves: the host shows it when they have all locked in.) */
   #checkFinalReady() {
     const f = this.final;
     if (!f) return;
     const here = f.eligible.filter((id) => this.#connected(id));
-    if (this.phase === 'final-wager' && here.length && here.every((id) => id in f.wagers)) this.#beginFinalClue();
-    else if (this.phase === 'final-answer' && here.length && here.every((id) => id in f.answers) && this.timer?.kind !== 'final-wait') {
+    if (this.phase === 'final-answer' && here.length && here.every((id) => id in f.answers) && this.timer?.kind !== 'final-wait') {
       // A short pause so the last player sees "locked in" before the reveal.
       this.#setTimer(1500, () => this.#beginFinalReveal(), 'final-wait');
     }
@@ -1383,6 +1397,8 @@ export class JeopardyGame {
     const c = this.clue;
     const f = this.final;
     const locked = (o) => `${Object.keys(o ?? {}).length} of ${f?.eligible.length ?? 0} locked in`;
+    // Everyone who is here has locked in a wager: all that is left is for the host to show the clue.
+    const allLocked = (ff) => !!ff && ff.eligible.filter((id) => this.#connected(id)).every((id) => id in ff.wagers);
     switch (this.phase) {
       case 'lobby':
         if (!this.room.players.length) return { pid: null, text: 'Scan the code with your phone to join', next: host || hosted ? 'The host starts the game when everyone is in' : 'The first to join is captain' };
@@ -1416,7 +1432,7 @@ export class JeopardyGame {
       case 'round-end':
         return { pid: host ? null : cap, text: `End of round ${this.round}`, next: `${mover} taps Continue for ${this.round >= this.rounds.length ? 'Final Jeopardy' : `round ${this.round + 1}`}` };
       case 'final-wager':
-        return { pid: null, text: `Final Jeopardy: ${f?.category ?? ''}`, next: `Everyone bets on their phone. ${locked(f?.wagers)}` };
+        return { pid: null, text: `Final Jeopardy: ${f?.category ?? ''}`, next: allLocked(f) ? `Everyone is locked in. ${mover} shows the clue` : `Everyone bets on their phone. ${locked(f?.wagers)}` };
       case 'final-answer':
         return { pid: null, text: 'Write your response on your phone', next: locked(f?.answers) };
       case 'final-reveal': {
@@ -1467,6 +1483,10 @@ export class JeopardyGame {
         liveSeq: this.phase === 'open' ? (this.clue.open ?? 0) : (this.clue.open ?? 0) + 1,
         tried: this.clue.tried,
       },
+      // The last clue's buzz times, for a few seconds after it, on the board (fastest first within each opening).
+      recentBuzzes: this.phase === 'board' && this.recentBuzzes
+        ? { cat: this.recentBuzzes.cat, value: this.recentBuzzes.value, buzzes: this.recentBuzzes.buzzes.slice().sort((x, y) => (x.open ?? 1) - (y.open ?? 1) || x.ms - y.ms).map((x) => ({ pid: x.pid, ms: x.ms, won: !!x.won, open: x.open ?? 1 })) }
+        : null,
       lastResult: this.lastResult,
       answerTime: this.settings.answerTime,
       finalForAll: !!this.settings.finalForAll,
@@ -1597,7 +1617,7 @@ export class JeopardyGame {
     if (this.clue && ['reading', 'open', 'answering', 'ruling', 'dd-wager', 'dd-answer'].includes(this.phase)) { this.phase = 'reveal'; this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal'); }
     else if (this.phase === 'reveal') this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal');
     else if (this.phase === 'round-intro') this.phase = 'board';
-    else if (this.phase === 'final-wager') this.#setTimer(T.finalWager, () => this.#beginFinalClue(), 'wager');
+    else if (this.phase === 'final-wager') this.#setTimer(T.finalWager, () => this.#lockFinalWagers(), 'wager');
     else if (this.phase === 'final-answer') this.#beginFinalReveal();
     else if (this.phase === 'final-reveal') this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
     if (this.phase === 'lobby' && !this.archivePacks.length) this.#requestArchive(this.era);
