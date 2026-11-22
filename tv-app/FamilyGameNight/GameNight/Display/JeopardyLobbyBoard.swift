@@ -1221,6 +1221,10 @@ struct JeoBoard: View {
                     }
                 }
             }
+            // How fast everyone buzzed on the clue that just ended, for a few seconds.
+            if let recent = game.recentBuzzes, !recent.buzzes.isEmpty {
+                JeoRecentBuzzesStrip(game: game, recent: recent)
+            }
         }
         .focusSection()
         .onAppear {

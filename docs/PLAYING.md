@@ -43,10 +43,15 @@ then shows only who has joined.
    for everyone who has not tried.
 5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone. The wager is from **$0** up to their
    score or the round's top value, whichever is higher: quick buttons for $0, half and all in, and a box to type any amount.
-6. **Final Jeopardy.** Players with a positive score wager, then type an answer in 35 seconds. The answers are shown
-   one at a time on the TV, lowest score first.
+6. **Final Jeopardy.** Players with a positive score wager. **The clue is never shown by the last wager coming in:** when
+   everyone is locked in the host (or the captain, or the TV remote's **Show the clue** button) starts it. (If the 60-second
+   wager clock runs out first, whoever has not bet bets nothing, and it still waits to be started.) Then everyone types an
+   answer in 35 seconds. The answers are shown one at a time on the TV, lowest score first.
 7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).
    **Play again** deals new categories.
+
+**Buzz times.** Everyone's buzz times, ranked and to the thousandth of a second, stay along the bottom of the TV for the whole
+clue (also after a wrong answer, when the buzzers open again), and for ten seconds on the board after it ends.
 
 Also: streaks (**on fire** after three right in a row), emoji reactions that float up the TV from phones, and
 **captain controls** on the captain's phone: choose packs, start, skip a clue, flip the last ruling, continue, end the

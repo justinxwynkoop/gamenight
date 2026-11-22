@@ -473,6 +473,9 @@ test('a full game: two rounds, then Final Jeopardy with wagers, answers and a re
   const before = ps[0].score;
   g.finalWager(ps[0].id, 999999);
   assert.equal(g.final.wagers[ps[0].id], before);        // capped at their score
+  assert.equal(g.phase, 'final-wager', 'the last wager does not start the clue by itself');
+  assert.match(g.publicView().guide.next, /locked in.*shows the clue/i);
+  g.advance();                                           // the host shows it
   assert.equal(g.phase, 'final-answer');
   assert.equal(g.publicView().timer.kind, 'final');
   g.finalAnswer(ps[0].id, g.finalClue.a);
@@ -710,6 +713,23 @@ test('removing a player during Final Jeopardy does not leave the game waiting fo
   g.finalWager(ps[0].id, 5);
   assert.equal(g.phase, 'final-wager');                  // still waiting for Bo
   room.removePlayer(ps[1].id);
+  assert.equal(g.phase, 'final-wager');                  // Ann is the only one left and has bet: now it is up to the host
+  g.advance();
+  assert.equal(g.phase, 'final-answer');
+});
+
+test('Final Jeopardy waits for the host even when the wager clock runs out: whoever has not bet bets nothing', () => {
+  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  assert.equal(g.phase, 'final-wager');
+  g.finalWager(ps[0].id, 5);
+  clock.advance(T.finalWager + 10);
+  assert.equal(g.phase, 'final-wager', 'the clock only locks the wagers');
+  assert.equal(g.final.wagers[ps[1].id], 0);
+  assert.equal(g.final.wagers[ps[0].id], 5);
+  g.advance();
   assert.equal(g.phase, 'final-answer');
 });
 
@@ -1160,4 +1180,25 @@ test('a picture or sound clue waits for the TV to finish it, then opens the buzz
   g.act('readDone', { ci, ri });
   clock.advance(AFTER_SPEECH + 10);
   assert.equal(g.phase, 'open');
+});
+
+test('after a clue, its buzz times stay on the board for a few seconds, then go', () => {
+  const { g, ps, clock } = setup();
+  begin(g);
+  const cl = openClue(g, clock);
+  g.buzz(ps[1].id); g.answer(ps[1].id, 'definitely wrong'); // a miss: the buzzers open again
+  clock.advance(T.ruling + 10);
+  assert.equal(g.phase, 'open');
+  assert.equal(g.publicView().recentBuzzes, null, 'not on the board yet');
+  g.buzz(ps[0].id); g.answer(ps[0].id, cl.a);
+  clock.advance(T.ruling + 10);
+  clock.advance(T.reveal + 10);
+  assert.equal(g.phase, 'board');
+  const recent = g.publicView().recentBuzzes;
+  assert.ok(recent, 'the board shows the last clue’s buzz times');
+  assert.deepEqual(recent.buzzes.map((b) => [b.pid, b.open]), [[ps[1].id, 1], [ps[0].id, 2]]);
+  clock.advance(T.buzzLinger - 100);
+  assert.ok(g.publicView().recentBuzzes);
+  clock.advance(200);
+  assert.equal(g.publicView().recentBuzzes, null, 'and they go after a while');
 });

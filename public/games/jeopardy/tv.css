@@ -445,3 +445,13 @@
 .bw .qr-small img { width: 11vh; height: 11vh; display: block; }
 .bw .joinbox:has(.hostbox) { gap: 1.4vh; padding: 2.4vh 3.6vh; }
 .bw .joinbox:has(.hostbox) .qr-big img { width: 26vh; height: 26vh; }
+
+/* The last clue's buzz times under the board, for a few seconds after it. */
+.bw .recent { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: center; padding: 8px 12px; margin-top: 6px; border-radius: 16px; background: rgba(0, 0, 0, .3); }
+.bw .recent .lbl { font-weight: 800; font-size: 18px; letter-spacing: .16em; color: var(--soft); }
+.bw .recent .rb { display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px 3px 6px; border-radius: 12px; background: rgba(0, 0, 0, .35); border-left: 5px solid var(--c); font-size: 22px; font-weight: 600; }
+.bw .recent .rb i { font-style: normal; font-family: var(--display); font-weight: 900; color: var(--soft); width: 22px; text-align: center; }
+.bw .recent .rb b { font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.bw .recent .rb small { color: var(--soft); font-size: 17px; font-variant-numeric: tabular-nums; }
+.bw .recent .rb.first { background: var(--sun); color: var(--ink); border-left-color: var(--ink); }
+.bw .recent .rb.first i, .bw .recent .rb.first small { color: var(--ink); }

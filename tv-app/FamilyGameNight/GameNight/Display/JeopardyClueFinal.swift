@@ -328,10 +328,14 @@ struct JeoBuzzChips: View {
     let game: JeopardyState
     let clue: JeoClue
     var label = false
-    var opening = 1
+    /// Which opening of the buzzers to show; nil is the newest one that has any buzzes, so the times stay up for the
+    /// whole clue (when the buzzers reopen after a miss, the last opening's times stay until someone buzzes again).
+    var opening: Int? = nil
 
     var body: some View {
-        let list = (clue.buzzes ?? []).filter { ($0.open ?? 1) == opening }
+        let all = clue.buzzes ?? []
+        let showing = opening ?? (all.map { $0.open ?? 1 }.max() ?? 1)
+        let list = all.filter { ($0.open ?? 1) == showing }
         if !list.isEmpty {
             let best = list[0].ms
             VStack(spacing: 10) {
@@ -392,6 +396,10 @@ struct JeoClueScreen: View {
         return JeoCard(category: clue.cat, value: value, edge: edge, glow: game.phase == .open) {
             JeoClueBody(clue: clue, size: answering ? 72 : 84, opacity: answering ? 0.9 : 1)
             JeoBand { band(clue, player: player, color: color, dd: dd) }
+            // Everyone's buzz times stay along the bottom for the whole clue.
+            if !dd, !(clue.buzzes ?? []).isEmpty {
+                JeoCardFoot { JeoBuzzChips(game: game, clue: clue, label: true) }
+            }
         }
     }
 
@@ -417,7 +425,6 @@ struct JeoClueScreen: View {
                     Text(name.uppercased()).font(BW.display(64)).foregroundColor(color ?? BW.text).lineLimit(1).minimumScaleFactor(0.5)
                     Text(doing).font(BW.body(34, .semibold)).lineLimit(1).minimumScaleFactor(0.6)
                 }
-                if !dd { JeoBuzzChips(game: game, clue: clue, opening: max(clue.open ?? 1, 1)) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let timer = game.timer { JeoTimerRing(timer: timer, color: color ?? BW.gold, zero: game.hostJudges ? "TIME" : "0") }
@@ -470,6 +477,9 @@ struct JeoRulingCard: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             JeoCardFoot { Text(next) }
+            if !clue.dd, !(clue.buzzes ?? []).isEmpty {
+                JeoCardFoot { JeoBuzzChips(game: game, clue: clue, label: true) }
+            }
         }
     }
 }
@@ -995,5 +1005,44 @@ struct JeoGameOver: View {
         .frame(width: 330, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(BW.surface))
         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+    }
+}
+
+
+/// The last clue's buzz times, in a compact block under the board for a few seconds after the clue (the engine takes
+/// them away): the same ranking as during the clue, so there is time to read them.
+struct JeoRecentBuzzesStrip: View {
+    let game: JeopardyState
+    let recent: JeoRecentBuzzes
+
+    var body: some View {
+        let latest = recent.buzzes.map { $0.open ?? 1 }.max() ?? 1
+        let list = recent.buzzes.filter { ($0.open ?? 1) == latest }
+        if let best = list.first?.ms {
+            HStack(alignment: .top, spacing: 18) {
+                Text("BUZZ TIMES").font(BW.body(20, .heavy)).kerning(3).foregroundColor(BW.soft).padding(.top, 8)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: 10)], alignment: .leading, spacing: 8) {
+                    ForEach(Array(list.prefix(8).enumerated()), id: \.element.id) { index, buzz in
+                        let player = game.player(buzz.pid)
+                        HStack(spacing: 8) {
+                            Text("\(index + 1)").font(BW.title(18)).frame(width: 22)
+                            Text(player?.name ?? "Someone").font(BW.body(22, .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+                            Spacer(minLength: 2)
+                            Text(BW.seconds(buzz.ms)).font(BW.title(21)).monospacedDigit()
+                            if index > 0 {
+                                Text("+" + String(format: "%.3f", (buzz.ms - best).rounded() / 1000)).font(BW.body(16, .semibold)).monospacedDigit().opacity(0.8)
+                            }
+                        }
+                        .foregroundColor(index == 0 ? BW.ink : BW.text)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(index == 0 ? BW.gold : Color.black.opacity(0.3)))
+                        .overlay(alignment: .leading) { Rectangle().fill(Color(playerHex: player?.color ?? "#AEB3D6")).frame(width: 5).clipShape(RoundedRectangle(cornerRadius: 2)) }
+                    }
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.black.opacity(0.25)))
+        }
     }
 }
