@@ -145,6 +145,17 @@ Neither the TV nor the host page ever shows a role while the game is running, so
    either. One Fail card fails the mission (two are needed on the fourth mission with 7 or more players). Everyone
    sees how many Fail cards there were, never who played them.
 
+**On the phones.** A Spy's phone shows their role card (tap to see it), and the **other Spies are behind a separate button**
+("Show the other Spies"), so a glance at the screen gives nothing away. The mission screen says it plainly: the Resistance **have
+to** play Success; a Spy may play Success or Fail. Everyone may talk about anything out loud as much as they like (who they trust,
+accusations, bluffing): the only rule is to keep your screen to yourself.
+
+**Who went.** Under each of the five mission boxes (on the TV, the phones and the host page) are the names of the players who
+went on that mission. When the game ends, each name also shows whether they played Success (✓) or Fail (✗).
+
+**Music.** A noir lobby tune plays while players join, and a quieter, tenser loop plays under the game from the deal until the
+game is over.
+
 **Who starts it.** With a host page open, the host presses **Deal the roles**. Without one, the first player to join
 does, from their phone. Anyone who goes away does not hold things up: their vote counts as Reject, and their mission
 card as Success. The host (or the first player) can also **Move on without waiting**. Past votes are public, so the

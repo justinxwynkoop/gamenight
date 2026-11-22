@@ -116,6 +116,10 @@
           "p2",
           "p1"
         ],
+        "cards": {
+          "p2": "fail",
+          "p1": "success"
+        },
         "current": false
       },
       {
@@ -129,6 +133,11 @@
           "p1",
           "p3"
         ],
+        "cards": {
+          "p2": "fail",
+          "p1": "success",
+          "p3": "fail"
+        },
         "current": false
       },
       {
@@ -141,6 +150,10 @@
           "p2",
           "p1"
         ],
+        "cards": {
+          "p2": "fail",
+          "p1": "success"
+        },
         "current": false
       },
       {
@@ -150,6 +163,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       },
       {
@@ -159,6 +173,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       }
     ],

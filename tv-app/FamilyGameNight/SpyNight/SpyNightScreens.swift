@@ -34,7 +34,7 @@ struct SpyNightScreen: View {
                 .ignoresSafeArea()
             VStack(spacing: 28) {
                 header
-                SpyTrack(track: game.track)
+                SpyTrack(game: game)
                 Spacer(minLength: 0)
                 stage
                 Spacer(minLength: 0)
@@ -140,29 +140,49 @@ struct SpyNightScreen: View {
     }
 }
 
-/// The five missions in a row: how many go, and how each one ended.
+/// The five missions in a row: how many go, and how each one ended, with the names of who went underneath. When the
+/// game is over each name also shows whether they played Success or Fail.
 struct SpyTrack: View {
-    let track: [SpyMission]
+    let game: SpyNightState
 
     var body: some View {
-        HStack(spacing: 20) {
-            ForEach(track) { m in
-                VStack(spacing: 4) {
-                    Text(m.succeeded ? "✓" : m.failed ? "✗" : "\(m.size ?? 0)")
-                        .font(JP.display(78))
-                    Text(m.needed > 1 ? "2 FAILS NEEDED" : "MISSION \(m.mission)")
-                        .font(JP.label(22)).tracking(2)
-                        .foregroundStyle(Spy.dim)
+        HStack(alignment: .top, spacing: 20) {
+            ForEach(game.track) { m in
+                VStack(spacing: 10) {
+                    VStack(spacing: 4) {
+                        Text(m.succeeded ? "✓" : m.failed ? "✗" : "\(m.size ?? 0)")
+                            .font(JP.display(78))
+                        Text(m.needed > 1 ? "2 FAILS NEEDED" : "MISSION \(m.mission)")
+                            .font(JP.label(22)).tracking(2)
+                            .foregroundStyle(Spy.dim)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(m.succeeded ? Color(hex: 0x0F4B45) : m.failed ? Color(hex: 0x5A1620) : Color(hex: 0x10172A)))
+                    .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .strokeBorder(m.succeeded ? Spy.resistance : m.failed ? Spy.spy : m.current ? Spy.gold : Spy.line, lineWidth: 5))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Mission \(m.mission): \(m.succeeded ? "succeeded" : m.failed ? "failed" : "not played yet")")
+                    who(m)
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(m.succeeded ? Color(hex: 0x0F4B45) : m.failed ? Color(hex: 0x5A1620) : Color(hex: 0x10172A)))
-                .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(m.succeeded ? Spy.resistance : m.failed ? Spy.spy : m.current ? Spy.gold : Spy.line, lineWidth: 5))
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Mission \(m.mission): \(m.succeeded ? "succeeded" : m.failed ? "failed" : "not played yet")")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func who(_ m: SpyMission) -> some View {
+        if let team = m.team, !team.isEmpty {
+            VStack(spacing: 2) {
+                ForEach(team, id: \.self) { id in
+                    let card = game.phase == .gameover ? m.cards?[id] : nil
+                    Text(game.name(id) + (card == nil ? "" : card == "fail" ? " ✗" : " ✓"))
+                        .font(JP.text(28, .bold))
+                        .foregroundStyle(card == "fail" ? Spy.spy : card == "success" ? Spy.resistance : Color.white.opacity(0.85))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
             }
         }
     }

@@ -29,6 +29,7 @@ export function lobby(v, ctx) {
 export function render(v, ctx) {
   loadStyles();
   const g = v.game;
+  if (ctx?.sound) playMusic(g, ctx.sound);   // a TV page opened in the middle of a game starts the music too
   const id = g.leaderId;
   let stage;
   switch (g.phase) {
@@ -78,9 +79,16 @@ export function render(v, ctx) {
 }
 
 /** Sound cues, from what changed since the last view. The names are the shared ones (see engine/sounds.js for what each means here). */
+/** The music under the game itself ("think", a quieter, tenser loop): from the deal until the game is over. */
+const inPlay = (phase) => phase !== 'lobby' && phase !== 'gameover';
+function playMusic(g, sound) {
+  if (inPlay(g.phase)) { if (!sound.musicPlaying?.()) sound.music?.('think', { owner: 'game', loop: true }); } else sound.stopMusic?.('game');
+}
+
 export function onChange(prev, view, sound) {
   const p = prev.game; const g = view.game;
   if (!p || !g) return;
+  playMusic(g, sound);
   if (g.phase === 'lobby' && p.phase === 'lobby' && g.players.length > p.players.length) sound.play('join');
   if (g.phase === p.phase) return;
   switch (g.phase) {

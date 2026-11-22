@@ -14,7 +14,7 @@ locks in), bet = "money-register" (a Daily Double bet), join = "notification-mes
 joins), applause = "celebration-applause-small" (the end of a round, and the winner). Levels raised to match.
 
 spynight__*.m4a are Spy Night's own sounds, original and CC0: synthesized by Tools/make_spynight_sounds.py (it also writes the
-website's copies in public/builtin-sounds/spynight/). lobby is the music that loops while players join; the others are
+website's copies in public/builtin-sounds/spynight/). lobby is the music that loops while players join and think the tenser loop under the game itself; the others are
 named for the cues they play on: roundstart (the roles are dealt), pick (a team is being picked), open (the vote begins),
 correct (a team is approved), wrong (rejected), lock (the mission begins), ding (a mission succeeds), strike (it fails),
 fanfare (the Resistance win), winner (the Spies win), join (a player joins).
