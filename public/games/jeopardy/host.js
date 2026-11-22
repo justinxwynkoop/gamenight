@@ -4,7 +4,7 @@
 // switched on the host opens the buzzers, taps the picks and rules on each answer.
 import { h, money } from '../../common.js';
 import { icon, button, card, eyebrow, pill, timerPill, dot } from '../../ui.js';
-import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl } from './setup.js';
+import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl, cluePicker } from './setup.js';
 
 let v = null;          // the game's view (with the host's secrets)
 let C = null;          // helpers from the page: act, openSheet, confirm, go, ...
@@ -18,7 +18,8 @@ const jp = (...kids) => h('div', { class: 'jp', style: { display: 'block' } }, k
 
 /** Is the game waiting on the host right now? The host page then brings the Game tab up by itself. */
 export function needsHost(g) {
-  if (g.hostJudges && ['board', 'reading', 'answering', 'dd-wager', 'dd-answer'].includes(g.phase)) return true;
+  if (g.phase === 'board' && (g.picksAloud ?? g.hostJudges)) return true;
+  if (g.hostJudges && ['reading', 'answering', 'dd-wager', 'dd-answer'].includes(g.phase)) return true;
   if (g.phase === 'round-end') return true;
   if (g.phase === 'final-wager' && g.final) {
     const here = g.final.eligible.filter((id) => g.players.find((p) => p.id === id)?.connected);
@@ -75,16 +76,17 @@ function clueCard() {
 /** The clock, counting down by itself between updates. */
 const clockPill = () => (v.timer ? timerPill({ ...v.timer, timedOut: v.timer.leftMs <= 0 }) : null);
 
-function miniBoard({ pickable }) {
-  const dd = v.secret?.dd ?? [];
-  const cells = v.board.map((c, ci) => h('div', { class: 'h', style: { '--col': `var(--c${ci})` } }, c.name));
-  for (let ri = 0; ri < 5; ri++) {
-    v.board.forEach((c, ci) => {
-      const cl = c.clues[ri];
-      cells.push(h('button', { type: 'button', class: dd[ci]?.[ri] && !cl.used ? 'dd' : '', style: { '--col': `var(--c${ci})` }, disabled: cl.used || !pickable, onclick: () => act('pick', { ci, ri }) }, cl.value));
-    });
-  }
-  return h('div', { class: 'jp' }, h('div', { class: 'jp-mini', style: { minHeight: '320px' } }, cells));
+/** The clue the host has selected (before opening it), for this board only. */
+let sel = null; let selFor = '';
+function picker() {
+  const used = v.board.map((c) => c.clues.map((x) => (x.used ? 1 : 0)).join('')).join('');
+  const id = `${v.round}-${used}`;
+  if (id !== selFor) { selFor = id; sel = null; }
+  return h('div', { class: 'jp', style: { display: 'block' } }, cluePicker(v.board, {
+    sel, dd: v.secret?.dd ?? null,
+    onSelect: (ci, ri) => { sel = { ci, ri }; act('peek', { ci, ri }); C.refresh(); },
+    onOpen: (ci, ri) => act('pick', { ci, ri }),
+  }));
 }
 
 // ---------- setup ----------
@@ -114,11 +116,9 @@ function boardView() {
   const ddLeft = v.board.reduce((n, c, ci) => n + c.clues.filter((x, ri) => !x.used && dd[ci]?.[ri]).length, 0);
   const body = [
     card(eyebrow(`Round ${v.round}`),
-      h('div', { class: 'card-title' }, v.hostJudges ? `Ask ${nameOf(v.controllerId)} for a pick` : `${nameOf(v.controllerId)} is picking on their phone`),
-      h('p', { class: 'dim' }, v.hostJudges
-        ? `They say a category and an amount, then you tap it here.${ddLeft ? ` The white tiles are Daily Doubles (${ddLeft} left; only you can see them).` : ''}`
-        : `Tap a tile only if you need to pick for them.${ddLeft ? ` White tiles are Daily Doubles (${ddLeft} left).` : ''}`),
-      miniBoard({ pickable: true })),
+      h('div', { class: 'card-title' }, `Ask ${nameOf(v.controllerId)} for a pick`),
+      h('p', { class: 'dim' }, `They say a category and a value out loud. Choose it here (the TV lights it up), then open it.${ddLeft ? ` Values with a white ring are Daily Doubles (${ddLeft} left; only you can see them).` : ''}`),
+      picker()),
   ];
   const dock = [dockRow(button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }),
     button({ label: 'End the game', size: 'sm', onclick: confirmEndGame }))];

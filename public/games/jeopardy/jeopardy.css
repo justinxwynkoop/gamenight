@@ -214,3 +214,25 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp-first small { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
 .jp-first b { font-family: 'Unbounded', system-ui, sans-serif; font-weight: 900; font-size: 1.9rem; line-height: 1.1; color: var(--c); }
 .jp-first span { font-family: 'Unbounded', system-ui, sans-serif; font-weight: 700; font-size: 1.15rem; }
+
+/* ---------- picking a clue: one row per category, big names and big values ---------- */
+.jp .jp-picker { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.jp .jp-plist { display: grid; gap: 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.jp .jp-pcat { border-radius: 14px; padding: 9px 10px 10px; background: linear-gradient(180deg, var(--jp-blue-lo), #0E1F78); box-shadow: inset 4px 0 0 var(--jp-sun); }
+.jp .jp-pcat.on { box-shadow: inset 4px 0 0 var(--jp-sun), 0 0 0 2px var(--jp-sun); }
+.jp .jp-pcat.done { opacity: .45; padding: 7px 10px; }
+.jp .jp-pname { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; color: #fff; }
+.jp .jp-pcat.done .jp-pname { margin-bottom: 0; }
+.jp .jp-pname span { font-weight: 800; font-size: 17px; line-height: 1.15; text-transform: uppercase; letter-spacing: .02em; }
+.jp .jp-pname small { flex: none; font-size: 12px; font-weight: 700; color: var(--jp-muted); }
+.jp .jp-pvals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.jp .jp-pval { min-height: 48px; border: 0; border-radius: 10px; padding: 0 2px; font-family: var(--jp-display); font-weight: 900; font-size: 15px; color: var(--jp-sun);
+  background: var(--jp-blue) linear-gradient(180deg, var(--jp-blue-hi), var(--jp-blue) 55%, var(--jp-blue-lo)); text-shadow: 0 2px 0 rgba(0, 0, 0, .4); touch-action: manipulation; cursor: pointer; }
+.jp .jp-pval:active { filter: brightness(1.25); }
+.jp .jp-pval.used { background: rgba(0, 0, 0, .25); cursor: default; }
+.jp .jp-pval.on { background: var(--jp-sun); color: #1a1300; text-shadow: none; transform: scale(1.06); box-shadow: 0 0 0 3px rgba(255, 201, 64, .35); }
+.jp .jp-pval.dd { box-shadow: inset 0 0 0 3px #fff; }
+.jp .jp-pval.dd.on { box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px rgba(255, 201, 64, .35); }
+.jp .jp-pgo { position: sticky; bottom: 0; padding-top: 2px; }
+.jp .jp-go { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jp .jp-gohint { padding: 12px 0; }

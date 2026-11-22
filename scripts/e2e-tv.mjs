@@ -143,9 +143,12 @@ try {
   console.log('the TV shows the board');
 
   // Whoever is in control picks the top-left clue on their phone.
-  const picker = async () => ((await ann.locator('.jp-mini button').count()) > 0 ? ann : (await bo.locator('.jp-mini button').count()) > 0 ? bo : null);
-  await until(async () => !!(await picker()), 'a mini board on the picker\'s phone');
-  await (await picker()).locator('.jp-mini button').first().click();
+  const picker = async () => ((await ann.locator('button.jp-pval').count()) > 0 ? ann : (await bo.locator('button.jp-pval').count()) > 0 ? bo : null);
+  await until(async () => !!(await picker()), 'the clue picker on the picker\'s phone');
+  await (await picker()).locator('button.jp-pval').first().click();
+  await until(async () => (await tv.locator('.board .tile.peek').count()) === 1, 'the chosen clue glowing on the TV');
+  await shot(tv, 'board-peek');
+  await (await picker()).locator('.jp-go').click();
   await until(async () => (await tv.locator('.card .rail, .dd').count()) > 0, 'the clue on the TV');
   if (await tv.locator('.dd').count()) {
     console.log('(that was a Daily Double; skipping the buzzer part)');

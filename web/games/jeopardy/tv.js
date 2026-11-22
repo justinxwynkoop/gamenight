@@ -620,13 +620,14 @@ function board() {
   const enter = key !== boardKey;
   boardKey = key;
   const rows = Math.max(...g.board.map((c) => c.clues.length));
-  const cells = g.board.map((c) => h('div', { class: 'cat' }, h('span', {}, c.name)));
+  const pk = g.peek;   // the clue the picker is looking at on their phone (or the host at the one called out)
+  const cells = g.board.map((c, ci) => h('div', { class: `cat ${pk?.ci === ci ? 'peek' : ''}` }, h('span', {}, c.name)));
   for (let ri = 0; ri < rows; ri++) {
     g.board.forEach((c, ci) => {
       const cl = c.clues[ri];
       const used = !cl || cl.used;
       cells.push(h('div', {
-        class: `tile ${used ? 'used' : ''}`, style: { '--d': String(ri * 6 + ci) },
+        class: `tile ${used ? 'used' : ''} ${!used && pk?.ci === ci && pk?.ri === ri ? 'peek' : ''}`, style: { '--d': String(ri * 6 + ci) },
         onclick: act && !used ? () => act('pick', { ci, ri }) : null,
       }, used ? '' : money(cl.value)));
     });

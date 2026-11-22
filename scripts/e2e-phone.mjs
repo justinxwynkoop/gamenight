@@ -99,13 +99,18 @@ try {
   const g = engine.room.game;
   const phones = { [engine.room.players.find((p) => p.name === 'Ann').id]: player, [engine.room.players.find((p) => p.name === 'Bo').id]: bo };
   const ctl = phones[g.controllerId];
-  await until(async () => (await ctl.locator('.jp-mini button').count()) === 30, 'the mini board on the picker\'s phone');
+  await until(async () => (await ctl.locator('button.jp-pval').count()) === 30, 'the clue picker on the picker\'s phone');
   await shotJ(ctl, 'board');
-  // each tile takes its column colour from an inline --col; if that is dropped the values vanish into the background
-  const tileBg = await ctl.locator('.jp-mini button').first().evaluate((b) => getComputedStyle(b).backgroundColor);
-  if (/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(tileBg)) throw new Error(`mini board tiles have no colour (${tileBg}), so the dollar values can't be read`);
+  // the values must stand out from the background or they can't be read
+  const valBg = await ctl.locator('button.jp-pval').first().evaluate((b) => getComputedStyle(b).backgroundColor);
+  if (/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(valBg)) throw new Error(`picker values have no colour (${valBg}), so the dollar values can't be read`);
   const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
-  await ctl.locator('.jp-mini button').nth(first.ri * 6 + first.ci).click();
+  // Choosing a value lights it up on the TV; Open opens it.
+  await ctl.locator(`button.jp-pval[data-ci="${first.ci}"][data-ri="${first.ri}"]`).click();
+  await until(() => g.peeking?.ci === first.ci && g.peeking?.ri === first.ri, 'the chosen clue to reach the game');
+  await until(async () => /^Open /.test(await ctl.locator('.jp-go').innerText().catch(() => '')), 'the Open button');
+  await shotJ(ctl, 'board-chosen');
+  await ctl.locator('.jp-go').click();
   await until(() => ['reading', 'open'].includes(g.phase), 'the pick to reach the game');
   await until(async () => await player.locator('.jp-buzzer').isVisible(), 'the buzzer on a phone while a clue is up');
   await until(() => g.phase === 'open', 'the buzzers to open', 12000);

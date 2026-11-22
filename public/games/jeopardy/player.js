@@ -4,7 +4,7 @@
 // keyboard opens as you press, so you can start typing straight away); wagers with thumbs, not the keyboard; and
 // after each clue what happened and everyone's scores. The page (play.js) handles joining and the header.
 import { h, money } from '../../common.js';
-import { loadStyles, lobbyControls } from './setup.js';
+import { loadStyles, lobbyControls, cluePicker } from './setup.js';
 
 const minus = (n) => money(n).replace('-', '−');
 const signed = (n) => (n >= 0 ? '+' : '−') + money(Math.abs(n));
@@ -229,48 +229,44 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
       picker && h('div', { class: 'jp-msg' }, picker.id === me().id ? 'You pick first!' : [named(picker), ' picks first.'])) };
   }
 
+  /** The clue this phone has selected on the picker (before opening it), for this board only. */
+  let sel = null; let selFor = '';
   function boardScreen() {
     const meCtrl = v.controllerId === me().id;
     const ctrl = player(v.controllerId);
-    if (v.hostJudges && me().isCaptain) {
-      // The captain is the host: tap the clue the player in control says.
-      const used = v.board.map((c) => c.clues.map((x) => (x.used ? 1 : 0)).join('')).join('');
-      return {
-        key: `board-hostcap-${v.round}-${used}-${v.controllerId}`,
-        nodes: [h('div', { class: 'jp-pickhead' }, h('div', { class: 'jp-logo' }, meCtrl ? 'YOUR PICK' : `${(ctrl?.name ?? '').toUpperCase()}’S PICK`), h('div', { class: 'jp-small jp-muted' }, meCtrl ? 'Tap a value. It opens on the TV.' : 'They say a category and an amount. Tap it here.')),
-          miniBoard(v.board, (ci, ri) => { navigator.vibrate?.(15); cap('pick', { ci, ri }); })],
-      };
+    const used = v.board.map((c) => c.clues.map((x) => (x.used ? 1 : 0)).join('')).join('');
+    const boardId = `${v.round}-${used}-${v.controllerId}`;
+    if (boardId !== selFor) { selFor = boardId; sel = null; }
+    const hostName = v.hosted ? 'the host' : player(v.captainId)?.name ?? 'the host';
+    const peekLine = () => {
+      const p = v.peek && v.board[v.peek.ci];
+      return p ? h('div', { class: 'jp-note' }, `Looking at ${p.name} · $${p.clues[v.peek.ri].value.toLocaleString('en-US')}`) : null;
+    };
+    const picker = (head, sub, viaCap) => ({
+      key: `board-pick-${boardId}-${sel ? `${sel.ci}.${sel.ri}` : ''}`,
+      nodes: [h('div', { class: 'jp-pickhead' }, h('div', { class: 'jp-logo' }, head), h('div', { class: 'jp-small jp-muted' }, sub)),
+        cluePicker(v.board, {
+          sel,
+          onSelect: (ci, ri) => { navigator.vibrate?.(10); sel = { ci, ri }; if (viaCap) cap('peek', { ci, ri }); else send({ t: 'peek', ci, ri }); render(); },
+          onOpen: (ci, ri) => { navigator.vibrate?.(15); if (viaCap) cap('pick', { ci, ri }); else send({ t: 'pick', ci, ri }); },
+        })],
+    });
+    // The captain is the host (host judging, no host page): they tap the clue the player in control says.
+    if (v.hostJudges && !v.hosted && me().isCaptain) {
+      return picker(meCtrl ? 'YOUR PICK' : `${(ctrl?.name ?? '').toUpperCase()}’S PICK`, meCtrl ? 'Choose a category and a value, then open it.' : 'They say a category and a value. Choose it here, then open it.', true);
     }
-    if (v.hostJudges) {
+    // With a host, picks are said out loud: nobody picks on their phone.
+    if (v.picksAloud ?? v.hostJudges) {
       return {
-        key: `board-host-${v.controllerId}-${meCtrl}`,
+        key: `board-say-${v.controllerId}-${meCtrl}-${JSON.stringify(v.peek)}`,
         nodes: center(meCtrl
-          ? [h('div', { class: 'jp-logo' }, 'YOUR PICK!'), h('div', { class: 'jp-msg' }, `Tell ${v.hosted ? 'the host' : player(v.captainId)?.name ?? 'the host'} a category and an amount.`)]
-          : [dot(ctrl, 56), h('div', { class: 'jp-msg' }, [named(ctrl), ' is picking a clue…']), h('div', { class: 'jp-muted' }, 'Get your thumb ready.')]),
+          ? [h('div', { class: 'jp-logo' }, 'YOUR PICK!'), h('div', { class: 'jp-msg' }, `Say a category and a value out loud. ${hostName[0].toUpperCase()}${hostName.slice(1)} opens it.`), peekLine()]
+          : [dot(ctrl, 56), h('div', { class: 'jp-msg' }, [named(ctrl), ' is choosing a clue…']), peekLine(), h('div', { class: 'jp-muted' }, 'Get your thumb ready.')]),
       };
     }
     const canPick = meCtrl || (me().isCaptain && ctrl && !ctrl.connected);
-    if (canPick) {
-      const used = v.board.map((c) => c.clues.map((x) => (x.used ? 1 : 0)).join('')).join('');
-      return {
-        key: `board-${v.round}-${used}`,
-        nodes: [h('div', { class: 'jp-pickhead' }, h('div', { class: 'jp-logo' }, meCtrl ? 'YOUR PICK' : `PICK FOR ${(ctrl?.name ?? '').toUpperCase()}`), h('div', { class: 'jp-small jp-muted' }, 'Tap a value. It opens on the TV.')),
-          miniBoard(v.board, (ci, ri) => { navigator.vibrate?.(15); send({ t: 'pick', ci, ri }); })],
-      };
-    }
-    return { key: `board-wait-${v.controllerId}`, nodes: center(dot(ctrl, 56), h('div', { class: 'jp-msg' }, [named(ctrl), ' is picking a clue…']), h('div', { class: 'jp-muted' }, 'Get your thumb ready.')) };
-  }
-
-  function miniBoard(board, onPick) {
-    const cells = board.map((c) => h('div', { class: 'h' }, c.name));
-    const rows = Math.max(...board.map((c) => c.clues.length));
-    for (let ri = 0; ri < rows; ri++) {
-      board.forEach((c, ci) => {
-        const cl = c.clues[ri];
-        cells.push(h('button', { type: 'button', disabled: !cl || cl.used, onclick: () => onPick(ci, ri) }, cl && !cl.used ? `$${cl.value >= 1000 ? `${cl.value / 1000}K` : cl.value}` : ''));
-      });
-    }
-    return h('div', { class: 'jp-mini', style: { gridTemplateColumns: `repeat(${board.length}, minmax(0, 1fr))` } }, cells);
+    if (canPick) return picker(meCtrl ? 'YOUR PICK' : `PICK FOR ${(ctrl?.name ?? '').toUpperCase()}`, 'Choose a category and a value, then open it.', false);
+    return { key: `board-wait-${v.controllerId}-${JSON.stringify(v.peek)}`, nodes: center(dot(ctrl, 56), h('div', { class: 'jp-msg' }, [named(ctrl), ' is choosing a clue…']), peekLine(), h('div', { class: 'jp-muted' }, 'Get your thumb ready.')) };
   }
 
   function buzzScreen() {

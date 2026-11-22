@@ -115,6 +115,10 @@
 .bw .tile { border-radius: 12px; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 60px; color: var(--sun); text-shadow: 0 4px 0 rgba(0, 0, 0, .45);
   background: linear-gradient(180deg, var(--blue-hi) 0%, var(--blue) 55%, var(--blue-mid) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -5px 0 rgba(0, 0, 0, .28); transition: transform .15s, filter .15s; }
 .bw .tile.used { background: var(--recess); box-shadow: inset 0 2px 12px rgba(0, 0, 0, .45); }
+/* The clue the picker is looking at on their phone: it glows, and its category lights up. */
+.bw .tile.peek { position: relative; z-index: 1; color: #1a1300; text-shadow: none; background: linear-gradient(180deg, var(--sun), #E8A90F); animation: bw-peek 1.1s ease-in-out infinite alternate; }
+.bw .board .cat.peek { box-shadow: inset 0 -6px 0 var(--sun), 0 0 0 3px var(--sun); }
+@keyframes bw-peek { from { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(255, 201, 64, .5), 0 0 30px rgba(255, 201, 64, .45); } to { transform: scale(1.07); box-shadow: 0 0 0 6px rgba(255, 201, 64, .8), 0 0 60px rgba(255, 201, 64, .7); } }
 .bw.can-act .tile:not(.used) { cursor: pointer; }
 .bw.can-act .tile:not(.used):hover { filter: brightness(1.15); transform: scale(1.03); }
 .bw .board.enter .tile:not(.used) { animation: bw-deal .45s backwards; animation-delay: calc(var(--d) * 28ms); }

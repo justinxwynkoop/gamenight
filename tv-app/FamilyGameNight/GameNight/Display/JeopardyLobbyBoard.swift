@@ -1203,6 +1203,7 @@ struct JeoBoard: View {
                                     .overlay(alignment: .bottom) { Rectangle().fill(BW.gold).frame(height: 3) }
                                     .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.12)).frame(height: 1) }
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(BW.gold, lineWidth: game.peek?.ci == column ? 4 : 0))
                             }
                         }
                         ForEach(0..<rows, id: \.self) { row in
@@ -1210,7 +1211,8 @@ struct JeoBoard: View {
                                 ForEach(board.indices, id: \.self) { column in
                                     let clues = board[column].clues
                                     JeoTileView(tile: row < clues.count ? clues[row] : nil, width: width, height: height,
-                                                delay: deal ? Double(row * 6 + column) * 0.028 : nil) {
+                                                delay: deal ? Double(row * 6 + column) * 0.028 : nil,
+                                                peeked: game.peek?.ci == column && game.peek?.ri == row) {
                                         JeoShown.lastPick = (column, row)
                                         act("pick", ["ci": column, "ri": row])
                                     }
@@ -1243,6 +1245,8 @@ struct JeoTileView: View {
     let height: CGFloat
     /// When set, the tile flies in after this many seconds.
     var delay: Double?
+    /// The picker is looking at this one on their phone: it glows gold.
+    var peeked: Bool = false
     let pick: () -> Void
 
     var body: some View {
@@ -1257,6 +1261,10 @@ struct JeoTileView: View {
                     .frame(width: width, height: height)
             }
             .buttonStyle(BWTileStyle())
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(BW.gold, lineWidth: peeked ? 8 : 0).allowsHitTesting(false))
+            .shadow(color: BW.gold.opacity(peeked ? 0.8 : 0), radius: peeked ? 24 : 0)
+            .scaleEffect(peeked ? 1.06 : 1)
+            .animation(.easeOut(duration: 0.2), value: peeked)
             .modifier(BWEnter(delay: delay ?? 0, scale: 0.4, bounce: false, active: delay != nil))
         } else {
             RoundedRectangle(cornerRadius: 12)

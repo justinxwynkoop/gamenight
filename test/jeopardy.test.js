@@ -1217,3 +1217,28 @@ test('after a clue, its buzz times stay on the board for a few seconds, then go'
   clock.advance(200);
   assert.equal(g.publicView().recentBuzzes, null, 'and they go after a while');
 });
+
+test('with a host page connected, players say their pick out loud: only the host opens it; the TV lights up the clue being looked at', () => {
+  const { room, g, ps } = setup();
+  begin(g);
+  const ctrl = ps.find((p) => p.id === g.controllerId);
+  // No host: the player in control looks a clue over on their phone (the TV lights it up), then opens it.
+  g.onPlayer(ctrl, { t: 'peek', ci: 2, ri: 1 });
+  assert.deepEqual(g.publicView().peek, { ci: 2, ri: 1 });
+  assert.match(g.publicView().guide.text, /is eyeing .+ for \$400/);
+  const other = ps.find((p) => p.id !== ctrl.id);
+  g.onPlayer(other, { t: 'peek', ci: 3, ri: 0 });
+  assert.deepEqual(g.publicView().peek, { ci: 2, ri: 1 }, 'only the picker can');
+  // A host page connects: picks are said out loud and the host taps them.
+  room.setHosts(1);
+  assert.equal(g.publicView().picksAloud, true);
+  assert.throws(() => g.onPlayer(ctrl, { t: 'pick', ci: 0, ri: 0 }), /Tell the host/);
+  g.onPlayer(ctrl, { t: 'peek', ci: 4, ri: 4 });
+  assert.deepEqual(g.publicView().peek, { ci: 2, ri: 1 }, 'a phone no longer peeks with a host');
+  g.act('peek', { ci: 0, ri: 3 });
+  assert.deepEqual(g.publicView().peek, { ci: 0, ri: 3 });
+  assert.match(g.publicView().guide.next, /host opens it/i);
+  g.act('pick', { ci: 0, ri: 3 });
+  assert.notEqual(g.phase, 'board');
+  assert.equal(g.publicView().peek, null, 'the glow goes once a clue is open');
+});

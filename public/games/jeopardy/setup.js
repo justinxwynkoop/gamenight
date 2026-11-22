@@ -146,3 +146,33 @@ export function lobbyControls(v, run, opts = {}) {
     v.hostJudges && answerTimeControl(v, run),
     finalControl(v, run));
 }
+
+/**
+ * Picking a clue: one row per category, its name in full and big, and its values as big buttons under it (a played
+ * value leaves an empty slot, so the rows line up like the board on the TV). Tapping a value selects it (the TV shows
+ * which one is being looked at), and the big button under the list opens it; tapping the same value again opens it too.
+ *   board     the view's board: [{ name, clues: [{ value, used }] }]
+ *   sel       the selected clue { ci, ri } or null
+ *   onSelect  (ci, ri) => void      onOpen (ci, ri) => void
+ *   dd        optional [[bool]]: where the Daily Doubles are (only the host sees them)
+ */
+export function cluePicker(board, { sel, onSelect, onOpen, dd = null }) {
+  const money = (n) => `$${Number(n).toLocaleString('en-US')}`;
+  const rows = board.map((c, ci) => {
+    const left = c.clues.filter((cl) => !cl.used).length;
+    return h('div', { class: `jp-pcat ${left ? '' : 'done'} ${sel?.ci === ci ? 'on' : ''}` },
+      h('div', { class: 'jp-pname' }, h('span', {}, c.name), h('small', {}, left ? `${left} left` : 'All played')),
+      left ? h('div', { class: 'jp-pvals' }, c.clues.map((cl, ri) => (cl.used
+        ? h('span', { class: 'jp-pval used' })
+        : h('button', {
+          type: 'button', class: `jp-pval ${sel?.ci === ci && sel?.ri === ri ? 'on' : ''} ${dd?.[ci]?.[ri] ? 'dd' : ''}`, 'data-ci': String(ci), 'data-ri': String(ri),
+          onclick: () => (sel?.ci === ci && sel?.ri === ri ? onOpen(ci, ri) : onSelect(ci, ri)),
+        }, money(cl.value))))) : null);
+  });
+  const chosen = sel && board[sel.ci]?.clues[sel.ri] && !board[sel.ci].clues[sel.ri].used ? sel : null;
+  const go = chosen
+    ? h('button', { type: 'button', class: 'jp-btn huge jp-go', onclick: () => onOpen(chosen.ci, chosen.ri) },
+      `Open ${board[chosen.ci].name} · ${money(board[chosen.ci].clues[chosen.ri].value)}`)
+    : h('div', { class: 'jp-small jp-muted jp-center-t jp-gohint' }, 'Tap a value, then open it');
+  return h('div', { class: 'jp-picker' }, h('div', { class: 'jp-plist' }, rows), h('div', { class: 'jp-pgo' }, go));
+}

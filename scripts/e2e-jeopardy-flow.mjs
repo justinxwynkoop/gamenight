@@ -102,13 +102,15 @@ try {
     await toggle.click();
     await until(async () => /You’re the host/.test(await ann.locator('body').innerText()), 'the captain phone saying she is the host');
     await tapCap('Start game');
-    await until(async () => (await capBtn('Skip intro').count()) > 0 || (await ann.locator('.jp-mini button').count()) > 0, 'round 1 on the captain phone');
+    await until(async () => (await capBtn('Skip intro').count()) > 0 || (await ann.locator('button.jp-pval').count()) > 0, 'round 1 on the captain phone');
     if (await capBtn('Skip intro').count()) await capBtn('Skip intro').click();
-    const tiles = ann.locator('.jp-mini button:not([disabled])');
+    const tiles = ann.locator('button.jp-pval');
     await until(async () => (await tiles.count()) > 0, 'the board on the captain-host phone');
     // Pick until a plain clue comes up (skip a Daily Double).
     for (let i = 0; i < 10; i++) {
       await tiles.first().click();
+      await until(async () => (await ann.locator('.jp-go').count()) > 0, 'the Open button on the captain-host phone');
+      await ann.locator('.jp-go').click();
       await until(async () => (await capBtn('Open buzzers').count()) > 0 || (await capBtn('Skip clue').count()) > 0, 'the clue on the captain phone');
       if (await capBtn('Open buzzers').count()) break;
       ann.once('dialog', (d) => d.accept()); await capBtn('Skip clue').click();
@@ -167,9 +169,14 @@ try {
   /** Tap a tile on the host's board: a Daily Double or not. */
   const pickTile = async (dd) => {
     await phase('board', 'the board');
-    const tiles = host.locator(`.jp-mini button:not([disabled])${dd ? '.dd' : ':not(.dd)'}`);
-    await until(async () => (await tiles.count()) > 0, `a ${dd ? 'Daily Double' : 'plain'} tile on the host's board`);
+    const tiles = host.locator(`button.jp-pval${dd ? '.dd' : ':not(.dd)'}`);
+    await until(async () => (await tiles.count()) > 0, `a ${dd ? 'Daily Double' : 'plain'} value on the host's picker`);
+    const ci = Number(await tiles.first().getAttribute('data-ci')); const ri = Number(await tiles.first().getAttribute('data-ri'));
     await tiles.first().click();
+    // Choosing it lights it up on the TV before it opens.
+    await until(() => hostView.peek?.ci === ci && hostView.peek?.ri === ri, 'the chosen clue in the view');
+    await until(async () => (await tv.locator('.board .tile.peek').count()) === 1, 'the chosen clue glowing on the TV');
+    await host.locator('.jp-go').click();
   };
 
   // ---------- setup: a host who judges out loud, a 5 second answer clock ----------
@@ -303,13 +310,13 @@ try {
   await tap('Start game');
   await skipTitles();
   await phase('board', 'the board');
-  // The player in control picks on their phone.
+  // With a host, the player in control says the pick out loud: their phone has no picker, and the host taps it.
   const picker = phones[nameOf(hostView.controllerId)];
-  const tile = picker.locator('.jp-mini button:not([disabled])');
-  await until(async () => (await tile.count()) > 0, 'the board on the phone of the player in control');
+  await until(async () => /Say a category and a value out loud/.test(await picker.locator('body').innerText()), 'the say-your-pick screen on the phone in control');
+  if (await picker.locator('button.jp-pval').count()) fail('a player can pick on their phone while a host is connected');
   let dd = true;
   for (let tries = 0; tries < 30 && dd; tries++) {
-    await tile.nth(tries).click();
+    await pickTile(false);
     await until(() => hostView.phase !== 'board', 'the pick');
     dd = hostView.phase === 'dd-wager';
     if (dd) { await tap('Skip this clue'); await phase('reveal', 'the skipped Daily Double'); await tap('Back to the board'); await phase('board', 'the board'); }
