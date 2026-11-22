@@ -183,14 +183,17 @@ export function onChange(prev, view, sound) {
   if (now === 'dd-answer' && was === 'dd-wager') sound.play('bet');
   if (now === 'round-end' && was !== 'round-end') sound.play('applause');
   if (now === 'dd-wager' && (was !== 'dd-wager' || newClue)) sound.play('dd');
-  else if (now === 'open' && was !== 'open') sound.play('open');
+  // The buzzers open once the clue is read. After a wrong answer they reopen, and the wrong-answer sound covers that.
+  else if (now === 'open' && was === 'reading') sound.play('open');
   else if (now === 'answering' && was !== 'answering') sound.play('buzz');
-  if (now === 'ruling' && was !== 'ruling') sound.play(g.lastResult?.correct ? 'correct' : 'wrong');
+  // Right or wrong (an answer clock that ran out sounds like time running out).
+  const verdict = (r) => (r.correct ? 'correct' : r.timedOut && !r.overridden ? 'timeup' : 'wrong');
+  if (now === 'ruling' && was !== 'ruling' && g.lastResult) sound.play(verdict(g.lastResult));
   if (now === 'reveal' && was !== 'reveal') {
-    const r = g.lastResult;
-    if (!r) sound.play('timeup');                        // nobody buzzed in
-    else if (was !== 'ruling') sound.play(r.correct ? 'correct' : 'wrong');
-  } else if (g.lastResult && p.lastResult && g.lastResult.overridden !== p.lastResult.overridden) sound.play(g.lastResult.correct ? 'correct' : 'wrong');
+    // Nothing was just ruled on: nobody buzzed in time (the time-up sound), or the clue was skipped.
+    const same = JSON.stringify(g.lastResult ?? null) === JSON.stringify(p.lastResult ?? null);
+    if (was !== 'ruling' && (same || !g.lastResult)) sound.play(was === 'open' ? 'timeup' : 'reveal');
+  } else if (g.lastResult && p.lastResult && g.lastResult.overridden !== p.lastResult.overridden) sound.play(verdict(g.lastResult));
   if (now === 'final-wager' && was !== 'final-wager') sound.play('final');
   // Each Final Jeopardy wager and answer locking in (the last answer goes straight on to the reveal, which has its own sound).
   if (['final-wager', 'final-answer'].includes(now) && g.final && p.final && ((g.final.wagered?.length ?? 0) > (p.final.wagered?.length ?? 0)

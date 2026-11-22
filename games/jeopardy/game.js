@@ -17,6 +17,7 @@ import { GameError, fail, cleanName, int } from '../../lib.js';
 import { judge, asksForPerson } from './judge.js';
 import { parseArchive, pickSeason, ERAS } from './archive.js';
 import { HOUSE_PACKS } from './packs/index.js';
+import { cleanAbout, explainCategory } from './about.js';
 
 export { GameError };
 export const COLS = 6;
@@ -129,6 +130,7 @@ export function validateSet(set) {
   };
   set.categories.forEach((cat, c) => {
     if (!cleanName(cat?.name, 40)) fail(`Category ${c + 1} needs a name`);
+    if (cat.about !== undefined && typeof cat.about !== 'string') fail(`Category ${c + 1}: the note for the host must be text`);
     if (!Array.isArray(cat.clues) || cat.clues.length !== ROWS) fail(`Category ${c + 1} needs exactly ${ROWS} clues`);
     cat.clues.forEach((cl, r) => {
       if (!String(cl?.clue ?? '').trim()) fail(`Category ${c + 1}, clue ${r + 1} is missing its clue text`);
@@ -155,6 +157,7 @@ export function normalizePack(id, data) {
     selected: data.selected !== false,
     easy: data.easy === true,
     own: data.own === true,
+    media: data.media === true,
     categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5)
       .map((c) => (c.clues.some((cl) => cl.media) ? { ...c, clues: c.clues.map((cl) => ({ ...cl, media: safeMedia(cl.media) })) } : c)),
     finals: (data.finals || []).filter((fin) => fin.q && fin.a),
@@ -420,7 +423,7 @@ export class JeopardyGame {
       own.push(normalizePack(`own-${id}`, {
         title: set.title, description: 'A full board from the question editor (Questions on the host page)', selected: false, own: true,
         categories: set.categories.map((c) => ({
-          name: c.name,
+          name: c.name, about: c.about,
           clues: c.clues.map((cl) => ({ q: cl.clue, a: cl.answer, alt: cl.alt ?? [], v: cl.value, dd: !!cl.dailyDouble, media: cleanMedia(cl.media) })),
         })),
         finals: [{ category: set.final.category, q: set.final.clue, a: set.final.answer, alt: set.final.alt ?? [] }],
@@ -435,7 +438,8 @@ export class JeopardyGame {
     const ids = new Set(this.packs.map((p) => p.id));
     for (const id of [...this.selected]) if (!ids.has(id)) this.selected.delete(id);
     // Packs seen for the first time follow their own "selected" flag (the real-show topics start on, the house packs off).
-    for (const p of this.packs) if (!before.has(p.id) && p.selected && (this.archivePacks.includes(p) || (!this.archivePacks.length && !p.own))) this.selected.add(p.id);
+    // Sights & Sounds (picture, sound and video clues) starts on too, beside the real show.
+    for (const p of this.packs) if (!before.has(p.id) && p.selected && (this.archivePacks.includes(p) || p.media || (!this.archivePacks.length && !p.own))) this.selected.add(p.id);
     if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
     this.draft = null;
   }
@@ -560,8 +564,9 @@ export class JeopardyGame {
     const first = !this.packs.some((p) => p.own && this.selected.has(p.id)) && !hadOn;
     this.packs = [...this.ownPacks, ...this.archivePacks, ...this.houses];
     for (const p of packs) if (hadOn ? wasOn.has(p.id) : first) this.selected.add(p.id);
-    // The house packs that started on stay off now that real boards are here; keep whatever else was chosen.
-    if (first) for (const p of this.houses) this.selected.delete(p.id);
+    // The house packs that started on stay off now that real boards are here (except Sights & Sounds, whose picture,
+    // sound and video clues mix in with them); keep whatever else was chosen.
+    if (first) for (const p of this.houses) if (!p.media) this.selected.delete(p.id);
     if (!this.selected.size) this.selected.add(packs[0].id);
     this.draft = null;
     this.#changed();
@@ -581,7 +586,8 @@ export class JeopardyGame {
     if (all.length < 12) fail('Pick packs with at least 12 categories in total.');
     this.#renewUsedUp(this.#chosen());
     const cats = this.#ranked(all);   // shuffled, the ones with nothing shown yet first
-    this.draft = [cats.slice(0, 6), cats.slice(6, 12)];
+    const used = new Set();
+    this.draft = [1, 2].map(() => this.#pickRow(cats, used));
     this.#changed();
   }
   /** Swap one previewed category (round r = 1 or 2, column ci) for another one from the chosen packs. */
@@ -618,6 +624,8 @@ export class JeopardyGame {
   #makeRound(r, cats, ddCount) {
     const board = cats.map((c) => ({
       name: c.name,
+      // What the category is asking for, for the host to read out: its own note, or one for a well-known kind of name.
+      about: cleanAbout(c.about) || explainCategory(c.name),
       clues: c.clues.slice(0, 5).map((cl, i) => ({
         // A board you wrote keeps the values you gave it; the house and archive packs are 200..1000, doubled in round 2.
         value: Number(cl.v) > 0 ? Math.round(Number(cl.v)) : (i + 1) * 200 * r,
@@ -632,6 +640,33 @@ export class JeopardyGame {
       for (const c of board) for (const cl of c.clues) if (cl.dd && extra > 0) { cl.dd = false; extra--; }
     }
     return board;
+  }
+  /**
+   * Six categories for one round from the ranked list, skipping ones already used. With Sights & Sounds on, every round
+   * gets one category of picture, sound or video clues (a video one first while there is a fresh one), so they come up
+   * every game instead of getting lost among hundreds of real-show categories.
+   */
+  #pickRow(cats, used) {
+    const ok = (c) => !used.has(c.name) && c.clues.length >= 5;
+    const isMedia = (c) => c.clues.some((cl) => cl.media);
+    const out = [];
+    const mixIn = this.#chosen().some((p) => p.media);
+    if (mixIn) {
+      const media = cats.filter((c) => ok(c) && isMedia(c));
+      const kinds = (c) => c.clues.map((cl) => cl.media?.kind);
+      const freshVideo = media.find((c) => kinds(c).includes('video') && this.#freshIn(c) > 0);
+      const m = freshVideo ?? media[0];
+      if (m) { used.add(m.name); out.push(m); }
+    }
+    for (const c of cats) {
+      if (out.length === 6) break;
+      if (!ok(c) || (mixIn && isMedia(c))) continue;   // one media category a round is plenty
+      used.add(c.name);
+      out.push(c);
+    }
+    // The media category goes in a random column, not always the first.
+    if (mixIn && out.length === 6 && isMedia(out[0])) { const k = Math.floor(this.#rng() * 6); [out[0], out[k]] = [out[k], out[0]]; }
+    return out;
   }
   #buildRounds() {
     const written = this.#asWrittenPacks();
@@ -648,18 +683,9 @@ export class JeopardyGame {
     this.#renewUsedUp(this.#chosen());
     const cats = this.#ranked(bank.categories);
     const used = new Set();
-    const pick = () => {
-      const out = [];
-      for (const c of cats) {
-        if (out.length === 6) break;
-        if (used.has(c.name) || c.clues.length < 5) continue;
-        used.add(c.name);
-        out.push(c);
-      }
-      return out;
-    };
     const chosen = this.draft && this.draft.every((row) => row.length === 6) ? this.draft : null;
-    this.rounds = chosen ? [this.#makeRound(1, chosen[0], 1), this.#makeRound(2, chosen[1], 2)] : [this.#makeRound(1, pick(), 1), this.#makeRound(2, pick(), 2)];
+    this.rounds = chosen ? [this.#makeRound(1, chosen[0], 1), this.#makeRound(2, chosen[1], 2)]
+      : [this.#makeRound(1, this.#pickRow(cats, used), 1), this.#makeRound(2, this.#pickRow(cats, used), 2)];
     this.draft = null;
     for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
     const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`) && !this.#seenClue(fin));
@@ -742,7 +768,7 @@ export class JeopardyGame {
     this.lastResult = null;
     this.collecting = null;
     this.recentBuzzes = null;
-    this.clue = { ci, ri, cat: b[ci].name, value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
+    this.clue = { ci, ri, cat: b[ci].name, about: b[ci].about || '', value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
       // A wager nobody places (a phone that went to sleep) is $0, so the game never stalls.
@@ -1500,12 +1526,13 @@ export class JeopardyGame {
       players: this.#players(),
       timer: this.#timerView(),
       guide: this.#guide(),
-      board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+      // media: what the category's clues play or show ('video', 'audio' or 'image'), so pickers can mark it.
+      board: b && b.map((c) => ({ name: c.name, about: c.about || '', media: c.clues.find((cl) => cl.media)?.media.kind ?? '', clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
       // The clue the picker is looking at (the TV lights it up), and whether picks are said out loud to a host.
       peek: this.phase === 'board' ? this.peeking : null,
       picksAloud: this.picksAloud(),
       clue: this.clue && {
-        ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
+        ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, about: this.clue.about || '', value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
         q: this.phase === 'dd-wager' ? null : this.clue.q,
         media: this.phase === 'dd-wager' ? null : this.clue.media ?? null,
         answer: showAnswer ? this.clue.a : null,
@@ -1569,6 +1596,7 @@ export class JeopardyGame {
       const done = ['final-reveal', 'gameover'].includes(this.phase);
       v.final = {
         category: f.category,
+        about: explainCategory(f.category),
         q: showQ ? f.q : null,
         // The correct answer comes last, after every player's response.
         answer: this.phase === 'gameover' || (this.phase === 'final-reveal' && f.answerShown) ? f.a : null,

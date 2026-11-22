@@ -104,7 +104,7 @@ try {
     await tapCap('Start game');
     await until(async () => (await capBtn('Skip intro').count()) > 0 || (await ann.locator('button.jp-pval').count()) > 0, 'round 1 on the captain phone');
     if (await capBtn('Skip intro').count()) await capBtn('Skip intro').click();
-    const tiles = ann.locator('button.jp-pval');
+    const tiles = ann.locator('.jp-pcat:not([data-media]) button.jp-pval');
     await until(async () => (await tiles.count()) > 0, 'the board on the captain-host phone');
     // Pick until a plain clue comes up (skip a Daily Double).
     for (let i = 0; i < 10; i++) {
@@ -169,7 +169,8 @@ try {
   /** Tap a tile on the host's board: a Daily Double or not. */
   const pickTile = async (dd) => {
     await phase('board', 'the board');
-    const tiles = host.locator(`button.jp-pval${dd ? '.dd' : ':not(.dd)'}`);
+    // Not a picture, sound or video clue: those wait for the TV to play them, which this test does not time.
+    const tiles = host.locator(`.jp-pcat:not([data-media]) button.jp-pval${dd ? '.dd' : ':not(.dd)'}`);
     await until(async () => (await tiles.count()) > 0, `a ${dd ? 'Daily Double' : 'plain'} value on the host's picker`);
     const ci = Number(await tiles.first().getAttribute('data-ci')); const ri = Number(await tiles.first().getAttribute('data-ri'));
     await tiles.first().click();

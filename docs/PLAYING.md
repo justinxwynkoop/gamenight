@@ -34,7 +34,13 @@ says.
      on the captain's phone when there is no host page, or with the remote) taps Correct or Wrong.
 2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote): the phone lists each
    category with its values, they tap a value (it glows on the TV) and then **Open**. With a host (a host page, or host
-   judging on), nobody picks on their phone: the player says a category and a value out loud and the host taps it. Round 2 is worth
+   judging on), nobody picks on their phone: the player says a category and a value out loud and the host taps it.
+   **Category notes:** every category can carry a one-line note on what it asks for ("Every answer is two words that
+   rhyme"), shown under its name in the picker and under the clue, so the host can read it out when a name is unclear.
+   The shipped sets have one for every category, real-show categories use the show's own explanation when it gave one
+   (and a few well-known kinds, like Before & After, are explained), and the question editor has a "Note for the host"
+   field. **Sights & Sounds** (picture, sound and video clues) is on by default beside the real show, and every round
+   gets one of its categories, a video one first while there is one not yet played. Round 2 is worth
    double and has two Daily Doubles; the lowest score picks first.
 3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
    phone. Every phone turns gold at the same instant as the TV, and **the fastest thumb wins, not the fastest Wi-Fi**

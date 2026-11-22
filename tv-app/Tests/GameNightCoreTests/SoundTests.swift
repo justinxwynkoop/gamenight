@@ -100,6 +100,14 @@ final class SoundPlannerTests: XCTestCase {
         XCTAssertEqual(try plan("jp-open-after-wrong", "jp-reveal-correct").cues, [.correct])
     }
 
+    func testAnAnswerClockRunningOutSoundsLikeTimeUp() throws {
+        let text = String(decoding: try Fixture.data("jp-ruling-wrong"), as: UTF8.self)
+        let timedOut = text.replacingOccurrences(of: "\"timedOut\": false", with: "\"timedOut\": true")
+        XCTAssertNotEqual(text, timedOut)
+        let after = try JSONDecoder().decode(ServerState.self, from: Data(timedOut.utf8))
+        XCTAssertEqual(SoundPlanner.plan(from: try Fixture.state("jp-answering"), to: after).cues, [.timeup])
+    }
+
     func testNobodyBuzzingRunsOutOfTime() throws {
         XCTAssertEqual(try plan("jp-open", "jp-reveal-nobody").cues, [.timeup])
     }

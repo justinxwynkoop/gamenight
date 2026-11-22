@@ -7,3 +7,7 @@ Added for every game moment (all from SFX Kit, CC0): pick.mp3 (a clue is picked;
 board.mp3 = "data-countup-medium" (the board fills in), lock.mp3 = "mechanical-lock-light" (a Final wager or answer
 locks in), bet.mp3 = "money-register" (a Daily Double bet), join.mp3 = "notification-message-in-clear" (a player
 joins), applause.mp3 = "celebration-applause-small" (the end of a round, and the winner). Levels raised to match.
+
+Nov 22 sound check: final = "sting-bold-long" (Final Jeopardy now has its own sting instead of the Daily Double one),
+reveal = "tone-ding-mid" (its own ding instead of the time-up sound). applause, bet, board and think were raised and
+wrong lowered, so every effect plays at about the same loudness (-18 LUFS; the thinking music -20).

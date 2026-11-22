@@ -33,7 +33,8 @@ const begin = (g) => { g.start(); assert.equal(g.phase, 'round-intro'); g.advanc
 /** Wait out the moment the ruling is shown, before the clue moves on. */
 const rule = (clock) => clock.advance(T.ruling + 10);
 /** How long the buzzers take to open on their own: the TV's voice has longer, unless it says it is done. */
-const waitFor = (g, q) => (g.readsAloud() ? speakingTime(q) : readingTime(q));
+// A picture, sound or video on the clue on screen adds its own time (Sights & Sounds is on by default).
+const waitFor = (g, q) => (g.readsAloud() ? speakingTime(q) : readingTime(q)) + mediaTime(g.clue?.media ?? null);
 /** Pick the first unused clue that is not a Daily Double, and wait out the reading time. */
 function openClue(g, clock, { dd = false } = {}) {
   const b = g.board();
@@ -1241,4 +1242,32 @@ test('with a host page connected, players say their pick out loud: only the host
   g.act('pick', { ci: 0, ri: 3 });
   assert.notEqual(g.phase, 'board');
   assert.equal(g.publicView().peek, null, 'the glow goes once a clue is open');
+});
+
+test('each category carries a note for the host, on the board and with its clue', () => {
+  const { g } = setup();
+  begin(g);
+  const v = g.publicView();
+  assert.ok(v.board.every((c) => typeof c.about === 'string'));
+  const ci = v.board.findIndex((c) => c.about);
+  assert.ok(ci >= 0, 'some category has a note');
+  const ri = g.board()[ci].clues.findIndex((cl) => !cl.dd);
+  g.pick(ci, ri);
+  assert.equal(g.publicView().clue.about, v.board[ci].about);
+});
+
+test('Sights & Sounds is on beside the real show, and every round gets one picture, sound or video category', () => {
+  const { g } = setup();
+  const req = g.takeArchiveRequest();
+  const header = 'round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes';
+  const rows = [];
+  for (let c = 0; c < 40; c++) for (let r = 0; r < 5; r++) rows.push(['1', String((r + 1) * 200), '0', `Mixed bag ${c}`, '', `Clue ${c}-${r}`, `Answer ${c}-${r}`, '2005-01-01', ''].join('\t'));
+  g.archiveLoaded([header, ...rows].join('\n'), 20, req.id);
+  const on = g.publicView().packs.filter((p) => p.selected).map((p) => p.title);
+  assert.ok(on.includes('Sights & Sounds'), `on: ${on.join(', ')}`);
+  begin(g);
+  const media = (row) => row.filter((c) => c.clues.some((cl) => cl.media));
+  assert.equal(media(g.rounds[0]).length, 1);
+  assert.equal(media(g.rounds[1]).length, 1);
+  assert.ok(media(g.rounds[0])[0].clues.some((cl) => cl.media.kind === 'video'), 'a video category comes first while one is fresh');
 });

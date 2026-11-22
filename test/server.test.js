@@ -8,6 +8,7 @@ import net from 'node:net';
 import os from 'node:os';
 import { pickAddress } from '../lib.js';
 import { WebSocket } from 'ws';
+import MEDIA_PACK from '../games/jeopardy/packs/media.json' with { type: 'json' };
 
 const root = path.resolve(import.meta.dirname, '..');
 const PIN = '2468';
@@ -144,7 +145,9 @@ test('server end to end', async (t) => {
   host.act('advance');                            // skip the opening titles
   await tv.until((c) => c.view?.game?.phase === 'board', 'board');
   // A clue that is not a Daily Double (the host sees where those are).
-  const spot = (() => { const dd = host.view.game.secret.dd; for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) if (!dd[c][r]) return [c, r]; })();
+  // A plain clue: not a Daily Double, and not a picture, sound or video one (those wait for the TV to play them first).
+  const isMediaCol = (c) => MEDIA_PACK.categories.some((m) => m.name === host.view.game.board[c].name);
+  const spot = (() => { const dd = host.view.game.secret.dd; for (let c = 0; c < 6; c++) for (let r = 0; r < 5; r++) if (!dd[c][r] && !isMediaCol(c)) return [c, r]; })();
   const valueOf = ([c, r]) => tv.view.game.board[c].clues[r].value;
 
   await t.test('answers never reach the TV or phones before the reveal', async () => {
@@ -203,7 +206,8 @@ test('server end to end', async (t) => {
 
   await t.test('the server opens the buzzers by itself once the clue has been read', async () => {
     const dd = host.view.game.secret.dd;
-    const next = [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1]].find(([c, r]) => !dd[c][r]);
+    // Not a Daily Double, and not a picture, sound or video clue (those wait for the TV to play them first).
+    const next = [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1]].find(([c, r]) => !dd[c][r] && !isMediaCol(c));
     host.act('pick', { ci: next[0], ri: next[1] });
     await tv.until((c) => c.view?.game?.phase === 'reading');
     const t0 = Date.now();

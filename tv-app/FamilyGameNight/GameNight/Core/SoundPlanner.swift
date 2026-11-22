@@ -65,8 +65,9 @@ enum SoundPlanner {
     private static func jeopardyPlan(from before: JeopardyState, to after: JeopardyState, into plan: inout SoundPlan) {
         // A ruling just came in: right or wrong. (Going on from the ruling to the answer or the reopened buzzers keeps
         // the same result, so it stays quiet; flipping the ruling changes it, so that sounds too.)
+        // An answer clock that ran out sounds like time running out.
         if let result = after.lastResult, result != before.lastResult {
-            plan.cues.append(result.correct ? .correct : .wrong)
+            plan.cues.append(result.correct ? .correct : (result.timedOut == true && result.overridden != true ? .timeup : .wrong))
         }
 
         // A new player steps up to a podium in the lobby.

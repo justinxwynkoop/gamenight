@@ -88,6 +88,8 @@ export function mount(container, api, ui) {
     });
     const body = h('div', { style: { display: 'contents' } },
       row('Category name', field('input', cat, 'name', { maxLength: 40, placeholder: `Category ${c + 1}`, autocomplete: 'off' }, () => { touch(); after(); })),
+      row('Note for the host', field('input', cat, 'about', { maxLength: 200, placeholder: 'Optional: what the category asks for, e.g. "Every answer rhymes"', autocomplete: 'off' }, () => { touch(); }),
+        'The host can read it out if someone asks what the category means.'),
       clues);
     item = group.add({ badge: String(c + 1), ...summary(), placeholder: 'Tap to name the category', body, open: openKey === `c${c}`, onToggle: (on) => { if (on) openKey = `c${c}`; } });
     return item.el;

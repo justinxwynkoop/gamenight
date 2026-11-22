@@ -25,7 +25,7 @@ export const SOUND_NAMES = [
   { name: 'wrong', label: 'Wrong answer', games: ['shared', 'jeopardy', 'spynight'], labels: { spynight: 'A team is rejected' } },
   { name: 'timeup', label: "Time's up", games: ['shared', 'jeopardy', 'feud'] },
   { name: 'tick', label: 'Countdown tick (last five seconds)', games: ['shared', 'jeopardy', 'feud'] },
-  { name: 'reveal', label: 'Answer shown, nobody got it', games: ['shared', 'jeopardy'] },
+  { name: 'reveal', label: 'Answer shown after a skipped clue, and each Final Jeopardy response', games: ['shared', 'jeopardy'] },
   { name: 'dd', label: 'Daily Double', games: ['shared', 'jeopardy'] },
   { name: 'final', label: 'Final Jeopardy begins', games: ['shared', 'jeopardy'] },
   { name: 'fanfare', label: 'The winner', games: ['shared', 'jeopardy', 'spynight'], labels: { spynight: 'The Resistance win' } },
