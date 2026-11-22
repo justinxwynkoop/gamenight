@@ -36,7 +36,7 @@ export function mount(container, { send, flash }) {
     const g = v.game;
     const mine = me && unit(v, me.unitId);
     if (!me?.unitId) return { label: 'NO TEAM', cls: 'out', line: 'Ask the host to put you on a team.' };
-    if (g.status === 'lobby') return { label: 'WAIT', cls: 'out', line: g.me?.captain ? 'You’re the captain: start the game below when everyone is in.' : g.title ? `${g.title} starts soon` : 'Waiting for the host' };
+    if (g.status === 'lobby') return { label: 'WAIT', cls: 'out', line: g.me?.captain ? 'You’re the captain: start the game below when everyone is in.' : g.hosted ? 'The host starts the game when everyone is in' : g.title ? `${g.title} starts soon` : 'Waiting for the host' };
     if (g.status === 'done') {
       const [top, next] = [...v.room.units].sort((a, b) => b.score - a.score);
       const tie = top && next && top.score === next.score;

@@ -2377,8 +2377,13 @@
           return void 0;
       }
     }
-    /** The first player who is here (the one who joined first, unless they left). */
+    /** A host page is connected: the host runs the game, so nobody is captain. */
+    hosted() {
+      return (this.room.hosts ?? 0) > 0;
+    }
+    /** The first player who is here (the one who joined first, unless they left). With a host connected there is no captain. */
     captain() {
+      if (this.hosted()) return null;
       const here = this.room.players.find((p) => this.room.connected?.has(p.id));
       return (here ?? this.room.players[0])?.id ?? null;
     }
@@ -2998,7 +3003,8 @@
       hasFastMoney: !!set?.fastMoney?.length,
       round: null,
       fm: null,
-      captainId: this.captain()
+      captainId: this.captain(),
+      hosted: this.hosted()
     };
     if (run.status === "lobby") view.sets = this.room.listContent(GAME2).map((x) => ({ id: x.id, title: x.title })).slice(0, 40);
     if (run.status === "lobby") view.setId = this.setId;

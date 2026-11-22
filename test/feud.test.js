@@ -570,3 +570,18 @@ test('the captain runs the game from a phone; guesses are refused while a host j
   room.setConnected(ps[0].id, false);
   assert.equal(g.captain(), ps[1].id);                               // someone else takes over when the captain leaves
 });
+
+test('with a host connected there is no captain, and the captain comes back when the host goes', () => {
+  const { room, g, ps } = setup();
+  assert.equal(g.captain(), ps[0].id);
+  room.setHosts(1);
+  assert.equal(g.captain(), null);
+  assert.equal(g.publicView().captainId, null);
+  assert.equal(g.publicView().hosted, true);
+  assert.equal(g.playerView(room.player(ps[0].id)).me.captain, false);
+  assert.throws(() => room.playerMessage(ps[0].id, { t: 'cap', action: 'startGame' }), /captain/, 'the first player can no longer run the game from a phone');
+  room.setHosts(0);
+  assert.equal(g.captain(), ps[0].id);
+  assert.equal(g.publicView().hosted, false);
+  assert.equal(g.playerView(room.player(ps[0].id)).me.captain, true);
+});

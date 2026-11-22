@@ -168,8 +168,11 @@ export class FeudGame {
     }
   }
 
-  /** The first player who is here (the one who joined first, unless they left). */
+  /** A host page is connected: the host runs the game, so nobody is captain. */
+  hosted() { return (this.room.hosts ?? 0) > 0; }
+  /** The first player who is here (the one who joined first, unless they left). With a host connected there is no captain. */
   captain() {
+    if (this.hosted()) return null;
     const here = this.room.players.find((p) => this.room.connected?.has(p.id));
     return (here ?? this.room.players[0])?.id ?? null;
   }
@@ -680,7 +683,7 @@ export class FeudGame {
     const view = {
       game: GAME, scoreFormat: 'points', lobbyTitle: set?.title ?? 'Family Feud', settings: this.settings, status: run.status,
       title: set?.title ?? null, rounds: set?.rounds.length ?? 0, hasFastMoney: !!set?.fastMoney?.length,
-      round: null, fm: null, captainId: this.captain(),
+      round: null, fm: null, captainId: this.captain(), hosted: this.hosted(),
     };
     if (run.status === 'lobby') view.sets = this.room.listContent(GAME).map((x) => ({ id: x.id, title: x.title })).slice(0, 40);
     if (run.status === 'lobby') view.setId = this.setId;
