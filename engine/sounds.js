@@ -18,7 +18,7 @@ export const SOUND_GAMES = [
  *  `labels` says what a sound is called in a game where it means something else (Spy Night reuses Family Feud's "ding" for a mission that succeeds). */
 export const SOUND_NAMES = [
   { name: 'lobby', label: 'Lobby music (loops while players join)', games: ['shared', 'jeopardy', 'feud', 'spynight'] },
-  { name: 'think', label: 'Final Jeopardy thinking music', games: ['shared', 'jeopardy'] },
+  { name: 'think', label: 'Final Jeopardy thinking music', games: ['shared', 'jeopardy', 'spynight'], labels: { spynight: 'Music under the game (loops from the deal to the end)' } },
   { name: 'open', label: 'Buzzers open', games: ['shared', 'jeopardy', 'feud', 'spynight'], labels: { spynight: 'The vote begins' } },
   { name: 'buzz', label: 'Someone buzzes in', games: ['shared', 'jeopardy'] },
   { name: 'correct', label: 'Right answer', games: ['shared', 'jeopardy', 'feud', 'spynight'], labels: { spynight: 'A team is approved' } },

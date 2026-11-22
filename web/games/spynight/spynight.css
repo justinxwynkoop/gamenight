@@ -20,6 +20,7 @@
 
 /* the mission track */
 .sn-track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.sn-col { display: grid; gap: 6px; align-content: start; min-width: 0; }
 .sn-m { text-align: center; border-radius: 14px; border: 2px solid var(--sn-line); padding: 8px 2px; background: #10172a; }
 .sn-m b { display: block; font-size: 1.6rem; line-height: 1.1; }
 .sn-m small { display: block; color: var(--sn-dim); font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; }
@@ -95,3 +96,12 @@
 .sn-reveal { display: flex; flex-wrap: wrap; gap: 1.6vmin; justify-content: center; max-width: 92vw; }
 .sn-reveal .sn-seat.spy { background: #3a0f17; border-color: var(--sn-spy); }
 .sn-reveal .sn-seat.resistance { background: #0c3a37; border-color: var(--sn-res); }
+
+/* who went on each mission, under its box; at the end each name says what they played */
+.sn-who { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; text-align: center; font-size: .72rem; font-weight: 700; color: #cfd8f6; }
+.sn-who li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sn-who li.success { color: var(--sn-res); }
+.sn-who li.fail { color: var(--sn-spy); }
+.sn-tv .sn-who { font-size: 2.2vmin; gap: .4vmin; }
+.sn-tv .sn-col { gap: 1vmin; }
+.sn-talk { color: var(--sn-dim); font-size: .85rem; }

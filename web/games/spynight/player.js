@@ -8,6 +8,7 @@ export function mount(container, { send }) {
   let view = null;
   let showRole = false;      // the role card is face up
   let peeking = false;       // the "My role" overlay is open
+  let showMates = false;     // a Spy has asked to see the other Spies (they are hidden behind a button)
   let lastPhase = '';
 
   const btn = (label, cls, onclick, extra = {}) => h('button', { type: 'button', class: `sn-btn ${cls}`, onclick, ...extra }, label);
@@ -19,15 +20,22 @@ export function mount(container, { send }) {
         h('div', { class: 'ico' }, '🕵️'), h('div', { class: 'big' }, 'TAP TO SEE'), h('div', { class: 'dim' }, 'Make sure nobody is looking at your screen'));
     }
     const spy = me.role === 'spy';
-    return h('div', { class: `sn-role ${me.role}`, onclick: interactive ? () => { showRole = false; refresh(); } : null },
+    return h('div', { class: `sn-role ${me.role}`, onclick: interactive ? () => { showRole = false; showMates = false; refresh(); } : null },
       h('div', { class: 'ico' }, spy ? '🕶️' : '🛡️'),
       h('div', { class: 'big' }, spy ? 'YOU ARE A SPY' : 'YOU ARE RESISTANCE'),
       spy
-        ? [h('p', {}, me.spies.length ? 'Your fellow Spies:' : 'You are the only Spy.'),
-          h('div', { class: 'sn-mates' }, me.spies.map((s) => h('span', {}, s.name))),
-          h('p', { class: 'dim' }, 'Get missions to fail without anyone working out who you are.')]
-        : h('p', { class: 'dim' }, 'You do not know who the Spies are. Work it out, and keep them off your missions.'),
+        ? [matesBlock(me),
+          h('p', { class: 'dim' }, 'Get missions to fail without anyone working out who you are. You may play Success or Fail on a mission.')]
+        : h('p', { class: 'dim' }, 'You do not know who the Spies are. Work it out, and keep them off your missions. You must always play Success.'),
       interactive && h('p', { class: 'dim' }, 'Tap to hide'));
+  }
+
+  /** The other Spies, behind a button so a glance at the screen does not give them away. */
+  function matesBlock(me) {
+    if (!me.spies.length) return h('p', {}, 'You are the only Spy.');
+    return h('div', {},
+      h('button', { type: 'button', class: 'sn-btn ghost', onclick: (e) => { e.stopPropagation(); showMates = !showMates; refresh(); } }, showMates ? 'Hide the other Spies' : `Show the other ${me.spies.length === 1 ? 'Spy' : 'Spies'}`),
+      showMates && h('div', { class: 'sn-mates' }, me.spies.map((s) => h('span', {}, s.name))));
   }
 
   const header = (v) => [track(v), rejectsLine(v)];
@@ -53,8 +61,9 @@ export function mount(container, { send }) {
     return h('details', { class: 'sn-card' }, h('summary', {}, 'How to play'),
       h('p', {}, 'Five missions. The Resistance need 3 to succeed; the Spies need 3 to fail.'),
       h('p', {}, 'The leader picks a team. Everyone votes to approve or reject it, all at once. If more than half approve, the team goes. A tie or a majority against passes the lead to the next player.'),
-      h('p', {}, 'On the mission each team member plays Success or Fail in secret. The Resistance can only play Success; a Spy may play either. One Fail fails the mission.'),
-      h('p', {}, 'Five rejected teams in a row and the Spies win.'));
+      h('p', {}, 'On the mission each team member plays Success or Fail in secret. The Resistance have to play Success; a Spy may play either. One Fail fails the mission.'),
+      h('p', {}, 'Five rejected teams in a row and the Spies win.'),
+      h('p', {}, 'You can talk about anything out loud, as much as you like: say who you trust, accuse, defend, bluff. The only rule is to keep your screen to yourself.'));
   }
 
   function roles(v) {
@@ -79,7 +88,7 @@ export function mount(container, { send }) {
         h('h2', {}, `${lead} is picking a team`),
         h('p', {}, `Mission ${v.mission + 1} takes ${v.teamSize} players.`),
         h('div', { class: 'sn-team' }, v.team.map((id) => h('span', {}, nameOf(v, id)))),
-        h('p', { class: 'dim' }, 'Talk it over out loud, then you will all vote.'))];
+        h('p', { class: 'sn-talk' }, 'Talk it over out loud, as much as you like: accuse, defend, bluff. Just do not show anyone your screen. Then you will all vote.'))];
     }
     const full = v.team.length >= v.teamSize;
     return [header(v), h('div', { class: 'sn-card' },
@@ -124,20 +133,23 @@ export function mount(container, { send }) {
         : [h('div', { class: 'sn-row' },
           btn('Success', 'yes huge', () => send({ t: 'card', card: 'success' })),
           btn('Fail', 'no huge', () => send({ t: 'card', card: 'fail' }), { disabled: !spy })),
-        !spy && h('p', { class: 'dim' }, 'The Resistance can only play Success.')],
+        h('p', { class: 'dim' }, spy ? 'You are a Spy, so you can play Success or Fail.' : 'You are Resistance, so you have to play Success.')],
       h('p', { class: 'dim' }, 'Nobody will see which card you played, only how many Fail cards there were.'))];
   }
 
   function missionResult(v) {
     const r = v.result;
     return [header(v), h('div', { class: `sn-banner ${r.success ? 'good' : 'bad'}` }, r.success ? 'MISSION SUCCEEDED' : 'MISSION FAILED'),
-      h('div', { class: 'sn-card' }, h('p', {}, r.fails === 0 ? 'No Fail cards.' : `${r.fails} Fail ${r.fails === 1 ? 'card' : 'cards'}${r.needed > 1 ? ` (this mission needed ${r.needed})` : ''}.`))];
+      h('div', { class: 'sn-card' }, h('p', {}, r.fails === 0 ? 'No Fail cards.' : `${r.fails} Fail ${r.fails === 1 ? 'card' : 'cards'}${r.needed > 1 ? ` (this mission needed ${r.needed})` : ''}.`),
+        h('p', { class: 'dim' }, 'Went on the mission:'), teamNames(v))];
   }
 
   function gameover(v) {
     const me = v.me;
     const won = me?.role && ((v.winner === 'spies') === (me.role === 'spy'));
     return [h('div', { class: `sn-banner ${v.winner === 'spies' ? 'bad' : 'good'}` }, v.winner === 'spies' ? 'THE SPIES WIN' : 'THE RESISTANCE WINS'),
+      // Under the five missions: who played Success (✓) and who played Fail (✗) on each.
+      track(v),
       h('div', { class: 'sn-card' },
         me?.role && h('h2', {}, won ? 'You won!' : 'You lost this one'),
         h('p', { class: 'dim' }, v.why),
@@ -165,10 +177,10 @@ export function mount(container, { send }) {
     const showPeek = me?.role && !['lobby', 'roles', 'gameover'].includes(v.phase);
     setKids(container, h('div', { class: 'sn' }, body, v.phase !== 'lobby' && v.phase !== 'roles' && history(v), v.phase === 'lobby' ? null : rules()),
       showPeek && h('button', { type: 'button', class: 'sn-peek', onclick: () => { peeking = true; refresh(); } }, '🕵️ My role'),
-      showPeek && peeking && h('div', { class: 'sn-peekbox', onclick: () => { peeking = false; refresh(); } },
+      showPeek && peeking && h('div', { class: 'sn-peekbox', onclick: () => { peeking = false; showMates = false; refresh(); } },
         h('div', { class: `sn-role ${me.role}` },
           h('div', { class: 'big' }, me.role === 'spy' ? 'SPY' : 'RESISTANCE'),
-          me.role === 'spy' && h('div', { class: 'sn-mates' }, me.spies.map((s) => h('span', {}, s.name))),
+          me.role === 'spy' && matesBlock(me),
           h('p', { class: 'dim' }, 'Tap anywhere to hide'))));
     if (v.phase !== 'vote' && v.phase !== 'mission') peeking = peeking && showPeek;
   }

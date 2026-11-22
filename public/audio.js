@@ -51,7 +51,7 @@ const BUILTIN = {
     'pick', 'board', 'lock', 'bet', 'join', 'applause'],
   shared: ['lobby'],
   // Spy Night's own: original, made by tv-app/Tools/make_spynight_sounds.py (CC0, see builtin-sounds/spynight/CREDITS.txt).
-  spynight: ['lobby', 'roundstart', 'pick', 'open', 'correct', 'wrong', 'lock', 'ding', 'strike', 'fanfare', 'winner', 'join'],
+  spynight: ['lobby', 'think', 'roundstart', 'pick', 'open', 'correct', 'wrong', 'lock', 'ding', 'strike', 'fanfare', 'winner', 'join'],
 };
 
 /** Fetch and decode the family's files in data/sounds/ (server mode), then the built-in recordings for any name still missing. */

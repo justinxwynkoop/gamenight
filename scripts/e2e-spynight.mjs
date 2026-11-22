@@ -81,6 +81,7 @@ try {
     await p.locator('button.sn-role').click();
     await until(async () => (await p.locator('.sn-role.spy, .sn-role.resistance').count()) > 0, 'the role to show');
     roles.push((await p.locator('.sn-role').getAttribute('class')).includes('spy') ? 'spy' : 'resistance');
+    if (await p.locator('.sn-role .sn-mates span').count()) fail('the role card shows the other Spies without the button');
     if (p === phones[0]) await shot(p, 'phone-role');
     await p.getByRole('button', { name: /got it/i }).click();
   }
@@ -89,9 +90,14 @@ try {
   // A Spy sees the other Spy; the Resistance sees nobody.
   for (const [i, p] of phones.entries()) {
     await p.locator('.sn-peek').click();
+    // The other Spies are behind a button, so a glance at the screen does not give them away.
+    if (await p.locator('.sn-peekbox .sn-mates span').count()) fail(`${names[i]} sees the other Spies before pressing the button`);
+    const button = p.locator('.sn-peekbox').getByRole('button', { name: /show the other/i });
+    if ((await button.count()) !== (roles[i] === 'spy' ? 1 : 0)) fail(`${names[i]} (${roles[i]}) has ${await button.count()} buttons for the other Spies`);
+    if (roles[i] === 'spy') await button.click();
     const mates = await p.locator('.sn-peekbox .sn-mates span').count();
     if (mates !== (roles[i] === 'spy' ? 1 : 0)) fail(`${names[i]} (${roles[i]}) sees ${mates} fellow Spies`);
-    await p.locator('.sn-peekbox').click();
+    await p.locator('.sn-peekbox').click({ position: { x: 5, y: 5 } });   // the dark edge closes it
   }
   await until(async () => /is picking/.test(await tv.locator('.sn-tv').innerText()), 'the TV to move on to picking a team');
   // The TV never shows a role.
@@ -136,6 +142,10 @@ try {
   await until(async () => /\bWINS?\b/.test(await tvText()), 'the game to end', 15000);
   await shot(tv, 'gameover');
   const final = await tvText();
+  // Under the five tiles: who went on each mission, and at the end who played Success and who played Fail.
+  const lists = await tv.locator('.sn-who').allInnerTexts();
+  if (lists.length < 3 || !lists.every((t) => /[✓✗]/.test(t))) fail(`the TV's lists of who went on each mission: ${JSON.stringify(lists)}`);
+  if (!(await phones[0].locator('.sn-who li.fail').count())) fail('the phone does not show who played Fail at the end');
   console.log(`missions: ${missions.join(', ')}; ${final.match(/THE (SPIES|RESISTANCE) WINS?/)[0]}`);
   if (!/Spy/.test(final)) fail('the final screen does not reveal the roles');
   await phones[0].getByRole('button', { name: /play again/i }).click();

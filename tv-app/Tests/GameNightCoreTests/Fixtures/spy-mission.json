@@ -112,7 +112,11 @@
         "needed": 1,
         "result": null,
         "fails": null,
-        "team": null,
+        "team": [
+          "p2",
+          "p1"
+        ],
+        "cards": null,
         "current": true
       },
       {
@@ -122,6 +126,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       },
       {
@@ -131,6 +136,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       },
       {
@@ -140,6 +146,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       },
       {
@@ -149,6 +156,7 @@
         "result": null,
         "fails": null,
         "team": null,
+        "cards": null,
         "current": false
       }
     ],

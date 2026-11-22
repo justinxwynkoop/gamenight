@@ -290,3 +290,22 @@ test('playing again returns to the lobby with the same players', () => {
   s.g.start();
   assert.equal(s.g.phase, 'roles');
 });
+
+test('everyone can see who went on each mission, but who played Fail only comes out when the game is over', () => {
+  const s = setup(5, 4);
+  toTeam(s);
+  const spies = s.ps.filter((p) => s.g.roles[p.id] === 'spy').map((p) => p.id);
+  runMission(s, [spies[0]]);                          // mission 1 fails: a Spy was on it
+  let track = s.room.publicView().game.track;
+  assert.equal(track[0].team.length, 2);              // who went is public
+  assert.equal(track[0].cards, null, 'who played what is not');
+  assert.ok(!/"cards":\{/.test(JSON.stringify(s.room.hostView().game)), 'the host page is told no more than the TV');
+  assert.equal(track[1].team, null);                  // the next mission has no team yet
+  runMission(s, [spies[0]]);
+  runMission(s, [spies[0]]);
+  assert.equal(s.g.phase, 'gameover');
+  track = s.room.publicView().game.track;
+  assert.equal(track[0].cards[spies[0]], 'fail');
+  assert.ok(Object.entries(track[0].cards).every(([id, c]) => (id === spies[0] ? c === 'fail' : c === 'success')));
+  assert.equal(track[3].cards, null, 'a mission that was not played has none');
+});
