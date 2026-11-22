@@ -3,7 +3,7 @@
 // settings. Players answer by typing and the game checks them, so the host mostly watches; with "a host judges out loud"
 // switched on the host opens the buzzers, taps the picks and rules on each answer.
 import { h, money } from '../../common.js';
-import { icon, button, card, eyebrow, pill, timerPill } from '../../ui.js';
+import { icon, button, card, eyebrow, pill, timerPill, dot } from '../../ui.js';
 import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalControl } from './setup.js';
 
 let v = null;          // the game's view (with the host's secrets)
@@ -151,14 +151,16 @@ function clueView() {
     dock.push(button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openNow') }), dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'open') {
     const r = v.lastResult;
+    body.unshift(buzzCard(c));   // the first opening's order stays up while the buzzers reopen after a miss
     body.push(card(eyebrow('Buzzers open'), clockPill(), h('p', { class: 'dim' }, r && !r.correct ? `${nameOf(r.pid)} missed. Others can buzz in.` : 'Waiting for someone to buzz in…')));
     dock.push(button({ label: 'Nobody. Show the answer', size: 'lg', block: true, onclick: () => act('skip') }));
   } else if (ph === 'answering' || ph === 'dd-answer') {
     const who = ph === 'answering' ? c.buzzedId : v.controllerId;
     if (ph === 'answering') body.unshift(buzzCard(c));   // above the clue: who has it, at a glance
     body.push(card(eyebrow('Answering'), h('div', { class: 'card-title' }, `${nameOf(who)} is answering`), clockPill(),
-      h('p', { class: 'dim' }, v.hostJudges ? 'Listen to the answer, then rule on it below.' : 'They type their answer and the game checks it. Use “Flip the ruling” afterwards if it got one wrong.')));
-    if (v.hostJudges) dock.push(dockRow(button({ label: 'Correct', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('judge', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('judge', { correct: false }) })));
+      h('p', { class: 'dim' }, v.hostJudges ? 'Listen to the answer, then rule on it below.' : 'They type their answer and the game checks it. You can rule on it yourself below at any time.')));
+    // Always there, whether the host judges out loud or the game checks typed answers: the host has the last word.
+    dock.push(dockRow(button({ label: 'Correct', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('judge', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('judge', { correct: false }) })));
     dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'ruling') {
     const r = v.lastResult;
@@ -171,6 +173,7 @@ function clueView() {
     dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'reveal') {
     const r = v.lastResult;
+    body.unshift(buzzCard(c));
     body.push(card(eyebrow('Result'), h('div', { class: 'card-title' }, r ? `${nameOf(r.pid)} ${r.correct ? 'got it' : 'missed it'}` : 'Nobody got it'),
       h('p', { class: 'dim' }, 'Back to the board in a moment.')));
     dock.push(button({ label: 'Back to the board', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }), dockRow(flip));
