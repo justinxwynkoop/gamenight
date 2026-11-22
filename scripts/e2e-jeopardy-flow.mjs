@@ -92,6 +92,47 @@ try {
     await until(async () => /YOU’RE IN/.test(await page.locator('body').innerText()), `${name} to join`);
     phones[name] = page;
   }
+  // ---------- no host page: the captain (Ann, first in) turns on host judging and runs it from her phone ----------
+  {
+    const ann = phones.Ann;
+    const capBtn = (label) => ann.locator('.jp-captain button', { hasText: label }).first();
+    const tapCap = async (label) => { const b = capBtn(label); await until(async () => (await b.count()) > 0, `"${label}" on the captain's phone`); await b.click(); };
+    const toggle = ann.locator('button', { hasText: 'A host judges out loud' }).first();
+    await until(async () => (await toggle.count()) > 0, 'the host judging switch on the captain phone');
+    await toggle.click();
+    await until(async () => /You’re the host/.test(await ann.locator('body').innerText()), 'the captain phone saying she is the host');
+    await tapCap('Start game');
+    await until(async () => (await capBtn('Skip intro').count()) > 0 || (await ann.locator('.jp-mini button').count()) > 0, 'round 1 on the captain phone');
+    if (await capBtn('Skip intro').count()) await capBtn('Skip intro').click();
+    const tiles = ann.locator('.jp-mini button:not([disabled])');
+    await until(async () => (await tiles.count()) > 0, 'the board on the captain-host phone');
+    // Pick until a plain clue comes up (skip a Daily Double).
+    for (let i = 0; i < 10; i++) {
+      await tiles.first().click();
+      await until(async () => (await capBtn('Open buzzers').count()) > 0 || (await capBtn('Skip clue').count()) > 0, 'the clue on the captain phone');
+      if (await capBtn('Open buzzers').count()) break;
+      ann.once('dialog', (d) => d.accept()); await capBtn('Skip clue').click();
+      await until(async () => (await capBtn('Continue').count()) > 0, 'Continue'); await capBtn('Continue').click();
+      await until(async () => (await tiles.count()) > 0, 'the board again');
+    }
+    await shot(ann, 'captain-host-reading');
+    await tapCap('Open buzzers');
+    await until(async () => (await phones.Bo.locator('.jp-buzzer.live').count()) > 0, 'Bo\'s buzzer to turn gold');
+    await phones.Bo.locator('.jp-buzzwrap').dispatchEvent('pointerdown');
+    await until(async () => (await capBtn('Correct').count()) > 0 && (await capBtn('Wrong').count()) > 0, 'Correct and Wrong on the captain-host phone');
+    await tapCap('Show the answer');
+    await until(async () => (await capBtn('Answer:').count()) > 0, 'the answer for the captain-host');
+    await shot(ann, 'captain-host-judging');
+    await tapCap('Correct');
+    await until(async () => (await tiles.count()) > 0 && /bo/i.test(await ann.locator('.jp-pickhead').innerText()), 'the board, Bo to pick');
+    ann.once('dialog', (d) => d.accept());
+    await tapCap('End game');
+    await until(async () => (await toggle.count()) > 0, 'the lobby again');
+    await toggle.click();
+    await until(async () => /You’re the captain/.test(await ann.locator('body').innerText()), 'host judging off again');
+    log('no host page: Ann turned host judging on and ran a clue from her phone (Open buzzers, Correct)');
+  }
+
   const host = await browser.newPage({ viewport: { width: 390, height: 844 } }); watch(host, 'host');
   await host.goto(`${base}/host?r=${code}`);
   await until(async () => (await host.locator('input').count()) > 0, 'the host PIN form');
