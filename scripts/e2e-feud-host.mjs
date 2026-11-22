@@ -131,6 +131,22 @@ try {
   await until(async () => (g.publicView().round.timer?.totalMs ?? 0) === 10000, 'the 10 second clock to start');
   await until(async () => /\d+s/.test(await text(host)), 'the clock on the host page');
   console.log('the host sees who is up and started the 10 second answer clock');
+  // Fast Money: the host chooses the two players, and can change them.
+  const [lead, other] = engine.room.teams;
+  lead.score = 150; other.score = 50;
+  g.run.round = 4; g.run.step = 'roundEnd';
+  g.nextRound();
+  await host.getByRole('button', { name: /^Game/ }).first().click();
+  await until(async () => /Choose the two players/i.test(await text(host)), 'the host page to ask for the two Fast Money players').catch(async (e) => { console.error(g.run.status, g.run.fm?.step, g.run.round); console.error((await text(host)).slice(0, 700)); throw e; });
+  const names = engine.room.players.filter((p) => p.teamId === lead.id).map((p) => p.name);
+  const before = [...g.run.fm.players];
+  await host.locator('button.pick', { hasText: names[1] }).first().click();   // Player 1 becomes the other member (the two swap)
+  await until(() => g.run.fm.players[0] !== before[0], 'the host’s pick to change Player 1');
+  assert.deepEqual(g.run.fm.players, [before[1], before[0]]);
+  await shot(host, 'fastmoney-pick');
+  await host.getByRole('button', { name: /Start Fast Money/ }).click();
+  await until(() => g.run.fm.step === 'p1', 'Fast Money to start');
+  console.log('Fast Money: the host picked the two players and started it');
   // The tabs of the host page.
   for (const tab of ['Players', 'Scores', 'Settings', 'Game']) {
     await host.getByRole('button', { name: new RegExp(`^${tab}`) }).first().click();
