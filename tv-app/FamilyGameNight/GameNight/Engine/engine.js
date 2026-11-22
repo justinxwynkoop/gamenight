@@ -855,8 +855,22 @@
     board() {
       return this.round >= 1 && this.round <= this.rounds.length ? this.rounds[this.round - 1] : null;
     }
+    /** With a host (a host page, or a host judging out loud), players say their pick and the host taps it. */
+    picksAloud() {
+      return this.hostJudges() || this.hosted();
+    }
+    /** The picker is looking at a clue on their phone (or the host at the one called out): the TV lights it up. */
+    peek(ci, ri) {
+      if (this.phase !== "board") return;
+      const cl = this.board()?.[ci]?.clues[ri];
+      const next = cl && !cl.used ? { ci, ri } : null;
+      if (JSON.stringify(next) === JSON.stringify(this.peeking)) return;
+      this.peeking = next;
+      __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+    }
     pick(ci, ri) {
       if (this.phase !== "board") return;
+      this.peeking = null;
       const b = this.board();
       const cl = b?.[ci]?.clues[ri];
       if (!cl || cl.used) return;
@@ -1224,6 +1238,8 @@
           return this.setCaptain(String(a.pid ?? a.id ?? ""));
         case "pick":
           return this.pick(Number(a.ci), Number(a.ri));
+        case "peek":
+          return this.peek(Number(a.ci), Number(a.ri));
         case "judge":
           return this.judgeNow(a.correct === true);
         // The host types in the bet a player says out loud (or places it for a phone that is not answering).
@@ -1300,10 +1316,15 @@
           this.answer(pid, msg.text);
           return { t: "ack", what: "answer" };
         case "pick": {
-          if (this.hostJudges()) fail("Tell the host your pick.");
+          if (this.picksAloud()) fail("Tell the host your pick.");
           const allowed = pid === this.controllerId || pid === this.captain() && !__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId);
           if (!allowed) fail("It is not your pick");
           this.pick(Number(msg.ci), Number(msg.ri));
+          return void 0;
+        }
+        case "peek": {
+          if (this.picksAloud()) return void 0;
+          if (pid === this.controllerId || pid === this.captain() && !__privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) this.peek(Number(msg.ci), Number(msg.ri));
           return void 0;
         }
         case "dd-wager":
@@ -1322,7 +1343,7 @@
           if (this.captain() !== pid) fail("Only the captain can do that");
           if (!_JeopardyGame.CAPTAIN_ACTIONS.has(msg.action)) fail("Not allowed");
           if (["judge", "openNow", "ddWager"].includes(msg.action) && !this.hostJudges()) fail("The game checks typed answers");
-          if (msg.action === "pick" && !this.hostJudges() && pid !== this.controllerId && __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) fail("It is not your pick");
+          if ((msg.action === "pick" || msg.action === "peek") && !this.hostJudges() && pid !== this.controllerId && __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, this.controllerId)) fail("It is not your pick");
           return this.act(msg.action, msg.args ?? {}) ?? void 0;
         }
         default:
@@ -1349,6 +1370,9 @@
         timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this),
         guide: __privateMethod(this, _JeopardyGame_instances, guide_fn).call(this),
         board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+        // The clue the picker is looking at (the TV lights it up), and whether picks are said out loud to a host.
+        peek: this.phase === "board" ? this.peeking : null,
+        picksAloud: this.picksAloud(),
         clue: this.clue && {
           ci: this.clue.ci,
           ri: this.clue.ri,
@@ -1539,6 +1563,7 @@
     this.rounds = [];
     this.controllerId = null;
     this.clue = null;
+    this.peeking = null;
     this.recentBuzzes = null;
     this.lastResult = null;
     this.final = null;
@@ -1841,6 +1866,7 @@
   /** The round's title and its categories on the TV, then the first pick. */
   roundIntro_fn = function() {
     this.lastResult = null;
+    this.peeking = null;
     this.phase = "round-intro";
     __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, T.roundIntro, () => {
       if (this.phase === "round-intro") {
@@ -2011,6 +2037,7 @@
     __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
   };
   afterReveal_fn = function() {
+    this.peeking = null;
     const done = this.clue;
     this.clue = null;
     const left = this.board().some((c) => c.clues.some((cl) => !cl.used));
@@ -2160,8 +2187,10 @@
       case "round-intro":
         return { pid: ctrl, text: this.round === 2 ? "Round 2: every value is doubled" : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
       case "board": {
+        const pk = this.peeking && this.board()?.[this.peeking.ci];
+        if (pk) return { pid: ctrl, text: `${name(ctrl)} is eyeing ${pk.name} for $${pk.clues[this.peeking.ri].value.toLocaleString("en-US")}`, next: host || hosted ? `${judge2 === "the host" ? "The host" : judge2} opens it` : `${name(ctrl)} taps Open on their phone` };
         const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it\u2019s their pick` : `${name(ctrl)}\u2019s pick`;
-        const next = host ? `${name(ctrl)}, tell ${judge2} a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so ${hosted ? "the host" : "the captain"} picks for them`;
+        const next = host || hosted ? `${name(ctrl)}, tell ${judge2} a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so ${hosted ? "the host" : "the captain"} picks for them`;
         return { pid: ctrl, text, next };
       }
       case "reading":
@@ -2198,7 +2227,7 @@
     }
   };
   /** What the captain's phone may do (with a host page connected there is no captain; without one the captain is the host). */
-  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["judge", "openNow", "pick", "ddWager", "kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory", "resetHall"]));
+  __publicField(_JeopardyGame, "CAPTAIN_ACTIONS", /* @__PURE__ */ new Set(["judge", "openNow", "pick", "peek", "ddWager", "kick", "setCaptain", "togglePack", "start", "advance", "skip", "override", "finalOverride", "endRound", "playAgain", "endGame", "adjustScore", "toggleEasy", "setAnswerTime", "setEra", "previewBoard", "swapCategory", "clearPreview", "setHostJudges", "setAsWritten", "setFinalForAll", "setReadAloud", "playBoard", "setAllPacks", "resetHistory", "resetHall"]));
   var JeopardyGame = _JeopardyGame;
 
   // games/jeopardy/index.js

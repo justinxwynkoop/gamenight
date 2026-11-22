@@ -184,6 +184,8 @@ struct JeopardyState: Decodable, Equatable {
     var lastResult: JeoResult?
     /// The last clue's buzz times, kept on the board for a few seconds after the clue ends.
     var recentBuzzes: JeoRecentBuzzes?
+    /// The clue the picker is looking at on their phone (or the host at the one called out): it glows on the board.
+    var peek: JeoPeek?
     /// Seconds a host-judged answer may take (0 = no clock).
     var answerTime: Int?
     /// Correct answers in a row that put a player "on fire".
@@ -220,7 +222,7 @@ struct JeopardyState: Decodable, Equatable {
         case game, lobbyTitle, phase, round, rounds, captainId, hostJudges, controllerId, players, timer, guide, board, clue
         case lastResult, answerTime, hotStreak, reactions, awards, packs, categoryCount, easyAvailable, easyMode
         case hasArchive, era, eras, archiveSeason, archiveLoading, archiveError, draft, asWritten, maxPlayers
-        case draftFresh, freshCount, seenCount, readsAloud, hall, hosted
+        case draftFresh, freshCount, seenCount, readsAloud, hall, hosted, recentBuzzes, peek
         case finalRound = "final"
     }
 }
@@ -272,6 +274,11 @@ struct JeoHallEntry: Decodable, Equatable {
 }
 
 /// The TV's status strip: whose moment it is, what is happening, and what happens next (or who moves things along).
+struct JeoPeek: Decodable, Equatable {
+    var ci: Int
+    var ri: Int
+}
+
 struct JeoGuide: Decodable, Equatable {
     var pid: String?
     var text: String

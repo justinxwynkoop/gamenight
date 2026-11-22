@@ -218,6 +218,7 @@ export class JeopardyGame {
     this.rounds = [];
     this.controllerId = null;
     this.clue = null;
+    this.peeking = null;            // the clue the picker is looking at on their phone, shown on the TV: { ci, ri }
     this.recentBuzzes = null;       // the last clue's buzz times, kept on screen for a few seconds after it ends: { cat, value, buzzes, until }
     this.lastResult = null;
     this.final = null;
@@ -685,6 +686,7 @@ export class JeopardyGame {
   /** The round's title and its categories on the TV, then the first pick. */
   #roundIntro() {
     this.lastResult = null;
+    this.peeking = null;
     this.phase = 'round-intro';
     this.#setTimer(T.roundIntro, () => { if (this.phase === 'round-intro') { this.phase = 'board'; this.#changed(); } }, 'intro');
     this.#changed();
@@ -718,8 +720,20 @@ export class JeopardyGame {
   // ---------- the clue ----------
   board() { return this.round >= 1 && this.round <= this.rounds.length ? this.rounds[this.round - 1] : null; }
 
+  /** With a host (a host page, or a host judging out loud), players say their pick and the host taps it. */
+  picksAloud() { return this.hostJudges() || this.hosted(); }
+  /** The picker is looking at a clue on their phone (or the host at the one called out): the TV lights it up. */
+  peek(ci, ri) {
+    if (this.phase !== 'board') return;
+    const cl = this.board()?.[ci]?.clues[ri];
+    const next = cl && !cl.used ? { ci, ri } : null;
+    if (JSON.stringify(next) === JSON.stringify(this.peeking)) return;
+    this.peeking = next;
+    this.#changed();
+  }
   pick(ci, ri) {
     if (this.phase !== 'board') return;
+    this.peeking = null;
     const b = this.board();
     const cl = b?.[ci]?.clues[ri];
     if (!cl || cl.used) return;
@@ -1017,6 +1031,7 @@ export class JeopardyGame {
     this.#changed();
   }
   #afterReveal() {
+    this.peeking = null;
     const done = this.clue;
     this.clue = null;
     const left = this.board().some((c) => c.clues.some((cl) => !cl.used));
@@ -1311,6 +1326,7 @@ export class JeopardyGame {
       case 'start': return this.start();
       case 'setCaptain': return this.setCaptain(String(a.pid ?? a.id ?? ''));
       case 'pick': return this.pick(Number(a.ci), Number(a.ri));
+      case 'peek': return this.peek(Number(a.ci), Number(a.ri));
       case 'judge': return this.judgeNow(a.correct === true);
       // The host types in the bet a player says out loud (or places it for a phone that is not answering).
       case 'ddWager': return this.ddWager(this.controllerId, a.amount);
@@ -1344,7 +1360,7 @@ export class JeopardyGame {
     }
   }
   /** What the captain's phone may do (with a host page connected there is no captain; without one the captain is the host). */
-  static CAPTAIN_ACTIONS = new Set(['judge', 'openNow', 'pick', 'ddWager', 'kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory', 'resetHall']);
+  static CAPTAIN_ACTIONS = new Set(['judge', 'openNow', 'pick', 'peek', 'ddWager', 'kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory', 'resetHall']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -1354,11 +1370,16 @@ export class JeopardyGame {
       case 'draft': this.typing(pid, msg.text); return undefined;
       case 'answer': this.answer(pid, msg.text); return { t: 'ack', what: 'answer' };
       case 'pick': {
-        // The player in control picks. With a host judging, the player says their pick aloud and the host taps it.
-        if (this.hostJudges()) fail('Tell the host your pick.');
+        // The player in control picks. With a host, the player says their pick out loud and the host taps it.
+        if (this.picksAloud()) fail('Tell the host your pick.');
         const allowed = pid === this.controllerId || (pid === this.captain() && !this.#connected(this.controllerId));
         if (!allowed) fail('It is not your pick');
         this.pick(Number(msg.ci), Number(msg.ri));
+        return undefined;
+      }
+      case 'peek': {
+        if (this.picksAloud()) return undefined;
+        if (pid === this.controllerId || (pid === this.captain() && !this.#connected(this.controllerId))) this.peek(Number(msg.ci), Number(msg.ri));
         return undefined;
       }
       case 'dd-wager': this.ddWager(pid, msg.amount); return { t: 'ack', what: 'wager' };
@@ -1370,7 +1391,7 @@ export class JeopardyGame {
         if (!JeopardyGame.CAPTAIN_ACTIONS.has(msg.action)) fail('Not allowed');
         // Ruling, opening the buzzers and picking for someone are the judge's: only when the captain is the host.
         if (['judge', 'openNow', 'ddWager'].includes(msg.action) && !this.hostJudges()) fail('The game checks typed answers');
-        if (msg.action === 'pick' && !this.hostJudges() && pid !== this.controllerId && this.#connected(this.controllerId)) fail('It is not your pick');
+        if ((msg.action === 'pick' || msg.action === 'peek') && !this.hostJudges() && pid !== this.controllerId && this.#connected(this.controllerId)) fail('It is not your pick');
         return this.act(msg.action, msg.args ?? {}) ?? undefined;
       }
       default: return undefined;
@@ -1419,8 +1440,10 @@ export class JeopardyGame {
       case 'round-intro':
         return { pid: ctrl, text: this.round === 2 ? 'Round 2: every value is doubled' : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
       case 'board': {
+        const pk = this.peeking && this.board()?.[this.peeking.ci];
+        if (pk) return { pid: ctrl, text: `${name(ctrl)} is eyeing ${pk.name} for $${pk.clues[this.peeking.ri].value.toLocaleString('en-US')}`, next: host || hosted ? `${judge === 'the host' ? 'The host' : judge} opens it` : `${name(ctrl)} taps Open on their phone` };
         const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it’s their pick` : `${name(ctrl)}’s pick`;
-        const next = host ? `${name(ctrl)}, tell ${judge} a category and an amount`
+        const next = host || hosted ? `${name(ctrl)}, tell ${judge} a category and an amount`
           : this.#connected(ctrl) ? `${name(ctrl)} picks a clue on their phone`
             : `${name(ctrl)} is away, so ${hosted ? 'the host' : 'the captain'} picks for them`;
         return { pid: ctrl, text, next };
@@ -1478,6 +1501,9 @@ export class JeopardyGame {
       timer: this.#timerView(),
       guide: this.#guide(),
       board: b && b.map((c) => ({ name: c.name, clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+      // The clue the picker is looking at (the TV lights it up), and whether picks are said out loud to a host.
+      peek: this.phase === 'board' ? this.peeking : null,
+      picksAloud: this.picksAloud(),
       clue: this.clue && {
         ci: this.clue.ci, ri: this.clue.ri, cat: this.clue.cat, value: this.clue.value, dd: this.clue.dd, wager: this.clue.wager,
         q: this.phase === 'dd-wager' ? null : this.clue.q,

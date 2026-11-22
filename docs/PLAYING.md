@@ -32,7 +32,9 @@ says.
      comes back once every clue in its pack has been played. Then that pack starts over. **Start fresh** forgets it all.
    - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page,
      on the captain's phone when there is no host page, or with the remote) taps Correct or Wrong.
-2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote). Round 2 is worth
+2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote): the phone lists each
+   category with its values, they tap a value (it glows on the TV) and then **Open**. With a host (a host page, or host
+   judging on), nobody picks on their phone: the player says a category and a value out loud and the host taps it. Round 2 is worth
    double and has two Daily Doubles; the lowest score picks first.
 3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
    phone. Every phone turns gold at the same instant as the TV, and **the fastest thumb wins, not the fastest Wi-Fi**

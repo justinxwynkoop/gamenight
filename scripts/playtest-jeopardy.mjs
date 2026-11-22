@@ -111,11 +111,12 @@ async function playPhone(p, host, rng) {
   while (!stopped) {
     await sleep(150);
     try {
-      const mini = page.locator('.jp-mini button:not([disabled])');
+      const mini = page.locator('button.jp-pval');
       if (await mini.count()) {
         await sleep(900 + rng() * 1800);   // looking over the board
         const n = await mini.count(); if (!n) continue;
         await mini.nth(Math.floor(rng() * n)).click({ timeout: 1000 });
+        await page.locator('.jp-go').click({ timeout: 1000 });
         log(p.name, '(taps a clue)');
         await sleep(800);
         continue;
