@@ -310,9 +310,10 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   assert.equal(g.hostView().fm.rows[0].p1.typed, 'apple');
   g.fmNext();
   assert.equal(fm.step, 'p2');
-  g.fmAnswersFrom(second.id, ['Apple', 'cat', 'shoes', 'garage', 'bake']);
+  assert.deepEqual(g.fmAnswersFrom(second.id, ['Apple', 'cat', 'shoes', 'garage', 'bake']), [0, 2], 'player 2 cannot type what player 1 said ("shoes" is the same survey answer as "sneakers")');
   g.fmNext();
   assert.equal(fm.step, 'reveal');
+  g.fmSetAnswers('p2', ['Apple', 'cat', 'shoes', 'garage', 'bake']);   // at the reveal the host can still put one in, and it scores 0 as a repeat
 
   const h = g.hostView().fm.rows;
   assert.equal(h[0].p1.suggest.index, 0);                 // apple
@@ -669,4 +670,40 @@ test('the host starts a 10 second answer clock for the team that is playing; it 
   g.startAnswerTimer();
   assert.equal(g.publicView().round.timer.totalMs, 15000);
   assert.throws(() => g.setSettings({ answerSeconds: 1 }), /Answer timer/);
+});
+
+test('Fast Money: the second player cannot repeat the first player’s answer, and the phone is told which', () => {
+  const ctx = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  const { g, room, red } = ctx;
+  toFastMoney(ctx);
+  assert.equal(g.run.status, 'fastmoney');
+  const [p1, p2] = g.run.fm.players;
+  g.fmStart();
+  g.fmSetAnswers('p1', ['one', 'two', 'three', 'four', 'five']);
+  g.fmNext();
+  assert.equal(g.run.fm.step, 'p2');
+  const r = room.playerMessage(p2, { t: 'fm-answers', answers: ['ONE', 'different', 'three!', 'x', 'y'] });
+  assert.deepEqual(r.rejected, [0, 2], 'the same words (any case or punctuation) are not taken');
+  assert.deepEqual(g.run.fm.answers.p2.slice(0, 3), ['', 'different', '']);
+  const ok = room.playerMessage(p2, { t: 'fm-answers', answers: ['uno', 'different', 'tres', 'x', 'y'] });
+  assert.deepEqual(ok.rejected, []);
+  assert.throws(() => g.fmSetAnswers('p2', ['one', '', '', '', '']), /Question 1: Player 1 already said that/, 'nor can the host enter it');
+  assert.ok(p1 && red);
+});
+
+test('Fast Money: the host picks two different players, can swap them, and can change the one who is up', () => {
+  const ctx = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  const { g, room, red } = ctx;
+  toFastMoney(ctx);
+  const team = room.players.filter((p) => p.teamId === red.id).map((p) => p.id);
+  const [a, b] = team;
+  assert.throws(() => g.fmPlayers([a, a]), /two different players/);
+  assert.throws(() => g.fmPlayers([a, room.players.find((p) => p.teamId !== red.id).id]), /on the team/);
+  g.fmPlayers([b, a]);
+  assert.deepEqual(g.run.fm.players, [b, a]);
+  g.fmStart();
+  g.fmPlayers([b, a]);                                  // still allowed while Player 1 is answering
+  g.fmNext();
+  g.fmPlayers([b, a]);                                  // Player 2 can be changed while they are up
+  assert.throws(() => g.fmPlayers([a, b]), /Player 1 has already answered/);
 });

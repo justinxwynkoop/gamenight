@@ -2250,7 +2250,7 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var _FeudGame = class _FeudGame {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
@@ -2361,8 +2361,7 @@
         case "buzz":
           return { t: "buzz-result", ...this.buzz(player.id) };
         case "fm-answers":
-          this.fmAnswersFrom(player.id, msg.answers);
-          return { t: "ack", what: "fm-answers" };
+          return { t: "ack", what: "fm-answers", rejected: this.fmAnswersFrom(player.id, msg.answers) };
         case "choose": {
           const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "choose");
           if (player.teamId !== run.faceoff.winner) fail("The team that won the face-off decides");
@@ -2655,11 +2654,14 @@
       __privateMethod(this, _FeudGame_instances, defaultFmPlayers_fn).call(this);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
+    /** The host picks the two players (any time before the answers are revealed; Player 1 cannot be changed once they have gone). */
     fmPlayers(ids) {
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
-      if (fm.step !== "pick") fail("Choose the players before Fast Money starts");
+      if (!["pick", "p1", "p2"].includes(fm.step)) fail("The players can only be changed before the answers are revealed");
       if (!Array.isArray(ids) || ids.length !== 2) fail("Choose two players");
       for (const id of ids) if (this.room.player(id).teamId !== fm.team) fail("Both players must be on the team playing Fast Money");
+      if (ids[0] === ids[1] && __privateMethod(this, _FeudGame_instances, members_fn).call(this, fm.team).length >= 2) fail("Choose two different players");
+      if (fm.step === "p2" && ids[0] !== fm.players[0]) fail("Player 1 has already answered");
       fm.players = [...ids];
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
@@ -2697,15 +2699,27 @@
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
       __privateMethod(this, _FeudGame_instances, fmSlot_fn).call(this, slot);
       if (!["p1", "p2", "reveal"].includes(fm.step)) fail("Answers can be entered once Fast Money has started");
-      fm.answers[slot] = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
+      const clean2 = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
+      if (slot === "p2" && fm.step !== "reveal") {
+        const dup = __privateMethod(this, _FeudGame_instances, repeatsOfPlayer1_fn).call(this, clean2);
+        if (dup.length) fail(`Question ${dup[0] + 1}: Player 1 already said that. Ask for a different answer.`);
+      }
+      fm.answers[slot] = clean2;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     fmAnswersFrom(playerId, answers) {
       const fm = this.run.status === "fastmoney" ? this.run.fm : null;
       if (!fm || !["p1", "p2"].includes(fm.step)) fail("Fast Money is not taking answers right now");
       if (fm.players[SLOTS.indexOf(fm.step)] !== playerId) fail("It is not your turn");
-      fm.answers[fm.step] = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
+      const clean2 = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
+      let rejected = [];
+      if (fm.step === "p2") {
+        rejected = __privateMethod(this, _FeudGame_instances, repeatsOfPlayer1_fn).call(this, clean2);
+        for (const q of rejected) clean2[q] = "";
+      }
+      fm.answers[fm.step] = clean2;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+      return rejected;
     }
     /** What a typed answer probably means, for the host to confirm: { index, rank (1 is the top answer), points, label, dup }. */
     fmSuggest(slot, q) {
@@ -2999,6 +3013,21 @@
   };
   cleanAnswers_fn = function(list) {
     return Array.from({ length: FAST_MONEY_QUESTIONS }, (_, i) => cleanName(Array.isArray(list) ? list[i] : "", 40));
+  };
+  /** Which of Player 2's answers repeat Player 1's (the same words, or the same survey answer): the questions' numbers, from 0. */
+  repeatsOfPlayer1_fn = function(answersP2) {
+    const fm = this.run.fm;
+    const out = [];
+    for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
+      const typed = answersP2[q] ?? "";
+      const other = fm.answers.p1?.[q] ?? "";
+      if (!typed.trim() || !other.trim()) continue;
+      const ranked_ = ranked(__privateMethod(this, _FeudGame_instances, fmQuestion_fn).call(this, q));
+      const i = matchAnswer(ranked_, typed);
+      const j = matchAnswer(ranked_, other);
+      if (i !== -1 && i === j || normalize(typed) !== "" && normalize(typed) === normalize(other)) out.push(q);
+    }
+    return out;
   };
   fmQuestion_fn = function(q) {
     return this.set.fastMoney[q] ?? fail("There is no such question");

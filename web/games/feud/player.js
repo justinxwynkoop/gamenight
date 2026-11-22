@@ -202,7 +202,10 @@ export function mount(container, { send, flash }) {
     onMessage(m) {
       if (m.t === 'guess-result') { if (m.reason === 'already-up') flash(`${m.label} is already up. Try another!`); else if (m.ok) navigator.vibrate?.(m.hit ? 60 : [80, 60, 80]); }
       else if (m.t === 'buzz-result') { if (m.ok) navigator.vibrate?.(60); else if (m.reason === 'not-your-turn') flash('Only the two face-off players buzz.'); }
-      else if (m.t === 'ack') { if (quiet > 0) quiet -= 1; else flash('Answers saved', 'ok'); }
+      else if (m.t === 'ack') {
+        if (m.rejected?.length) { fmBox?.form.reject(m.rejected); flash('Your partner already said that. Try a different answer!'); if (quiet > 0) quiet -= 1; return; }
+        if (quiet > 0) quiet -= 1; else flash('Answers saved', 'ok');
+      }
     },
     destroy() { clearInterval(timer); },
   };

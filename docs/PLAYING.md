@@ -115,7 +115,7 @@ strike. The captain's phone starts the game, picks the question set and moves on
 moves on when time is up and reveals itself. Every phone shows the question, big; the answer board stays on the TV
 (phones never show it).
 
-5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
+5. **Fast Money.** The leading team picks two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). **Player 2 cannot say what Player 1 said**: on a phone such an answer is not accepted (the phone says so and asks for another) and the host cannot enter it either. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
    their phone, or the host types what they say. On the phone the questions come one at a time with a big
    answer box and a microphone button; **Skip** (or just saying "skip", or sending nothing) moves on, and

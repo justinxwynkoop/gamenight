@@ -289,17 +289,32 @@ function fastMoneyView() {
   return fmReveal(fm, head);
 }
 
-function memberList(slotIndex, fm) {
+/** The team's players, to pick one of them for this slot. Picking the player who is in the other slot swaps the two. */
+function memberList(slotIndex, fm, after = null) {
   const members = room.players.filter((p) => p.teamId === fm.team);
+  const other = 1 - slotIndex;
   return members.map((p) => h('button', {
     type: 'button', class: 'pick', 'aria-pressed': String(fm.players[slotIndex].id === p.id),
-    onclick: () => { const ids = fm.players.map((x) => x.id); ids[slotIndex] = p.id; act('fmPlayers', { ids }); },
-  }, dot(p.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, p.name)), fm.players[slotIndex].id === p.id && icon('check', 20)));
+    onclick: () => {
+      const ids = fm.players.map((x) => x.id);
+      if (ids[other] === p.id) ids[other] = ids[slotIndex];   // already the other player: swap
+      ids[slotIndex] = p.id;
+      act('fmPlayers', { ids });
+      after?.();
+    },
+  }, dot(p.color, 18), h('div', { class: 'grow' }, h('div', { class: 't' }, p.name), fm.players[other].id === p.id && h('div', { class: 's' }, `Player ${other + 1}: tap to swap`)),
+  p.connected === false && h('span', { class: 'dim' }, 'offline'), fm.players[slotIndex].id === p.id && icon('check', 20)));
+}
+/** Change who is playing the slot that is up now (the host can swap a player who is not there). */
+function openChangePlayerSheet(slotIndex) {
+  C.openSheet({ title: `Who is Player ${slotIndex + 1}?`, build: () => h('div', { class: 'list' }, memberList(slotIndex, g.fm, () => C.closeSheet())) });
 }
 function fmPick(fm, head) {
-  const ready = fm.players.every((p) => p.id);
+  const members = room.players.filter((p) => p.teamId === fm.team);
+  const ready = fm.players.every((p) => p.id) && (members.length < 2 || fm.players[0].id !== fm.players[1].id);
   return {
     body: [head,
+      card(eyebrow('Choose the two players'), h('p', { class: 'dim' }, `${unit(fm.team)?.name ?? 'The team'}: pick who plays Fast Money. Tap a name to choose them for that slot.`)),
       card(eyebrow('Player 1'), h('div', { class: 'list' }, memberList(0, fm))),
       card(eyebrow('Player 2'), h('p', { class: 'dim' }, 'Player 2 should not hear Player 1’s answers. Send them out of the room, or have them look away.'), h('div', { class: 'list' }, memberList(1, fm)))],
     dock: [button({ label: 'Start Fast Money', icon: 'play', kind: 'ok', size: 'lg', block: true, disabled: !ready, onclick: () => act('fmStart') })],
@@ -319,7 +334,8 @@ function fmAnswering(fm, head) {
       card(eyebrow('Questions'), h('div', { class: 'list' }, fm.rows.map((row, i) => h('div', { class: 'field' }, h('span', {}, `${i + 1}. ${row.question}`), inputs[i]))),
         button({ label: 'Save these answers', icon: 'check', onclick: save }))],
     dock: [button({ label: slot === 'p1' ? 'Time’s up. Player 2 is next' : 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => { save(); act('fmNext'); } }),
-      button({ label: 'Restart the timer', icon: 'refresh', size: 'sm', block: true, onclick: () => act('fmRestartTimer') })],
+      dockRow(button({ label: 'Restart the timer', icon: 'refresh', size: 'sm', onclick: () => act('fmRestartTimer') }),
+        button({ label: `Change ${slot === 'p1' ? 'Player 1' : 'Player 2'}`, icon: 'swap', size: 'sm', onclick: () => openChangePlayerSheet(slot === 'p1' ? 0 : 1) }))],
   };
 }
 

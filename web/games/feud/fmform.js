@@ -132,6 +132,13 @@ export function buildFastMoneyForm(questions, { send, Recognition = window.Speec
   return {
     node,
     setNote: (text) => { if (text) note.textContent = text; },
+    /** The server did not take these answers (the second player cannot repeat the first player's): clear them and ask again. */
+    reject(list) {
+      const qs = (list ?? []).filter((i) => i >= 0 && i < N);
+      if (!qs.length) return;
+      for (const i of qs) { answers[i] = ''; skipped.delete(i); }
+      show(qs[0], 'Your partner already said that. Try a different answer!');
+    },
     /** Time is up: send whatever is there, once. */
     auto() { if (sentOnTimeout) return; sentOnTimeout = true; commit(); sendNow(); },
     // for tests
