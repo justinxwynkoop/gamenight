@@ -168,10 +168,24 @@ test('a failed steal leaves the pot with the team that struck out', () => {
   startAndWinFaceoff(g, red);
   const pot = g.pot();
   g.miss(); g.miss(); g.miss();
+  assert.equal(g.publicView().round.stealMissed, false, 'no X yet: the steal has not been tried');
   g.miss();
   assert.equal(g.run.winner, red.id);
   assert.equal(red.score, pot);
   assert.equal(blue.score, 0);
+  assert.equal(g.publicView().round.stealMissed, true, 'the TV is told to put the big X up for the failed steal');
+  g.undo();
+  assert.equal(g.publicView().round.stealMissed, false, 'undoing the miss takes it away');
+});
+
+test('a good steal does not show the failed-steal X', () => {
+  const { g, red, blue } = setup();
+  startAndWinFaceoff(g, red);
+  g.miss(); g.miss(); g.miss();
+  g.answer(answersOf(g).length - 1);
+  assert.equal(g.run.step, 'roundEnd');
+  assert.equal(g.run.winner, blue.id);
+  assert.equal(g.publicView().round.stealMissed, false);
 });
 
 test('clearing the board wins the round for the team playing', () => {
@@ -296,9 +310,10 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   assert.equal(g.hostView().fm.rows[0].p1.typed, 'apple');
   g.fmNext();
   assert.equal(fm.step, 'p2');
-  g.fmAnswersFrom(second.id, ['Apple', 'cat', 'shoes', 'garage', 'bake']);
+  assert.deepEqual(g.fmAnswersFrom(second.id, ['Apple', 'cat', 'shoes', 'garage', 'bake']), [0, 2], 'player 2 cannot type what player 1 said ("shoes" is the same survey answer as "sneakers")');
   g.fmNext();
   assert.equal(fm.step, 'reveal');
+  g.fmSetAnswers('p2', ['Apple', 'cat', 'shoes', 'garage', 'bake']);   // at the reveal the host can still put one in, and it scores 0 as a repeat
 
   const h = g.hostView().fm.rows;
   assert.equal(h[0].p1.suggest.index, 0);                 // apple
@@ -569,4 +584,126 @@ test('the captain runs the game from a phone; guesses are refused while a host j
   assert.ok(g.publicView().sets === undefined);                     // the set list is only for the lobby
   room.setConnected(ps[0].id, false);
   assert.equal(g.captain(), ps[1].id);                               // someone else takes over when the captain leaves
+});
+
+test('with a host connected there is no captain, and the captain comes back when the host goes', () => {
+  const { room, g, ps } = setup();
+  assert.equal(g.captain(), ps[0].id);
+  room.setHosts(1);
+  assert.equal(g.captain(), null);
+  assert.equal(g.publicView().captainId, null);
+  assert.equal(g.publicView().hosted, true);
+  assert.equal(g.playerView(room.player(ps[0].id)).me.captain, false);
+  assert.throws(() => room.playerMessage(ps[0].id, { t: 'cap', action: 'startGame' }), /captain/, 'the first player can no longer run the game from a phone');
+  room.setHosts(0);
+  assert.equal(g.captain(), ps[0].id);
+  assert.equal(g.publicView().hosted, false);
+  assert.equal(g.playerView(room.player(ps[0].id)).me.captain, true);
+});
+
+test('face-off buzz times are kept to the millisecond, fastest first, and the late presser is listed too', () => {
+  const { room, g, clock } = setup();
+  g.startGame();
+  g.openBuzzers();
+  const reps = Object.values(g.run.faceoff.reps);
+  clock.advance(412);
+  assert.equal(room.playerMessage(reps[1], { t: 'buzz' }).ok, true);          // the second team's player is first
+  clock.advance(130);
+  assert.equal(room.playerMessage(reps[0], { t: 'buzz' }).ok, false);         // too late: the turn is given
+  const times = g.publicView().round.faceoff.buzzes;
+  assert.deepEqual(times.map((b) => [b.pid, b.ms, b.won]), [[reps[1], 412, true], [reps[0], 542, false]]);
+  assert.ok(times.every((b) => typeof b.name === 'string'));
+  g.openBuzzers();                                                            // opening again times everyone afresh
+  assert.deepEqual(g.publicView().round.faceoff.buzzes, []);
+  clock.advance(3500);
+  room.playerMessage(reps[0], { t: 'buzz' });
+  clock.advance(5000);
+  room.playerMessage(reps[1], { t: 'buzz' });                                 // far too late to count
+  assert.deepEqual(g.publicView().round.faceoff.buzzes.map((b) => b.pid), [reps[0]]);
+});
+
+test('the host can see which player on the team is up, and it moves on after each guess', () => {
+  const { g, red, blue, room } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'] });
+  g.startGame();
+  g.openBuzzers(); g.awardBuzz(red.id);
+  g.answer(0);                                                                // red's player gets the top answer: red wins the face-off
+  g.choose(true);
+  const redPlayers = room.players.filter((p) => p.teamId === red.id).map((p) => p.id);
+  const rep = g.run.faceoff.reps[red.id];
+  const first = g.publicView().round.up;
+  assert.equal(first.unitId, red.id);
+  assert.notEqual(first.playerId, rep, 'the face-off player just answered: the next in line is up');
+  assert.ok(redPlayers.includes(first.playerId));
+  g.answer(1);
+  const second = g.publicView().round.up.playerId;
+  assert.notEqual(second, first.playerId, 'a right guess moves it on');
+  g.miss();
+  assert.notEqual(g.publicView().round.up.playerId, second, 'so does a strike');
+  g.miss(); g.miss();                                                         // three strikes: the other team steals
+  assert.equal(g.run.step, 'steal');
+  const stealer = g.publicView().round.up;
+  assert.equal(stealer.unitId, blue.id);
+  assert.ok(room.players.find((p) => p.id === stealer.playerId).teamId === blue.id);
+  g.undo();
+  assert.equal(g.publicView().round.up.unitId, red.id, 'undo puts it back');
+});
+
+test('the host starts a 10 second answer clock for the team that is playing; it runs out by itself and a guess clears it', () => {
+  const { g, red, clock } = setup();
+  startAndWinFaceoff(g, red);
+  assert.equal(g.publicView().round.timer, null, 'nothing runs until the host starts it');
+  g.startAnswerTimer();
+  let t = g.publicView().round.timer;
+  assert.equal(t.totalMs, 10000);
+  assert.equal(t.timedOut, false);
+  clock.advance(4000); g.tick();
+  assert.equal(g.publicView().round.timer.leftMs, 6000);
+  clock.advance(6100); g.tick();
+  t = g.publicView().round.timer;
+  assert.equal(t.timedOut, true);
+  assert.equal(g.run.strikes, 0, 'it does not strike by itself: the host decides');
+  g.startAnswerTimer();                                                       // the next player: a fresh clock
+  assert.equal(g.publicView().round.timer.timedOut, false);
+  g.answer(1);
+  assert.equal(g.publicView().round.timer, null, 'a guess stops the clock');
+  g.setSettings({ answerSeconds: 15 });
+  g.startAnswerTimer();
+  assert.equal(g.publicView().round.timer.totalMs, 15000);
+  assert.throws(() => g.setSettings({ answerSeconds: 1 }), /Answer timer/);
+});
+
+test('Fast Money: the second player cannot repeat the first player’s answer, and the phone is told which', () => {
+  const ctx = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  const { g, room, red } = ctx;
+  toFastMoney(ctx);
+  assert.equal(g.run.status, 'fastmoney');
+  const [p1, p2] = g.run.fm.players;
+  g.fmStart();
+  g.fmSetAnswers('p1', ['one', 'two', 'three', 'four', 'five']);
+  g.fmNext();
+  assert.equal(g.run.fm.step, 'p2');
+  const r = room.playerMessage(p2, { t: 'fm-answers', answers: ['ONE', 'different', 'three!', 'x', 'y'] });
+  assert.deepEqual(r.rejected, [0, 2], 'the same words (any case or punctuation) are not taken');
+  assert.deepEqual(g.run.fm.answers.p2.slice(0, 3), ['', 'different', '']);
+  const ok = room.playerMessage(p2, { t: 'fm-answers', answers: ['uno', 'different', 'tres', 'x', 'y'] });
+  assert.deepEqual(ok.rejected, []);
+  assert.throws(() => g.fmSetAnswers('p2', ['one', '', '', '', '']), /Question 1: Player 1 already said that/, 'nor can the host enter it');
+  assert.ok(p1 && red);
+});
+
+test('Fast Money: the host picks two different players, can swap them, and can change the one who is up', () => {
+  const ctx = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  const { g, room, red } = ctx;
+  toFastMoney(ctx);
+  const team = room.players.filter((p) => p.teamId === red.id).map((p) => p.id);
+  const [a, b] = team;
+  assert.throws(() => g.fmPlayers([a, a]), /two different players/);
+  assert.throws(() => g.fmPlayers([a, room.players.find((p) => p.teamId !== red.id).id]), /on the team/);
+  g.fmPlayers([b, a]);
+  assert.deepEqual(g.run.fm.players, [b, a]);
+  g.fmStart();
+  g.fmPlayers([b, a]);                                  // still allowed while Player 1 is answering
+  g.fmNext();
+  g.fmPlayers([b, a]);                                  // Player 2 can be changed while they are up
+  assert.throws(() => g.fmPlayers([a, b]), /Player 1 has already answered/);
 });

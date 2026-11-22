@@ -50,6 +50,8 @@ const BUILTIN = {
   jeopardy: ['open', 'buzz', 'correct', 'wrong', 'timeup', 'reveal', 'dd', 'final', 'fanfare', 'roundstart', 'think',
     'pick', 'board', 'lock', 'bet', 'join', 'applause'],
   shared: ['lobby'],
+  // Family Feud's own: its theme, the right-answer ding and the face-off buzzer (original, CC0: see builtin-sounds/feud/CREDITS.txt).
+  feud: ['lobby', 'ding', 'faceoff'],
   // Spy Night's own: original, made by tv-app/Tools/make_spynight_sounds.py (CC0, see builtin-sounds/spynight/CREDITS.txt).
   spynight: ['lobby', 'think', 'roundstart', 'pick', 'open', 'correct', 'wrong', 'lock', 'ding', 'strike', 'fanfare', 'winner', 'join'],
 };

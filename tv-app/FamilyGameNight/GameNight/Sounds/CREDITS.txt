@@ -18,3 +18,7 @@ website's copies in public/builtin-sounds/spynight/). lobby is the music that lo
 named for the cues they play on: roundstart (the roles are dealt), pick (a team is being picked), open (the vote begins),
 correct (a team is approved), wrong (rejected), lock (the mission begins), ding (a mission succeeds), strike (it fails),
 fanfare (the Resistance win), winner (the Spies win), join (a player joins).
+
+feud__lobby.m4a, feud__ding.m4a and feud__faceoff.m4a are Family Feud's own sounds (its theme tune, a right answer, and the face-off
+buzzer), original and CC0, synthesized by Tools/make_spynight_sounds.py (it also writes the website's copies in
+public/builtin-sounds/feud/). They are not recordings of the show.

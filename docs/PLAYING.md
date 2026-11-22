@@ -12,7 +12,7 @@ to open. Anyone who scans it becomes a host, the same as typing the PIN. The PIN
 Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. It runs on the Apple TV, and the
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
 touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host connected (or
-**A host judges out loud** on) there is **no captain**, and the topics are the host's to choose on the host page. The TV lobby
+**A host judges out loud** on) there is **no captain** (in Jeopardy and in Family Feud alike), and the topics are the host's to choose on the host page. The TV lobby
 then shows only who has joined.
 
 1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV (**Choose questions**), the captain's
@@ -97,7 +97,14 @@ dealt onto them at random and the host can move anyone.
 3. **Play or pass.** The winners choose (anyone on that team can tap **Play** or **Pass** on their phone). Their team then names answers; the host taps each one and it
    flips on the TV. A **strike** puts a big boxed X in the middle of the TV, which then slides down into
    the next empty strike box. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
-   whole pot, a miss leaves it with the first team.
+   whole pot, a miss leaves it with the first team, and the big X comes up on the TV for it too (the host's button
+   says "Wrong: show the X").
+   **Who is up.** The host page (and the TV's banner, and that player's phone) says which player on the team is up: the
+   players take turns, starting with the one after the team's face-off player, and it moves on after every guess.
+   **Answer clock.** When a player is up the host taps **Start the 10s clock** (the length is under Settings → Rules).
+   The seconds count down on the TV and the host page, and it says TIME'S UP at zero; it never strikes by itself: the
+   host decides. A guess stops it.
+   **Buzz times.** In the face-off the TV and the host page show who buzzed and how fast, to the thousandth of a second.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
    rounds.
@@ -105,9 +112,10 @@ dealt onto them at random and the host can move anyone.
 their phone; it is also on the host page). Then the buzzers open by themselves, whoever's turn it is types the
 guess, and the survey checks it (each answer's aliases count too). A guess that is already on the board is not a
 strike. The captain's phone starts the game, picks the question set and moves on to the next round; Fast Money
-moves on when time is up and reveals itself. Every phone shows the question and a small copy of the board.
+moves on when time is up and reveals itself. Every phone shows the question, big; the answer board stays on the TV
+(phones never show it).
 
-5. **Fast Money.** The leading team picks two players. Each answers five questions in turn (40 and 45
+5. **Fast Money.** The leading team picks two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). **Player 2 cannot say what Player 1 said**: on a phone such an answer is not accepted (the phone says so and asks for another) and the host cannot enter it either. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
    their phone, or the host types what they say. On the phone the questions come one at a time with a big
    answer box and a microphone button; **Skip** (or just saying "skip", or sending nothing) moves on, and
@@ -204,6 +212,6 @@ saved and survives a restart (inside the app on the Apple TV, or in `data/state.
 ## Sound
 
 The TV plays short sound effects: buzzers open, a buzz-in, correct, wrong, a Daily Double, Final
-Jeopardy, time's up, and a tick for the last five seconds. Jeopardy uses recorded sounds that came over from the Buzzworthy game, with a theme song ("Happy Dance") looping on the main menu and in every game's lobby and thinking music during Final Jeopardy; they are free to use (CC0, credits in `public/builtin-sounds/jeopardy/CREDITS.txt`). Family Feud's are synthesized. Spy Night has its own original sounds and a noir-style lobby tune (made for this project, CC0, credits in `public/builtin-sounds/spynight/CREDITS.txt`): the roles being dealt, a vote starting, a team approved or rejected, a mission succeeding or failing, and a win for each side. Your own files replace any of them. They are built in, so nothing needs installing.
+Jeopardy, time's up, and a tick for the last five seconds. Jeopardy uses recorded sounds that came over from the Buzzworthy game, with a theme song ("Happy Dance") looping on the main menu and in every game's lobby and thinking music during Final Jeopardy; they are free to use (CC0, credits in `public/builtin-sounds/jeopardy/CREDITS.txt`). Family Feud has its own original theme tune, right-answer ding and face-off buzzer (made for this project, CC0, credits in `public/builtin-sounds/feud/CREDITS.txt`), and its other sounds are synthesized. Spy Night has its own original sounds and a noir-style lobby tune (made for this project, CC0, credits in `public/builtin-sounds/spynight/CREDITS.txt`): the roles being dealt, a vote starting, a team approved or rejected, a mission succeeding or failing, and a win for each side. Your own files replace any of them. They are built in, so nothing needs installing.
 The host can turn sound off, change the volume, or press **Test on TV** at the bottom of the host page.
 To use your own sound files, see the Apple TV app's [CUSTOM-FILES.md](../tv-app/docs/CUSTOM-FILES.md) (online mode) or [SERVER-MODE.md](SERVER-MODE.md).

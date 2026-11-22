@@ -245,3 +245,27 @@ final class FeudSoundTests: XCTestCase {
         XCTAssertNil(SoundCue.strike.fallbackFile)
     }
 }
+
+/// What the server now sends for the face-off buzz times, who is up on the team, the host's answer clock and a failed steal.
+final class FeudHostExtrasDecodingTests: XCTestCase {
+    func testTheNewRoundFieldsDecode() throws {
+        let json = #"""
+        {"unitId":"t1","pid":"p1","name":"Ann","ms":412.0,"won":true}
+        """#
+        let buzz = try JSONDecoder().decode(FeudBuzz.self, from: Data(json.utf8))
+        XCTAssertEqual(buzz.name, "Ann")
+        XCTAssertEqual(buzz.ms, 412)
+        XCTAssertTrue(buzz.won)
+        let up = try JSONDecoder().decode(FeudUp.self, from: Data(#"{"unitId":"t1","playerId":"p2","name":"Bo"}"#.utf8))
+        XCTAssertEqual(up.name, "Bo")
+        let timer = try JSONDecoder().decode(TimerState.self, from: Data(#"{"kind":"answer","totalMs":10000,"leftMs":6000,"timedOut":false}"#.utf8))
+        XCTAssertEqual(timer.leftMs, 6000)
+    }
+
+    func testAnOlderServersRoundStillDecodes() throws {
+        let round = try XCTUnwrap(try Fixture.feud("feud-play").round)
+        XCTAssertNil(round.up, "an older server sends no player-up")
+        XCTAssertNil(round.timer)
+        XCTAssertNil(round.faceoff.buzzes)
+    }
+}

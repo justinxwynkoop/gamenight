@@ -1,0 +1,9 @@
+Family Feud's own sounds were made for this project: synthesized from plain waves by tv-app/Tools/make_spynight_sounds.py
+(run `python3 tv-app/Tools/make_spynight_sounds.py feud` to remake them). They are original and dedicated to the public
+domain (CC0), free for any use. They are not recordings of the TV show.
+
+lobby  = Family Feud's theme tune: it loops while players join (the shared theme in ../shared/ plays in the other games' lobbies)
+ding   = a right answer on the survey board
+faceoff = the face-off buzzer
+The Apple TV app has the same files as feud__<name>.m4a in GameNight/Sounds/. The family's own files (added from the host
+page or the Mac script) replace them.

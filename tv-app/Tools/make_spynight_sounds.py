@@ -1,13 +1,14 @@
-"""Writes Spy Night's sounds: a noir-ish lobby loop and one sound for each moment of the game.
+"""Writes Spy Night's and Family Feud's own sounds: a noir-ish lobby loop and one sound for each moment of the game.
 
 Everything is synthesized here from plain waves, so it is original (CC0, like the rest of the built-in sounds) and there
 is nothing to license. Usage, from the repository root (needs ffmpeg):
 
-    python3 tv-app/Tools/make_spynight_sounds.py
+    python3 tv-app/Tools/make_spynight_sounds.py [spynight|feud] [names...]
 
-It writes public/builtin-sounds/spynight/<name>.mp3 (the website's TV page) and
-tv-app/FamilyGameNight/GameNight/Sounds/spynight__<name>.m4a (the Apple TV app). The two copies are the same sounds.
-The names are the ones the game's cues use (the same as the other games' files, see games/spynight/ and docs/PLAYING.md):
+It writes public/builtin-sounds/<game>/<name>.mp3 (the website's TV page) and
+tv-app/FamilyGameNight/GameNight/Sounds/<game>__<name>.m4a (the Apple TV app). The two copies are the same sounds.
+Family Feud gets three: lobby (its theme tune), ding (a right answer) and faceoff (the buzzer).
+Spy Night's names are the ones the game's cues use (the same as the other games' files, see games/spynight/ and docs/PLAYING.md):
   lobby       music loop while players join          roundstart  the roles are dealt
   think       the music under the game itself (a quieter, tenser loop)
   pick        a leader starts picking a team          open        the vote begins
@@ -444,6 +445,80 @@ SOUNDS = {
 }
 
 
+# ---------------------------------------------------------------- Family Feud
+
+def feud_theme():
+    """Family Feud's lobby theme: a bright, bouncy, original game-show tune. 124 beats a minute, C major, sixteen bars:
+    a bouncing bass, handclaps on two and four, off-beat brassy stabs, a hook of rising notes and sparkling bells, with
+    a higher, busier second half. Wrapped so the end runs straight back into the start."""
+    bpm = 124
+    beat = 60 / bpm
+    bars = 16
+    length = bars * 4 * beat
+    tail = 2.0
+    t = Track(length + tail)
+    prog = [(36, "C"), (43, "G"), (45, "A"), (41, "F")]   # C2 G2 A2 F2 with the chord's name for its triad
+    triads = {"C": (60, 64, 67), "G": (59, 62, 67), "A": (60, 64, 69), "F": (60, 65, 69)}
+    for bar in range(bars):
+        root, name = prog[bar % 4]
+        # Drums: kick on one and three (with a pickup), claps on two and four, eighth-note hats.
+        t.add((bar * 4) * beat, kick(0.3, 120, 48), 0.55)
+        t.add((bar * 4 + 2) * beat, kick(0.3, 115, 48), 0.5)
+        if bar % 2 == 1:
+            t.add((bar * 4 + 3.5) * beat, kick(0.2, 110, 48), 0.35)
+        for b in (1, 3):
+            t.add((bar * 4 + b) * beat, noise(0.12, 100 + bar * 2 + b, 0.001, 0.1, highpass=0.7), 0.42)
+        for k in range(8):
+            t.add((bar * 4 + k * 0.5) * beat, hat(bar * 8 + k, 0.04), 0.22 if k % 2 else 0.12)
+        # Bass: root, octave, fifth: bouncing.
+        for b, n in ((0, root), (0.75, root + 12), (1.5, root + 7), (2, root), (2.75, root + 12), (3.5, root + 7)):
+            t.add((bar * 4 + b) * beat, pluck(hz(n), 0.3, 0.55), 0.5)
+        # Brassy stabs on the off-beats.
+        for b in (1.5, 3.5):
+            for n in triads[name]:
+                t.add((bar * 4 + b) * beat, tone(hz(n), 0.18, "saw", 0.005, 0.12, 0.2, 0.04, harmonics=[(2, 0.25)]), 0.075)
+    # The hook: four rising notes, answered by a falling three. It returns every two bars and climbs in the second half.
+    hook = [(0, "G4", 0.5), (0.5, "C5", 0.5), (1, "E5", 0.5), (1.5, "G5", 1.0), (3, "E5", 0.5), (3.5, "D5", 0.5), (4, "C5", 1.5)]
+    for bar in range(bars):
+        if bar % 2 == 0:
+            lift = 12 if bar >= 8 else 0
+            for b, name, ln in hook:
+                n = midi(name) + lift
+                t.add((bar * 4 + b) * beat, tone(hz(n), ln * beat + 0.15, "tri", 0.01, 0.2, 0.5, 0.08, harmonics=[(2, 0.2), (3, 0.08)]), 0.16)
+    # Sparkle: a run of bells up the scale at the end of every fourth bar.
+    for bar in (3, 7, 11, 15):
+        for i, n in enumerate(("C6", "D6", "E6", "G6", "A6", "C7")):
+            t.add((bar * 4 + 2.5 + i * 0.25) * beat, bell(hz(midi(n)), 0.5), 0.09)
+    x = room(t.x, 0.18)
+    body = x[: int(length * SR)]
+    for i, s_ in enumerate(x[int(length * SR):]):
+        if i < len(body):
+            body[i] += s_
+    return normalize(body, 0.9)
+
+
+def feud_correct():
+    """A right answer on the survey board: a bright bell ding with a shimmer and a little rising sparkle."""
+    t = Track(1.6)
+    t.add(0.0, bell(hz(midi("E6")), 1.3), 0.6)
+    t.add(0.0, bell(hz(midi("B6")), 1.2), 0.28)
+    t.add(0.0, tone(hz(midi("E4")), 0.12, "tri", 0.002, 0.1, 0.0, 0.02), 0.25)
+    for i, n in enumerate(("G6", "B6", "E7")):
+        t.add(0.16 + i * 0.07, bell(hz(midi(n)), 0.7), 0.16)
+    return normalize(room(t.x, 0.3), 0.85)
+
+
+def feud_buzzer():
+    """A face-off buzzer: a short, punchy "BZZT" and a bright ping to say who was first."""
+    t = Track(0.9)
+    t.add(0.0, tone(hz(midi("A3")), 0.22, "square", 0.002, 0.2, 0.7, 0.03, slide=hz(midi("G3"))), 0.34)
+    t.add(0.0, tone(hz(midi("A3")) * 1.01, 0.22, "saw", 0.002, 0.2, 0.7, 0.03, slide=hz(midi("G3")) * 1.01), 0.26)
+    t.add(0.0, noise(0.05, 77, 0.0005, 0.05, highpass=0.5), 0.3)
+    t.add(0.2, bell(hz(midi("A6")), 0.6), 0.4)
+    t.add(0.2, bell(hz(midi("E7")), 0.5), 0.18)
+    return normalize(room(lowpass(t.x, 0.7), 0.2), 0.88)
+
+
 def write_wav(path, samples):
     with open(path, "wb") as f:
         data = b"".join(struct.pack("<h", int(max(-1, min(1, s)) * 32767)) for s in samples)
@@ -451,17 +526,28 @@ def write_wav(path, samples):
         f.write(b"data" + struct.pack("<I", len(data)) + data)
 
 
+LIBRARY = {
+    "spynight": SOUNDS,
+    "feud": {"lobby": feud_theme, "ding": feud_correct, "faceoff": feud_buzzer},
+}
+
+
 def main():
-    os.makedirs(MP3_DIR, exist_ok=True)
+    # python3 make_spynight_sounds.py [spynight|feud] [names...]   (no arguments: everything)
+    args = sys.argv[1:]
+    games = [args.pop(0)] if args and args[0] in LIBRARY else list(LIBRARY)
     os.makedirs(M4A_DIR, exist_ok=True)
-    only = sys.argv[1:] or list(SOUNDS)
     with tempfile.TemporaryDirectory() as tmp:
-        for name in only:
-            wav = os.path.join(tmp, f"{name}.wav")
-            write_wav(wav, fade_edges(SOUNDS[name]()) if name != "lobby" else SOUNDS[name]())
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-codec:a", "libmp3lame", "-b:a", "96k", os.path.join(MP3_DIR, f"{name}.mp3")], check=True)
-            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-codec:a", "aac", "-b:a", "96k", os.path.join(M4A_DIR, f"spynight__{name}.m4a")], check=True)
-            print("wrote", name)
+        for game in games:
+            mp3_dir = os.path.join(ROOT, "public", "builtin-sounds", game)
+            os.makedirs(mp3_dir, exist_ok=True)
+            for name in args or list(LIBRARY[game]):
+                wav = os.path.join(tmp, f"{game}-{name}.wav")
+                made = LIBRARY[game][name]()
+                write_wav(wav, made if name in ("lobby", "think") else fade_edges(made))
+                subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-codec:a", "libmp3lame", "-b:a", "96k", os.path.join(mp3_dir, f"{name}.mp3")], check=True)
+                subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-codec:a", "aac", "-b:a", "96k", os.path.join(M4A_DIR, f"{game}__{name}.m4a")], check=True)
+                print("wrote", game, name)
 
 
 if __name__ == "__main__":
