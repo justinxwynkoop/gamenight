@@ -157,6 +157,7 @@ export function normalizePack(id, data) {
     selected: data.selected !== false,
     easy: data.easy === true,
     own: data.own === true,
+    media: data.media === true,
     categories: (data.categories || []).filter((c) => c.name && Array.isArray(c.clues) && c.clues.length >= 5)
       .map((c) => (c.clues.some((cl) => cl.media) ? { ...c, clues: c.clues.map((cl) => ({ ...cl, media: safeMedia(cl.media) })) } : c)),
     finals: (data.finals || []).filter((fin) => fin.q && fin.a),
@@ -437,7 +438,8 @@ export class JeopardyGame {
     const ids = new Set(this.packs.map((p) => p.id));
     for (const id of [...this.selected]) if (!ids.has(id)) this.selected.delete(id);
     // Packs seen for the first time follow their own "selected" flag (the real-show topics start on, the house packs off).
-    for (const p of this.packs) if (!before.has(p.id) && p.selected && (this.archivePacks.includes(p) || (!this.archivePacks.length && !p.own))) this.selected.add(p.id);
+    // Sights & Sounds (picture, sound and video clues) starts on too, beside the real show.
+    for (const p of this.packs) if (!before.has(p.id) && p.selected && (this.archivePacks.includes(p) || p.media || (!this.archivePacks.length && !p.own))) this.selected.add(p.id);
     if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
     this.draft = null;
   }
@@ -562,8 +564,9 @@ export class JeopardyGame {
     const first = !this.packs.some((p) => p.own && this.selected.has(p.id)) && !hadOn;
     this.packs = [...this.ownPacks, ...this.archivePacks, ...this.houses];
     for (const p of packs) if (hadOn ? wasOn.has(p.id) : first) this.selected.add(p.id);
-    // The house packs that started on stay off now that real boards are here; keep whatever else was chosen.
-    if (first) for (const p of this.houses) this.selected.delete(p.id);
+    // The house packs that started on stay off now that real boards are here (except Sights & Sounds, whose picture,
+    // sound and video clues mix in with them); keep whatever else was chosen.
+    if (first) for (const p of this.houses) if (!p.media) this.selected.delete(p.id);
     if (!this.selected.size) this.selected.add(packs[0].id);
     this.draft = null;
     this.#changed();
@@ -583,7 +586,8 @@ export class JeopardyGame {
     if (all.length < 12) fail('Pick packs with at least 12 categories in total.');
     this.#renewUsedUp(this.#chosen());
     const cats = this.#ranked(all);   // shuffled, the ones with nothing shown yet first
-    this.draft = [cats.slice(0, 6), cats.slice(6, 12)];
+    const used = new Set();
+    this.draft = [1, 2].map(() => this.#pickRow(cats, used));
     this.#changed();
   }
   /** Swap one previewed category (round r = 1 or 2, column ci) for another one from the chosen packs. */
@@ -637,6 +641,33 @@ export class JeopardyGame {
     }
     return board;
   }
+  /**
+   * Six categories for one round from the ranked list, skipping ones already used. With Sights & Sounds on, every round
+   * gets one category of picture, sound or video clues (a video one first while there is a fresh one), so they come up
+   * every game instead of getting lost among hundreds of real-show categories.
+   */
+  #pickRow(cats, used) {
+    const ok = (c) => !used.has(c.name) && c.clues.length >= 5;
+    const isMedia = (c) => c.clues.some((cl) => cl.media);
+    const out = [];
+    const mixIn = this.#chosen().some((p) => p.media);
+    if (mixIn) {
+      const media = cats.filter((c) => ok(c) && isMedia(c));
+      const kinds = (c) => c.clues.map((cl) => cl.media?.kind);
+      const freshVideo = media.find((c) => kinds(c).includes('video') && this.#freshIn(c) > 0);
+      const m = freshVideo ?? media[0];
+      if (m) { used.add(m.name); out.push(m); }
+    }
+    for (const c of cats) {
+      if (out.length === 6) break;
+      if (!ok(c) || (mixIn && isMedia(c))) continue;   // one media category a round is plenty
+      used.add(c.name);
+      out.push(c);
+    }
+    // The media category goes in a random column, not always the first.
+    if (mixIn && out.length === 6 && isMedia(out[0])) { const k = Math.floor(this.#rng() * 6); [out[0], out[k]] = [out[k], out[0]]; }
+    return out;
+  }
   #buildRounds() {
     const written = this.#asWrittenPacks();
     const bank = this.#bank();
@@ -652,18 +683,9 @@ export class JeopardyGame {
     this.#renewUsedUp(this.#chosen());
     const cats = this.#ranked(bank.categories);
     const used = new Set();
-    const pick = () => {
-      const out = [];
-      for (const c of cats) {
-        if (out.length === 6) break;
-        if (used.has(c.name) || c.clues.length < 5) continue;
-        used.add(c.name);
-        out.push(c);
-      }
-      return out;
-    };
     const chosen = this.draft && this.draft.every((row) => row.length === 6) ? this.draft : null;
-    this.rounds = chosen ? [this.#makeRound(1, chosen[0], 1), this.#makeRound(2, chosen[1], 2)] : [this.#makeRound(1, pick(), 1), this.#makeRound(2, pick(), 2)];
+    this.rounds = chosen ? [this.#makeRound(1, chosen[0], 1), this.#makeRound(2, chosen[1], 2)]
+      : [this.#makeRound(1, this.#pickRow(cats, used), 1), this.#makeRound(2, this.#pickRow(cats, used), 2)];
     this.draft = null;
     for (const row of this.rounds) for (const c of row) this.played.add(c.name.toLowerCase());
     const freshFinals = bank.finals.filter((fin) => !this.played.has(`final:${fin.q}`) && !this.#seenClue(fin));
