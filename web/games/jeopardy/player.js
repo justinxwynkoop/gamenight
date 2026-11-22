@@ -460,7 +460,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function finalWagerScreen() {
     const f = v.final;
     if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-logo' }, 'FINAL JEOPARDY'), h('div', { class: 'jp-msg' }, 'Only players with money play Final Jeopardy tonight.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
-    if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-lock' }, '🔒'), h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, 'Nobody sees it until the reveal. Waiting for everyone else…')) };
+    if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-lock' }, '🔒'), h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, v.final && v.final.wagered.length >= v.final.eligible.length ? 'Everyone is locked in. Waiting for the host to show the clue…' : 'Nobody sees it until the reveal. Waiting for everyone else…')) };
     return { key: `fw-${typing}`, nodes: wagerForm('final-wager', 0, me().maxFinal ?? me().score,
       [h('div', { class: 'jp-logo' }, 'FINAL JEOPARDY'), h('div', { class: 'jp-meta center' }, f.category)]) };
   }

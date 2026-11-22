@@ -56,6 +56,11 @@ enum JeoRemote {
             return [Item(id: "reveal", title: "Next", action: "advance", icon: "forward.fill")]
         case .gameover:
             return [Item(id: "again", title: "Play again", action: "playAgain", icon: "arrow.counterclockwise")]
+        case .finalWager:
+            // The clue is shown by the host (or whoever runs the game from the TV), never by the last wager coming in.
+            guard let final = game.finalRound else { return [] }
+            let waiting = final.eligible.filter { id in (game.player(id)?.connected ?? false) && !final.wagered.contains(id) }
+            return waiting.isEmpty ? [Item(id: "showclue", title: "Show the clue", action: "advance", icon: "play.fill")] : []
         default:
             return []
         }
