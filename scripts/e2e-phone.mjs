@@ -104,7 +104,7 @@ try {
   // the values must stand out from the background or they can't be read
   const valBg = await ctl.locator('button.jp-pval').first().evaluate((b) => getComputedStyle(b).backgroundColor);
   if (/^rgba\(0, 0, 0, 0\)$|^transparent$/.test(valBg)) throw new Error(`picker values have no colour (${valBg}), so the dollar values can't be read`);
-  const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd);
+  const first = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => !x.cl.dd && !x.cl.media);
   // Choosing a value lights it up on the TV; Open opens it.
   await ctl.locator(`button.jp-pval[data-ci="${first.ci}"][data-ri="${first.ri}"]`).click();
   await until(() => g.peeking?.ci === first.ci && g.peeking?.ri === first.ri, 'the chosen clue to reach the game');

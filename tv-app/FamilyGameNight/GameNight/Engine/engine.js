@@ -1419,7 +1419,8 @@
         players: __privateMethod(this, _JeopardyGame_instances, players_fn).call(this),
         timer: __privateMethod(this, _JeopardyGame_instances, timerView_fn).call(this),
         guide: __privateMethod(this, _JeopardyGame_instances, guide_fn).call(this),
-        board: b && b.map((c) => ({ name: c.name, about: c.about || "", clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
+        // media: what the category's clues play or show ('video', 'audio' or 'image'), so pickers can mark it.
+        board: b && b.map((c) => ({ name: c.name, about: c.about || "", media: c.clues.find((cl) => cl.media)?.media.kind ?? "", clues: c.clues.map((cl) => ({ value: cl.value, used: cl.used })) })),
         // The clue the picker is looking at (the TV lights it up), and whether picks are said out loud to a host.
         peek: this.phase === "board" ? this.peeking : null,
         picksAloud: this.picksAloud(),

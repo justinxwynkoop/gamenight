@@ -145,7 +145,7 @@ try {
   // Whoever is in control picks the top-left clue on their phone.
   const picker = async () => ((await ann.locator('button.jp-pval').count()) > 0 ? ann : (await bo.locator('button.jp-pval').count()) > 0 ? bo : null);
   await until(async () => !!(await picker()), 'the clue picker on the picker\'s phone');
-  await (await picker()).locator('button.jp-pval').first().click();
+  await (await picker()).locator('.jp-pcat:not([data-media]) button.jp-pval').first().click();   // a plain clue, not a sound or video one
   await until(async () => (await tv.locator('.board .tile.peek').count()) === 1, 'the chosen clue glowing on the TV');
   await shot(tv, 'board-peek');
   await (await picker()).locator('.jp-go').click();
