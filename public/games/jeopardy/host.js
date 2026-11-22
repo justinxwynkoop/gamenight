@@ -16,6 +16,17 @@ const dockRow = (...kids) => h('div', { class: 'dock-row' }, kids.flat().filter(
 /** The setup buttons are written for the captain's dark theme, so they sit in a .jp wrapper. */
 const jp = (...kids) => h('div', { class: 'jp', style: { display: 'block' } }, kids);
 
+/** Is the game waiting on the host right now? The host page then brings the Game tab up by itself. */
+export function needsHost(g) {
+  if (g.hostJudges && ['board', 'reading', 'answering', 'dd-wager', 'dd-answer'].includes(g.phase)) return true;
+  if (g.phase === 'round-end') return true;
+  if (g.phase === 'final-wager' && g.final) {
+    const here = g.final.eligible.filter((id) => g.players.find((p) => p.id === id)?.connected);
+    return here.every((id) => g.final.wagered.includes(id));
+  }
+  return false;
+}
+
 /** What the page needs from this game. */
 export function render(raw, ctx) {
   loadStyles();
@@ -169,8 +180,18 @@ function clueView() {
       r && pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), h('p', { class: 'dim' }, 'Shown on the TV for a moment. Flip it if the game got it wrong.')));
     dock.push(dockRow(button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }), button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'dd-wager') {
-    body.push(card(eyebrow('Daily Double'), h('p', { class: 'dim' }, `${nameOf(v.controllerId)} is choosing a wager on their phone. Don’t read the clue until they lock it in.`)));
-    dock.push(dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
+    // The player bets on their phone, or says it out loud and the host types it in here.
+    const who = v.players.find((p) => p.id === v.controllerId);
+    const max = Math.max(who?.score ?? 0, 1000 * v.round);
+    const input = h('input', { type: 'number', inputMode: 'numeric', min: 0, max, placeholder: `$0 to ${money(max)}`, 'data-k': 'dd-wager', 'aria-label': 'Their bet', style: { width: '100%', fontSize: '20px', padding: '10px', marginTop: '8px' } });
+    const place = (n) => { const w = Math.round(Number(n)); if (!Number.isFinite(w)) { C.flash?.('Type an amount', true); return; } act('ddWager', { amount: Math.max(0, Math.min(max, w)) }); };
+    body.push(card(eyebrow('Daily Double'),
+      h('div', { class: 'card-title' }, `${nameOf(v.controllerId)} is betting`),
+      h('p', { class: 'dim' }, `They can bet on their phone, from $0 to ${money(max)}, or tell you and you put it in here. Don’t read the clue until the bet is in.`),
+      input,
+      dockRow(button({ label: '$0', size: 'sm', onclick: () => place(0) }), button({ label: 'Half', size: 'sm', onclick: () => place(Math.round(max / 2 / 100) * 100) }), button({ label: `All in (${money(max)})`, size: 'sm', onclick: () => place(max) }))));
+    dock.push(button({ label: 'Place this bet', icon: 'check', kind: 'ok', size: 'lg', block: true, onclick: () => place(input.value === '' ? NaN : input.value) }),
+      dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'reveal') {
     const r = v.lastResult;
     body.unshift(buzzCard(c));

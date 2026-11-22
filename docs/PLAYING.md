@@ -189,7 +189,7 @@ phones keep a "Who voted for what" list to argue over. When the game ends everyo
 |---|---|
 | Buzz in (after the clue is read) | 7 seconds, 6 after a wrong answer |
 | Typed answer | 15 seconds; a Daily Double gets 20 after the clue is read |
-| Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 3 seconds to rule) |
+| Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 8 seconds to rule) |
 | Final Jeopardy answer | 35 seconds |
 
 **Early buzzes.** Pressing before the buzzers open locks that player out for 0.25 seconds, as on the show. The phone

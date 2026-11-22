@@ -427,8 +427,8 @@
     // host mode: fallback if the host forgets to open buzzers
     hostAnswer: 3e4,
     // host mode: Daily Double fallback for the host to judge a spoken answer
-    hostGrace: 3e3,
-    // host mode: after the answer clock hits zero, the host still has this long to rule
+    hostGrace: 8e3,
+    // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
     captainGone: 15e3
     // how long the captain may be away before someone else takes over
   };
@@ -817,7 +817,9 @@
       __privateMethod(this, _JeopardyGame_instances, resetStats_fn).call(this);
       this.round = 1;
       const order = __privateMethod(this, _JeopardyGame_instances, order_fn).call(this);
-      this.controllerId = order[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * order.length)];
+      const here = order.filter((id) => __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, id));
+      const from = here.length ? here : order;
+      this.controllerId = from[Math.floor(__privateMethod(this, _JeopardyGame_instances, rng_fn).call(this) * from.length)];
       this.captainId ?? (this.captainId = order[0]);
       __privateMethod(this, _JeopardyGame_instances, roundIntro_fn).call(this);
     }
@@ -1223,6 +1225,9 @@
           return this.pick(Number(a.ci), Number(a.ri));
         case "judge":
           return this.judgeNow(a.correct === true);
+        // The host types in the bet a player says out loud (or places it for a phone that is not answering).
+        case "ddWager":
+          return this.ddWager(this.controllerId, a.amount);
         case "openNow":
           return this.openNow();
         case "readDone":
@@ -2149,7 +2154,7 @@
         return { pid: ctrl, text: this.round === 2 ? "Round 2: every value is doubled" : `Round ${this.round}: here are the categories`, next: `${name(ctrl)} picks first` };
       case "board": {
         const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it\u2019s their pick` : `${name(ctrl)}\u2019s pick`;
-        const next = host ? `${name(ctrl)}, tell the host a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so the captain picks for them`;
+        const next = host ? `${name(ctrl)}, tell the host a category and an amount` : __privateMethod(this, _JeopardyGame_instances, connected_fn).call(this, ctrl) ? `${name(ctrl)} picks a clue on their phone` : `${name(ctrl)} is away, so ${hosted ? "the host" : "the captain"} picks for them`;
         return { pid: ctrl, text, next };
       }
       case "reading":
@@ -2165,7 +2170,7 @@
       case "reveal":
         return { pid: ctrl, text: r?.correct ? `${name(r.pid)} got it! ${signed(r.delta)}` : "Nobody got that one", next: `${name(ctrl)} picks next. The board is back in a moment` };
       case "dd-wager":
-        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)}, tell the host your bet` : `${name(ctrl)} is placing a bet on their phone` };
+        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)} bets on their phone, or tells the host` : `${name(ctrl)} is placing a bet on their phone` };
       case "dd-answer":
         return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString("en-US")}`, next: host ? `${name(ctrl)}, say your answer. The host rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
       case "round-end":
@@ -4510,14 +4515,25 @@
   function createRelayHost({ engine: engine2, code, broadcast, now, quietMs = 25e3 }) {
     const seen = /* @__PURE__ */ new Map();
     const lastSent = /* @__PURE__ */ new Map();
+    const sentNo = /* @__PURE__ */ new Map();
+    const lastMsg = /* @__PURE__ */ new Map();
     const topic = `gn:${code}`;
+    const run = Math.floor(Math.random() * 36 ** 4).toString(36);
     function toClient(id, message) {
-      const text = JSON.stringify(message);
       if (message?.t === "state") {
+        const text = JSON.stringify(message.view);
         if (lastSent.get(id) === text) return;
         lastSent.set(id, text);
+        const n = `${run}.${(Number(String(sentNo.get(id) ?? "").split(".")[1]) || 0) + 1}`;
+        sentNo.set(id, n);
+        message = { ...message, n };
+        lastMsg.set(id, message);
       }
       broadcast(`${topic}:${id}`, "m", message);
+    }
+    function forget(id) {
+      lastSent.delete(id);
+      lastMsg.delete(id);
     }
     return {
       topic,
@@ -4530,7 +4546,8 @@
         if (typeof id !== "string" || !CLIENT_ID.test(id) || id === "tv" || typeof payload.m !== "object" || payload.m === null) return;
         if (!seen.has(id)) engine2.open(id);
         seen.set(id, now());
-        if (payload.m.t === "hello") lastSent.delete(id);
+        if (payload.m.t === "hello") forget(id);
+        if (payload.m.t === "ping" && "n" in payload.m && lastMsg.has(id) && payload.m.n !== sentNo.get(id)) broadcast(`${topic}:${id}`, "m", lastMsg.get(id));
         engine2.receive(id, payload.m);
       },
       /** Drop clients that have gone quiet. Call a few times a second along with engine.tick(). */
@@ -4539,7 +4556,7 @@
         for (const [id, at] of seen) {
           if (t - at > quietMs) {
             seen.delete(id);
-            lastSent.delete(id);
+            forget(id);
             engine2.close(id);
           }
         }

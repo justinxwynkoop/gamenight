@@ -686,7 +686,7 @@ struct JeoRoundEnd: View {
             Text(more ? "Every value doubles. Lowest score picks first." : "One clue. Everyone wagers in secret.")
                 .font(BW.body(32, .semibold)).foregroundColor(BW.muted)
             JeoStandings(game: game)
-            Text("The \(game.hostJudges ? "host" : "captain") taps Continue to keep going.")
+            Text("The \(game.hostJudges || game.hosted == true ? "host" : "captain") taps Continue to keep going.")
                 .font(BW.body(26, .semibold)).foregroundColor(BW.muted)
         }
         .multilineTextAlignment(.center)

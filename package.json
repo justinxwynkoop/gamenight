@@ -9,7 +9,7 @@
     "start": "node server.js",
     "test": "node --test \"test/*.test.js\"",
     "build": "node scripts/build-web.mjs && node scripts/build-engine.mjs tv-app/FamilyGameNight/GameNight/Engine/engine.js && node scripts/bundle-sets.mjs tv-app/FamilyGameNight/GameNight/Engine/sets.json",
-    "e2e": "node scripts/e2e-phone.mjs && node scripts/e2e-tv.mjs && node scripts/e2e-spynight.mjs && node scripts/e2e-feud-host.mjs && node scripts/e2e-jeopardy-host.mjs"
+    "e2e": "node scripts/e2e-phone.mjs && node scripts/e2e-tv.mjs && node scripts/e2e-spynight.mjs && node scripts/e2e-feud-host.mjs && node scripts/e2e-jeopardy-host.mjs && node scripts/e2e-jeopardy-flow.mjs"
   },
   "engines": {
     "node": ">=20"

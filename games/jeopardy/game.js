@@ -48,7 +48,7 @@ export const T = {
   finalAnswerShow: 5000, // final reveal: the correct answer, after everyone
   hostRead: 30000,      // host mode: fallback if the host forgets to open buzzers
   hostAnswer: 30000,    // host mode: Daily Double fallback for the host to judge a spoken answer
-  hostGrace: 3000,      // host mode: after the answer clock hits zero, the host still has this long to rule
+  hostGrace: 8000,      // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
   captainGone: 15000,   // how long the captain may be away before someone else takes over
 };
 
@@ -675,7 +675,10 @@ export class JeopardyGame {
     this.#resetStats();
     this.round = 1;
     const order = this.#order();
-    this.controllerId = order[Math.floor(this.#rng() * order.length)];
+    // Someone who is here picks first (a phone that dropped out of the room before the start would hold up the board).
+    const here = order.filter((id) => this.#connected(id));
+    const from = here.length ? here : order;
+    this.controllerId = from[Math.floor(this.#rng() * from.length)];
     this.captainId ??= order[0];
     this.#roundIntro();
   }
@@ -1308,6 +1311,8 @@ export class JeopardyGame {
       case 'setCaptain': return this.setCaptain(String(a.pid ?? a.id ?? ''));
       case 'pick': return this.pick(Number(a.ci), Number(a.ri));
       case 'judge': return this.judgeNow(a.correct === true);
+      // The host types in the bet a player says out loud (or places it for a phone that is not answering).
+      case 'ddWager': return this.ddWager(this.controllerId, a.amount);
       case 'openNow': return this.openNow();
       case 'readDone': return this.readDone(Number(a.ci), Number(a.ri));
       case 'setReadAloud': return this.setReadAloud(a.on);
@@ -1410,7 +1415,7 @@ export class JeopardyGame {
         const text = r && r.pid === ctrl && r.correct ? `${name(ctrl)} got the last one, so it’s their pick` : `${name(ctrl)}’s pick`;
         const next = host ? `${name(ctrl)}, tell the host a category and an amount`
           : this.#connected(ctrl) ? `${name(ctrl)} picks a clue on their phone`
-            : `${name(ctrl)} is away, so the captain picks for them`;
+            : `${name(ctrl)} is away, so ${hosted ? 'the host' : 'the captain'} picks for them`;
         return { pid: ctrl, text, next };
       }
       case 'reading':
@@ -1426,7 +1431,7 @@ export class JeopardyGame {
       case 'reveal':
         return { pid: ctrl, text: r?.correct ? `${name(r.pid)} got it! ${signed(r.delta)}` : 'Nobody got that one', next: `${name(ctrl)} picks next. The board is back in a moment` };
       case 'dd-wager':
-        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)}, tell the host your bet` : `${name(ctrl)} is placing a bet on their phone` };
+        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)} bets on their phone, or tells the host` : `${name(ctrl)} is placing a bet on their phone` };
       case 'dd-answer':
         return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString('en-US')}`, next: host ? `${name(ctrl)}, say your answer. The host rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
       case 'round-end':
