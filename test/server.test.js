@@ -178,22 +178,23 @@ test('server end to end', async (t) => {
     assert.equal(tv.view.game.timer.kind, 'answer');
   });
 
-  await t.test('only the host can drive the game, and only the winner can answer', async () => {
+  await t.test('only the host can drive the game, and with a host the answer is said out loud and ruled on', async () => {
     ann.act('skip'); bo.act('skip');
     await new Promise((r) => setTimeout(r, 100));
     assert.equal(tv.view.game.phase, 'answering');
     const [winner, loser] = tv.view.game.clue.buzzedId === tv.view.game.players.find((p) => p.name === 'Ann').id ? [ann, bo] : [bo, ann];
+    // With a host connected nobody types an answer: a typed one is turned away, from the winner too.
     loser.send({ t: 'answer', text: host.view.game.secret.answer });
+    winner.send({ t: 'answer', text: host.view.game.secret.answer });
     await new Promise((r) => setTimeout(r, 100));
     assert.equal(tv.view.game.phase, 'answering');
-    winner.send({ t: 'answer', text: host.view.game.secret.answer });       // typed, judged by the server
+    assert.equal(tv.view.game.hostJudges, true);
+    host.act('judge', { correct: true });       // the winner said it out loud; the host rules
     await tv.until((c) => c.view?.game?.phase === 'ruling', 'ruling');
-    await tv.until((c) => c.view?.game?.phase === 'reveal', 'reveal', 4000);
     assert.equal(tv.view.game.lastResult.correct, true);
-    assert.equal(tv.view.game.clue.answer, host.view.game.secret.answer);
+    // A right answer with a host goes straight back to the board (the host already said the answer).
+    await tv.until((c) => c.view?.game?.phase === 'board', 'board', 4000);
     assert.equal(tv.view.room.units.reduce((s, u) => s + u.score, 0), valueOf(spot));
-    host.act('advance');
-    await tv.until((c) => c.view?.game?.phase === 'board');
   });
 
   await t.test('a refreshed phone rejoins as the same player with its score', async () => {
@@ -204,16 +205,16 @@ test('server end to end', async (t) => {
     assert.equal(again.view.game.me.id, again.view.room.me.id);
   });
 
-  await t.test('the server opens the buzzers by itself once the clue has been read', async () => {
+  await t.test('with a host, the buzzers wait for the host to open them', async () => {
     const dd = host.view.game.secret.dd;
     // Not a Daily Double, and not a picture, sound or video clue (those wait for the TV to play them first).
     const next = [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1]].find(([c, r]) => !dd[c][r] && !isMediaCol(c));
     host.act('pick', { ci: next[0], ri: next[1] });
     await tv.until((c) => c.view?.game?.phase === 'reading');
-    const t0 = Date.now();
-    // This TV reads clues out loud but is only a test client, so it never says it is done: the longer backstop applies.
-    await tv.until((c) => c.view?.game?.phase === 'open', 'buzzers open', 18000);
-    assert.ok(Date.now() - t0 >= 1500);
+    await new Promise((r) => setTimeout(r, 2500));
+    assert.equal(tv.view.game.phase, 'reading', 'the buzzers stay shut while the host reads');
+    host.act('openNow');
+    await tv.until((c) => c.view?.game?.phase === 'open', 'buzzers open');
     assert.equal(tv.view.game.timer.kind, 'buzz');
     host.act('skip');
     await tv.until((c) => c.view?.game?.phase === 'reveal');

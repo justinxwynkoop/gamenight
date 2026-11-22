@@ -79,7 +79,7 @@ try {
   console.log('Ann joined');
 
   // Jeopardy, played through the real phone page: the captain sets up and starts, the player in control picks on a
-  // mini board, the buzzer, a typed answer that the game checks, then the reveal.
+  // mini board, the buzzer, a typed answer that the game checks, then straight back to the board.
   const bo = await browser.newPage({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2 }); watch(bo, 'bo');
   await bo.goto(`${base}/?r=ABCD`);
   await until(async () => (await bo.locator('input').count()) > 0, 'Bo\'s join form');
@@ -122,13 +122,13 @@ try {
   await shotJ(player, 'answer');
   await player.locator('input.jp-in').fill(first.cl.a);
   await player.getByRole('button', { name: /lock it in/i }).click();
-  await until(() => g.phase === 'reveal' && g.lastResult?.correct, 'the typed answer to be accepted');
-  await until(async () => (await player.locator('.jp').innerText()).includes(first.cl.a), 'the reveal to show the answer');
-  await shotJ(player, 'reveal');
-  console.log('buzzed on a phone, typed the answer, the game accepted it and showed the reveal');
+  await until(() => g.lastResult?.correct, 'the typed answer to be accepted');
+  await until(async () => /RIGHT/.test(await player.locator('.jp').innerText()), 'the phone to say it was right');
+  await shotJ(player, 'ruling');
+  // As on the show, a right answer goes straight back to the board: no answer screen.
+  await until(() => g.phase === 'board', 'the board right after the right answer');
+  console.log('buzzed on a phone, typed the answer, the game accepted it and went straight back to the board');
   // A Daily Double: quick bets ($0, Half, All in) and a box to type any amount in between.
-  engine.room.act('advance', {});
-  await until(() => g.phase === 'board', 'the board after the reveal');
   const dd = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => x.cl.dd);
   engine.room.act('pick', { ci: dd.ci, ri: dd.ri });
   await until(() => g.phase === 'dd-wager', 'the Daily Double wager');

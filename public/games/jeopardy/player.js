@@ -431,6 +431,10 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
   function ddWagerScreen() {
     const c = v.clue;
     const head = [h('div', { class: 'jp-logo dd' }, 'DAILY DOUBLE'), h('div', { class: 'jp-meta center' }, c.cat)];
+    // With a host page, the bet is said out loud too: the host enters it.
+    if (v.controllerId === me().id && v.hosted) {
+      return { key: `ddsayw-${c.ci}${c.ri}`, nodes: center(head, h('div', { class: 'jp-logo' }, 'YOUR BET'), h('div', { class: 'jp-msg' }, `Tell the host how much you bet, up to ${money(me().maxDD ?? 1000)}.`)) };
+    }
     if (v.controllerId === me().id) return { key: `ddw-${c.ci}${c.ri}-${typing}`, nodes: wagerForm('dd-wager', 0, me().maxDD ?? 1000, head) };
     return { key: `ddww-${c.ci}${c.ri}`, nodes: center(head, dot(player(v.controllerId), 56), h('div', { class: 'jp-msg' }, [named(player(v.controllerId)), ' is placing a bet…'])) };
   }

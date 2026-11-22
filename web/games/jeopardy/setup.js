@@ -122,6 +122,8 @@ function draftView(v, run) {
 }
 
 export function judgeControl(v, run) {
+  // With a host page connected, answers are always said out loud: nothing to switch.
+  if (v.hosted) return h('div', { class: 'jp-muted', style: { textAlign: 'left' } }, '🎤 You’re hosting: players say their answers out loud and you rule on each one. Final Jeopardy answers are typed.');
   return btn([v.hostJudges ? '✓ ' : '', '🎤 A host judges out loud'], () => run('setHostJudges', { on: !v.hostJudges }), `${v.hostJudges ? '' : 'ghost'} left`,
     v.hostJudges ? 'On: players say their answers aloud and the host rules on the host page.' : 'Off: players type their answers and the game checks them.');
 }

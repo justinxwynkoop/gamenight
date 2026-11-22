@@ -161,7 +161,7 @@ function clueView() {
   const dock = [];
   const flip = v.lastResult && ph === 'reveal' ? button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }) : null;
   if (ph === 'reading') {
-    body.push(card(eyebrow('Reading'), h('p', { class: 'dim' }, v.hostJudges ? 'Read the clue out loud, then open the buzzers.' : 'The buzzers open by themselves once the clue has been read.')));
+    body.push(card(eyebrow('Reading'), h('p', { class: 'dim' }, v.hostJudges ? 'Take as long as you like. Read the clue out loud, then open the buzzers: they never open by themselves.' : 'The buzzers open by themselves once the clue has been read.')));
     dock.push(button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openNow') }), dockRow(button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'open') {
     const r = v.lastResult;
