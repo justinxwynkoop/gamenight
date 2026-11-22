@@ -198,7 +198,7 @@ test('buzzing while the clue is still being read costs a short lockout', () => {
   assert.equal(g.buzz(ps[0].id).result, 'won');
 });
 
-test('a right typed answer scores, takes control and reveals', () => {
+test('a right typed answer scores, takes control and goes straight back to the board, as on the show', () => {
   const { g, ps, clock } = setup();
   begin(g);
   const cl = openClue(g, clock);
@@ -207,7 +207,7 @@ test('a right typed answer scores, takes control and reveals', () => {
   assert.equal(g.phase, 'ruling');                        // their answer and the ruling, on screen for a moment
   assert.equal(ps[2].score, cl.value);
   rule(clock);
-  assert.equal(g.phase, 'reveal');
+  assert.equal(g.phase, 'board', 'no answer screen after a right answer');
   assert.equal(ps[2].score, cl.value);
   assert.equal(g.controllerId, ps[2].id);
   assert.equal(g.publicView().lastResult.correct, true);
@@ -229,7 +229,7 @@ test('a wrong answer costs points and reopens the buzzers for everyone else; the
   g.answer(ps[1].id, cl.a);
   assert.equal(ps[1].score, cl.value);
   rule(clock);
-  assert.equal(g.phase, 'reveal');
+  assert.equal(g.phase, 'board');
 });
 
 test('everyone missing ends the clue; running out of answer time counts as a miss', () => {
@@ -282,7 +282,7 @@ test('Daily Double: only the player in control wagers, bounded by their score or
   g.answer(ctl.id, cl.a);
   assert.equal(ctl.score, 1000);
   rule(clock);
-  assert.equal(g.phase, 'reveal');
+  assert.equal(g.phase, 'board', 'a right Daily Double goes straight back to the board too');
 });
 
 test('Daily Double wrong answer loses the wager', () => {
@@ -328,6 +328,40 @@ test('host judges mode: players say the answer out loud and the host rules', () 
   assert.equal(g.controllerId, ps[0].id);
   assert.equal(g.publicView().lastResult.correct, true, 'the ruling is still there for the score count-up at the bottom');
   assert.throws(() => g.onPlayer(ps[0], { t: 'pick', ci: 0, ri: 1 }), /host/);
+});
+
+test('with a host the buzzers never open by themselves, and there is no clock while the host reads or takes a bet', () => {
+  const { room, g, ps, clock } = setup();
+  room.hosts = 1;                                          // a host page is connected
+  begin(g);
+  g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd));
+  assert.equal(g.phase, 'reading');
+  assert.equal(g.publicView().timer, null, 'no clock while the host reads');
+  for (let i = 0; i < 20; i++) clock.advance(60000);       // twenty minutes
+  assert.equal(g.phase, 'reading', 'still waiting for the host');
+  g.readDone(g.clue.ci, g.clue.ri);                        // the TV finished a picture or a voice: still the host's call
+  clock.advance(5000);
+  assert.equal(g.phase, 'reading');
+  g.openNow();
+  assert.equal(g.phase, 'open');
+  // A Daily Double bet has no clock either.
+  g.buzz(ps[0].id); g.act('judge', { correct: true }); rule(clock);
+  const dd = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => x.cl.dd && !x.cl.used);
+  g.pick(dd.ci, dd.ri);
+  assert.equal(g.phase, 'dd-wager');
+  assert.equal(g.publicView().timer, null, 'no clock on the bet with a host');
+  clock.advance(T.ddWager + 60000);
+  assert.equal(g.phase, 'dd-wager');
+  g.ddWager(g.controllerId, 0); g.act('judge', { correct: false }); rule(clock);
+  if (g.phase === 'reveal') clock.advance(T.reveal + 10);
+  assert.equal(g.phase, 'board');
+  // The host leaves while reading the next clue: the buzzers open by themselves again, so the game never stalls.
+  g.pick(1, g.board()[1].clues.findIndex((c) => !c.dd));
+  assert.equal(g.phase, 'reading');
+  room.hosts = 0;
+  clock.advance(10);
+  clock.advance(waitFor(g, g.clue.q) + 50);
+  assert.equal(g.phase, 'open');
 });
 
 test('host mode answer clock runs out, then the host still has a few seconds to rule', () => {
@@ -786,8 +820,8 @@ test('the TV is told what is going on and who moves things along at every step',
   g.onPlayer(ps[2], { t: 'answer', text: cl.a });
   assert.match(g.publicView().guide.text, /Cy is right! \+\$/);
   rule(clock);
-  assert.match(g.publicView().guide.next, /Cy picks next/);
-  g.advance();
+  assert.equal(g.phase, 'board', 'a right answer goes straight back to the board');
+  assert.match(g.publicView().guide.next, /Cy picks a clue on their phone/);
   g.endRound();
   assert.equal(g.phase, 'round-end');
   assert.match(g.publicView().guide.next, /Ann \(captain\) taps Continue for round 2/);
@@ -1162,7 +1196,7 @@ test('a clue can carry a picture, sound or video link, checked and cleaned', () 
 
 test('the Sights & Sounds pack is all free https media of a kind the Apple TV can play', () => {
   const pack = HOUSE_PACKS.find((p) => p.id === 'house-media').data;
-  assert.equal(pack.categories.length, 6);
+  assert.equal(pack.categories.length, 5);
   for (const c of pack.categories) {
     assert.equal(c.clues.length, 5, c.name);
     for (const cl of c.clues) {
@@ -1208,7 +1242,6 @@ test('after a clue, its buzz times stay on the board for a few seconds, then go'
   assert.equal(g.publicView().recentBuzzes, null, 'not on the board yet');
   g.buzz(ps[0].id); g.answer(ps[0].id, cl.a);
   clock.advance(T.ruling + 10);
-  clock.advance(T.reveal + 10);
   assert.equal(g.phase, 'board');
   const recent = g.publicView().recentBuzzes;
   assert.ok(recent, 'the board shows the last clue’s buzz times');
@@ -1256,7 +1289,7 @@ test('each category carries a note for the host, on the board and with its clue'
   assert.equal(g.publicView().clue.about, v.board[ci].about);
 });
 
-test('Sights & Sounds is on beside the real show, and every round gets one picture, sound or video category', () => {
+test('Sights & Sounds is on beside the real show, and every round gets one picture or sound category (no video clues)', () => {
   const { g } = setup();
   const req = g.takeArchiveRequest();
   const header = 'round\tclue_value\tdaily_double_value\tcategory\tcomments\tanswer\tquestion\tair_date\tnotes';
@@ -1269,5 +1302,5 @@ test('Sights & Sounds is on beside the real show, and every round gets one pictu
   const media = (row) => row.filter((c) => c.clues.some((cl) => cl.media));
   assert.equal(media(g.rounds[0]).length, 1);
   assert.equal(media(g.rounds[1]).length, 1);
-  assert.ok(media(g.rounds[0])[0].clues.some((cl) => cl.media.kind === 'video'), 'a video category comes first while one is fresh');
+  assert.ok(g.rounds.flat().every((c) => c.clues.every((cl) => cl.media?.kind !== 'video')), 'the shipped set has no video clues');
 });

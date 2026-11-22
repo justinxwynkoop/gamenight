@@ -47,7 +47,6 @@ export const T = {
   finalBeat: 2800,      // final reveal: a player's response, before right or wrong
   finalStep: 5000,      // final reveal: right or wrong and the wager, before the next player
   finalAnswerShow: 5000, // final reveal: the correct answer, after everyone
-  hostRead: 30000,      // host mode: fallback if the host forgets to open buzzers
   hostAnswer: 30000,    // host mode: Daily Double fallback for the host to judge a spoken answer
   hostGrace: 8000,      // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
   captainGone: 15000,   // how long the captain may be away before someone else takes over
@@ -274,6 +273,9 @@ export class JeopardyGame {
     if (this.collecting && now >= this.collecting.until) this.#settle();
     const t = this.timer;
     if (t && now >= t.at) { this.timer = null; t.fire(); }
+    // The host left while reading a clue (and nobody hosts from a phone): the buzzers open by themselves again.
+    if (this.phase === 'reading' && !this.timer && !this.hostJudges() && this.clue) { this.#startReading(this.clue); this.#changed(); }
+    if (this.phase === 'dd-wager' && !this.timer && !this.hostJudges()) { this.#startWager(); this.#changed(); }
     // The captain may step away, but not for long.
     const cap = this.captainId && this.#player(this.captainId);
     if (cap && !this.#connected(cap.id)) {
@@ -643,7 +645,7 @@ export class JeopardyGame {
   }
   /**
    * Six categories for one round from the ranked list, skipping ones already used. With Sights & Sounds on, every round
-   * gets one category of picture, sound or video clues (a video one first while there is a fresh one), so they come up
+   * gets one category of picture or sound clues (a fresh one first), so they come up
    * every game instead of getting lost among hundreds of real-show categories.
    */
   #pickRow(cats, used) {
@@ -653,9 +655,7 @@ export class JeopardyGame {
     const mixIn = this.#chosen().some((p) => p.media);
     if (mixIn) {
       const media = cats.filter((c) => ok(c) && isMedia(c));
-      const kinds = (c) => c.clues.map((cl) => cl.media?.kind);
-      const freshVideo = media.find((c) => kinds(c).includes('video') && this.#freshIn(c) > 0);
-      const m = freshVideo ?? media[0];
+      const m = media.find((c) => this.#freshIn(c) > 0) ?? media[0];
       if (m) { used.add(m.name); out.push(m); }
     }
     for (const c of cats) {
@@ -741,7 +741,11 @@ export class JeopardyGame {
     this.captainGoneAt = null;
     this.#changed();
   }
-  hostJudges() { return !!this.settings.hostJudges; }
+  /**
+   * Answers are said out loud and a host rules on them: when switched on (the captain hosts from a phone), and always
+   * while a host page is connected. Final Jeopardy is typed either way.
+   */
+  hostJudges() { return !!this.settings.hostJudges || this.hosted(); }
 
   // ---------- the clue ----------
   board() { return this.round >= 1 && this.round <= this.rounds.length ? this.rounds[this.round - 1] : null; }
@@ -771,20 +775,30 @@ export class JeopardyGame {
     this.clue = { ci, ri, cat: b[ci].name, about: b[ci].about || '', value: cl.value, q: cl.q, a: cl.a, alt: cl.alt, dd: cl.dd, media: cl.media ?? null, tried: [], buzzedId: null, wager: null, buzzes: [], buzzMs: null, open: 0, drafts: {}, prevController: this.controllerId };
     if (cl.dd) {
       this.phase = 'dd-wager';
-      // A wager nobody places (a phone that went to sleep) is $0, so the game never stalls.
-      const who = this.controllerId;
-      this.#setTimer(T.ddWager, () => this.ddWager(who, 0), 'wager');
+      this.#startWager();
     } else {
       this.phase = 'reading';
-      // With a host judging, the buzzers open when the host finishes reading aloud. Otherwise they open at a moment
-      // known in advance, which every phone is told, so they all turn gold together.
-      // With the TV reading it out loud, they open once the voice stops (readDone), or at the latest after speakingTime.
-      // A picture, sound or video plays first: the TV says when it is done (readDone), with mediaTime as the backstop.
-      const ms = (this.hostJudges() ? T.hostRead : this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q)) + mediaTime(cl.media);
-      const at = this.#now() + ms;
-      this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
+      this.#startReading(cl);
     }
     this.#changed();
+  }
+  /** A wager nobody places (a phone that went to sleep) is $0, so the game never stalls. A host takes as long as they like. */
+  #startWager() {
+    if (this.hostJudges()) { this.#clearTimer(); return; }
+    const who = this.controllerId;
+    this.#setTimer(T.ddWager, () => this.ddWager(who, 0), 'wager');
+  }
+  /**
+   * With a host judging, the buzzers open only when the host opens them: no clock, as long as the host needs.
+   * Otherwise they open at a moment known in advance, which every phone is told, so they all turn gold together.
+   * With the TV reading it out loud, they open once the voice stops (readDone), or at the latest after speakingTime.
+   * A picture, sound or video plays first: the TV says when it is done (readDone), with mediaTime as the backstop.
+   */
+  #startReading(cl) {
+    if (this.hostJudges()) { this.#clearTimer(); return; }
+    const ms = (this.readsAloud() ? speakingTime(cl.q) : readingTime(cl.q)) + mediaTime(cl.media);
+    const at = this.#now() + ms;
+    this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
   }
   openNow() { if (this.phase === 'reading') this.#openBuzzers(T.buzzWindow); }
   /** The TV reads clues out loud (never with a host, who reads them). */
@@ -1013,10 +1027,10 @@ export class JeopardyGame {
   #afterRuling(at) {
     if (this.phase !== 'ruling') return;
     const r = this.lastResult;
-    // With a host judging, a right answer goes straight back to the board: the host said the answer, and the score count-up
-    // carries on in the podiums along the bottom.
-    if (r && r.correct && this.hostJudges()) { this.#afterReveal(); return; }
-    if (!r || r.dd || r.correct) { this.#revealClue(); return; }
+    // A right answer goes straight back to the board, as on the show: the answer was just said (or typed and shown in the
+    // ruling), and the score count-up carries on in the podiums along the bottom.
+    if (r && r.correct) { this.#afterReveal(); return; }
+    if (!r || r.dd) { this.#revealClue(); return; }
     const remaining = this.#order().filter((id) => this.#connected(id) && !this.clue.tried.includes(id));
     if (remaining.length === 0) this.#revealClue();
     else this.#openBuzzers(T.rebuzzWindow, at);
@@ -1128,7 +1142,7 @@ export class JeopardyGame {
     r.streak = this.#stat(r.pid).streak;
     if (r.correct) {
       this.controllerId = r.pid;
-      if (['open', 'reading', 'answering', 'ruling'].includes(this.phase)) this.#revealClue();
+      if (['open', 'reading', 'answering', 'ruling'].includes(this.phase)) { this.#afterReveal(); return; }
     } else if (!r.dd && this.controllerId === r.pid && r.prevController && this.#player(r.prevController)) {
       // Taking back a right answer also takes back the control it won.
       this.controllerId = r.prevController;

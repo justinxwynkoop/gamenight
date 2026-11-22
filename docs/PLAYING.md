@@ -31,7 +31,9 @@ says.
      Each topic says how many of its categories are still new, and the game deals new categories first, so a clue only
      comes back once every clue in its pack has been played. Then that pack starts over. **Start fresh** forgets it all.
    - **A host judges out loud** switches typed answers off: players say their answer, and the host (on the host page,
-     on the captain's phone when there is no host page, or with the remote) taps Correct or Wrong.
+     on the captain's phone when there is no host page, or with the remote) taps Correct or Wrong. **With a host page
+     connected this is always on**: phones never show an answer box (or Daily Double bet buttons: the player tells the
+     host the bet and the host types it in). Only Final Jeopardy is typed on the phones.
 2. **Board.** The player in control picks a clue on their phone (or on the TV with the remote): the phone lists each
    category with its values, they tap a value (it glows on the TV) and then **Open**. With a host (a host page, or host
    judging on), nobody picks on their phone: the player says a category and a value out loud and the host taps it.
@@ -39,19 +41,23 @@ says.
    rhyme"), shown under its name in the picker and under the clue, so the host can read it out when a name is unclear.
    The shipped sets have one for every category, real-show categories use the show's own explanation when it gave one
    (and a few well-known kinds, like Before & After, are explained), and the question editor has a "Note for the host"
-   field. **Sights & Sounds** (picture, sound and video clues) is on by default beside the real show, and every round
-   gets one of its categories, a video one first while there is one not yet played. Round 2 is worth
+   field. **Sights & Sounds** (picture and sound clues) is on by default beside the real show, and every round
+   gets one of its categories. (Your own boards can still carry a video link.) Round 2 is worth
    double and has two Daily Doubles; the lowest score picks first.
-3. **Buzzers.** The clue is shown and read, then the buzzers open with a **7-second countdown** on the TV and the
+3. **Buzzers.** With a host judging, the buzzers never open by themselves: the host reads the clue for as long as
+   they like (no clock on the clue or on a Daily Double bet) and taps **Open buzzers**. Without a host, the clue is
+   shown and read, then the buzzers open with a **7-second countdown** on the TV and the
    phone. Every phone turns gold at the same instant as the TV, and **the fastest thumb wins, not the fastest Wi-Fi**
    (see Fair buzzing below). A press before the buzzers open locks that player out for a quarter second. Everyone
    who pressed is timed, and the times are shown after the clue.
 4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
    articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
-   gives that player control. (With a host judging, Correct goes straight back to the board; the score count-up carries on in
-   the podiums along the bottom.) **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
+   gives that player control, and the game goes straight back to the board, as on the show (no answer screen; the score
+   count-up carries on in the podiums along the bottom). With a host, the answer is said out loud and the host taps
+   Correct or Wrong. **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
    for everyone who has not tried.
-5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone. The wager is from **$0** up to their
+5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone (with a host, they tell the
+   host, who types it in). The wager is from **$0** up to their
    score or the round's top value, whichever is higher: quick buttons for $0, half and all in, and a box to type any amount.
 6. **Final Jeopardy.** Players with a positive score wager. **The clue is never shown by the last wager coming in:** when
    everyone is locked in the host (or the captain, or the TV remote's **Show the clue** button) starts it. (If the 60-second
@@ -197,6 +203,7 @@ phones keep a "Who voted for what" list to argue over. When the game ends everyo
 
 | Timer | Default |
 |---|---|
+| Reading the clue | with a host judging, none: the host opens the buzzers; otherwise a few seconds, by the clue's length |
 | Buzz in (after the clue is read) | 7 seconds, 6 after a wrong answer |
 | Typed answer | 15 seconds; a Daily Double gets 20 after the clue is read |
 | Spoken answer, with a host judging | the host's choice: 5, 10, 15, 20, 30 seconds or none (the host then still has 8 seconds to rule) |
