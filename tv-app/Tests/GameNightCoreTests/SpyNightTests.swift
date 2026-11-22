@@ -63,6 +63,18 @@ final class SpyNightTests: XCTestCase {
         XCTAssertTrue(done.track[0].failed)
     }
 
+    func testTheMissionBoxesListWhoWentAndOnlyTheEndSaysWhatTheyPlayed() throws {
+        let midGame = try spy("mission-result")
+        let first = try XCTUnwrap(midGame.track[0].team)
+        XCTAssertEqual(first.count, 2, "who went is public")
+        XCTAssertNil(midGame.track[0].cards, "who played Fail is not")
+        let over = try spy("gameover")
+        let cards = try XCTUnwrap(over.track[0].cards)
+        XCTAssertEqual(cards.values.filter { $0 == "fail" }.count, 1)
+        XCTAssertEqual(cards.count, over.track[0].team?.count)
+        XCTAssertNil(over.track[3].cards, "a mission that was not played has none")
+    }
+
     func testTheEndRevealsEveryRole() throws {
         let game = try spy("gameover")
         XCTAssertEqual(game.phase, .gameover)
@@ -93,6 +105,15 @@ final class SpyNightSoundTests: XCTestCase {
         XCTAssertEqual(try cues("spy-vote-result", "spy-mission"), [.lock])         // the mission begins
         XCTAssertEqual(try cues("spy-mission", "spy-mission-result"), [.strike])    // a Fail card was played
         XCTAssertEqual(try cues("spy-mission-result", "spy-gameover"), [.winner])   // the recorded game ends with the Spies winning
+    }
+
+    func testTheTenseMusicRunsFromTheDealUntilTheEnd() throws {
+        func music(_ from: String, _ to: String) throws -> Bool? {
+            SoundPlanner.plan(from: try Fixture.state(from), to: try Fixture.state(to)).playMusic
+        }
+        XCTAssertEqual(try music("spy-lobby", "spy-roles"), true)
+        XCTAssertEqual(try music("spy-vote", "spy-vote-result"), true)
+        XCTAssertEqual(try music("spy-mission-result", "spy-gameover"), false)
     }
 
     func testNothingPlaysWithinAPhase() throws {

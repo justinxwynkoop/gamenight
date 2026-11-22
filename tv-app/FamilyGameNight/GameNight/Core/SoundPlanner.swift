@@ -7,6 +7,9 @@ struct SoundPlan: Equatable {
     var startFinalMusic = false
     /// There is no Final Jeopardy countdown running: stop that music if it is playing.
     var stopFinalMusic = false
+    /// Spy Night's music under the game itself: true while a game is under way, false in the lobby and at the end
+    /// (nil: no change).
+    var playMusic: Bool? = nil
 }
 
 /// Decides which sound goes with which change in the game.
@@ -41,6 +44,8 @@ enum SoundPlanner {
         if after.phase == .lobby, before.phase == .lobby, after.players.count > before.players.count {
             plan.cues.append(.join)
         }
+        // The tense music under the game plays from the deal until the game is over.
+        plan.playMusic = after.phase != .lobby && after.phase != .gameover && after.phase != .unknown
         guard after.phase != before.phase else { return }
         switch after.phase {
         case .roles: plan.cues.append(.roundstart)

@@ -33,6 +33,10 @@ struct SpyMission: Decodable, Equatable, Identifiable {
     var result: String?
     var fails: Int?
     var current: Bool
+    /// Who went on the mission (once the team is on it).
+    var team: [String]?
+    /// "success" or "fail" for each member: only sent when the game is over.
+    var cards: [String: String]?
 
     var id: Int { mission }
     var succeeded: Bool { result == "success" }

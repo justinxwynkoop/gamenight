@@ -9,7 +9,7 @@ import Foundation
 /// The host's room settings (sound on/off, volume) are applied on every update.
 @MainActor
 final class SoundDirector {
-    private enum MusicOwner { case lobby, finalRound }
+    private enum MusicOwner { case lobby, finalRound, play }
     /// Music sits a little under the effects (the web TV's music gain, public/audio.js).
     private static let musicGain = 0.6
 
@@ -99,6 +99,12 @@ final class SoundDirector {
             startMusic(.finalRound, restart: true)
         } else if plan.stopFinalMusic {
             stopMusic(owner: .finalRound)
+        }
+        // Spy Night's music under the game itself (its "think" file).
+        if plan.playMusic == true {
+            startMusic(.play, restart: false)
+        } else if plan.playMusic == false {
+            stopMusic(owner: .play)
         }
     }
 

@@ -3610,7 +3610,19 @@
       const sizes = TEAM_SIZES[n] ?? [];
       const track = Array.from({ length: MISSIONS }, (_, i) => {
         const m = this.track[i];
-        return { mission: i + 1, size: sizes[i] ?? null, needed: failsNeeded(n, i), result: m ? m.success ? "success" : "fail" : null, fails: m ? m.fails : null, team: m ? m.team : null, current: this.phase !== "lobby" && this.phase !== "gameover" && i === this.mission };
+        const current = this.phase !== "lobby" && this.phase !== "gameover" && i === this.mission;
+        return {
+          mission: i + 1,
+          size: sizes[i] ?? null,
+          needed: failsNeeded(n, i),
+          result: m ? m.success ? "success" : "fail" : null,
+          fails: m ? m.fails : null,
+          // Who went on the mission (the team that was approved): for the mission under way too, once the team is on it.
+          team: m ? m.team : current && ["mission", "mission-result"].includes(this.phase) ? this.team.slice() : null,
+          // Who played Success and who played Fail: only at the very end, when every role is shown too.
+          cards: this.phase === "gameover" && m ? m.cards ?? null : null,
+          current
+        };
       });
       const v = {
         game: GAME4,
@@ -3806,7 +3818,8 @@
     const needed = failsNeeded(this.order.length, this.mission);
     const fails = this.team.filter((id) => this.cards[id] === "fail").length;
     const success = fails < needed;
-    const entry = { mission: this.mission + 1, size: this.team.length, team: this.team.slice(), leaderId: this.leaderId, success, fails, needed };
+    const cards = Object.fromEntries(this.team.map((id) => [id, this.cards[id] === "fail" ? "fail" : "success"]));
+    const entry = { mission: this.mission + 1, size: this.team.length, team: this.team.slice(), leaderId: this.leaderId, success, fails, needed, cards };
     this.track.push(entry);
     this.lastMission = { success, fails, needed };
     this.phase = "mission-result";
@@ -4517,7 +4530,7 @@
   ];
   var SOUND_NAMES = [
     { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight"] },
-    { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy"] },
+    { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy", "spynight"], labels: { spynight: "Music under the game (loops from the deal to the end)" } },
     { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight"], labels: { spynight: "The vote begins" } },
     { name: "buzz", label: "Someone buzzes in", games: ["shared", "jeopardy"] },
     { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight"], labels: { spynight: "A team is approved" } },

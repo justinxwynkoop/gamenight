@@ -10,6 +10,7 @@ tv-app/FamilyGameNight/GameNight/Sounds/<game>__<name>.m4a (the Apple TV app). T
 Family Feud gets three: lobby (its theme tune), ding (a right answer) and faceoff (the buzzer).
 Spy Night's names are the ones the game's cues use (the same as the other games' files, see games/spynight/ and docs/PLAYING.md):
   lobby       music loop while players join          roundstart  the roles are dealt
+  think       the music under the game itself (a quieter, tenser loop)
   pick        a leader starts picking a team          open        the vote begins
   correct     a team is approved                      wrong       a team is rejected
   lock        the mission begins                      ding        a mission succeeds
@@ -267,6 +268,56 @@ def lobby():
     return normalize(body, 0.9)
 
 
+def play_loop():
+    """The music under the game itself (not the lobby): sixteen bars of low, watchful E-phrygian tension at 88 beats a
+    minute. A muted plucked bass, a ticking watch, wood-block clicks, a heartbeat, a long low drone and, now and then,
+    a cold little bell figure and a short staccato chord. Quieter and thinner than the lobby tune so talk carries over it.
+    Wrapped so the end runs straight back into the start."""
+    bpm = 88
+    beat = 60 / bpm
+    bars = 16
+    length = bars * 4 * beat
+    tail = 2.5
+    t = Track(length + tail)
+    roots = [40, 40, 41, 40, 40, 43, 41, 40]          # E2 E2 F2 E2 E2 G2 F2 E2 (the flat second is the menace)
+    for bar in range(bars):
+        r = roots[bar % 8]
+        # Bass: muted and pulsing, with a jump up an octave and a flat-second step now and then.
+        pat = [(0, r, 0.9), (0.75, r, 0.5), (1.5, r + 12, 0.5), (2, r, 0.9), (2.75, r + 1 if bar % 2 else r, 0.5), (3.5, r + 7, 0.5)]
+        for b, n, g in pat:
+            t.add((bar * 4 + b) * beat, pluck(hz(n), 0.35, 0.25), 0.42 * g)
+        # The watch: sixteenth ticks, a touch louder on the beat.
+        for k in range(16):
+            t.add((bar * 4 + k * 0.25) * beat, hat(bar * 16 + k, 0.03), 0.16 if k % 4 == 0 else 0.07)
+        # Wood-block clicks on two and four.
+        for b in (1, 3):
+            t.add((bar * 4 + b) * beat, tone(hz(midi("A5")), 0.05, "square", 0.001, 0.04, 0.0, 0.01), 0.10)
+            t.add((bar * 4 + b) * beat, noise(0.03, 40 + bar, 0.0005, 0.03, highpass=0.6), 0.14)
+        # A soft heartbeat on one and three.
+        if bar % 2 == 0:
+            t.add((bar * 4) * beat, kick(0.35, 95, 42), 0.34)
+            t.add((bar * 4 + 2) * beat, kick(0.3, 90, 42), 0.22)
+        # A short staccato chord at the end of every fourth bar.
+        if bar % 4 == 3:
+            for n in ("E3", "G3", "B3", "F4"):
+                t.add((bar * 4 + 3.5) * beat, tone(hz(midi(n)), 0.16, "saw", 0.002, 0.12, 0.0, 0.02), 0.10)
+    # A cold bell figure, sparse: it drifts in every other phrase.
+    figures = [(0, "E5", 1), (1.5, "F5", 1), (3, "E5", 1), (4.5, "B4", 2), (8, "G5", 1), (9.5, "F5", 1), (11, "E5", 2)]
+    for phrase in (1, 3):   # eight-bar phrases 2 and 4 of every 16... (bars 8-15 here, then the loop's start)
+        for b, name, ln in figures:
+            t.add((phrase * 8 * 4 / 2 + b * 2) * beat, bell(hz(midi(name)), ln * beat + 0.5), 0.10)
+    # A long, low drone with a slow swell over each eight bars.
+    for part in range(2):
+        t.add(part * 8 * 4 * beat, tone(hz(28), 8 * 4 * beat, "saw", 3.0, 3.0, 0.5, 2.0, vibrato=3.2), 0.05)
+        t.add(part * 8 * 4 * beat, tone(hz(40), 8 * 4 * beat, "tri", 3.0, 3.0, 0.5, 2.0), 0.05)
+    x = room(t.x, 0.3)
+    body = x[: int(length * SR)]
+    for i, s_ in enumerate(x[int(length * SR):]):
+        if i < len(body):
+            body[i] += s_
+    return normalize(body, 0.8)
+
+
 # ---------------------------------------------------------------- the moments
 
 def deal():
@@ -389,7 +440,7 @@ def player_joins():
 
 SOUNDS = {
     "lobby": lobby, "roundstart": deal, "pick": pick, "open": vote_open, "correct": approved, "wrong": rejected,
-    "lock": mission_start, "ding": success, "strike": failure, "fanfare": resistance_wins, "winner": spies_win,
+    "think": play_loop, "lock": mission_start, "ding": success, "strike": failure, "fanfare": resistance_wins, "winner": spies_win,
     "join": player_joins,
 }
 
