@@ -241,7 +241,8 @@ try {
   const pickTile = async (dd) => {
     await phase('board', 'the board');
     // Not a picture, sound or video clue: those wait for the TV to play them, which this test does not time.
-    const tiles = host.locator(`.jp-pcat:not([data-media]) button.jp-pval${dd ? '.dd' : ':not(.dd)'}`);
+    // A Daily Double may sit in the picture or sound column: the bet comes first, so that is fine.
+    const tiles = host.locator(dd ? 'button.jp-pval.dd' : '.jp-pcat:not([data-media]) button.jp-pval:not(.dd)');
     await until(async () => (await tiles.count()) > 0, `a ${dd ? 'Daily Double' : 'plain'} value on the host's picker`);
     const ci = Number(await tiles.first().getAttribute('data-ci')); const ri = Number(await tiles.first().getAttribute('data-ri'));
     await tiles.first().click();
