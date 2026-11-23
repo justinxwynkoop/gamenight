@@ -316,23 +316,23 @@
     for (const line of lines2) {
       if (!line) continue;
       const f = line.split("	");
-      const round = f[iR], resp = f[iA], cat = clean(f[iC]);
+      const round2 = f[iR], resp = f[iA], cat = clean(f[iC]);
       const raw = clean(f[iQ]);
       const clue = raw && playable(raw);
-      if (raw && !clue && (round === "1" || round === "2")) {
-        const key2 = `${f[iD]}|${round}|${cat}`;
-        if (!groups.has(key2)) groups.set(key2, { name: cat, round, clues: [] });
+      if (raw && !clue && (round2 === "1" || round2 === "2")) {
+        const key2 = `${f[iD]}|${round2}|${cat}`;
+        if (!groups.has(key2)) groups.set(key2, { name: cat, round: round2, clues: [] });
         groups.get(key2).bad = true;
         continue;
       }
       if (!clue || !resp || !cat) continue;
-      if (round === "3") {
+      if (round2 === "3") {
         finals.push({ category: cat, q: clue, ...response(resp), date: f[iD] });
         continue;
       }
-      if (round !== "1" && round !== "2") continue;
-      const key = `${f[iD]}|${round}|${cat}`;
-      if (!groups.has(key)) groups.set(key, { name: cat, round, clues: [] });
+      if (round2 !== "1" && round2 !== "2") continue;
+      const key = `${f[iD]}|${round2}|${cat}`;
+      if (!groups.has(key)) groups.set(key, { name: cat, round: round2, clues: [] });
       const said = clean(f[iM]);
       if (said) {
         const about = showComment(said);
@@ -4073,8 +4073,794 @@
     create: (room) => new SpyNightGame(room)
   };
 
+  // games/piechase/board.js
+  var CATEGORY_COUNT = 6;
+  var RING = 42;
+  var SPOKE = 5;
+  var STEP = RING / CATEGORY_COUNT;
+  var RING_PATTERN = [2, null, 4, 3, null, 5];
+  var SPOKE_PATTERN = [5, 2, 4, 1, 3];
+  var HUB_R = 0.17;
+  var round = (n) => Math.round(n * 1e4) / 1e4;
+  function build() {
+    const spaces = [];
+    const add = (s) => {
+      spaces.push(s);
+      return s;
+    };
+    add({ id: "H", kind: "hub", cat: null, x: 0, y: 0 });
+    for (let k = 0; k < CATEGORY_COUNT; k++) {
+      const a = (-90 + k * 60) * Math.PI / 180;
+      for (let i = 1; i <= SPOKE; i++) {
+        const r = HUB_R + i * (1 - HUB_R) / (SPOKE + 1);
+        add({ id: `s${k}-${i}`, kind: "cat", cat: (k + SPOKE_PATTERN[i - 1]) % CATEGORY_COUNT, x: round(Math.cos(a) * r), y: round(Math.sin(a) * r) });
+      }
+    }
+    for (let n = 0; n < RING; n++) {
+      const a = (-90 + n * 360 / RING) * Math.PI / 180;
+      const k = Math.floor(n / STEP);
+      const off = n % STEP;
+      const at = { x: round(Math.cos(a)), y: round(Math.sin(a)) };
+      if (off === 0) add({ id: `r${n}`, kind: "hq", cat: k, ...at });
+      else {
+        const c = RING_PATTERN[off - 1];
+        add(c === null ? { id: `r${n}`, kind: "again", cat: null, ...at } : { id: `r${n}`, kind: "cat", cat: (k + c) % CATEGORY_COUNT, ...at });
+      }
+    }
+    const links = new Map(spaces.map((s) => [s.id, []]));
+    const link = (a, b) => {
+      links.get(a).push(b);
+      links.get(b).push(a);
+    };
+    for (let k = 0; k < CATEGORY_COUNT; k++) {
+      link("H", `s${k}-1`);
+      for (let i = 1; i < SPOKE; i++) link(`s${k}-${i}`, `s${k}-${i + 1}`);
+      link(`s${k}-${SPOKE}`, `r${k * STEP}`);
+    }
+    for (let n = 0; n < RING; n++) link(`r${n}`, `r${(n + 1) % RING}`);
+    return { spaces, links };
+  }
+  var BOARD = build();
+  var SPACES = BOARD.spaces;
+  var BY_ID = new Map(SPACES.map((s) => [s.id, s]));
+  var HUB = "H";
+  var space = (id) => BY_ID.get(id) ?? null;
+  var neighbours = (id) => BOARD.links.get(id) ?? [];
+  function destinations(from, steps) {
+    const out = /* @__PURE__ */ new Map();
+    const walk = (at, prev, left, path) => {
+      if (left === 0) {
+        if (!out.has(at)) out.set(at, path);
+        return;
+      }
+      for (const next of neighbours(at)) {
+        if (next === prev) continue;
+        walk(next, at, left - 1, [...path, next]);
+      }
+    };
+    if (BY_ID.has(from) && steps > 0) walk(from, null, steps, []);
+    return out;
+  }
+
+  // games/piechase/game.js
+  var GAME5 = "piechase";
+  var NAME = "Pie Chase";
+  var MIN_UNITS = 2;
+  var MAX_UNITS = 6;
+  var DIE = 6;
+  var ALL_SETS = "all";
+  var CATEGORIES = [
+    { key: "geography", name: "Geography", color: "#3b82f6" },
+    { key: "entertainment", name: "Entertainment", color: "#ec4899" },
+    { key: "history", name: "History", color: "#facc15" },
+    { key: "arts", name: "Arts & Literature", color: "#a855f7" },
+    { key: "science", name: "Science & Nature", color: "#22c55e" },
+    { key: "sports", name: "Sports & Leisure", color: "#f97316" }
+  ];
+  var T3 = {
+    result: 3500,
+    // the answer, right or wrong, before the game moves on
+    wedge: 5500,
+    // a wedge was won: a little longer, to enjoy it
+    rolloffDone: 3e3,
+    // who goes first, before their first turn
+    autoMove: 1400
+    // a roll with only one place to go moves there by itself after this
+  };
+  var MAX_SEEN2 = 3e3;
+  function validateSet3(set) {
+    if (!set || typeof set !== "object") fail("A question set must be an object");
+    if (!String(set.title ?? "").trim()) fail("Give the question set a title");
+    if (!Array.isArray(set.categories) || set.categories.length !== CATEGORY_COUNT) fail(`A Pie Chase set has exactly ${CATEGORY_COUNT} categories`);
+    set.categories.forEach((c, i) => {
+      if (!c || !String(c.name ?? "").trim()) fail(`Category ${i + 1} needs a name`);
+      if (!Array.isArray(c.questions) || !c.questions.length) fail(`${c.name} needs at least one question`);
+      c.questions.forEach((q, n) => {
+        if (!q || !String(q.q ?? "").trim()) fail(`${c.name}, question ${n + 1}: write the question`);
+        if (!String(q.a ?? "").trim()) fail(`${c.name}, question ${n + 1}: write the answer`);
+      });
+    });
+    return true;
+  }
+  var keyOf = (q) => String(q.q).trim().toLowerCase().slice(0, 120);
+  var _PieChaseGame_instances, reset_fn2, changed_fn5, now_fn3, setTimer_fn3, unit_fn2, name_fn, note_fn, members_fn2, connectedUnit_fn, unitOf_fn, sets_fn, categoryNames_fn, buildDeck_fn, draw_fn, units_fn, rolloffRoll_fn, settleRolloff_fn, beginPlay_fn, startTurn_fn, hasAll_fn, land_fn, ask_fn, afterResult_fn, won_fn, nextTurn_fn, end_fn2, catName_fn, starter_fn2, reader_fn, line_fn2, peekNext_fn, unitsView_fn;
+  var PieChaseGame = class {
+    constructor(room) {
+      __privateAdd(this, _PieChaseGame_instances);
+      this.room = room;
+      this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false };
+      __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
+    }
+    /** One roll of the die (tests replace this to load the die). */
+    rollDie() {
+      return 1 + Math.floor(this.room.rng() * DIE);
+    }
+    // ---------- the room's side of the contract ----------
+    inProgress() {
+      return this.phase !== "lobby";
+    }
+    usesContent(id) {
+      return this.settings.setId === id || this.settings.setId === ALL_SETS;
+    }
+    tick() {
+      const t = this.timer;
+      if (t && __privateMethod(this, _PieChaseGame_instances, now_fn3).call(this) >= t.at) {
+        this.timer = null;
+        t.fire();
+      }
+    }
+    playerRemoved() {
+      if (this.phase === "lobby") return;
+      const ids = new Set(this.room.units().map((u) => u.id));
+      this.order = this.order.filter((id) => ids.has(id));
+      if (this.turn && !ids.has(this.turn)) {
+        this.turn = this.order[0] ?? null;
+        __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this);
+      }
+    }
+    contentChanged(id) {
+      if (this.phase === "lobby" && this.settings.setId === id && !this.room.loadContent(GAME5, id)) this.settings.setId = ALL_SETS;
+    }
+    start() {
+      if (this.phase !== "lobby") fail("The game is already under way");
+      const units = __privateMethod(this, _PieChaseGame_instances, units_fn).call(this);
+      if (units.length < MIN_UNITS) fail(`${NAME} needs at least ${MIN_UNITS} ${this.room.mode === "teams" ? "teams" : "players"}`);
+      if (units.length > MAX_UNITS) fail(`${NAME} takes at most ${MAX_UNITS} players or teams. Play in teams.`);
+      __privateMethod(this, _PieChaseGame_instances, buildDeck_fn).call(this);
+      if (this.deck.pools.some((p) => !p.length)) fail("That question set has an empty category");
+      const keep = { ...this.settings };
+      __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
+      this.settings = keep;
+      __privateMethod(this, _PieChaseGame_instances, buildDeck_fn).call(this);
+      this.order = units.map((u) => u.id);
+      for (const id of this.order) {
+        this.pos[id] = HUB;
+        this.wedges[id] = [];
+      }
+      this.room.resetScores();
+      this.phase = "rolloff";
+      this.rolloff = { rolls: {}, contenders: this.order.slice(), round: 1, starter: null };
+      __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, "Everyone rolls: the highest roll goes first");
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    roll(unitId) {
+      if (this.phase === "rolloff") {
+        __privateMethod(this, _PieChaseGame_instances, rolloffRoll_fn).call(this, unitId);
+        return;
+      }
+      if (this.phase !== "roll") fail("It is not time to roll");
+      if (unitId !== this.turn) fail(`It is ${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.turn)}\u2019s turn`);
+      const value = this.rollDie();
+      this.rolls += 1;
+      this.die = { value, n: this.rolls };
+      const found = destinations(this.pos[this.turn], value);
+      this.options = [...found.keys()];
+      this.paths = Object.fromEntries(found);
+      this.phase = "move";
+      this.again = null;
+      if (this.options.length === 1) __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, T3.autoMove, () => this.move(this.turn, this.options[0]));
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    move(unitId, to) {
+      if (this.phase !== "move") fail("Roll first");
+      if (unitId !== this.turn) fail(`It is ${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.turn)}\u2019s turn`);
+      if (!this.options.includes(to)) fail("You cannot get there with this roll");
+      this.timer = null;
+      const from = this.pos[unitId];
+      this.pos[unitId] = to;
+      this.lastMove = { unit: unitId, from, to, path: this.paths[to] ?? [to], n: this.die?.value ?? 0 };
+      this.options = [];
+      this.paths = {};
+      __privateMethod(this, _PieChaseGame_instances, land_fn).call(this, unitId, to);
+    }
+    /** In the hub: the player picks the category (before they have every wedge), or the others pick it (the last question). */
+    choose(chooserUnit, cat, { trusted = false } = {}) {
+      if (this.phase !== "choose") fail("There is no category to pick");
+      const c = int(cat);
+      if (!(c >= 0 && c < CATEGORY_COUNT)) fail("Pick one of the six categories");
+      if (!trusted) {
+        if (this.chooser === "self" && chooserUnit !== this.turn) fail(`${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.turn)} picks the category`);
+        if (this.chooser === "opponents" && chooserUnit === this.turn) fail("The other players pick your last category");
+      }
+      __privateMethod(this, _PieChaseGame_instances, ask_fn).call(this, c, { hq: false, final: this.chooser === "opponents", where: HUB });
+    }
+    /** The reader (or the host) says whether the answer was right. */
+    judge(byUnit, correct, { trusted = false } = {}) {
+      if (this.phase !== "question") fail("There is no question to judge");
+      if (!trusted) {
+        if (byUnit === this.turn) fail("Another player judges your answer");
+        if (this.room.hosts > 0) fail("The host judges the answers");
+      }
+      const u = this.turn;
+      const q = this.question;
+      const result = { correct: !!correct, wedge: null, win: false };
+      if (correct) {
+        if (q.final) result.win = true;
+        else if (q.hq && !this.wedges[u].includes(q.cat)) {
+          this.wedges[u].push(q.cat);
+          result.wedge = q.cat;
+          const unit = __privateMethod(this, _PieChaseGame_instances, unit_fn2).call(this, u);
+          if (unit) unit.score = this.wedges[u].length;
+        }
+      }
+      this.result = result;
+      this.phase = "result";
+      const name = __privateMethod(this, _PieChaseGame_instances, name_fn).call(this, u);
+      const cat = __privateMethod(this, _PieChaseGame_instances, catName_fn).call(this, q.cat);
+      if (result.win) __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `${name} answered the winning question`);
+      else if (result.wedge !== null) __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `${name} won the ${cat} wedge`);
+      else __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, correct ? `${name} got a ${cat} question right` : `${name} missed a ${cat} question`);
+      __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, result.wedge !== null || result.win ? T3.wedge : T3.result, () => __privateMethod(this, _PieChaseGame_instances, afterResult_fn).call(this));
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    /** The host, the TV or the first player moves things along for someone who has gone away. */
+    advance() {
+      switch (this.phase) {
+        case "rolloff": {
+          const r = this.rolloff;
+          if (r.starter) {
+            this.timer = null;
+            __privateMethod(this, _PieChaseGame_instances, beginPlay_fn).call(this);
+            return;
+          }
+          for (const id of r.contenders.filter((x) => !r.rolls[x])) __privateMethod(this, _PieChaseGame_instances, rolloffRoll_fn).call(this, id);
+          return;
+        }
+        case "roll":
+          this.roll(this.turn);
+          return;
+        case "move":
+          this.move(this.turn, this.options[0]);
+          return;
+        case "choose":
+          this.choose(null, Math.floor(this.room.rng() * CATEGORY_COUNT), { trusted: true });
+          return;
+        case "result":
+          this.timer = null;
+          __privateMethod(this, _PieChaseGame_instances, afterResult_fn).call(this);
+          return;
+        default:
+          return;
+      }
+    }
+    /** The host passes the turn on (someone has had to leave, say). */
+    skipTurn() {
+      if (!["roll", "move", "choose", "question"].includes(this.phase)) fail("Nothing to skip right now");
+      this.timer = null;
+      __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.turn)}\u2019s turn was skipped`);
+      __privateMethod(this, _PieChaseGame_instances, nextTurn_fn).call(this);
+    }
+    endGame() {
+      const keep = { ...this.settings };
+      __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
+      this.settings = keep;
+      this.room.resetScores();
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    // ---------- settings (lobby) ----------
+    setSet(id) {
+      if (this.phase !== "lobby") fail("Change the questions before the game starts");
+      const want = String(id ?? "");
+      if (want !== ALL_SETS && !this.room.loadContent(GAME5, want)) fail("No such question set");
+      this.settings.setId = want;
+      this.deck = null;
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    setWedges(n) {
+      if (this.phase !== "lobby") fail("Change this before the game starts");
+      const v = int(n);
+      if (![4, 5, 6].includes(v)) fail("Play to 4, 5 or 6 wedges");
+      this.settings.wedgesToWin = v;
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    setEqualTurns(on) {
+      if (this.phase !== "lobby") fail("Change this before the game starts");
+      this.settings.equalTurns = !!on;
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+    }
+    // ---------- who may do what ----------
+    /** Host and TV actions (both trusted). */
+    act(action, a = {}) {
+      switch (action) {
+        case "start":
+          return this.start();
+        case "roll":
+          return this.roll(this.phase === "rolloff" ? String(a.unit ?? "") : this.turn);
+        case "move":
+          return this.move(this.turn, String(a.to ?? ""));
+        case "choose":
+          return this.choose(null, a.cat, { trusted: true });
+        case "judge":
+          return this.judge(null, a.correct === true, { trusted: true });
+        case "advance":
+          return this.advance();
+        case "skipTurn":
+          return this.skipTurn();
+        case "endGame":
+        case "playAgain":
+          return this.endGame();
+        case "setSet":
+          return this.setSet(a.id);
+        case "setWedges":
+          return this.setWedges(a.n);
+        case "setEqualTurns":
+          return this.setEqualTurns(a.on);
+        case "kick":
+          if (this.phase !== "lobby") fail("Players can only be removed before the game starts");
+          return this.room.removePlayer(String(a.pid ?? a.id ?? ""));
+        default:
+          throw new GameError(`Unknown action ${action}`);
+      }
+    }
+    /** A message from a phone. */
+    onPlayer(player, msg) {
+      const unit = __privateMethod(this, _PieChaseGame_instances, unitOf_fn).call(this, player);
+      switch (msg.t) {
+        case "start":
+        case "advance":
+        case "skip":
+        case "play-again":
+          if (!__privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id)) fail("Only the host can do that");
+          this.act({ start: "start", advance: "advance", skip: "skipTurn", "play-again": "playAgain" }[msg.t]);
+          return void 0;
+        case "roll":
+          this.roll(unit);
+          return { t: "ack", what: "roll" };
+        case "move":
+          this.move(unit, String(msg.to ?? ""));
+          return void 0;
+        case "choose":
+          this.choose(unit, msg.cat);
+          return void 0;
+        case "judge":
+          this.judge(unit, msg.correct === true);
+          return { t: "ack", what: "judge" };
+        default:
+          return void 0;
+      }
+    }
+    publicView() {
+      const names = this.phase === "lobby" ? __privateMethod(this, _PieChaseGame_instances, categoryNames_fn).call(this) : this.deck?.names ?? __privateMethod(this, _PieChaseGame_instances, categoryNames_fn).call(this);
+      const v = {
+        game: GAME5,
+        scoreFormat: "none",
+        lobbyTitle: NAME,
+        phase: this.phase,
+        status: this.phase,
+        hosted: this.room.hosts > 0,
+        minUnits: MIN_UNITS,
+        maxUnits: MAX_UNITS,
+        categories: CATEGORIES.map((c, i) => ({ key: c.key, name: names[i] ?? c.name, color: c.color })),
+        board: SPACES,
+        units: __privateMethod(this, _PieChaseGame_instances, unitsView_fn).call(this),
+        turn: this.turn,
+        die: this.die,
+        settings: { ...this.settings },
+        line: __privateMethod(this, _PieChaseGame_instances, line_fn2).call(this),
+        log: this.log.slice()
+      };
+      if (this.phase === "lobby") {
+        v.sets = this.room.listContent(GAME5).map((s) => ({ id: s.id, title: s.title })).slice(0, 40);
+        v.setTitle = this.settings.setId === ALL_SETS ? "All question sets" : this.room.listContent(GAME5).find((s) => s.id === this.settings.setId)?.title ?? "";
+      }
+      if (this.phase === "rolloff") {
+        const r = this.rolloff;
+        v.rolloff = { rolls: { ...r.rolls }, contenders: r.contenders.slice(), round: r.round, starter: r.starter, history: (r.history ?? []).map((x) => ({ ...x })) };
+      }
+      if (this.phase === "roll") v.again = this.again;
+      if (this.phase === "move") v.options = this.options.slice();
+      if (this.lastMove) v.lastMove = { ...this.lastMove, path: this.lastMove.path.slice() };
+      if (this.phase === "choose") v.chooser = this.chooser;
+      if (this.phase === "question" || this.phase === "result") {
+        const q = this.question;
+        v.question = { cat: q.cat, text: q.q, hq: q.hq, final: q.final, where: q.where, hasWedge: (this.wedges[this.turn] ?? []).includes(q.cat) };
+        v.readerId = this.room.hosts > 0 ? null : __privateMethod(this, _PieChaseGame_instances, reader_fn).call(this);
+      }
+      if (this.phase === "result") {
+        v.question.answer = this.question.a;
+        v.result = { ...this.result };
+      }
+      if (this.phase === "gameover") v.winners = this.winners.slice();
+      return v;
+    }
+    /** A phone: the shared view, and the answer for an opponent's phone while there is no host to read it. */
+    playerView(player) {
+      const v = this.publicView();
+      const unit = __privateMethod(this, _PieChaseGame_instances, unitOf_fn).call(this, player);
+      v.me = { id: player.id, unitId: unit, canStart: __privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id), myTurn: !!unit && unit === this.turn };
+      if (this.phase === "question" && !v.hosted && unit && unit !== this.turn) {
+        v.question.answer = this.question.a;
+        v.me.canJudge = true;
+        v.me.reader = unit === v.readerId;
+      }
+      if (this.phase === "choose") v.me.canChoose = this.chooser === "self" ? unit === this.turn : !!unit && unit !== this.turn;
+      return v;
+    }
+    /** The host reads every question, so the host sees the answer. */
+    hostView() {
+      const v = this.publicView();
+      if (this.question && (this.phase === "question" || this.phase === "result")) v.question.answer = this.question.a;
+      return v;
+    }
+    // ---------- saving ----------
+    toJSON() {
+      return {
+        settings: this.settings,
+        phase: this.phase,
+        order: this.order,
+        pos: this.pos,
+        wedges: this.wedges,
+        turn: this.turn,
+        rolloff: this.rolloff,
+        die: this.die,
+        rolls: this.rolls,
+        options: this.options,
+        paths: this.paths,
+        lastMove: this.lastMove,
+        again: this.again,
+        chooser: this.chooser,
+        question: this.question,
+        result: this.result,
+        firstOfRound: this.firstOfRound,
+        lastRound: this.lastRound,
+        winners: this.winners,
+        finished: this.finished,
+        log: this.log
+      };
+    }
+    restore(d) {
+      __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
+      this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false, ...d.settings ?? {} };
+      const valid = ["lobby", "rolloff", "roll", "move", "choose", "question", "result", "gameover"];
+      this.phase = valid.includes(d.phase) ? d.phase : "lobby";
+      Object.assign(this, {
+        order: d.order ?? [],
+        pos: d.pos ?? {},
+        wedges: d.wedges ?? {},
+        turn: d.turn ?? null,
+        rolloff: d.rolloff ?? null,
+        die: d.die ?? null,
+        rolls: d.rolls ?? 0,
+        options: d.options ?? [],
+        paths: d.paths ?? {},
+        lastMove: d.lastMove ?? null,
+        again: d.again ?? null,
+        chooser: d.chooser ?? null,
+        question: d.question ?? null,
+        result: d.result ?? null,
+        firstOfRound: d.firstOfRound ?? null,
+        lastRound: !!d.lastRound,
+        winners: d.winners ?? [],
+        finished: d.finished ?? {},
+        log: d.log ?? []
+      });
+      if (this.phase === "question" && !this.question) this.phase = "roll";
+      if (this.phase === "result") __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, T3.result, () => __privateMethod(this, _PieChaseGame_instances, afterResult_fn).call(this));
+      if (this.phase === "rolloff" && this.rolloff?.starter) __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, T3.rolloffDone, () => __privateMethod(this, _PieChaseGame_instances, beginPlay_fn).call(this));
+      if (this.phase === "move" && this.options.length === 1) __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, T3.autoMove, () => this.move(this.turn, this.options[0]));
+    }
+  };
+  _PieChaseGame_instances = new WeakSet();
+  reset_fn2 = function() {
+    this.phase = "lobby";
+    this.order = [];
+    this.pos = {};
+    this.wedges = {};
+    this.turn = null;
+    this.rolloff = null;
+    this.die = null;
+    this.rolls = 0;
+    this.options = [];
+    this.paths = {};
+    this.lastMove = null;
+    this.again = null;
+    this.chooser = null;
+    this.question = null;
+    this.result = null;
+    this.firstOfRound = null;
+    this.lastRound = false;
+    this.winners = [];
+    this.finished = {};
+    this.timer = null;
+    this.deck = null;
+    this.log = [];
+  };
+  changed_fn5 = function() {
+    this.room.changed();
+  };
+  now_fn3 = function() {
+    return this.room.now();
+  };
+  setTimer_fn3 = function(ms, fire) {
+    this.timer = { at: __privateMethod(this, _PieChaseGame_instances, now_fn3).call(this) + ms, fire };
+  };
+  unit_fn2 = function(id) {
+    return this.room.units().find((u) => u.id === id) ?? null;
+  };
+  name_fn = function(id) {
+    return __privateMethod(this, _PieChaseGame_instances, unit_fn2).call(this, id)?.name ?? "Someone";
+  };
+  note_fn = function(text) {
+    this.log.push(text);
+    if (this.log.length > 6) this.log.shift();
+  };
+  /** Players who belong to a unit (a team's members, or the player themself). */
+  members_fn2 = function(unitId) {
+    return this.room.mode === "teams" ? this.room.players.filter((p) => p.teamId === unitId) : this.room.players.filter((p) => p.id === unitId);
+  };
+  connectedUnit_fn = function(unitId) {
+    return __privateMethod(this, _PieChaseGame_instances, members_fn2).call(this, unitId).some((p) => this.room.connected.has(p.id));
+  };
+  unitOf_fn = function(player) {
+    return this.room.unitOf(player)?.id ?? null;
+  };
+  // ---------- questions ----------
+  /** The question sets in play: one, or every set this TV has. */
+  sets_fn = function() {
+    const ids = this.settings.setId === ALL_SETS ? this.room.listContent(GAME5).map((s) => s.id) : [this.settings.setId];
+    return ids.map((id) => this.room.loadContent(GAME5, id)).filter(Boolean);
+  };
+  /** Category names: the set's own, or the usual ones when several sets are mixed. */
+  categoryNames_fn = function() {
+    const sets = __privateMethod(this, _PieChaseGame_instances, sets_fn).call(this);
+    if (sets.length === 1) return sets[0].categories.map((c, i) => String(c.name).trim() || CATEGORIES[i].name);
+    return CATEGORIES.map((c) => c.name);
+  };
+  buildDeck_fn = function() {
+    const sets = __privateMethod(this, _PieChaseGame_instances, sets_fn).call(this);
+    const pools = Array.from({ length: CATEGORY_COUNT }, () => []);
+    const seenKeys = /* @__PURE__ */ new Set();
+    for (const set of sets) {
+      set.categories.forEach((c, i) => {
+        for (const q of c.questions) {
+          const k = keyOf(q);
+          if (seenKeys.has(k)) continue;
+          seenKeys.add(k);
+          pools[i].push({ q: String(q.q).trim(), a: String(q.a).trim() });
+        }
+      });
+    }
+    this.deck = { names: __privateMethod(this, _PieChaseGame_instances, categoryNames_fn).call(this), pools };
+  };
+  /** The next question in a category: one this TV has not asked before, if there is one left. */
+  draw_fn = function(cat) {
+    if (!this.deck) __privateMethod(this, _PieChaseGame_instances, buildDeck_fn).call(this);
+    const pool = this.deck.pools[cat] ?? [];
+    if (!pool.length) return { q: `No ${this.deck.names[cat]} questions in this set. Answer anything!`, a: "(no question)" };
+    const memory = this.room.memory.load(GAME5) ?? {};
+    const seen = new Set(memory.seen ?? []);
+    let fresh = pool.filter((q) => !seen.has(keyOf(q)));
+    if (!fresh.length) {
+      const mine = new Set(pool.map(keyOf));
+      for (const k of mine) seen.delete(k);
+      fresh = pool;
+    }
+    const pick = fresh[Math.floor(this.room.rng() * fresh.length)];
+    const list = [...seen, keyOf(pick)].slice(-MAX_SEEN2);
+    this.room.memory.save(GAME5, { ...memory, seen: list });
+    return pick;
+  };
+  // ---------- starting ----------
+  units_fn = function() {
+    return this.room.eligibleUnits();
+  };
+  // ---------- who goes first ----------
+  rolloffRoll_fn = function(unitId) {
+    const r = this.rolloff;
+    if (this.phase !== "rolloff" || !r || r.starter) return;
+    if (!r.contenders.includes(unitId) || r.rolls[unitId]) return;
+    r.rolls[unitId] = this.rollDie();
+    this.rolls += 1;
+    this.die = { value: r.rolls[unitId], n: this.rolls };
+    if (r.contenders.every((id) => r.rolls[id])) __privateMethod(this, _PieChaseGame_instances, settleRolloff_fn).call(this);
+    __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+  };
+  settleRolloff_fn = function() {
+    const r = this.rolloff;
+    const best = Math.max(...r.contenders.map((id) => r.rolls[id]));
+    const top = r.contenders.filter((id) => r.rolls[id] === best);
+    if (top.length === 1) {
+      r.starter = top[0];
+      __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, top[0])} rolled highest and goes first`);
+      __privateMethod(this, _PieChaseGame_instances, setTimer_fn3).call(this, T3.rolloffDone, () => __privateMethod(this, _PieChaseGame_instances, beginPlay_fn).call(this));
+      return;
+    }
+    r.history = [...r.history ?? [], { ...r.rolls }];
+    r.contenders = top;
+    r.rolls = {};
+    r.round += 1;
+    __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `A tie: ${top.map((id) => __privateMethod(this, _PieChaseGame_instances, name_fn).call(this, id)).join(" and ")} roll again`);
+  };
+  beginPlay_fn = function() {
+    if (this.phase !== "rolloff" || !this.rolloff?.starter) return;
+    const i = this.order.indexOf(this.rolloff.starter);
+    this.order = [...this.order.slice(i), ...this.order.slice(0, i)];
+    this.firstOfRound = this.order[0];
+    this.turn = this.order[0];
+    __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this);
+  };
+  // ---------- a turn ----------
+  startTurn_fn = function(again = null) {
+    this.phase = "roll";
+    this.again = again;
+    this.options = [];
+    this.paths = {};
+    this.question = null;
+    this.result = null;
+    this.chooser = null;
+    __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+  };
+  hasAll_fn = function(unitId) {
+    return (this.wedges[unitId]?.length ?? 0) >= this.settings.wedgesToWin;
+  };
+  land_fn = function(unitId, at) {
+    const s = space(at);
+    if (s.kind === "again") {
+      __privateMethod(this, _PieChaseGame_instances, note_fn).call(this, `${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, unitId)} landed on Roll Again`);
+      __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this, "space");
+      return;
+    }
+    if (s.kind === "hub") {
+      this.phase = "choose";
+      this.chooser = __privateMethod(this, _PieChaseGame_instances, hasAll_fn).call(this, unitId) ? "opponents" : "self";
+      __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+      return;
+    }
+    __privateMethod(this, _PieChaseGame_instances, ask_fn).call(this, s.cat, { hq: s.kind === "hq", final: false, where: at });
+  };
+  ask_fn = function(cat, { hq, final, where }) {
+    const q = __privateMethod(this, _PieChaseGame_instances, draw_fn).call(this, cat);
+    this.question = { cat, q: q.q, a: q.a, hq, final, where };
+    this.phase = "question";
+    this.chooser = null;
+    __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+  };
+  afterResult_fn = function() {
+    if (this.phase !== "result") return;
+    const r = this.result;
+    if (r.win) {
+      __privateMethod(this, _PieChaseGame_instances, won_fn).call(this, this.turn);
+      return;
+    }
+    if (r.correct) {
+      __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this, "correct");
+      return;
+    }
+    __privateMethod(this, _PieChaseGame_instances, nextTurn_fn).call(this);
+  };
+  won_fn = function(unitId) {
+    this.winners.push(unitId);
+    this.finished[unitId] = true;
+    if (!this.settings.equalTurns) {
+      __privateMethod(this, _PieChaseGame_instances, end_fn2).call(this);
+      return;
+    }
+    this.lastRound = true;
+    __privateMethod(this, _PieChaseGame_instances, nextTurn_fn).call(this);
+  };
+  nextTurn_fn = function() {
+    const n = this.order.length;
+    let i = this.order.indexOf(this.turn);
+    for (let step = 0; step < n; step++) {
+      i = (i + 1) % n;
+      const id = this.order[i];
+      if (this.lastRound && id === this.firstOfRound) {
+        __privateMethod(this, _PieChaseGame_instances, end_fn2).call(this);
+        return;
+      }
+      if (this.finished[id]) continue;
+      this.turn = id;
+      __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this);
+      return;
+    }
+    __privateMethod(this, _PieChaseGame_instances, end_fn2).call(this);
+  };
+  end_fn2 = function() {
+    this.phase = "gameover";
+    this.timer = null;
+    this.options = [];
+    this.paths = {};
+    __privateMethod(this, _PieChaseGame_instances, changed_fn5).call(this);
+  };
+  catName_fn = function(cat) {
+    return (this.deck?.names ?? CATEGORIES.map((c) => c.name))[cat] ?? CATEGORIES[cat]?.name ?? "";
+  };
+  /** With a host on the host page, the host starts and moves things along; without one, the first player to join does. */
+  starter_fn2 = function(pid) {
+    return !this.room.hosts && this.room.players[0]?.id === pid;
+  };
+  // ---------- views ----------
+  /** Who reads the question: the next player in turn (on the answerer's left) who is here. */
+  reader_fn = function() {
+    const n = this.order.length;
+    let i = this.order.indexOf(this.turn);
+    for (let step = 1; step < n; step++) {
+      const id = this.order[(i + step) % n];
+      if (__privateMethod(this, _PieChaseGame_instances, connectedUnit_fn).call(this, id)) return id;
+    }
+    return n > 1 ? this.order[(i + 1) % n] : null;
+  };
+  line_fn2 = function() {
+    const who = __privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.turn);
+    const cat = (c) => __privateMethod(this, _PieChaseGame_instances, catName_fn).call(this, c);
+    switch (this.phase) {
+      case "lobby":
+        return { text: "Waiting for players", next: `${MIN_UNITS} to ${MAX_UNITS} players or teams` };
+      case "rolloff":
+        return this.rolloff?.starter ? { text: `${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.rolloff.starter)} goes first`, next: "Highest roll starts" } : { text: "Everyone rolls the die", next: this.rolloff?.round > 1 ? "A tie for highest: roll again" : "The highest roll goes first" };
+      case "roll":
+        return { text: this.again === "correct" ? `Right! ${who} rolls again` : this.again === "space" ? `Roll Again! ${who} rolls again` : `${who}\u2019s turn: roll the die`, next: __privateMethod(this, _PieChaseGame_instances, hasAll_fn).call(this, this.turn) ? "Every wedge: head for the hub!" : "Roll on your phone" };
+      case "move":
+        return { text: `${who} rolled ${this.die?.value}`, next: this.options.length > 1 ? "Pick where to move on your phone" : "Moving\u2026" };
+      case "choose":
+        return this.chooser === "opponents" ? { text: `${who} is in the hub with every wedge!`, next: "The other players pick the category for the winning question" } : { text: `${who} is in the hub`, next: `${who} picks any category` };
+      case "question":
+        return { text: `${cat(this.question.cat)}${this.question.final ? ": for the win!" : this.question.hq ? ": for the wedge!" : ""}`, next: `${who} answers out loud` };
+      case "result":
+        return this.result.win ? { text: `${who} wins!`, next: "" } : this.result.wedge !== null ? { text: `${who} wins the ${cat(this.result.wedge)} wedge!`, next: "and rolls again" } : this.result.correct ? { text: "Right!", next: `${who} rolls again` } : { text: "Not quite", next: `Over to ${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, __privateMethod(this, _PieChaseGame_instances, peekNext_fn).call(this))}` };
+      default:
+        return { text: this.winners.length > 1 ? "A tie!" : `${__privateMethod(this, _PieChaseGame_instances, name_fn).call(this, this.winners[0])} wins!`, next: "" };
+    }
+  };
+  peekNext_fn = function() {
+    const n = this.order.length;
+    let i = this.order.indexOf(this.turn);
+    for (let step = 1; step <= n; step++) {
+      const id = this.order[(i + step) % n];
+      if (!this.finished[id]) return id;
+    }
+    return this.turn;
+  };
+  unitsView_fn = function() {
+    const ids = this.phase === "lobby" ? __privateMethod(this, _PieChaseGame_instances, units_fn).call(this).map((u) => u.id) : this.order;
+    return ids.map((id) => {
+      const u = __privateMethod(this, _PieChaseGame_instances, unit_fn2).call(this, id);
+      return {
+        id,
+        name: u?.name ?? "?",
+        color: u?.color ?? "#888888",
+        connected: __privateMethod(this, _PieChaseGame_instances, connectedUnit_fn).call(this, id),
+        pos: this.pos[id] ?? HUB,
+        wedges: (this.wedges[id] ?? []).slice(),
+        ...this.room.mode === "teams" ? { members: __privateMethod(this, _PieChaseGame_instances, members_fn2).call(this, id).map((p) => p.name) } : {},
+        ...this.finished[id] ? { won: true } : {}
+      };
+    });
+  };
+
+  // games/piechase/index.js
+  var piechase_default = {
+    id: "piechase",
+    name: NAME,
+    description: "The wedge-collecting trivia board game. Roll, move round the wheel, answer questions in six categories, win a wedge at each headquarters, then race back to the hub to win.",
+    // Two to six players or teams; each player or team needs a phone to roll and move.
+    maxUnits: MAX_UNITS,
+    validateContent: validateSet3,
+    create: (room) => new PieChaseGame(room)
+  };
+
   // games/index.js
-  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default, spynight_default].map((g) => [g.id, g]));
+  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default, spynight_default, piechase_default].map((g) => [g.id, g]));
 
   // room.js
   var VERSION = 2;
@@ -4718,28 +5504,29 @@
     { id: "shared", label: "Every game" },
     { id: "jeopardy", label: "Jeopardy" },
     { id: "feud", label: "Family Feud" },
-    { id: "spynight", label: "Spy Night" }
+    { id: "spynight", label: "Spy Night" },
+    { id: "piechase", label: "Pie Chase" }
   ];
   var SOUND_NAMES = [
-    { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight"] },
+    { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight", "piechase"] },
     { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy", "spynight"], labels: { spynight: "Music under the game (loops from the deal to the end)" } },
-    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight"], labels: { spynight: "The vote begins" } },
+    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "A question comes up", spynight: "The vote begins" } },
     { name: "buzz", label: "Someone buzzes in", games: ["shared", "jeopardy"] },
-    { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight"], labels: { spynight: "A team is approved" } },
-    { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy", "spynight"], labels: { spynight: "A team is rejected" } },
+    { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "A right answer", spynight: "A team is approved" } },
+    { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy", "spynight", "piechase"], labels: { piechase: "A wrong answer", spynight: "A team is rejected" } },
     { name: "timeup", label: "Time's up", games: ["shared", "jeopardy", "feud"] },
     { name: "tick", label: "Countdown tick (last five seconds)", games: ["shared", "jeopardy", "feud"] },
     { name: "reveal", label: "Answer shown after a skipped clue, and each Final Jeopardy response", games: ["shared", "jeopardy"] },
-    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy"] },
-    { name: "final", label: "Final Jeopardy begins", games: ["shared", "jeopardy"] },
-    { name: "fanfare", label: "The winner", games: ["shared", "jeopardy", "spynight"], labels: { spynight: "The Resistance win" } },
-    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight"], labels: { spynight: "A leader starts picking a team" } },
+    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy", "piechase"], labels: { piechase: "A wedge is won" } },
+    { name: "final", label: "Final Jeopardy begins", games: ["shared", "jeopardy", "piechase"], labels: { piechase: "The winning question comes up" } },
+    { name: "fanfare", label: "The winner", games: ["shared", "jeopardy", "spynight", "piechase"], labels: { piechase: "The winning answer", spynight: "The Resistance win" } },
+    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight", "piechase"], labels: { piechase: "The die is rolled", spynight: "A leader starts picking a team" } },
     { name: "board", label: "The board fills in", games: ["jeopardy"] },
     { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy", "spynight"], labels: { spynight: "The mission begins" } },
-    { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy"] },
-    { name: "join", label: "A player joins", games: ["jeopardy", "spynight"] },
-    { name: "applause", label: "End of a round, and the winner", games: ["jeopardy"] },
-    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight"], labels: { spynight: "The roles are dealt" } },
+    { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy", "piechase"], labels: { piechase: "Landing on Roll Again" } },
+    { name: "join", label: "A player joins", games: ["jeopardy", "spynight", "piechase"] },
+    { name: "applause", label: "End of a round, and the winner", games: ["jeopardy", "piechase"], labels: { piechase: "Game over" } },
+    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "The game begins", spynight: "The roles are dealt" } },
     { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight"], labels: { spynight: "A mission succeeds" } },
     { name: "strike", label: "A strike (the big X)", games: ["feud", "spynight"], labels: { spynight: "A mission fails" } },
     { name: "strikeout", label: "The third strike", games: ["feud"] },

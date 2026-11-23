@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
 import { T, readingTime, speakingTime } from '../games/jeopardy/game.js';
+import { T as PT } from '../games/piechase/game.js';
+import { HUB, hqOf } from '../games/piechase/board.js';
 
 const out = path.resolve(process.argv[2] ?? 'fixtures-out');
 mkdirSync(out, { recursive: true });
@@ -19,6 +21,75 @@ const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483
 const room = new Room({ games: GAMES, now: () => t, random, loadContent: () => own, listContent: () => [{ id: 'family-night', title: own.title }] });
 const advance = (ms) => { t += ms; room.tick(); };
 const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.stringify(room.publicView(), null, 2)); console.log('recorded', name); };
+
+// Pie Chase: what the Apple TV reads at each step of a game (pc-*.json), with a loaded die. The answer to a question
+// only reaches the TV once it has been judged. Recorded first, with its own clock and dice, so it does not depend on the
+// Jeopardy game below.
+{
+  let t = 1000;
+  let seed = 11;
+  const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const set = JSON.parse(readFileSync(path.join(root, 'data/piechase/family-classic.json'), 'utf8'));
+  const proom = new Room({
+    games: GAMES, now: () => t, random,
+    loadContent: (game, id) => (game === 'piechase' && id === 'family-classic' ? set : null),
+    listContent: (game) => (game === 'piechase' ? [{ id: 'family-classic', title: set.title }] : []),
+  });
+  proom.chooseGame('piechase');
+  const pg = proom.game;
+  const dice = [5, 2, 5, 3, 6, 6, 4];
+  pg.rollDie = () => dice.shift() ?? 1;
+  const pp = ['Leo', 'Maya', 'Dad'].map((n) => proom.join({ name: n }));
+  pp.forEach((p) => proom.setConnected(p.id, true));
+  const savePc = (name) => { writeFileSync(path.join(out, `pc-${name}.json`), JSON.stringify(proom.publicView(), null, 2)); console.log('recorded pc', name); };
+  const tickBy = (ms) => { t += ms; proom.tick(); };
+  const msg = (p, m) => proom.playerMessage(p.id, m);
+  const byUnit = (id) => pp.find((p) => proom.unitOf(p).id === id);
+  savePc('lobby');
+  msg(pp[0], { t: 'start' });
+  savePc('rolloff');
+  // Leo and Dad tie on 5 and roll again; Dad wins it with a 6.
+  for (const p of pp) msg(p, { t: 'roll' });
+  savePc('rolloff-tie');
+  msg(pp[0], { t: 'roll' }); msg(pp[2], { t: 'roll' });
+  savePc('rolloff-done');
+  tickBy(PT.rolloffDone);
+  savePc('roll');
+  // Dad rolls a 6 from the hub: six headquarters to pick from.
+  msg(byUnit(pg.turn), { t: 'roll' });
+  savePc('move');
+  const mv0 = proom.publicView().game;
+  msg(byUnit(pg.turn), { t: 'move', to: mv0.options.find((id) => mv0.board.find((x) => x.id === id).cat === 2) });
+  savePc('question-hq');
+  msg(byUnit(pg.readerId ?? proom.publicView().game.readerId), { t: 'judge', correct: true });
+  savePc('result-wedge');
+  tickBy(PT.wedge);
+  savePc('roll-again');
+  // Dad rolls a 4 and lands on a category space, and gets it wrong.
+  msg(byUnit(pg.turn), { t: 'roll' });
+  const v = proom.publicView().game;
+  if (v.phase === 'move') msg(byUnit(pg.turn), { t: 'move', to: v.options.find((id) => v.board.find((x) => x.id === id).kind === 'cat') ?? v.options[0] });
+  savePc('question');
+  msg(byUnit(proom.publicView().game.readerId), { t: 'judge', correct: false });
+  savePc('result-wrong');
+  tickBy(PT.result);
+  // The end game: Dad has every wedge and is a roll away from the hub; the others pick his category.
+  const dad = proom.unitOf(pp[2]).id;
+  pg.wedges[dad] = [2, 0, 1, 3, 4, 5];
+  pg.pos[dad] = hqOf(0);
+  pg.turn = dad; pg.phase = 'roll'; pg.again = null;
+  dice.unshift(6);
+  msg(pp[2], { t: 'roll' });
+  const mv = proom.publicView().game;
+  if (mv.phase === 'move') msg(pp[2], { t: 'move', to: HUB });
+  savePc('choose-final');
+  msg(pp[0], { t: 'choose', cat: 5 });
+  savePc('question-final');
+  msg(byUnit(proom.publicView().game.readerId), { t: 'judge', correct: true });
+  savePc('result-win');
+  tickBy(PT.wedge + PT.result);
+  savePc('gameover');
+}
 
 room.chooseGame('jeopardy');
 const g = room.game;

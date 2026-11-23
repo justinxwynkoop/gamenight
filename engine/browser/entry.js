@@ -27,7 +27,7 @@ async function downloadSeason(season) {
 
 /**
  * config     { url, key }: the Supabase project and its publishable key
- * game       'jeopardy', 'feud' or 'spynight' to start that game (null: the host picks)
+ * game       'jeopardy', 'feud', 'spynight' or 'piechase' to start that game (null: the host picks)
  * onState    (view) => void, what the TV shows
  * onStatus   (phonesConnected: boolean, issue: string | null) => void
  */

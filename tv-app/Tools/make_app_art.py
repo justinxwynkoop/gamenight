@@ -1,7 +1,8 @@
 """Draws the Family Game Night app icon, Top Shelf images and the two home
-screen tiles (Singo Night, Jeopardy, Family Feud, Spy Night).
+screen tiles (Singo Night, Jeopardy, Family Feud, Spy Night, Pie Chase).
 
-`python3 Tools/make_app_art.py <Assets.xcassets> spynight [menu.webp]` draws only the Spy Night tile (and the website's menu picture).
+`python3 Tools/make_app_art.py <Assets.xcassets> spynight [menu.webp]` draws only the Spy Night tile (and the website's menu picture);
+`... piechase [menu.webp]` the same for Pie Chase.
 
 Usage: python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
 
@@ -478,6 +479,83 @@ def spy_tile(w, h):
     return img.convert("RGB")
 
 
+PIE_COLORS = [(59, 130, 246), (236, 72, 153), (250, 204, 21), (168, 85, 247), (34, 197, 94), (249, 115, 22)]
+APP_FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "FamilyGameNight", "GameNight", "Fonts")
+
+
+def pie_tile(w, h):
+    """Pie Chase: the wheel board seen from above, a token with four of its six wedges, and the title. Uses the app's
+    own fonts (Unbounded, Outfit), so it draws anywhere."""
+    import math
+    img = vgrad(w, h, (22, 34, 84), (8, 11, 28))
+    for (fx, fy, col, st) in ((0.2, 0.2, (59, 130, 246), 0.35), (0.85, 0.25, (236, 72, 153), 0.3), (0.75, 0.9, (249, 115, 22), 0.25), (0.15, 0.85, (34, 197, 94), 0.25)):
+        img.alpha_composite(radial(w, h, w * fx, h * fy, h * 0.7, col, st))
+    ss = 3   # drawn bigger, then shrunk, for smooth edges
+    W, H = w * ss, h * ss
+    board = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(board)
+    cx, cy, R = W * 0.5, H * 0.42, H * 0.36
+    d.ellipse([cx - R * 1.13, cy - R * 1.13, cx + R * 1.13, cy + R * 1.13], fill=(13, 20, 40, 255), outline=(40, 52, 96, 255), width=int(H * 0.004))
+    ring = [None] * 42
+    pat = [2, None, 4, 3, None, 5]
+    for n in range(42):
+        k, off = divmod(n, 7)
+        ring[n] = ("hq", k) if off == 0 else (("again", None) if pat[off - 1] is None else ("cat", (k + pat[off - 1]) % 6))
+    band = R * 0.15
+    for n, (kind, c) in enumerate(ring):
+        a0 = -90 + (n - 0.5) * 360 / 42 + 0.5
+        a1 = -90 + (n + 0.5) * 360 / 42 - 0.5
+        col = PIE_COLORS[c] + (255,) if c is not None else (27, 34, 56, 255)
+        d.pieslice([cx - R - band / 2, cy - R - band / 2, cx + R + band / 2, cy + R + band / 2], a0, a1, fill=col)
+    d.ellipse([cx - R + band / 2 + 6, cy - R + band / 2 + 6, cx + R - band / 2 - 6, cy + R - band / 2 - 6], fill=(18, 27, 54, 255))
+    spoke = [5, 2, 4, 1, 3]
+    for k in range(6):
+        a = math.radians(-90 + 60 * k)
+        for i in range(1, 6):
+            r = R * (0.17 + i * 0.83 / 6)
+            x, y = cx + math.cos(a) * r, cy + math.sin(a) * r
+            s = R * 0.062
+            d.rounded_rectangle([x - s, y - s, x + s, y + s], radius=s * 0.3, fill=PIE_COLORS[(k + spoke[i - 1]) % 6] + (255,))
+        x, y = cx + math.cos(a) * R, cy + math.sin(a) * R
+        d.ellipse([x - R * 0.12, y - R * 0.12, x + R * 0.12, y + R * 0.12], fill=PIE_COLORS[k] + (255,), outline=(255, 255, 255, 255), width=int(R * 0.022))
+    hexa = [(cx + math.cos(math.radians(-60 + 60 * i)) * R * 0.17, cy + math.sin(math.radians(-60 + 60 * i)) * R * 0.17) for i in range(6)]
+    d.polygon(hexa, fill=(16, 22, 38, 255), outline=(255, 255, 255, 255), width=int(R * 0.02))
+    for i in range(6):
+        d.pieslice([cx - R * 0.1, cy - R * 0.1, cx + R * 0.1, cy + R * 0.1], -90 + 60 * i, -30 + 60 * i, fill=PIE_COLORS[i] + (230,))
+    # A big token, tilted, in front: four wedges won, two to go.
+    tok = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    td = ImageDraw.Draw(tok)
+    tx, ty, tr = W * 0.79, H * 0.44, H * 0.2
+    td.ellipse([tx - tr * 1.1, ty - tr * 1.1 + tr * 0.12, tx + tr * 1.1, ty + tr * 1.1 + tr * 0.12], fill=(0, 0, 0, 150))
+    td.ellipse([tx - tr * 1.1, ty - tr * 1.1, tx + tr * 1.1, ty + tr * 1.1], fill=(245, 247, 255, 255))
+    td.ellipse([tx - tr, ty - tr, tx + tr, ty + tr], fill=(12, 16, 32, 255))
+    for i in (0, 1, 2, 4):
+        td.pieslice([tx - tr * 0.92, ty - tr * 0.92, tx + tr * 0.92, ty + tr * 0.92], -90 + 60 * i + 2, -30 + 60 * i - 2, fill=PIE_COLORS[i] + (255,))
+    board.alpha_composite(tok.filter(ImageFilter.GaussianBlur(radius=1)))
+    # A die, top left.
+    dd = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ddd = ImageDraw.Draw(dd)
+    dx, dy, ds = W * 0.2, H * 0.36, H * 0.12
+    ddd.rounded_rectangle([dx - ds, dy - ds + ds * 0.15, dx + ds, dy + ds + ds * 0.15], radius=ds * 0.35, fill=(0, 0, 0, 140))
+    ddd.rounded_rectangle([dx - ds, dy - ds, dx + ds, dy + ds], radius=ds * 0.35, fill=(255, 255, 255, 255))
+    for px, py in ((-1, -1), (1, -1), (0, 0), (-1, 1), (1, 1)):
+        pr = ds * 0.17
+        ddd.ellipse([dx + px * ds * 0.55 - pr, dy + py * ds * 0.55 - pr, dx + px * ds * 0.55 + pr, dy + py * ds * 0.55 + pr], fill=(17, 24, 39, 255))
+    board.alpha_composite(dd.rotate(14, center=(dx, dy), resample=Image.BICUBIC))
+    img.alpha_composite(board.resize((w, h), Image.LANCZOS))
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.7, w * 1.02, h * 1.02], radius=h * 0.1, fill=(4, 6, 20, 225))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.04)))
+    front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    title_font = ImageFont.truetype(os.path.join(APP_FONTS, "Unbounded-Black.ttf"), int(h * 0.15))
+    gradient_text(front, (w / 2, h * 0.8), "PIE CHASE", title_font, (255, 255, 255), (214, 222, 245),
+                  stroke=int(h * 0.008), stroke_fill=(10, 12, 40, 255), shadow=0.04, glow=(140, 120, 255, 120))
+    tag_font = ImageFont.truetype(os.path.join(APP_FONTS, "Outfit-ExtraBold.ttf"), int(h * 0.058))
+    gradient_text(front, (w / 2, h * 0.925), "COLLECT ALL SIX WEDGES", tag_font, (255, 224, 110), (255, 178, 40), shadow=0.06, spacing=h * 0.012)
+    img.alpha_composite(front)
+    return img.convert("RGB")
+
+
 # ---------- Writing the asset catalog ----------
 
 def save_stack(root, name, size, scales):
@@ -530,6 +608,12 @@ def main():
         save_tile(assets, "Tile-SpyNight", spy_tile)
         if len(sys.argv) > 3:
             spy_tile(840, 504).save(sys.argv[3], quality=88)
+        return
+    if len(sys.argv) > 2 and sys.argv[2] == "piechase":
+        # Only the Pie Chase tile (and its picture for the website's menu).
+        save_tile(assets, "Tile-PieChase", pie_tile)
+        if len(sys.argv) > 3:
+            pie_tile(840, 504).save(sys.argv[3], quality=88)
         return
     mi.write_json(os.path.join(assets, "Contents.json"), {"info": {"author": "xcode", "version": 1}})
     brand = os.path.join(assets, "App Icon & Top Shelf Image.brandassets")

@@ -60,7 +60,7 @@ test('server end to end', async (t) => {
 
   await t.test('games are listed, and set endpoints are per game', async () => {
     const games = await (await fetch(`${base}/api/games`)).json();
-    assert.deepEqual(games.map((g) => g.id), ['jeopardy', 'feud', 'spynight']);
+    assert.deepEqual(games.map((g) => g.id), ['jeopardy', 'feud', 'spynight', 'piechase']);
     assert.ok(games[0].name && games[0].description);
     const h = { 'x-host-pin': PIN };
     assert.equal((await fetch(`${base}/api/games/nope/sets`, { headers: h })).status, 404);

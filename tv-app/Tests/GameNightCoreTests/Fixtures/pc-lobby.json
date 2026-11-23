@@ -1,0 +1,647 @@
+{
+  "room": {
+    "mode": "players",
+    "modeSetting": "auto",
+    "teamCount": 0,
+    "fixedTeams": 0,
+    "individualsOnly": false,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "score": 0,
+        "connected": true,
+        "members": 1
+      }
+    ],
+    "gameId": "piechase",
+    "inProgress": false,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "piechase",
+    "scoreFormat": "none",
+    "lobbyTitle": "Pie Chase",
+    "phase": "lobby",
+    "status": "lobby",
+    "hosted": false,
+    "minUnits": 2,
+    "maxUnits": 6,
+    "categories": [
+      {
+        "key": "geography",
+        "name": "Geography",
+        "color": "#3b82f6"
+      },
+      {
+        "key": "entertainment",
+        "name": "Entertainment",
+        "color": "#ec4899"
+      },
+      {
+        "key": "history",
+        "name": "History",
+        "color": "#facc15"
+      },
+      {
+        "key": "arts",
+        "name": "Arts & Literature",
+        "color": "#a855f7"
+      },
+      {
+        "key": "science",
+        "name": "Science & Nature",
+        "color": "#22c55e"
+      },
+      {
+        "key": "sports",
+        "name": "Sports & Leisure",
+        "color": "#f97316"
+      }
+    ],
+    "board": [
+      {
+        "id": "H",
+        "kind": "hub",
+        "cat": null,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "s0-1",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0,
+        "y": -0.3083
+      },
+      {
+        "id": "s0-2",
+        "kind": "cat",
+        "cat": 2,
+        "x": 0,
+        "y": -0.4467
+      },
+      {
+        "id": "s0-3",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0,
+        "y": -0.585
+      },
+      {
+        "id": "s0-4",
+        "kind": "cat",
+        "cat": 1,
+        "x": 0,
+        "y": -0.7233
+      },
+      {
+        "id": "s0-5",
+        "kind": "cat",
+        "cat": 3,
+        "x": 0,
+        "y": -0.8617
+      },
+      {
+        "id": "s1-1",
+        "kind": "cat",
+        "cat": 0,
+        "x": 0.267,
+        "y": -0.1542
+      },
+      {
+        "id": "s1-2",
+        "kind": "cat",
+        "cat": 3,
+        "x": 0.3868,
+        "y": -0.2233
+      },
+      {
+        "id": "s1-3",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0.5066,
+        "y": -0.2925
+      },
+      {
+        "id": "s1-4",
+        "kind": "cat",
+        "cat": 2,
+        "x": 0.6264,
+        "y": -0.3617
+      },
+      {
+        "id": "s1-5",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0.7462,
+        "y": -0.4308
+      },
+      {
+        "id": "s2-1",
+        "kind": "cat",
+        "cat": 1,
+        "x": 0.267,
+        "y": 0.1542
+      },
+      {
+        "id": "s2-2",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0.3868,
+        "y": 0.2233
+      },
+      {
+        "id": "s2-3",
+        "kind": "cat",
+        "cat": 0,
+        "x": 0.5066,
+        "y": 0.2925
+      },
+      {
+        "id": "s2-4",
+        "kind": "cat",
+        "cat": 3,
+        "x": 0.6264,
+        "y": 0.3617
+      },
+      {
+        "id": "s2-5",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0.7462,
+        "y": 0.4308
+      },
+      {
+        "id": "s3-1",
+        "kind": "cat",
+        "cat": 2,
+        "x": 0,
+        "y": 0.3083
+      },
+      {
+        "id": "s3-2",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0,
+        "y": 0.4467
+      },
+      {
+        "id": "s3-3",
+        "kind": "cat",
+        "cat": 1,
+        "x": 0,
+        "y": 0.585
+      },
+      {
+        "id": "s3-4",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0,
+        "y": 0.7233
+      },
+      {
+        "id": "s3-5",
+        "kind": "cat",
+        "cat": 0,
+        "x": 0,
+        "y": 0.8617
+      },
+      {
+        "id": "s4-1",
+        "kind": "cat",
+        "cat": 3,
+        "x": -0.267,
+        "y": 0.1542
+      },
+      {
+        "id": "s4-2",
+        "kind": "cat",
+        "cat": 0,
+        "x": -0.3868,
+        "y": 0.2233
+      },
+      {
+        "id": "s4-3",
+        "kind": "cat",
+        "cat": 2,
+        "x": -0.5066,
+        "y": 0.2925
+      },
+      {
+        "id": "s4-4",
+        "kind": "cat",
+        "cat": 5,
+        "x": -0.6264,
+        "y": 0.3617
+      },
+      {
+        "id": "s4-5",
+        "kind": "cat",
+        "cat": 1,
+        "x": -0.7462,
+        "y": 0.4308
+      },
+      {
+        "id": "s5-1",
+        "kind": "cat",
+        "cat": 4,
+        "x": -0.267,
+        "y": -0.1542
+      },
+      {
+        "id": "s5-2",
+        "kind": "cat",
+        "cat": 1,
+        "x": -0.3868,
+        "y": -0.2233
+      },
+      {
+        "id": "s5-3",
+        "kind": "cat",
+        "cat": 3,
+        "x": -0.5066,
+        "y": -0.2925
+      },
+      {
+        "id": "s5-4",
+        "kind": "cat",
+        "cat": 0,
+        "x": -0.6264,
+        "y": -0.3617
+      },
+      {
+        "id": "s5-5",
+        "kind": "cat",
+        "cat": 2,
+        "x": -0.7462,
+        "y": -0.4308
+      },
+      {
+        "id": "r0",
+        "kind": "hq",
+        "cat": 0,
+        "x": 0,
+        "y": -1
+      },
+      {
+        "id": "r1",
+        "kind": "cat",
+        "cat": 2,
+        "x": 0.149,
+        "y": -0.9888
+      },
+      {
+        "id": "r2",
+        "kind": "again",
+        "cat": null,
+        "x": 0.2948,
+        "y": -0.9556
+      },
+      {
+        "id": "r3",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0.4339,
+        "y": -0.901
+      },
+      {
+        "id": "r4",
+        "kind": "cat",
+        "cat": 3,
+        "x": 0.5633,
+        "y": -0.8262
+      },
+      {
+        "id": "r5",
+        "kind": "again",
+        "cat": null,
+        "x": 0.6802,
+        "y": -0.7331
+      },
+      {
+        "id": "r6",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0.7818,
+        "y": -0.6235
+      },
+      {
+        "id": "r7",
+        "kind": "hq",
+        "cat": 1,
+        "x": 0.866,
+        "y": -0.5
+      },
+      {
+        "id": "r8",
+        "kind": "cat",
+        "cat": 3,
+        "x": 0.9309,
+        "y": -0.3653
+      },
+      {
+        "id": "r9",
+        "kind": "again",
+        "cat": null,
+        "x": 0.9749,
+        "y": -0.2225
+      },
+      {
+        "id": "r10",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0.9972,
+        "y": -0.0747
+      },
+      {
+        "id": "r11",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0.9972,
+        "y": 0.0747
+      },
+      {
+        "id": "r12",
+        "kind": "again",
+        "cat": null,
+        "x": 0.9749,
+        "y": 0.2225
+      },
+      {
+        "id": "r13",
+        "kind": "cat",
+        "cat": 0,
+        "x": 0.9309,
+        "y": 0.3653
+      },
+      {
+        "id": "r14",
+        "kind": "hq",
+        "cat": 2,
+        "x": 0.866,
+        "y": 0.5
+      },
+      {
+        "id": "r15",
+        "kind": "cat",
+        "cat": 4,
+        "x": 0.7818,
+        "y": 0.6235
+      },
+      {
+        "id": "r16",
+        "kind": "again",
+        "cat": null,
+        "x": 0.6802,
+        "y": 0.7331
+      },
+      {
+        "id": "r17",
+        "kind": "cat",
+        "cat": 0,
+        "x": 0.5633,
+        "y": 0.8262
+      },
+      {
+        "id": "r18",
+        "kind": "cat",
+        "cat": 5,
+        "x": 0.4339,
+        "y": 0.901
+      },
+      {
+        "id": "r19",
+        "kind": "again",
+        "cat": null,
+        "x": 0.2948,
+        "y": 0.9556
+      },
+      {
+        "id": "r20",
+        "kind": "cat",
+        "cat": 1,
+        "x": 0.149,
+        "y": 0.9888
+      },
+      {
+        "id": "r21",
+        "kind": "hq",
+        "cat": 3,
+        "x": 0,
+        "y": 1
+      },
+      {
+        "id": "r22",
+        "kind": "cat",
+        "cat": 5,
+        "x": -0.149,
+        "y": 0.9888
+      },
+      {
+        "id": "r23",
+        "kind": "again",
+        "cat": null,
+        "x": -0.2948,
+        "y": 0.9556
+      },
+      {
+        "id": "r24",
+        "kind": "cat",
+        "cat": 1,
+        "x": -0.4339,
+        "y": 0.901
+      },
+      {
+        "id": "r25",
+        "kind": "cat",
+        "cat": 0,
+        "x": -0.5633,
+        "y": 0.8262
+      },
+      {
+        "id": "r26",
+        "kind": "again",
+        "cat": null,
+        "x": -0.6802,
+        "y": 0.7331
+      },
+      {
+        "id": "r27",
+        "kind": "cat",
+        "cat": 2,
+        "x": -0.7818,
+        "y": 0.6235
+      },
+      {
+        "id": "r28",
+        "kind": "hq",
+        "cat": 4,
+        "x": -0.866,
+        "y": 0.5
+      },
+      {
+        "id": "r29",
+        "kind": "cat",
+        "cat": 0,
+        "x": -0.9309,
+        "y": 0.3653
+      },
+      {
+        "id": "r30",
+        "kind": "again",
+        "cat": null,
+        "x": -0.9749,
+        "y": 0.2225
+      },
+      {
+        "id": "r31",
+        "kind": "cat",
+        "cat": 2,
+        "x": -0.9972,
+        "y": 0.0747
+      },
+      {
+        "id": "r32",
+        "kind": "cat",
+        "cat": 1,
+        "x": -0.9972,
+        "y": -0.0747
+      },
+      {
+        "id": "r33",
+        "kind": "again",
+        "cat": null,
+        "x": -0.9749,
+        "y": -0.2225
+      },
+      {
+        "id": "r34",
+        "kind": "cat",
+        "cat": 3,
+        "x": -0.9309,
+        "y": -0.3653
+      },
+      {
+        "id": "r35",
+        "kind": "hq",
+        "cat": 5,
+        "x": -0.866,
+        "y": -0.5
+      },
+      {
+        "id": "r36",
+        "kind": "cat",
+        "cat": 1,
+        "x": -0.7818,
+        "y": -0.6235
+      },
+      {
+        "id": "r37",
+        "kind": "again",
+        "cat": null,
+        "x": -0.6802,
+        "y": -0.7331
+      },
+      {
+        "id": "r38",
+        "kind": "cat",
+        "cat": 3,
+        "x": -0.5633,
+        "y": -0.8262
+      },
+      {
+        "id": "r39",
+        "kind": "cat",
+        "cat": 2,
+        "x": -0.4339,
+        "y": -0.901
+      },
+      {
+        "id": "r40",
+        "kind": "again",
+        "cat": null,
+        "x": -0.2948,
+        "y": -0.9556
+      },
+      {
+        "id": "r41",
+        "kind": "cat",
+        "cat": 4,
+        "x": -0.149,
+        "y": -0.9888
+      }
+    ],
+    "units": [
+      {
+        "id": "p1",
+        "name": "Leo",
+        "color": "#ef4444",
+        "connected": true,
+        "pos": "H",
+        "wedges": []
+      },
+      {
+        "id": "p2",
+        "name": "Maya",
+        "color": "#f97316",
+        "connected": true,
+        "pos": "H",
+        "wedges": []
+      },
+      {
+        "id": "p3",
+        "name": "Dad",
+        "color": "#eab308",
+        "connected": true,
+        "pos": "H",
+        "wedges": []
+      }
+    ],
+    "turn": null,
+    "die": null,
+    "settings": {
+      "setId": "all",
+      "wedgesToWin": 6,
+      "equalTurns": false
+    },
+    "line": {
+      "text": "Waiting for players",
+      "next": "2 to 6 players or teams"
+    },
+    "log": [],
+    "sets": [
+      {
+        "id": "family-classic",
+        "title": "Family Classic"
+      }
+    ],
+    "setTitle": "All question sets"
+  }
+}

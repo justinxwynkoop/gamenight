@@ -13,6 +13,7 @@ enum DisplayScreen: Equatable {
     case feudFastMoney
     case feudWinner
     case spyNight
+    case pieChase
     case unsupported(id: String)
 
     static func screen(for state: ServerState) -> DisplayScreen {
@@ -25,6 +26,8 @@ enum DisplayScreen: Equatable {
             return feudScreen(for: game, inProgress: state.room.inProgress)   // Feud/Core/FeudDisplay.swift
         case .spyNight(let game):
             return spyNightScreen(for: game, inProgress: state.room.inProgress)   // GameNight/Core/SpyNightState.swift
+        case .pieChase(let game):
+            return pieChaseScreen(for: game, inProgress: state.room.inProgress)   // GameNight/Core/PieChaseState.swift
         case .jeopardy(let game):
             switch game.phase {
             case .lobby: return .lobby

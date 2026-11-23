@@ -65,7 +65,7 @@ async function startOnline() {
     const { hostTv } = await import('/tvhost.js');
     hosted = await hostTv({
       config: globalThis.GN_RELAY,
-      game: want === 'jeopardy' || want === 'feud' || want === 'spynight' ? want : null,
+      game: ['jeopardy', 'feud', 'spynight', 'piechase'].includes(want) ? want : null,
       onState,
       onStatus: (up) => conn.classList.toggle('down', !up),
     });

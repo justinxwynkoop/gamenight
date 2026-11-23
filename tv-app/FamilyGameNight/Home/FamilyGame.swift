@@ -9,12 +9,13 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     case jeopardy
     case feud
     case spynight
+    case piechase
 
     var id: String { rawValue }
 
     /// The tiles are sized so that all of them fit in a row on a 1920-wide screen.
-    static var cardWidth: CGFloat { allCases.count > 3 ? 400 : 480 }
-    static var cardSpacing: CGFloat { allCases.count > 3 ? 40 : 56 }
+    static var cardWidth: CGFloat { allCases.count > 4 ? 320 : allCases.count > 3 ? 400 : 480 }
+    static var cardSpacing: CGFloat { allCases.count > 4 ? 30 : allCases.count > 3 ? 40 : 56 }
 
     var title: String {
         switch self {
@@ -22,6 +23,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return "Jeopardy"
         case .feud: return "Family Feud"
         case .spynight: return "Spy Night"
+        case .piechase: return "Pie Chase"
         }
     }
 
@@ -32,6 +34,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return "Trivia board with phone buzzers. The host runs it from a phone."
         case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
         case .spynight: return "Most of you are the Resistance. A few are Spies. Your phone tells you which."
+        case .piechase: return "Roll, move round the wheel and answer to win a wedge in all six categories. Then race back to the hub."
         }
     }
 
@@ -42,6 +45,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return "Players or teams buzz in from their phones"
         case .feud: return "Two teams, phones as buzzers"
         case .spynight: return "Five to ten players, each on their own phone"
+        case .piechase: return "Two to six players or teams, each with a phone"
         }
     }
 
@@ -52,6 +56,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return [GameTag("person.3.fill", "2+ players"), GameTag("iphone", "Phone buzzers")]
         case .feud: return [GameTag("person.2.fill", "Two teams"), GameTag("bolt.fill", "Fast Money")]
         case .spynight: return [GameTag("person.3.fill", "5–10 players"), GameTag("eye.slash.fill", "Secret roles")]
+        case .piechase: return [GameTag("person.3.fill", "2–6 players"), GameTag("die.face.5.fill", "Six wedges")]
         }
     }
 
@@ -62,6 +67,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return "Tile-Jeopardy"
         case .feud: return "Tile-Feud"
         case .spynight: return "Tile-SpyNight"
+        case .piechase: return "Tile-PieChase"
         }
     }
 
@@ -72,6 +78,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .jeopardy: return Color(red: 0.12, green: 0.30, blue: 0.85)
         case .feud: return Color(red: 0.92, green: 0.58, blue: 0.10)
         case .spynight: return Color(red: 0.85, green: 0.18, blue: 0.27)
+        case .piechase: return Color(red: 0.66, green: 0.33, blue: 0.97)
         }
     }
 }

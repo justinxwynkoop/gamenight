@@ -190,6 +190,60 @@ does, from their phone. Anyone who goes away does not hold things up: their vote
 card as Success. The host (or the first player) can also **Move on without waiting**. Past votes are public, so the
 phones keep a "Who voted for what" list to argue over. When the game ends everyone's role is shown.
 
+## Pie Chase
+
+The wedge-collecting trivia board game for **two to six players or teams**, each with a phone. It plays by the classic
+rules of the well-known board game, with its own name and look.
+
+**The board.** A wheel: a ring of 42 spaces, six spokes of five spaces, and the **hub** in the middle (73 spaces in
+all). On the ring are the six **headquarters** (one per category, where the spokes meet the ring), twelve **Roll Again**
+spaces, and category spaces in the six colours. The categories are Geography (blue), Entertainment (pink), History
+(yellow), Arts & Literature (purple), Science & Nature (green) and Sports & Leisure (orange); a question set may rename
+them, but the colours stay.
+
+**Who goes first.** Everyone starts in the hub and rolls the die on their phone. The highest roll goes first; a tie for
+highest rolls again between the tied players. Play then passes to the left (the order players joined).
+
+**A turn.**
+1. Roll the die on your phone, then move **exactly** that many spaces, in any direction. You may not double back on a
+   move, but you may turn at a headquarters or the hub, and you may cross the hub. When the roll can end in more than
+   one place, your phone (and the TV) number the choices, and you tap one.
+2. Where you land decides what happens:
+   - a **category space**: a question in that colour;
+   - a **headquarters**: a question in its category, and a right answer wins that **wedge** (if you do not have it yet);
+   - **Roll Again**: roll again, no question;
+   - the **hub** (before you have every wedge): you pick any category for your question.
+3. **Right**: you roll again. **Wrong**: play passes to the left.
+
+**Who asks.** The question shows on the TV and the answering player's phone, **never the answer**. The next player (on
+the answerer's left) is the **reader**: their phone shows the question and answer, they read it out, listen, and tap
+**Right** or **Wrong**. With a host page open, the host reads and judges instead, and the phones cannot. The answer
+shows on the TV once it has been judged.
+
+**Winning.** Once you have every wedge, head for the hub; you must land on it **by exact count**. The other players
+then pick the category for your winning question (on their phones, or the host taps it). Answer it right and you win.
+Answer it wrong and your turn ends: leave the hub on your next turn and come back to try again.
+
+**Options** (host page, Settings, before the game starts):
+- **Wedges to win**: 6 (classic), 5 or 4 for a shorter game. With fewer than six you still need a wedge from that many
+  different headquarters.
+- **Equal turns**: when someone wins, the rest of that round still plays, so everyone has had the same number of turns.
+  Anyone else who wins in that round ties.
+
+**Teams.** In teams mode each team shares one token and pie, and any member can roll, move and answer.
+
+**Away players.** A player whose phone goes quiet does not hold the game up: the host (or, with no host, the first player)
+can **Skip** their turn from **Someone gone quiet?**, and the reader passes to the next player who is here.
+
+**Questions.** The shipped set is *Family Classic*, 60 or so questions in each category, written for a mixed family.
+Write your own in the **Questions** tab: six categories, as many questions as you like in each, or paste a list of
+`question | answer` lines. "All question sets (mixed)" plays every set together. A TV does not ask the same question
+twice until a category runs out.
+
+**Sounds.** Pie Chase borrows Jeopardy's built-in recordings: a roll of the die, a question coming up, right and wrong,
+a wedge won, the winning question, and applause at the end. Your own Jeopardy sound files are used here too, and files
+uploaded for Pie Chase itself take their place.
+
 ## Players and teams
 
 - **Jeopardy** is always individuals, up to ten players.
