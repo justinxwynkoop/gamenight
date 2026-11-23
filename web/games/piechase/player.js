@@ -50,8 +50,17 @@ export function mount(container, { send }) {
         ? [btn(n < v.minUnits ? `Waiting for ${v.minUnits - n} more` : 'Start the game', 'go huge', () => send({ t: 'start' }), { disabled: n < v.minUnits }),
           h('p', { class: 'dim' }, 'You joined first, so you start the game when everyone is in.')]
         : h('p', { class: 'dim' }, v.hosted ? 'The host starts the game when everyone is in.' : 'The first player starts the game when everyone is in.'),
+      anotherPlayer(),
       rules(),
     ];
+  }
+
+  /** Opens a new tab that joins as another player, for one phone shared by two people (or trying it on your own). */
+  function anotherPlayer() {
+    const params = new URLSearchParams(location.search);
+    const next = String(Math.min(9, Number(params.get('seat') || 1) + 1));
+    params.set('seat', next);
+    return h('a', { class: 'btn', href: `${location.pathname}?${params}`, target: '_blank', rel: 'noopener', style: { display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '12px' } }, '＋ Add another player on this phone');
   }
 
   function rolloff(v) {
