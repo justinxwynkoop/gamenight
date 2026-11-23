@@ -31,6 +31,8 @@ export const MIN_UNITS = 2;
 export const MAX_UNITS = 6;
 export const DIE = 6;
 export const ALL_SETS = 'all';
+/** The set a new game uses: the easy one everybody can answer. The host can pick Family Classic (harder) or all sets mixed. */
+export const DEFAULT_SET = 'family-easy';
 
 /** The six categories, in order. A question set can name them its own way; the colours always stay the same. */
 export const CATEGORIES = [
@@ -72,7 +74,7 @@ const keyOf = (q) => String(q.q).trim().toLowerCase().slice(0, 120);
 export class PieChaseGame {
   constructor(room) {
     this.room = room;
-    this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false };
+    this.settings = { setId: DEFAULT_SET, wedgesToWin: CATEGORY_COUNT, equalTurns: false };
     this.#reset();
   }
 
@@ -136,8 +138,11 @@ export class PieChaseGame {
   // ---------- questions ----------
   /** The question sets in play: one, or every set this TV has. */
   #sets() {
-    const ids = this.settings.setId === ALL_SETS ? this.room.listContent(GAME).map((s) => s.id) : [this.settings.setId];
-    return ids.map((id) => this.room.loadContent(GAME, id)).filter(Boolean);
+    const all = () => this.room.listContent(GAME).map((s) => s.id).map((id) => this.room.loadContent(GAME, id)).filter(Boolean);
+    if (this.settings.setId === ALL_SETS) return all();
+    // The chosen set has gone (or this TV never had the default one): every set instead.
+    const one = this.room.loadContent(GAME, this.settings.setId);
+    return one ? [one] : all();
   }
   /** Category names: the set's own, or the usual ones when several sets are mixed. */
   #categoryNames() {
@@ -583,7 +588,7 @@ export class PieChaseGame {
   }
   restore(d) {
     this.#reset();
-    this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false, ...(d.settings ?? {}) };
+    this.settings = { setId: DEFAULT_SET, wedgesToWin: CATEGORY_COUNT, equalTurns: false, ...(d.settings ?? {}) };
     const valid = ['lobby', 'rolloff', 'roll', 'move', 'choose', 'question', 'result', 'gameover'];
     this.phase = valid.includes(d.phase) ? d.phase : 'lobby';
     Object.assign(this, {
