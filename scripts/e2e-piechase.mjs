@@ -67,8 +67,16 @@ try {
   const code = (await tv.locator('.roomcode').innerText()).trim();
   const phones = [];
   for (const name of names) {
-    const p = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); watch(p, name);
-    await p.goto(`${base}/?r=${code}`);
+    let p;
+    if (name === 'Cy') {
+      // Cy shares Bo's phone: Bo's lobby opens a second player in a new tab of the same browser.
+      const [tab] = await Promise.all([phones[1].context().waitForEvent('page'), phones[1].getByRole('link', { name: /Add another player on this phone/ }).click()]);
+      p = tab; watch(p, name);
+      await p.waitForLoadState();
+    } else {
+      p = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); watch(p, name);
+      await p.goto(`${base}/?r=${code}`);
+    }
     await until(async () => (await p.locator('input').count()) > 0, `${name}'s join form`);
     await p.locator('input').first().fill(name);
     await p.getByRole('button', { name: /^join$/i }).click();
@@ -134,7 +142,8 @@ try {
     if (/Roll Again!/.test(t)) return { i, roll: true };
     // The question: the answerer's phone and the TV never show the answer; the reader's phone does.
     const reader = phones[(i + 1) % phones.length];
-    await until(async () => (await reader.locator('.pc-qcard .a').count()) > 0, 'the answer on the reader’s phone');
+    // Wait for this question on the reader's phone (it may still be showing the last answer for a moment).
+    await until(async () => (await reader.locator('.pc-qcard .a').count()) > 0 && /Read this to/.test(await reader.locator('.pc').innerText()), 'the answer on the reader’s phone');
     const answer = (await reader.locator('.pc-qcard .a').innerText()).replace(/^Answer\s*/i, '').trim();
     if ((await me.locator('.pc-qcard .a').count())) fail('the answering player can see the answer');
     if ((await tvText()).includes(answer) && answer.length > 3) fail(`the TV shows the answer before it is judged: ${answer}`);

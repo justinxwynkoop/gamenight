@@ -106,12 +106,15 @@ function askForRoom(problem) {
 function connectOnline({ hello, onState, onMessage, onStatus }) {
   let link = null; let closed = false;
   // One id per browser tab, so a host page and a player page on one phone do not look like the same screen.
+  // ?seat=2 (play.js) is a second player on the same phone: it gets its own id even in a tab copied from the first.
+  const seat = /^[2-9]$/.test(new URLSearchParams(location.search).get('seat') ?? '') ? new URLSearchParams(location.search).get('seat') : '';
+  const CLIENT = seat ? `gn-client-${seat}` : 'gn-client';
   let clientId = null;
-  try { clientId = sessionStorage.getItem('gn-client'); } catch { /* private mode: a new id each time */ }
+  try { clientId = sessionStorage.getItem(CLIENT); } catch { /* private mode: a new id each time */ }
   if (!clientId) {
     const bytes = crypto.getRandomValues(new Uint8Array(9));
     clientId = 'c' + [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
-    try { sessionStorage.setItem('gn-client', clientId); } catch { /* fine */ }
+    try { sessionStorage.setItem(CLIENT, clientId); } catch { /* fine */ }
   }
   const start = async () => {
     let room = roomFromPage();

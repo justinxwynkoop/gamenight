@@ -19,10 +19,13 @@ let gameId = null;
 let instance = null;
 const modules = {};
 const load = (id) => (modules[id] ??= import(`/games/${id}/player.js`));
-const form = { name: store('gn-name') ?? '', color: store('gn-color') ?? '' };
+// ?seat=2 (3, 4...) is another player on this same phone, in another tab: it keeps its own seat in the room.
+const seat = /^[2-9]$/.test(new URLSearchParams(location.search).get('seat') ?? '') ? new URLSearchParams(location.search).get('seat') : '';
+const TOKEN = seat ? `gn-token-${seat}` : 'gn-token';
+const form = { name: seat ? '' : store('gn-name') ?? '', color: seat ? '' : store('gn-color') ?? '' };
 
 const net = connect({
-  hello: () => ({ t: 'hello', role: 'player', token: store('gn-token') }),
+  hello: () => ({ t: 'hello', role: 'player', token: store(TOKEN) }),
   onStatus: (up) => {
     offline.classList.toggle('hidden', up);
     if (up) { clearTimeout(offlineHint); offlineHint = null; offline.textContent = 'Reconnecting…'; return; }
@@ -35,7 +38,7 @@ const net = connect({
   onState: (v) => { view = v; if (v.room.me) needJoin = false; update(); },
   onMessage: (m) => {
     if (m.t === 'need-join') { needJoin = true; update(); }
-    else if (m.t === 'joined') { store('gn-token', m.token); needJoin = false; joinError = ''; }
+    else if (m.t === 'joined') { store(TOKEN, m.token); needJoin = false; joinError = ''; }
     else if (m.t === 'error') { if (needJoin) { joinError = m.message; update(true); } else flash(m.message); }
     else instance?.onMessage?.(m);
   },
@@ -85,7 +88,7 @@ function joinScreen() {
     joinError && h('div', { class: 'err' }, joinError),
     h('button', {
       class: 'btn primary', style: { width: '100%', marginTop: '16px' }, onclick: () => {
-        store('gn-name', form.name); if (form.color) store('gn-color', form.color);
+        if (!seat) { store('gn-name', form.name); if (form.color) store('gn-color', form.color); }
         joinError = '';
         net.send({ t: 'join', name: form.name, color: form.color || undefined });
       },
