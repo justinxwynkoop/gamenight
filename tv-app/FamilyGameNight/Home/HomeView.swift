@@ -135,6 +135,7 @@ struct HomeView: View {
 private struct GameCard: View {
     let game: FamilyGame
     @Environment(\.isFocused) private var isFocused
+    private var compact: Bool { FamilyGame.cardWidth < 400 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -153,20 +154,21 @@ private struct GameCard: View {
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(.white.opacity(isFocused ? 1 : 0))
                 }
-                HStack(spacing: 10) {
+                // Five tiles in a row leave less room: the facts get a little smaller so both still fit.
+                HStack(spacing: compact ? 8 : 10) {
                     ForEach(game.tags, id: \.self) { tag in
-                        HStack(spacing: 8) {
-                            Image(systemName: tag.icon).font(.system(size: 17, weight: .bold))
-                            Text(tag.text).font(.system(size: 20, weight: .semibold))
+                        HStack(spacing: compact ? 6 : 8) {
+                            Image(systemName: tag.icon).font(.system(size: compact ? 14 : 17, weight: .bold))
+                            Text(tag.text).font(.system(size: compact ? 16 : 20, weight: .semibold)).lineLimit(1)
                         }
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, compact ? 10 : 14)
                         .padding(.vertical, 6)
                         .background(Capsule().fill(.black.opacity(isFocused ? 0.28 : 0.35)))
                     }
                 }
             }
-            .padding(.horizontal, 26)
+            .padding(.horizontal, compact ? 18 : 26)
             .frame(width: FamilyGame.cardWidth, height: 128, alignment: .leading)
             .background(game.accent.opacity(isFocused ? 0.95 : 0.55))
         }
@@ -191,6 +193,7 @@ struct GameHost: View {
         // Same display: it shows whichever game the host has started, so Feud needs no screen of its own here.
         case .feud: JeopardyRootView(title: "Family Feud", onExit: exit)
         case .spynight: JeopardyRootView(title: "Spy Night", onExit: exit)
+        case .piechase: JeopardyRootView(title: "Pie Chase", onExit: exit)
         }
     }
 }

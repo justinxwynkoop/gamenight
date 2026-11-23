@@ -92,6 +92,10 @@ function playBuffer(buf, loop = false, gain = FILE_GAIN) {
   return src;
 }
 
+// Pie Chase has no recordings of its own: it uses Jeopardy's (the right-answer ding, the Daily Double sting for a wedge,
+// the fanfare for the win...) unless the family gave it its own files.
+const BORROW = { piechase: 'jeopardy' };
+
 // A sound with no file of its own borrows another's if the family provided one (the third strike and a Fast Money zero use the strike buzzer).
 const ALIAS = { strikeout: 'strike', zero: 'strike' };
 
@@ -101,9 +105,11 @@ const ALIAS = { strikeout: 'strike', zero: 'strike' };
  * the Final Jeopardy music.
  */
 function findCustom(...names) {
+  const borrowed = BORROW[game];
   for (const n of names) {
     if (game && custom[`${game}/${n}`]) return custom[`${game}/${n}`];
     if (custom[n]) return custom[n];
+    if (borrowed && custom[`${borrowed}/${n}`]) return custom[`${borrowed}/${n}`];
   }
   return null;
 }

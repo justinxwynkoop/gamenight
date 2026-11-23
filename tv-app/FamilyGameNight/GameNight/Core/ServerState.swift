@@ -31,6 +31,8 @@ struct ServerState: Decodable, Equatable {
             game = .feud(try container.decode(FeudState.self, forKey: .game))
         case "spynight":
             game = .spyNight(try container.decode(SpyNightState.self, forKey: .game))
+        case "piechase":
+            game = .pieChase(try container.decode(PieChaseState.self, forKey: .game))
         default:
             game = .unsupported(id: header.game)
         }
@@ -54,9 +56,15 @@ struct ServerState: Decodable, Equatable {
         return nil
     }
 
+    /// The Pie Chase state, when that is the active game.
+    var pieChase: PieChaseState? {
+        if case .pieChase(let state) = game { return state }
+        return nil
+    }
+
     /// The big title on the lobby screen: the question set's name, or a generic one.
     var lobbyTitle: String {
-        jeopardy?.lobbyTitle ?? feud?.lobbyTitle ?? spyNight?.lobbyTitle ?? "Game Night"
+        jeopardy?.lobbyTitle ?? feud?.lobbyTitle ?? spyNight?.lobbyTitle ?? pieChase?.lobbyTitle ?? "Game Night"
     }
 }
 
@@ -70,6 +78,7 @@ enum ActiveGame: Equatable {
     case jeopardy(JeopardyState)
     case feud(FeudState)
     case spyNight(SpyNightState)
+    case pieChase(PieChaseState)
     /// A game the server runs that this app has no screens for yet.
     case unsupported(id: String)
 }

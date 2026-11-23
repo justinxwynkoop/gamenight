@@ -242,9 +242,12 @@ final class SoundDirector {
     /// The names come first: the shared "lobby" theme wins over a game's own "think" (its stand-in), or Jeopardy's
     /// lobby would play the Final Jeopardy music.
     private func customSound(_ names: [String]) -> Data? {
+        let borrowed = currentGame.flatMap { SoundPlanner.borrowedSounds[$0] }
         for name in names {
             if let game = currentGame, let data = custom["\(game)/\(name)"] { return data }
             if let data = custom[name] { return data }
+            // Pie Chase has no recordings of its own and uses Jeopardy's (public/audio.js does the same).
+            if let borrowed, let data = custom["\(borrowed)/\(name)"] { return data }
         }
         return nil
     }

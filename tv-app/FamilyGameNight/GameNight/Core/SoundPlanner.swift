@@ -14,6 +14,9 @@ struct SoundPlan: Equatable {
 
 /// Decides which sound goes with which change in the game.
 enum SoundPlanner {
+    /// A game with no recordings of its own uses another game's (public/audio.js has the same list).
+    static let borrowedSounds: [String: String] = ["piechase": "jeopardy"]
+
     static func plan(from previous: ServerState?, to next: ServerState) -> SoundPlan {
         var plan = SoundPlan()
         // The first state after connecting is not a change, so nothing plays.
@@ -29,6 +32,10 @@ enum SoundPlanner {
         }
         if let before = previous.spyNight, let after = next.spyNight {
             spyNightPlan(from: before, to: after, into: &plan)
+            return plan
+        }
+        if let before = previous.pieChase, let after = next.pieChase {
+            pieChasePlan(from: before, to: after, into: &plan)   // GameNight/Core/PieChaseState.swift
             return plan
         }
         guard let before = previous.jeopardy, let after = next.jeopardy else { return plan }

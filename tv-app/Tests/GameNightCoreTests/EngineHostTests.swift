@@ -45,7 +45,7 @@ final class EngineHostTests: XCTestCase {
 
     func testStartsAndListsTheGames() throws {
         let host = try makeHost(Wire())
-        XCTAssertEqual(host.games().map(\.id), ["jeopardy", "feud", "spynight"])
+        XCTAssertEqual(host.games().map(\.id), ["jeopardy", "feud", "spynight", "piechase"])
         XCTAssertEqual(host.errors, [])
     }
 
