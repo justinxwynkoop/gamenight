@@ -147,6 +147,10 @@ engine and online relay as Jeopardy and Family Feud). The Round Setup screen
 shows a QR code and the room code; phones scan it or open the Game Night site
 and type the code, then enter a name. Nobody has to sign in.
 
+Playing with printed sheets instead? In Round Setup, turn off **Bingo cards →
+Cards on phones**. The QR code and join card disappear (on the setup screen and
+during the round) and no phone is dealt a card. The choice is remembered.
+
 - **Start Round** deals every phone its own card from the playlist: 5×5 with a
   free middle square (4×4 for 16 to 23 songs, 3×3 for 9 to 15). Someone who
   joins mid-round gets a card too.
