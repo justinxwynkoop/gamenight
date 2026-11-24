@@ -272,7 +272,7 @@ export function mount(container, { send }) {
     else if (g.phase === 'trophy') body = trophyWon(g);
     else if (g.phase === 'gameover') body = gameover(g);
     else body = waiting(g);
-    setKids(container, h('div', { class: 'gv' }, header(g), body,
+    setKids(container, h('div', { class: 'gv', style: g.card && (g.phase === 'card' || g.phase === 'result') ? { '--a': deckOf(g, g.card.deck).color } : {} }, header(g), body,
       g.phase !== 'lobby' ? h('div', { class: 'gv-pcard gv-ppath' }, isRace(g) ? raceTrack(g, { compact: true }) : path(g, { compact: true })) : null,
       helper(g), g.phase !== 'lobby' ? rules(g) : null, reacts(g)));
   }

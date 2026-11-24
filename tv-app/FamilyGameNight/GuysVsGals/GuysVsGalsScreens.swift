@@ -528,21 +528,32 @@ private struct GvgDeckCard: View {
         let c = game.card!
         let result = game.phase == .result
         let deckColor = Color(playerHex: game.deck(c.deck)?.color ?? "#cccccc")
-        VStack(spacing: 22) {
-            HStack(spacing: 12) {
-                Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 38)
-                Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: GV.color(game, c.about), ink: .white, size: 38)
-                if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 38).lineLimit(1).minimumScaleFactor(0.5) }
-                if let q = c.q, let of = c.of { Sticker(text: "\(q) OF \(of)", fill: .white, size: 38) }
+        // A game card: a thick frame in the deck's colour, rounded corners, the deck's name on a banner across the top.
+        let shape = RoundedRectangle(cornerRadius: 34, style: .continuous)
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                Text(c.deckName.uppercased()).font(GV.bangers(66)).tracking(2).foregroundStyle(.white)
+                    .shadow(color: GV.ink, radius: 0, x: 4, y: 4).lineLimit(1).fixedSize()
+                Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: GV.color(game, c.about), ink: .white, size: 36)
+                if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 36).lineLimit(1).minimumScaleFactor(0.5) }
+                if let q = c.q, let of = c.of { Sticker(text: "\(q) OF \(of)", fill: .white, size: 36) }
                 Spacer(minLength: 120)
             }
-            middle(c, result: result)
-            footer(c, result: result)
+            .padding(.horizontal, 40).padding(.top, 20).padding(.bottom, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(deckColor)
+            VStack(spacing: 22) {
+                middle(c, result: result)
+                if !result { Rectangle().fill(GV.ink.opacity(0.3)).frame(height: 3).padding(.horizontal, 20) }
+                footer(c, result: result)
+            }
+            .padding(.horizontal, 40).padding(.top, 24).padding(.bottom, 36)
         }
-        .padding(.horizontal, 34).padding(.vertical, 28)
-        .padding(.top, 14)
-        .comicPanel(.white)
-        .overlay(alignment: .top) { Rectangle().fill(deckColor).frame(height: 22).overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 6)) }
+        .background(Color.white)
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(deckColor, lineWidth: 20))
+        .overlay(shape.strokeBorder(GV.ink, lineWidth: 6))
+        .background(shape.fill(GV.ink).offset(x: 10, y: 10))
         .rotationEffect(.degrees(0.4))
         .overlay(alignment: .topTrailing) {
             if result, let r = game.result {
@@ -574,20 +585,17 @@ private struct GvgDeckCard: View {
         return r.right ? "POW!" : "OOF!"
     }
 
+    /// The question, printed on the card.
     private func balloon(_ text: String, size: CGFloat = 52, font: Font? = nil) -> some View {
         Text(text)
-            .font(font ?? GV.body(size, .black))
+            .font(font ?? GV.body(size + 4, .black))
             .foregroundStyle(GV.ink)
             .multilineTextAlignment(.center)
             .lineLimit(7)
             .minimumScaleFactor(0.4)
             .allowsTightening(true)
-            .padding(.horizontal, 60).padding(.vertical, 34)
+            .padding(.horizontal, 20).padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .background(Balloon().fill(.white))
-            .overlay(Balloon().stroke(GV.ink, lineWidth: 6))
-            .background(Balloon().fill(GV.ink).offset(x: 9, y: 9))
-            .padding(.bottom, 34)
     }
 
     @ViewBuilder
@@ -712,21 +720,6 @@ private struct GvgDeckCard: View {
 }
 
 /// A speech balloon: an oval with a tail down to the left.
-private struct Balloon: Shape {
-    func path(in rect: CGRect) -> Path {
-        var p = Path(ellipseIn: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height - 30))
-        let x = rect.minX + rect.width * 0.18
-        let y = rect.maxY - 30 - rect.height * 0.08
-        var tail = Path()
-        tail.move(to: CGPoint(x: x, y: y))
-        tail.addLine(to: CGPoint(x: x - 34, y: rect.maxY + 10))
-        tail.addLine(to: CGPoint(x: x + 60, y: y))
-        tail.closeSubpath()
-        p.addPath(tail)
-        return p
-    }
-}
-
 /// POW! The one big moment: a starburst that slams on when the answer is revealed.
 private struct Pow: View {
     let text: String

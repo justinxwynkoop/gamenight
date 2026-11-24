@@ -89,7 +89,7 @@
 .gv-member .role { font-style: normal; }
 .gv-clock-badge.reading { background: var(--gv-cyan); }
 
-/* the question: a white panel with the question in a speech balloon */
+/* the question: a game card. A thick frame in the deck's colour, rounded corners, the deck's name on a banner across the top. */
 .gv-center { position: relative; display: grid; place-items: center; min-height: 0; }
 .gv-card { position: relative; width: 100%; max-height: 100%; box-sizing: border-box; background: #fff; padding: 2.6vmin 3vmin 3vmin; transform: rotate(.4deg);
   display: grid; gap: calc(2vmin * var(--fit, 1)); animation: gv-card-in .45s cubic-bezier(.2, .9, .3, 1.2) both; }
@@ -99,10 +99,7 @@
 .gv-chip.guys { background: var(--gv-blue); color: #fff; }
 .gv-chip.gals { background: var(--gv-pink); color: #fff; }
 .gv-chip.ghost { background: var(--gv-cyan); color: var(--gv-ink); }
-.gv-q { position: relative; font-size: calc(4.8vmin * var(--fit, 1)); font-weight: 900; line-height: 1.08; text-align: center; text-wrap: balance; padding: calc(3vmin * var(--fit, 1)) 5vmin; margin: -1vmin 0 1.6vmin; overflow-wrap: anywhere;
-  background: #fff; border: .6vmin solid var(--gv-ink); border-radius: 50% / 46%; box-shadow: .8vmin .8vmin 0 var(--gv-ink); }
-.gv-q::after { content: ''; position: absolute; left: 14%; bottom: -5.2vmin; width: 6vmin; height: 5.4vmin; background: #fff; border-right: .6vmin solid var(--gv-ink); border-bottom: .6vmin solid var(--gv-ink);
-  clip-path: polygon(0 0, 100% 0, 100% 100%); transform: skewX(-30deg); }
+.gv-q { position: relative; font-size: calc(5.2vmin * var(--fit, 1)); font-weight: 900; line-height: 1.12; text-align: center; text-wrap: balance; padding: calc(1.6vmin * var(--fit, 1)) 2vmin; overflow-wrap: anywhere; color: var(--gv-ink); }
 .gv-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 2.2vmin 2.6vmin; }
 .gv-choice { position: relative; display: flex; align-items: center; gap: 1.6vmin; min-height: calc(8.8vmin * var(--fit, 1)); padding: .8vmin 1.6vmin; font-size: calc(3.2vmin * var(--fit, 1)); overflow-wrap: anywhere; font-weight: 900; background: var(--gv-paper);
   border: .5vmin solid var(--gv-ink); box-shadow: .7vmin .7vmin 0 var(--gv-ink); transition: transform .3s, opacity .3s, background .3s; }
@@ -210,7 +207,11 @@
 /* the five decks */
 .gv-chip.deck { background: var(--d); color: var(--gv-ink); }
 .gv-deckpill { background: var(--d) !important; font-family: 'Bangers', sans-serif; letter-spacing: .05em; font-size: 2.6vmin; }
-.gv-card { border-top: 2.2vmin solid var(--a); }
+.gv-card { border: 1.5vmin solid var(--a); outline: var(--gv-line) solid var(--gv-ink); border-radius: 3vmin; padding-top: 0; }
+.gv-card-top { height: auto; min-height: 7vmin; align-items: center; margin: 0 -3vmin; padding: .8vmin 3vmin 1.6vmin; background: var(--a); border-radius: 1.4vmin 1.4vmin 0 0; }
+.gv-card-top .gv-chip.deck { background: none; border: 0; padding: 0; font-size: 6vmin; line-height: 1; letter-spacing: .05em; color: #fff; -webkit-text-stroke: .35vmin var(--gv-ink); paint-order: stroke fill; text-shadow: .5vmin .5vmin 0 var(--gv-ink); }
+.gv-card-top .gv-chip:not(.deck) { box-shadow: .4vmin .4vmin 0 var(--gv-ink); }
+.gv-card .gv-foot { border-top: .4vmin dashed color-mix(in srgb, var(--gv-ink) 45%, transparent); padding-top: 1.4vmin; }
 .gv-body { display: grid; gap: calc(2vmin * var(--fit, 1)); min-width: 0; }
 .gv-body > * { min-width: 0; }
 .gv-body.with-pic { grid-template-columns: auto 1fr; align-items: center; }
@@ -237,7 +238,7 @@
 .gv p { margin: .25em 0; }
 .gv .dim { color: var(--gv-dim); }
 .gv-pcard { background: #fff; border: 3px solid var(--gv-ink); box-shadow: 5px 5px 0 var(--gv-ink); padding: 16px; display: grid; gap: 10px; }
-.gv-pcard.accent { background: #fff; }
+.gv-pcard.accent { background: #fff; border: 6px solid var(--a, var(--gv-ink)); outline: 3px solid var(--gv-ink); border-radius: 16px; }
 .gv-phead { position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 8px 14px 0; background: var(--c); border: 3px solid var(--gv-ink); box-shadow: 5px 5px 0 var(--gv-ink); color: #fff; }
 .gv-phead::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,.3) 1.5px, transparent 2px) 0 0 / 9px 9px; }
 .gv-phead > * { position: relative; }
@@ -258,7 +259,7 @@
 .gv-btn:disabled { opacity: .45; }
 .gv-btn.go { background: var(--gv-yellow); }
 .gv-btn.huge { min-height: 96px; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2rem; letter-spacing: .05em; }
-.gv-pq { font-size: 1.35rem; font-weight: 900; line-height: 1.2; overflow-wrap: anywhere; }
+.gv-pq { font-size: 1.6rem; font-weight: 900; line-height: 1.2; overflow-wrap: anywhere; }
 .gv-pchoices { display: grid; gap: 12px; }
 .gv-pchoice { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 68px; padding: 8px 12px; color: var(--gv-ink);
   background: #fff; border: 3px solid var(--gv-ink); box-shadow: 4px 4px 0 var(--gv-ink); font-weight: 900; font-size: 1.1rem; line-height: 1.2; }
