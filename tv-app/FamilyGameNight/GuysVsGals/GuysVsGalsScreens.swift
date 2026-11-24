@@ -35,7 +35,7 @@ enum GV {
     }
 
     /// Everything else: Outfit, heavy.
-    static func body(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font { BuzzTheme.body(size, weight) }
+    static func body(_ size: CGFloat, _ weight: Font.Weight = .heavy) -> Font { BW.body(size, weight) }
 
     static func color(_ game: GuysVsGalsState, _ side: String?) -> Color {
         if let t = game.team(side) { return Color(playerHex: t.color) }
@@ -175,8 +175,8 @@ struct ComicRays: View {
             let r = hypot(size.width, size.height)
             var path = Path()
             for i in 0..<count {
-                let a0 = Double(i) / Double(count) * 2 * .pi
-                let a1 = a0 + .pi / Double(count) * 0.85
+                let a0 = CGFloat(i) / CGFloat(count) * 2 * .pi
+                let a1 = a0 + .pi / CGFloat(count) * 0.85
                 path.move(to: c)
                 path.addLine(to: CGPoint(x: c.x + r * cos(a0), y: c.y + r * sin(a0)))
                 path.addLine(to: CGPoint(x: c.x + r * cos(a1), y: c.y + r * sin(a1)))
@@ -192,8 +192,8 @@ struct ComicRays: View {
 struct Starburst: Shape {
     var points: [CGPoint] = Starburst.burst
 
-    private static func pts(_ raw: [(CGFloat, CGFloat)]) -> [CGPoint] { raw.map { CGPoint(x: $0.0, y: $0.1) } }
-    private static let burst = pts([(50, 0), (61, 22), (85, 8), (78, 34), (100, 42), (80, 58), (93, 82), (66, 76), (55, 100), (44, 78), (18, 92), (22, 66), (0, 54), (20, 40), (8, 15), (35, 24)])
+    static func pts(_ raw: [(CGFloat, CGFloat)]) -> [CGPoint] { raw.map { CGPoint(x: $0.0, y: $0.1) } }
+    static let burst = pts([(50, 0), (61, 22), (85, 8), (78, 34), (100, 42), (80, 58), (93, 82), (66, 76), (55, 100), (44, 78), (18, 92), (22, 66), (0, 54), (20, 40), (8, 15), (35, 24)])
 
     func path(in rect: CGRect) -> Path {
         var p = Path()
@@ -220,7 +220,7 @@ struct Lettering: View {
         ZStack {
             Text(text).font(GV.bangers(size)).foregroundStyle(GV.ink).offset(x: o * 1.6, y: o * 1.6)
             ForEach(0..<12, id: \.self) { i in
-                let a = Double(i) / 12 * 2 * .pi
+                let a = CGFloat(i) / 12 * 2 * .pi
                 Text(text).font(GV.bangers(size)).foregroundStyle(GV.ink).offset(x: o * cos(a), y: o * sin(a))
             }
             Text(text).font(GV.bangers(size)).foregroundStyle(fill)
