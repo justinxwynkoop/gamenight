@@ -15,16 +15,17 @@ enum FamilyGame: String, CaseIterable, Identifiable {
 
     // MARK: - The menu's layout
     // Up to three games sit in one row. From four on they go in two staggered rows (brick fashion), which leaves room for
-    // much larger tiles than one long row would. The tile size is worked out from the number of games and the screen,
+    // much larger tiles than one long row would. A tile is just the game's logo art; the name, description and facts
+    // appear in a pop-up beside the tile that has focus. The size is worked out from the number of games and the screen,
     // so adding a game needs no change here.
 
-    /// Space for the tiles on a 1920 x 1080 screen, inside the menu's side padding and below the title.
+    /// Space for the tiles on a 1920 x 1080 screen, inside the menu's side padding, between the title and the footer.
     private static let menuWidth: CGFloat = 1760
-    private static let menuHeight: CGFloat = 760
-    /// The colour band under a tile's picture, with the game's name and its two facts.
-    static let cardBand: CGFloat = 112
+    private static let menuHeight: CGFloat = 740
+    /// The height of a tile's art as a fraction of its width.
+    static let tileAspect: CGFloat = 0.6
     static let cardSpacing: CGFloat = 36
-    static let rowSpacing: CGFloat = 26
+    static let rowSpacing: CGFloat = 30
 
     static var rowCount: Int { allCases.count <= 3 ? 1 : 2 }
     static var perRow: Int { (allCases.count + rowCount - 1) / rowCount }
@@ -37,8 +38,8 @@ enum FamilyGame: String, CaseIterable, Identifiable {
             ? (menuWidth - (across - 0.5) * cardSpacing) / (across + 0.5)
             : (menuWidth - (across - 1) * cardSpacing) / across
         let rows = CGFloat(rowCount)
-        let byHeight = (((menuHeight - (rows - 1) * rowSpacing) / rows) - cardBand) / 0.6
-        return min(480, byWidth, byHeight).rounded(.down)
+        let byHeight = ((menuHeight - (rows - 1) * rowSpacing) / rows) / tileAspect
+        return min(560, byWidth, byHeight).rounded(.down)
     }
 
     /// The games laid out row by row.
