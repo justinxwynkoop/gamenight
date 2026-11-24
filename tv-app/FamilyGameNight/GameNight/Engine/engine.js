@@ -4862,8 +4862,873 @@
     create: (room) => new PieChaseGame(room)
   };
 
+  // games/guysvsgals/game.js
+  var GAME6 = "guysvsgals";
+  var NAME2 = "Guys vs Gals";
+  var ALL_SETS2 = "all";
+  var DEFAULT_SET2 = "family";
+  var SIDES = {
+    guys: { key: "blue", name: "Guys", color: "#3b8bff", asks: "galStuff", other: "gals" },
+    gals: { key: "red", name: "Gals", color: "#ff4fa3", asks: "guyStuff", other: "guys" }
+  };
+  var SIDE_ORDER = ["guys", "gals"];
+  var LENGTHS = { 15: "Quick", 20: "Standard", 30: "Long" };
+  var DEFAULT_LENGTH = 20;
+  var STEP2 = 2;
+  var LIGHTNING_EVERY = 5;
+  var LIGHTNING_ITEMS = 5;
+  var ANSWER_TIMES2 = [20, 30, 45, 0];
+  var T4 = {
+    toss: 4200,
+    // the coin toss, before the first question
+    lockPause: 1400,
+    // the answer is locked in: a moment of suspense before the reveal
+    reveal: 4800,
+    // the right answer, before the next turn
+    lightningIntro: 3800,
+    lightning: 2e4,
+    // the whole Lightning Round
+    lightningFlash: 900,
+    // right or wrong on one statement, before the next
+    lightningDone: 4200,
+    lightningPerItem: 6e3
+    // with no clock at all, each statement still gives up after this long
+  };
+  var MAX_SEEN3 = 4e3;
+  var REACTIONS2 = ["\u{1F602}", "\u{1F525}", "\u{1F631}", "\u{1F44F}", "\u{1F644}", "\u{1F4AA}"];
+  var REACTION_MS = 4500;
+  function validateSet4(set) {
+    if (!set || typeof set !== "object") fail("A question set must be an object");
+    if (!String(set.title ?? "").trim()) fail("Give the question set a title");
+    for (const [part, label] of [["guyStuff", "Guy stuff"], ["galStuff", "Gal stuff"]]) {
+      const half = set[part];
+      if (!half || typeof half !== "object") fail(`${label}: add some questions`);
+      if (!Array.isArray(half.questions) || !half.questions.length) fail(`${label} needs at least one question`);
+      half.questions.forEach((q, n) => {
+        if (!q || !String(q.q ?? "").trim()) fail(`${label}, question ${n + 1}: write the question`);
+        if (!String(q.a ?? "").trim()) fail(`${label}, question ${n + 1}: write the right answer`);
+        const wrong = Array.isArray(q.wrong) ? q.wrong.filter((w) => String(w ?? "").trim()) : [];
+        if (!wrong.length) fail(`${label}, question ${n + 1}: give at least one wrong answer`);
+        if (wrong.length > 3) fail(`${label}, question ${n + 1}: at most three wrong answers`);
+      });
+      if (half.lightning !== void 0) {
+        if (!Array.isArray(half.lightning)) fail(`${label}: lightning statements must be a list`);
+        half.lightning.forEach((s, n) => {
+          if (!s || !String(s.q ?? "").trim()) fail(`${label}, lightning ${n + 1}: write the statement`);
+          if (typeof s.a !== "boolean") fail(`${label}, lightning ${n + 1}: say whether it is true or false`);
+        });
+      }
+    }
+    return true;
+  }
+  var keyOf2 = (text) => String(text).trim().toLowerCase().slice(0, 120);
+  var _GuysVsGalsGame_instances, reset_fn3, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, shuffle_fn3, hasLightning_fn, ask_fn2, lock_fn, reveal_fn2, afterMove_fn, endTurn_fn, finished_fn, end_fn3, score_fn, startLightning_fn, runLightning_fn, answerItem_fn, finishLightning_fn, lightningDone_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn;
+  var GuysVsGalsGame = class {
+    constructor(room) {
+      __privateAdd(this, _GuysVsGalsGame_instances);
+      this.room = room;
+      this.settings = { setId: DEFAULT_SET2, length: DEFAULT_LENGTH, answerSecs: 30, lightning: true };
+      this.picked = {};
+      this.reactions = [];
+      this.reactionN = 0;
+      this.lastReact = {};
+      __privateMethod(this, _GuysVsGalsGame_instances, reset_fn3).call(this);
+    }
+    // ---------- the room's side of the contract ----------
+    teamsReady() {
+      __privateMethod(this, _GuysVsGalsGame_instances, dress_fn).call(this);
+    }
+    /** Another game is being chosen: the teams get their usual names and colours back. */
+    leave() {
+      for (const side of SIDE_ORDER) {
+        const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side);
+        if (!t) continue;
+        const def = { red: { name: "Red", color: "#ef4444" }, blue: { name: "Blue", color: "#3b82f6" } }[t.key];
+        if (t.name === SIDES[side].name) t.name = def.name;
+        t.color = def.color;
+      }
+    }
+    inProgress() {
+      return this.phase !== "lobby";
+    }
+    usesContent(id) {
+      return this.settings.setId === id || this.settings.setId === ALL_SETS2;
+    }
+    tick() {
+      const t = this.timer;
+      if (t && __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) >= t.at) {
+        this.timer = null;
+        t.fire();
+        return;
+      }
+      if (this.phase === "question" && !this.locked) {
+        const here = __privateMethod(this, _GuysVsGalsGame_instances, here_fn).call(this, this.turn);
+        if (here.length && here.every((p) => p.id in this.votes)) __privateMethod(this, _GuysVsGalsGame_instances, lock_fn).call(this);
+      }
+      if (this.reactions.length && this.reactions[0].at + REACTION_MS < __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this)) {
+        this.reactions = this.reactions.filter((r) => r.at + REACTION_MS >= __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this));
+        __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+      }
+    }
+    playerRemoved(id) {
+      delete this.votes[id];
+      this.voteOrder = this.voteOrder.filter((x) => x !== id);
+      delete this.picked[id];
+    }
+    contentChanged(id) {
+      if (this.phase === "lobby" && this.settings.setId === id && !this.room.loadContent(GAME6, id)) this.settings.setId = ALL_SETS2;
+      if (this.phase === "lobby") this.deck = null;
+    }
+    // ---------- the track ----------
+    length() {
+      return this.settings.length;
+    }
+    lightningSpaces() {
+      if (!this.settings.lightning) return [];
+      const out = [];
+      for (let s = LIGHTNING_EVERY; s < this.length(); s += LIGHTNING_EVERY) out.push(s);
+      return out;
+    }
+    // ---------- starting ----------
+    /** Heads the Guys go first, tails the Gals (tests replace this). */
+    coinToss() {
+      return this.room.rng() < 0.5 ? ["guys", "gals"] : ["gals", "guys"];
+    }
+    start() {
+      if (this.phase !== "lobby") fail("The game is already under way");
+      __privateMethod(this, _GuysVsGalsGame_instances, dress_fn).call(this);
+      for (const side of SIDE_ORDER) if (!__privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, side).length) fail(`The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} need at least one player`);
+      __privateMethod(this, _GuysVsGalsGame_instances, buildDeck_fn2).call(this);
+      if (!this.deck.guyStuff.questions.length || !this.deck.galStuff.questions.length) fail("That question set needs questions for both sides");
+      const keep = { ...this.settings };
+      const deck = this.deck;
+      __privateMethod(this, _GuysVsGalsGame_instances, reset_fn3).call(this);
+      this.settings = keep;
+      this.deck = deck;
+      this.room.resetScores();
+      this.order = this.coinToss();
+      this.turn = this.order[0];
+      this.phase = "toss";
+      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `Coin toss: the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} go first`);
+      __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.toss, () => __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this));
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** A player on the team at play votes (and can change their vote until the team's answer is locked). */
+    vote(player, choice) {
+      if (this.phase !== "question" || this.locked) fail("No question to answer right now");
+      const side = __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player);
+      if (side !== this.turn) fail(`It is the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)}\u2019 question. Keep a straight face!`);
+      const c = int(choice);
+      if (!(c >= 0 && c < this.question.choices.length)) fail("Pick one of the answers");
+      this.votes[player.id] = c;
+      this.voteOrder = [...this.voteOrder.filter((x) => x !== player.id), player.id];
+      const here = __privateMethod(this, _GuysVsGalsGame_instances, here_fn).call(this, side);
+      if (here.every((p) => p.id in this.votes)) __privateMethod(this, _GuysVsGalsGame_instances, lock_fn).call(this);
+      else __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** The team's answer: the most votes; a tie goes to whichever of the tied answers was picked first. */
+    teamPick() {
+      const counts = /* @__PURE__ */ new Map();
+      for (const c of Object.values(this.votes)) counts.set(c, (counts.get(c) ?? 0) + 1);
+      if (!counts.size) return null;
+      const best = Math.max(...counts.values());
+      const tied = new Set([...counts].filter(([, n]) => n === best).map(([c]) => c));
+      for (const id of this.voteOrder) if (tied.has(this.votes[id])) return this.votes[id];
+      return [...tied][0];
+    }
+    /** Anyone on the team at play answers the current statement: true or false. The first answer counts. */
+    lightningAnswer(player, said) {
+      const L = this.lightning;
+      if (this.phase !== "lightning" || !L) fail("No Lightning Round right now");
+      if (__privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player) !== L.side) fail(`It is the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, L.side)}\u2019 Lightning Round`);
+      if (L.flash && __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) < L.flash.until) return;
+      __privateMethod(this, _GuysVsGalsGame_instances, answerItem_fn).call(this, !!said);
+    }
+    // ---------- the host and the TV ----------
+    /** Moves things along: locks the answer in now, skips the wait after a reveal, or ends the Lightning Round. */
+    advance() {
+      switch (this.phase) {
+        case "toss":
+          this.timer = null;
+          __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+          return;
+        case "question":
+          if (!this.locked) __privateMethod(this, _GuysVsGalsGame_instances, lock_fn).call(this);
+          else {
+            this.timer = null;
+            __privateMethod(this, _GuysVsGalsGame_instances, reveal_fn2).call(this);
+          }
+          return;
+        case "reveal": {
+          const t = this.timer;
+          this.timer = null;
+          t?.fire();
+          return;
+        }
+        case "lightning-intro":
+          this.timer = null;
+          __privateMethod(this, _GuysVsGalsGame_instances, runLightning_fn).call(this);
+          return;
+        case "lightning":
+          if (!this.lightning.over) {
+            this.timer = null;
+            __privateMethod(this, _GuysVsGalsGame_instances, lightningDone_fn).call(this);
+          }
+          return;
+        case "lightning-done": {
+          const t = this.timer;
+          this.timer = null;
+          t?.fire();
+          return;
+        }
+        default:
+          return;
+      }
+    }
+    /** The host throws out a question (a dud, or one nobody could know) and asks the same team another. */
+    newQuestion() {
+      if (this.phase !== "question") fail("There is no question to change");
+      __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+    }
+    /** The host nudges a team's token (a judgement call, a mistake). */
+    nudge(side, delta) {
+      if (!SIDES[side]) fail("No such team");
+      if (this.phase === "lobby" || this.phase === "gameover") fail("Only during a game");
+      const d = int(delta);
+      if (![-1, 1].includes(d)) fail("Move one space at a time");
+      this.pos[side] = Math.max(0, Math.min(this.length() - 1, this.pos[side] + d));
+      __privateMethod(this, _GuysVsGalsGame_instances, score_fn).call(this);
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    endGame() {
+      const keep = { ...this.settings };
+      __privateMethod(this, _GuysVsGalsGame_instances, reset_fn3).call(this);
+      this.settings = keep;
+      this.room.resetScores();
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    setSet(id) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      const want = String(id ?? "");
+      if (want !== ALL_SETS2 && !this.room.loadContent(GAME6, want)) fail("No such question set");
+      this.settings.setId = want;
+      this.deck = null;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    setLength(n) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      const v = int(n);
+      if (!LENGTHS[v]) fail("Pick a quick, standard or long game");
+      this.settings.length = v;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    setAnswerTime(s) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      const v = int(s);
+      if (!ANSWER_TIMES2.includes(v)) fail("Pick 20, 30 or 45 seconds, or no clock");
+      this.settings.answerSecs = v;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    setLightning(on) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      this.settings.lightning = !!on;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** A player picks their side (in the lobby; the host can also move people between teams). */
+    setSide(player, side) {
+      if (!SIDES[side]) fail("Pick the Guys or the Gals");
+      if (this.phase !== "lobby" && __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player)) fail("Sides are fixed once the game starts");
+      const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side) ?? fail("No such team");
+      this.room.setPlayerTeam(player.id, t.id);
+      this.picked[player.id] = true;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** Emoji from any phone, floating up on the TV for a few seconds. */
+    react(player, e) {
+      const i = int(e);
+      if (!(i >= 0 && i < REACTIONS2.length)) return;
+      const now = __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this);
+      if (this.lastReact[player.id] && now - this.lastReact[player.id] < 700) return;
+      this.lastReact[player.id] = now;
+      this.reactionN += 1;
+      this.reactions.push({ id: this.reactionN, e: REACTIONS2[i], side: __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player), name: player.name, at: now });
+      if (this.reactions.length > 12) this.reactions.shift();
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    // ---------- who may do what ----------
+    act(action, a = {}) {
+      switch (action) {
+        case "start":
+          return this.start();
+        case "advance":
+          return this.advance();
+        case "newQuestion":
+          return this.newQuestion();
+        case "nudge":
+          return this.nudge(String(a.side ?? ""), a.delta);
+        case "endGame":
+        case "playAgain":
+          return this.endGame();
+        case "setSet":
+          return this.setSet(a.id);
+        case "setLength":
+          return this.setLength(a.n);
+        case "setAnswerTime":
+          return this.setAnswerTime(a.secs);
+        case "setLightning":
+          return this.setLightning(a.on);
+        case "setSide":
+          return this.setSide(this.room.player(String(a.pid ?? "")), String(a.side ?? ""));
+        case "kick":
+          if (this.phase !== "lobby") fail("Players can only be removed before the game starts");
+          return this.room.removePlayer(String(a.pid ?? a.id ?? ""));
+        default:
+          throw new GameError(`Unknown action ${action}`);
+      }
+    }
+    onPlayer(player, msg) {
+      switch (msg.t) {
+        case "start":
+        case "advance":
+        case "play-again":
+          if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id)) fail("Only the host can do that");
+          this.act({ start: "start", advance: "advance", "play-again": "playAgain" }[msg.t]);
+          return void 0;
+        case "side":
+          this.setSide(player, String(msg.side ?? ""));
+          return void 0;
+        case "vote":
+          this.vote(player, msg.choice);
+          return { t: "ack", what: "vote" };
+        case "lightning":
+          this.lightningAnswer(player, msg.said === true);
+          return { t: "ack", what: "lightning" };
+        case "react":
+          this.react(player, msg.e);
+          return void 0;
+        default:
+          return void 0;
+      }
+    }
+    publicView() {
+      const v = {
+        game: GAME6,
+        scoreFormat: "none",
+        lobbyTitle: NAME2,
+        phase: this.phase,
+        status: this.phase,
+        hosted: this.room.hosts > 0,
+        length: this.length(),
+        step: STEP2,
+        lightningAt: this.lightningSpaces(),
+        teams: __privateMethod(this, _GuysVsGalsGame_instances, teamsView_fn).call(this),
+        turn: this.turn,
+        order: this.order.slice(),
+        lastChance: this.lastChance,
+        settings: { ...this.settings },
+        line: __privateMethod(this, _GuysVsGalsGame_instances, line_fn3).call(this),
+        timer: __privateMethod(this, _GuysVsGalsGame_instances, timerView_fn3).call(this),
+        reactions: this.reactions.map(({ id, e, side, name }) => ({ id, e, side, name })),
+        lengths: Object.entries(LENGTHS).map(([n, label]) => ({ n: Number(n), label })),
+        reactionList: REACTIONS2,
+        log: this.log.slice()
+      };
+      if (this.lastMove) v.lastMove = { ...this.lastMove };
+      if (this.phase === "lobby") {
+        v.sets = this.room.listContent(GAME6).map((s) => ({ id: s.id, title: s.title })).slice(0, 40);
+        v.setTitle = this.settings.setId === ALL_SETS2 ? "All question sets" : this.room.listContent(GAME6).find((s) => s.id === this.settings.setId)?.title ?? "";
+      }
+      if ((this.phase === "question" || this.phase === "reveal") && this.question) {
+        const q = this.question;
+        const counts = q.choices.map(() => 0);
+        for (const c of Object.values(this.votes)) counts[c] += 1;
+        v.question = {
+          n: this.questionN,
+          cat: q.cat,
+          about: q.about,
+          text: q.q,
+          choices: q.choices.slice(),
+          counts,
+          voters: Object.keys(this.votes),
+          locked: this.locked,
+          pick: this.locked ? this.pick : null
+        };
+        if (this.phase === "reveal") {
+          v.question.answer = q.answer;
+          v.result = { ...this.result };
+        }
+      }
+      if (this.lightning && this.phase.startsWith("lightning")) {
+        const L = this.lightning;
+        v.lightning = {
+          side: L.side,
+          at: L.at,
+          total: L.items.length,
+          i: L.i,
+          rights: L.rights,
+          over: !!L.over,
+          current: !L.over && L.started && L.items[L.i] ? L.items[L.i].q : null,
+          done: L.items.slice(0, L.i).map((x) => ({ text: x.q, a: x.a, said: x.said, correct: x.correct })),
+          flash: L.flash && __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) < L.flash.until ? { i: L.flash.i, correct: L.flash.correct } : null
+        };
+      }
+      if (this.phase === "gameover") v.winners = this.winners.slice();
+      return v;
+    }
+    playerView(player) {
+      const v = this.publicView();
+      const side = __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player);
+      v.me = { id: player.id, side, picked: !!this.picked[player.id], canStart: __privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id), myTurn: !!side && side === this.turn };
+      if (v.question) {
+        if (player.id in this.votes) v.me.vote = this.votes[player.id];
+        if (side && side !== this.turn && this.question) v.me.answer = this.question.answer;
+      }
+      if (v.lightning && side && side !== this.lightning.side && v.lightning.current) {
+        v.me.lightningAnswer = this.lightning.items[this.lightning.i]?.a;
+      }
+      return v;
+    }
+    hostView() {
+      const v = this.publicView();
+      if (v.question) v.question.answer = this.question.answer;
+      if (v.lightning && v.lightning.current) v.lightning.currentAnswer = this.lightning.items[this.lightning.i]?.a;
+      return v;
+    }
+    // ---------- saving ----------
+    toJSON() {
+      return {
+        settings: this.settings,
+        picked: this.picked,
+        phase: this.phase,
+        order: this.order,
+        turn: this.turn,
+        pos: this.pos,
+        used: this.used,
+        turns: this.turns,
+        question: this.question,
+        votes: this.votes,
+        voteOrder: this.voteOrder,
+        locked: this.locked,
+        pick: this.pick,
+        result: this.result,
+        lightning: this.lightning,
+        lastMove: this.lastMove,
+        lastChance: this.lastChance,
+        winners: this.winners,
+        questionN: this.questionN,
+        log: this.log
+      };
+    }
+    restore(d) {
+      __privateMethod(this, _GuysVsGalsGame_instances, reset_fn3).call(this);
+      this.settings = { setId: DEFAULT_SET2, length: DEFAULT_LENGTH, answerSecs: 30, lightning: true, ...d.settings ?? {} };
+      if (!LENGTHS[this.settings.length]) this.settings.length = DEFAULT_LENGTH;
+      this.picked = d.picked ?? {};
+      const valid = ["lobby", "toss", "question", "reveal", "lightning-intro", "lightning", "lightning-done", "gameover"];
+      this.phase = valid.includes(d.phase) ? d.phase : "lobby";
+      Object.assign(this, {
+        order: d.order ?? [],
+        turn: d.turn ?? null,
+        pos: { guys: 0, gals: 0, ...d.pos ?? {} },
+        used: { guys: [], gals: [], ...d.used ?? {} },
+        turns: { guys: 0, gals: 0, ...d.turns ?? {} },
+        question: d.question ?? null,
+        votes: d.votes ?? {},
+        voteOrder: d.voteOrder ?? [],
+        locked: !!d.locked,
+        pick: d.pick ?? null,
+        result: d.result ?? null,
+        lightning: d.lightning ?? null,
+        lastMove: d.lastMove ?? null,
+        lastChance: !!d.lastChance,
+        winners: d.winners ?? [],
+        questionN: d.questionN ?? 0,
+        log: d.log ?? []
+      });
+      if (this.phase !== "lobby" && this.phase !== "gameover") {
+        __privateMethod(this, _GuysVsGalsGame_instances, buildDeck_fn2).call(this);
+        if (!this.turn || !SIDES[this.turn]) {
+          this.phase = "lobby";
+          return;
+        }
+        if (this.phase === "toss") __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.toss, () => __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this));
+        else if (this.phase === "question") {
+          if (!this.question) __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+          else if (this.locked) __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.lockPause, () => __privateMethod(this, _GuysVsGalsGame_instances, reveal_fn2).call(this));
+          else if (this.settings.answerSecs > 0) __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, this.settings.answerSecs * 1e3, () => __privateMethod(this, _GuysVsGalsGame_instances, lock_fn).call(this), "answer");
+        } else if (this.phase === "reveal") {
+          const side = this.turn;
+          const to = this.pos[side];
+          const from = to - (this.result?.moved ?? 0);
+          __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.reveal, () => __privateMethod(this, _GuysVsGalsGame_instances, afterMove_fn).call(this, side, from, to));
+        } else if (this.lightning) {
+          const L = this.lightning;
+          if (this.phase === "lightning-intro") __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.lightningIntro, () => __privateMethod(this, _GuysVsGalsGame_instances, runLightning_fn).call(this));
+          else if (this.phase === "lightning") __privateMethod(this, _GuysVsGalsGame_instances, runLightning_fn).call(this);
+          else {
+            const side = L.side;
+            __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.lightningDone, () => {
+              this.lightning = null;
+              if (this.pos[side] >= this.length()) __privateMethod(this, _GuysVsGalsGame_instances, finished_fn).call(this, side);
+              else __privateMethod(this, _GuysVsGalsGame_instances, endTurn_fn).call(this, side);
+            });
+          }
+        } else {
+          this.phase = "question";
+          __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+        }
+      }
+    }
+  };
+  _GuysVsGalsGame_instances = new WeakSet();
+  reset_fn3 = function() {
+    this.phase = "lobby";
+    this.order = [];
+    this.turn = null;
+    this.pos = { guys: 0, gals: 0 };
+    this.used = { guys: [], gals: [] };
+    this.turns = { guys: 0, gals: 0 };
+    this.question = null;
+    this.votes = {};
+    this.voteOrder = [];
+    this.locked = false;
+    this.pick = null;
+    this.result = null;
+    this.lightning = null;
+    this.lastMove = null;
+    this.lastChance = false;
+    this.winners = [];
+    this.timer = null;
+    this.deck = null;
+    this.questionN = 0;
+    this.log = [];
+  };
+  changed_fn6 = function() {
+    this.room.changed();
+  };
+  now_fn4 = function() {
+    return this.room.now();
+  };
+  setTimer_fn4 = function(ms, fire, kind = null) {
+    this.timer = { at: __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) + ms, fire, kind, totalMs: ms };
+  };
+  note_fn2 = function(text) {
+    this.log.push(text);
+    if (this.log.length > 6) this.log.shift();
+  };
+  // ---------- the two sides and the room's teams ----------
+  team_fn = function(side) {
+    return this.room.teams.find((t) => t.key === SIDES[side]?.key) ?? null;
+  };
+  sideOfTeam_fn = function(teamId) {
+    const t = this.room.teams.find((x) => x.id === teamId);
+    return SIDE_ORDER.find((s) => SIDES[s].key === t?.key) ?? null;
+  };
+  sideOf_fn = function(player) {
+    return __privateMethod(this, _GuysVsGalsGame_instances, sideOfTeam_fn).call(this, player?.teamId);
+  };
+  members_fn3 = function(side) {
+    const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side);
+    return t ? this.room.players.filter((p) => p.teamId === t.id) : [];
+  };
+  here_fn = function(side) {
+    return __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, side).filter((p) => this.room.connected.has(p.id));
+  };
+  name_fn2 = function(side) {
+    return __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side)?.name ?? SIDES[side]?.name ?? "Someone";
+  };
+  /** The room's two teams wear the sides' names and colours while this game is chosen. */
+  dress_fn = function() {
+    for (const side of SIDE_ORDER) {
+      const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side);
+      if (!t) continue;
+      const plain = ["Red", "Blue"].includes(t.name);
+      if (plain) t.name = SIDES[side].name;
+      t.color = SIDES[side].color;
+    }
+  };
+  // ---------- questions ----------
+  sets_fn2 = function() {
+    const all = () => this.room.listContent(GAME6).map((s) => this.room.loadContent(GAME6, s.id)).filter(Boolean);
+    if (this.settings.setId === ALL_SETS2) return all();
+    const one = this.room.loadContent(GAME6, this.settings.setId);
+    return one ? [one] : all();
+  };
+  buildDeck_fn2 = function() {
+    const deck = { guyStuff: { questions: [], lightning: [] }, galStuff: { questions: [], lightning: [] } };
+    const seen = /* @__PURE__ */ new Set();
+    for (const set of __privateMethod(this, _GuysVsGalsGame_instances, sets_fn2).call(this)) {
+      for (const part of ["guyStuff", "galStuff"]) {
+        for (const q of set[part]?.questions ?? []) {
+          const k = keyOf2(q.q);
+          if (!String(q.q ?? "").trim() || seen.has(k)) continue;
+          seen.add(k);
+          const wrong = (q.wrong ?? []).map((w) => String(w).trim()).filter(Boolean).slice(0, 3);
+          deck[part].questions.push({ cat: String(q.cat ?? "").trim(), q: String(q.q).trim(), a: String(q.a).trim(), wrong });
+        }
+        for (const s of set[part]?.lightning ?? []) {
+          const k = keyOf2(s.q);
+          if (!String(s.q ?? "").trim() || seen.has(k) || typeof s.a !== "boolean") continue;
+          seen.add(k);
+          deck[part].lightning.push({ q: String(s.q).trim(), a: s.a });
+        }
+      }
+    }
+    this.deck = deck;
+  };
+  /** Some not yet asked on this TV (the oldest asked ones come back once a pile runs out). */
+  draw_fn2 = function(pool, n = 1) {
+    if (!pool.length) return [];
+    const memory = this.room.memory.load(GAME6) ?? {};
+    const seen = new Set(memory.seen ?? []);
+    let fresh = pool.filter((x) => !seen.has(keyOf2(x.q)));
+    if (fresh.length < n) {
+      for (const x of pool) seen.delete(keyOf2(x.q));
+      fresh = pool.slice();
+    }
+    const picks = [];
+    while (picks.length < n && fresh.length) {
+      const i = Math.floor(this.room.rng() * fresh.length);
+      picks.push(fresh.splice(i, 1)[0]);
+    }
+    this.room.memory.save(GAME6, { ...memory, seen: [...seen, ...picks.map((x) => keyOf2(x.q))].slice(-MAX_SEEN3) });
+    return picks;
+  };
+  shuffle_fn3 = function(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(this.room.rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  hasLightning_fn = function(side) {
+    return !!this.deck?.[SIDES[side].asks]?.lightning?.length;
+  };
+  // ---------- a question ----------
+  ask_fn2 = function() {
+    const [q] = __privateMethod(this, _GuysVsGalsGame_instances, draw_fn2).call(this, this.deck[SIDES[this.turn].asks].questions);
+    const choices = __privateMethod(this, _GuysVsGalsGame_instances, shuffle_fn3).call(this, [q.a, ...q.wrong]);
+    this.question = { cat: q.cat, about: SIDES[this.turn].other, q: q.q, choices, answer: choices.indexOf(q.a) };
+    this.questionN += 1;
+    this.votes = {};
+    this.voteOrder = [];
+    this.locked = false;
+    this.pick = null;
+    this.result = null;
+    this.phase = "question";
+    const secs = this.settings.answerSecs;
+    if (secs > 0) __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, secs * 1e3, () => __privateMethod(this, _GuysVsGalsGame_instances, lock_fn).call(this), "answer");
+    else this.timer = null;
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  lock_fn = function() {
+    if (this.phase !== "question" || this.locked) return;
+    this.locked = true;
+    this.pick = this.teamPick();
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, this.pick === null ? 300 : T4.lockPause, () => __privateMethod(this, _GuysVsGalsGame_instances, reveal_fn2).call(this));
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  reveal_fn2 = function() {
+    const side = this.turn;
+    const correct = this.pick !== null && this.pick === this.question.answer;
+    const from = this.pos[side];
+    const to = correct ? Math.min(this.length(), from + STEP2) : from;
+    this.pos[side] = to;
+    this.result = { correct, moved: to - from, timeout: this.pick === null };
+    if (to !== from) this.lastMove = { side, from, to, n: (this.lastMove?.n ?? 0) + 1 };
+    __privateMethod(this, _GuysVsGalsGame_instances, score_fn).call(this);
+    this.phase = "reveal";
+    __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, correct ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} got it right` : this.pick === null ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} ran out of time` : `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} got it wrong`);
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.reveal, () => __privateMethod(this, _GuysVsGalsGame_instances, afterMove_fn).call(this, side, from, to));
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  /** After a token has moved: a Lightning Round if it reached one, the finish, or the other team's turn. */
+  afterMove_fn = function(side, from, to) {
+    if (to >= this.length()) {
+      __privateMethod(this, _GuysVsGalsGame_instances, finished_fn).call(this, side);
+      return;
+    }
+    const hit = this.lightningSpaces().filter((s) => s > from && s <= to && !this.used[side].includes(s));
+    if (hit.length && __privateMethod(this, _GuysVsGalsGame_instances, hasLightning_fn).call(this, side)) {
+      this.used[side].push(...hit);
+      __privateMethod(this, _GuysVsGalsGame_instances, startLightning_fn).call(this, side, hit.at(-1));
+      return;
+    }
+    this.used[side].push(...hit);
+    __privateMethod(this, _GuysVsGalsGame_instances, endTurn_fn).call(this, side);
+  };
+  endTurn_fn = function(side) {
+    this.turns[side] += 1;
+    if (this.lastChance) {
+      __privateMethod(this, _GuysVsGalsGame_instances, end_fn3).call(this);
+      return;
+    }
+    this.turn = SIDES[side].other;
+    __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+  };
+  finished_fn = function(side) {
+    this.turns[side] += 1;
+    if (!this.winners.includes(side)) this.winners.push(side);
+    const other = SIDES[side].other;
+    if (!this.lastChance && this.turns[other] < this.turns[side]) {
+      this.lastChance = true;
+      this.turn = other;
+      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} reached the finish! One last chance for the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, other)}`);
+      __privateMethod(this, _GuysVsGalsGame_instances, ask_fn2).call(this);
+      return;
+    }
+    __privateMethod(this, _GuysVsGalsGame_instances, end_fn3).call(this);
+  };
+  end_fn3 = function() {
+    this.phase = "gameover";
+    this.timer = null;
+    this.lightning = null;
+    if (!this.winners.length) {
+      const best = Math.max(this.pos.guys, this.pos.gals);
+      this.winners = SIDE_ORDER.filter((s) => this.pos[s] === best);
+    }
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  score_fn = function() {
+    for (const side of SIDE_ORDER) {
+      const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side);
+      if (t) t.score = this.pos[side];
+    }
+  };
+  // ---------- the Lightning Round ----------
+  startLightning_fn = function(side, at) {
+    const items = __privateMethod(this, _GuysVsGalsGame_instances, draw_fn2).call(this, this.deck[SIDES[side].asks].lightning, LIGHTNING_ITEMS).map((s) => ({ q: s.q, a: s.a, said: null, correct: null }));
+    this.lightning = { side, at, items, i: 0, rights: 0, endsAt: null, flash: null, started: false };
+    this.turn = side;
+    this.question = null;
+    this.result = null;
+    this.pick = null;
+    this.phase = "lightning-intro";
+    __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `Lightning Round for the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)}!`);
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.lightningIntro, () => __privateMethod(this, _GuysVsGalsGame_instances, runLightning_fn).call(this));
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  runLightning_fn = function() {
+    const L = this.lightning;
+    this.phase = "lightning";
+    L.started = true;
+    const ms = this.settings.answerSecs > 0 ? T4.lightning : T4.lightningPerItem * L.items.length;
+    L.endsAt = __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) + ms;
+    L.totalMs = ms;
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, ms, () => __privateMethod(this, _GuysVsGalsGame_instances, finishLightning_fn).call(this), "lightning");
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  answerItem_fn = function(said) {
+    const L = this.lightning;
+    const item = L.items[L.i];
+    if (!item) return;
+    item.said = said;
+    item.correct = said === item.a;
+    if (item.correct) L.rights += 1;
+    L.flash = { i: L.i, correct: item.correct, until: __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) + T4.lightningFlash };
+    L.i += 1;
+    if (L.i >= L.items.length) {
+      __privateMethod(this, _GuysVsGalsGame_instances, finishLightning_fn).call(this, T4.lightningFlash);
+      return;
+    }
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  finishLightning_fn = function(delay = 0) {
+    const L = this.lightning;
+    if (!L || this.phase !== "lightning") return;
+    if (delay) {
+      this.timer = { at: __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this) + delay, fire: () => __privateMethod(this, _GuysVsGalsGame_instances, lightningDone_fn).call(this), kind: null, totalMs: delay };
+      L.over = true;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+      return;
+    }
+    __privateMethod(this, _GuysVsGalsGame_instances, lightningDone_fn).call(this);
+  };
+  lightningDone_fn = function() {
+    const L = this.lightning;
+    const side = L.side;
+    const from = this.pos[side];
+    const to = Math.min(this.length(), from + L.rights);
+    this.pos[side] = to;
+    for (const s of this.lightningSpaces()) if (s > from && s <= to && !this.used[side].includes(s)) this.used[side].push(s);
+    if (to !== from) this.lastMove = { side, from, to, n: (this.lastMove?.n ?? 0) + 1 };
+    __privateMethod(this, _GuysVsGalsGame_instances, score_fn).call(this);
+    L.over = true;
+    this.phase = "lightning-done";
+    __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `Lightning Round: the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} got ${L.rights} of ${L.items.length}`);
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.lightningDone, () => {
+      this.lightning = null;
+      if (to >= this.length()) __privateMethod(this, _GuysVsGalsGame_instances, finished_fn).call(this, side);
+      else __privateMethod(this, _GuysVsGalsGame_instances, endTurn_fn).call(this, side);
+    });
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  // ---------- settings (lobby) ----------
+  lobby_fn = function() {
+    if (this.phase !== "lobby") fail("Change this before the game starts");
+  };
+  starter_fn3 = function(pid) {
+    return !this.room.hosts && this.room.players[0]?.id === pid;
+  };
+  // ---------- views ----------
+  timerView_fn3 = function() {
+    const t = this.timer;
+    if (!t || !t.kind) return null;
+    return { kind: t.kind, totalMs: t.totalMs, leftMs: Math.max(0, Math.round(t.at - __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this))) };
+  };
+  line_fn3 = function() {
+    const who = this.turn ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)}` : "";
+    const about = this.question ? this.question.about === "guys" ? "Guy stuff" : "Gal stuff" : "";
+    switch (this.phase) {
+      case "lobby":
+        return { text: "Pick your side!", next: "Guys on one team, Gals on the other" };
+      case "toss":
+        return { text: `Coin toss: the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} go first!`, next: "Then the teams take turns" };
+      case "question":
+        return this.locked ? { text: this.pick === null ? "Time\u2019s up!" : "Final answer!", next: "" } : { text: `${who}: ${about}`, next: this.lastChance ? "Last chance to catch up!" : "Vote on your phones" };
+      case "reveal":
+        return this.result.correct ? { text: "Right!", next: `${who} move ${STEP2} spaces` } : { text: this.result.timeout ? "Out of time!" : "Wrong!", next: `${who} stay put` };
+      case "lightning-intro":
+        return { text: "Lightning Round!", next: `${who}: true or false, as fast as you can` };
+      case "lightning":
+        return { text: "Lightning Round!", next: "True or false?" };
+      case "lightning-done":
+        return { text: `${this.lightning?.rights ?? 0} right!`, next: `${who} move ${this.lightning?.rights ?? 0} ${this.lightning?.rights === 1 ? "space" : "spaces"}` };
+      default:
+        return { text: this.winners.length > 1 ? "It\u2019s a tie!" : `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.winners[0])} win!`, next: "" };
+    }
+  };
+  teamsView_fn = function() {
+    return SIDE_ORDER.map((side) => {
+      const t = __privateMethod(this, _GuysVsGalsGame_instances, team_fn).call(this, side);
+      const members = __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, side);
+      return {
+        side,
+        id: t?.id ?? null,
+        name: __privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side),
+        color: t?.color ?? SIDES[side].color,
+        pos: this.pos[side],
+        used: this.used[side].slice(),
+        members: members.map((p) => ({ id: p.id, name: p.name, connected: this.room.connected.has(p.id), picked: !!this.picked[p.id] })),
+        connected: members.some((p) => this.room.connected.has(p.id))
+      };
+    });
+  };
+
+  // games/guysvsgals/index.js
+  var guysvsgals_default = {
+    id: "guysvsgals",
+    name: NAME2,
+    description: "The battle of the sexes: the Guys answer questions about gal stuff, the Gals about guy stuff. Vote on your phones, race to the finish, and survive the Lightning Rounds.",
+    // Always two teams: the Guys and the Gals.
+    needs: { teams: 2 },
+    validateContent: validateSet4,
+    create: (room) => new GuysVsGalsGame(room)
+  };
+
   // games/index.js
-  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default, spynight_default, piechase_default].map((g) => [g.id, g]));
+  var GAMES = Object.fromEntries([jeopardy_default, feud_default, singo_default, spynight_default, piechase_default, guysvsgals_default].map((g) => [g.id, g]));
 
   // room.js
   var VERSION = 2;
@@ -5025,10 +5890,12 @@
       __privateMethod(this, _Room_instances, lobbyOnly_fn2).call(this, "Pick the game");
       const mod = this.games[id] ?? fail("No such game");
       if (this.gameId === id && this.game) return;
+      this.game?.leave?.();
       this.gameId = id;
       this.game = mod.create(this);
       this.game.init?.();
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
+      this.game.teamsReady?.();
       this.changed();
     }
     /** How to play: 'auto' (individuals up to INDIVIDUAL_MAX players, teams beyond that), or force 'players' or 'teams'. */
@@ -5508,30 +6375,31 @@
     { id: "jeopardy", label: "Jeopardy" },
     { id: "feud", label: "Family Feud" },
     { id: "spynight", label: "Spy Night" },
-    { id: "piechase", label: "Pie Chase" }
+    { id: "piechase", label: "Pie Chase" },
+    { id: "guysvsgals", label: "Guys vs Gals" }
   ];
   var SOUND_NAMES = [
-    { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight", "piechase"] },
-    { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy", "spynight"], labels: { spynight: "Music under the game (loops from the deal to the end)" } },
-    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "A question comes up", spynight: "The vote begins" } },
+    { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"] },
+    { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy", "spynight", "guysvsgals"], labels: { guysvsgals: "The Lightning Round music", spynight: "Music under the game (loops from the deal to the end)" } },
+    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A question comes up", piechase: "A question comes up", spynight: "The vote begins" } },
     { name: "buzz", label: "Someone buzzes in", games: ["shared", "jeopardy"] },
-    { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "A right answer", spynight: "A team is approved" } },
-    { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy", "spynight", "piechase"], labels: { piechase: "A wrong answer", spynight: "A team is rejected" } },
-    { name: "timeup", label: "Time's up", games: ["shared", "jeopardy", "feud"] },
+    { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A right answer", piechase: "A right answer", spynight: "A team is approved" } },
+    { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A wrong answer", piechase: "A wrong answer", spynight: "A team is rejected" } },
+    { name: "timeup", label: "Time's up", games: ["shared", "jeopardy", "feud", "guysvsgals"], labels: { guysvsgals: "Out of time" } },
     { name: "tick", label: "Countdown tick (last five seconds)", games: ["shared", "jeopardy", "feud"] },
     { name: "reveal", label: "Answer shown after a skipped clue, and each Final Jeopardy response", games: ["shared", "jeopardy"] },
-    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy", "piechase"], labels: { piechase: "A wedge is won" } },
+    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "A Lightning Round begins", piechase: "A wedge is won" } },
     { name: "final", label: "Final Jeopardy begins", games: ["shared", "jeopardy", "piechase"], labels: { piechase: "The winning question comes up" } },
-    { name: "fanfare", label: "The winner", games: ["shared", "jeopardy", "spynight", "piechase"], labels: { piechase: "The winning answer", spynight: "The Resistance win" } },
-    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight", "piechase"], labels: { piechase: "The die is rolled", spynight: "A leader starts picking a team" } },
+    { name: "fanfare", label: "The winner", games: ["shared", "jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The winners", piechase: "The winning answer", spynight: "The Resistance win" } },
+    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A token hops along the track", piechase: "The die is rolled", spynight: "A leader starts picking a team" } },
     { name: "board", label: "The board fills in", games: ["jeopardy"] },
-    { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy", "spynight"], labels: { spynight: "The mission begins" } },
+    { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy", "spynight", "guysvsgals"], labels: { guysvsgals: "The team\u2019s answer locks in", spynight: "The mission begins" } },
     { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy", "piechase"], labels: { piechase: "Landing on Roll Again" } },
-    { name: "join", label: "A player joins", games: ["jeopardy", "spynight", "piechase"] },
-    { name: "applause", label: "End of a round, and the winner", games: ["jeopardy", "piechase"], labels: { piechase: "Game over" } },
-    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase"], labels: { piechase: "The game begins", spynight: "The roles are dealt" } },
-    { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight"], labels: { spynight: "A mission succeeds" } },
-    { name: "strike", label: "A strike (the big X)", games: ["feud", "spynight"], labels: { spynight: "A mission fails" } },
+    { name: "join", label: "A player joins", games: ["jeopardy", "spynight", "piechase", "guysvsgals"] },
+    { name: "applause", label: "End of a round, and the winner", games: ["jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "After the winners", piechase: "Game over" } },
+    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The coin toss", piechase: "The game begins", spynight: "The roles are dealt" } },
+    { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight", "guysvsgals"], labels: { guysvsgals: "Right, in a Lightning Round", spynight: "A mission succeeds" } },
+    { name: "strike", label: "A strike (the big X)", games: ["feud", "spynight", "guysvsgals"], labels: { guysvsgals: "Wrong, in a Lightning Round", spynight: "A mission fails" } },
     { name: "strikeout", label: "The third strike", games: ["feud"] },
     { name: "faceoff", label: "A face-off player buzzes in", games: ["feud"] },
     { name: "winner", label: "The winning jingle", games: ["feud", "spynight"], labels: { spynight: "The Spies win" } },

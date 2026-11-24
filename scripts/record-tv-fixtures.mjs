@@ -9,6 +9,7 @@ import { GAMES } from '../games/index.js';
 import { T, readingTime, speakingTime } from '../games/jeopardy/game.js';
 import { T as PT } from '../games/piechase/game.js';
 import { HUB, hqOf } from '../games/piechase/board.js';
+import { T as GT } from '../games/guysvsgals/game.js';
 
 const out = path.resolve(process.argv[2] ?? 'fixtures-out');
 mkdirSync(out, { recursive: true });
@@ -89,6 +90,68 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
   savePc('result-win');
   tickBy(PT.wedge + PT.result);
   savePc('gameover');
+}
+
+// Guys vs Gals: what the Apple TV reads at each step (gvg-*.json). The Guys win the coin toss (random() is 0), get one
+// right, the Gals get one wrong, the Guys reach a lightning space and play the Lightning Round, and then win the race.
+{
+  let t = 1000;
+  const set = JSON.parse(readFileSync(path.join(root, 'data/guysvsgals/family.json'), 'utf8'));
+  const groom = new Room({
+    games: GAMES, now: () => t, random: () => 0,
+    loadContent: (game, id) => (game === 'guysvsgals' && id === 'family' ? set : null),
+    listContent: (game) => (game === 'guysvsgals' ? [{ id: 'family', title: set.title }] : []),
+  });
+  groom.chooseGame('guysvsgals');
+  const gg = groom.game;
+  const join = (name, side) => { const p = groom.join({ name }); groom.setConnected(p.id, true); groom.playerMessage(p.id, { t: 'side', side }); return p; };
+  const guys = [join('Dad', 'guys'), join('Leo', 'guys')];
+  const gals = [join('Mom', 'gals'), join('Maya', 'gals')];
+  const saveG = (name) => { writeFileSync(path.join(out, `gvg-${name}.json`), JSON.stringify(groom.publicView(), null, 2)); console.log('recorded gvg', name); };
+  const tickBy = (ms) => { t += ms; groom.tick(); };
+  const msg = (p, m) => groom.playerMessage(p.id, m);
+  const right = () => groom.hostView().game.question.answer;
+  const vote = (team, choice) => { for (const p of team) msg(p, { t: 'vote', choice }); };
+  saveG('lobby');
+  msg(guys[0], { t: 'start' });
+  saveG('toss');
+  tickBy(GT.toss);
+  saveG('question');
+  msg(guys[0], { t: 'vote', choice: right() });
+  saveG('question-voted');
+  msg(guys[1], { t: 'vote', choice: right() });
+  saveG('question-locked');
+  tickBy(GT.lockPause);
+  saveG('reveal-right');
+  tickBy(GT.reveal);
+  vote(gals, (right() + 1) % gg.question.choices.length);
+  tickBy(GT.lockPause);
+  saveG('reveal-wrong');
+  tickBy(GT.reveal);
+  // The Guys are on 4: a right answer takes them past the lightning space on 5.
+  gg.pos.guys = 4;
+  vote(guys, right());
+  tickBy(GT.lockPause);
+  tickBy(GT.reveal);
+  saveG('lightning-intro');
+  tickBy(GT.lightningIntro);
+  saveG('lightning');
+  msg(guys[1], { t: 'lightning', said: gg.lightning.items[gg.lightning.i].a });
+  saveG('lightning-flash');
+  while (gg.phase === 'lightning') { tickBy(GT.lightningFlash); if (gg.phase === 'lightning') msg(guys[0], { t: 'lightning', said: gg.lightning.items[gg.lightning.i].a }); }
+  saveG('lightning-done');
+  tickBy(GT.lightningDone);
+  // The race ends: the Guys reach the finish, the Gals get one last turn and miss.
+  if (gg.turn !== 'gals') throw new Error(`expected the Gals' turn, not ${gg.turn}`);
+  vote(gals, (right() + 1) % gg.question.choices.length);
+  tickBy(GT.lockPause); tickBy(GT.reveal);
+  gg.pos.guys = gg.length() - 2;
+  vote(guys, right());
+  tickBy(GT.lockPause); tickBy(GT.reveal);
+  saveG('last-chance');
+  vote(gals, (right() + 1) % gg.question.choices.length);
+  tickBy(GT.lockPause); tickBy(GT.reveal);
+  saveG('gameover');
 }
 
 room.chooseGame('jeopardy');

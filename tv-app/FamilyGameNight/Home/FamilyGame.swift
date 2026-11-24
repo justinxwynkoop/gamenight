@@ -10,6 +10,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     case feud
     case spynight
     case piechase
+    case guysvsgals
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Family Feud"
         case .spynight: return "Spy Night"
         case .piechase: return "Pie Chase"
+        case .guysvsgals: return "Guys vs Gals"
         }
     }
 
@@ -35,6 +37,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
         case .spynight: return "Most of you are the Resistance. A few are Spies. Your phone tells you which."
         case .piechase: return "Roll, move round the wheel and answer to win a wedge in all six categories. Then race back to the hub."
+        case .guysvsgals: return "The Guys answer about gal stuff, the Gals about guy stuff. Race to the finish, with Lightning Rounds on the way."
         }
     }
 
@@ -46,6 +49,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Two teams, phones as buzzers"
         case .spynight: return "Five to ten players, each on their own phone"
         case .piechase: return "Two to six players or teams, each with a phone"
+        case .guysvsgals: return "Guys against Gals, everyone votes on their own phone"
         }
     }
 
@@ -57,6 +61,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return [GameTag("person.2.fill", "Two teams"), GameTag("bolt.fill", "Fast Money")]
         case .spynight: return [GameTag("person.3.fill", "5–10 players"), GameTag("eye.slash.fill", "Secret roles")]
         case .piechase: return [GameTag("person.3.fill", "2–6 players"), GameTag("die.face.5.fill", "Six wedges")]
+        case .guysvsgals: return [GameTag("person.2.fill", "Two sides"), GameTag("bolt.fill", "Lightning")]
         }
     }
 
@@ -68,6 +73,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Tile-Feud"
         case .spynight: return "Tile-SpyNight"
         case .piechase: return "Tile-PieChase"
+        case .guysvsgals: return "Tile-GuysVsGals"
         }
     }
 
@@ -79,6 +85,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return Color(red: 0.92, green: 0.58, blue: 0.10)
         case .spynight: return Color(red: 0.85, green: 0.18, blue: 0.27)
         case .piechase: return Color(red: 0.66, green: 0.33, blue: 0.97)
+        case .guysvsgals: return Color(red: 1.0, green: 0.31, blue: 0.64)
         }
     }
 }

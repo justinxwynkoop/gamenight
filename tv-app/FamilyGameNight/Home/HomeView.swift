@@ -149,6 +149,8 @@ private struct GameCard: View {
                     Text(game.title)
                         .font(.system(size: 34, weight: .bold))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     Spacer()
                     Image(systemName: "play.fill")
                         .font(.system(size: 26, weight: .bold))
@@ -159,7 +161,7 @@ private struct GameCard: View {
                     ForEach(game.tags, id: \.self) { tag in
                         HStack(spacing: compact ? 6 : 8) {
                             Image(systemName: tag.icon).font(.system(size: compact ? 14 : 17, weight: .bold))
-                            Text(tag.text).font(.system(size: compact ? 16 : 20, weight: .semibold)).lineLimit(1)
+                            Text(tag.text).font(.system(size: compact ? 16 : 20, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, compact ? 10 : 14)
@@ -194,6 +196,7 @@ struct GameHost: View {
         case .feud: JeopardyRootView(title: "Family Feud", onExit: exit)
         case .spynight: JeopardyRootView(title: "Spy Night", onExit: exit)
         case .piechase: JeopardyRootView(title: "Pie Chase", onExit: exit)
+        case .guysvsgals: JeopardyRootView(title: "Guys vs Gals", onExit: exit)
         }
     }
 }

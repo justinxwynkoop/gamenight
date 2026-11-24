@@ -2,7 +2,7 @@ import Foundation
 
 /// Your own sound files, copied into the app on your Mac (see Tools/install-sounds.sh). They are not in the git
 /// repository: the audio is not ours to publish. A file is named `<game>__<name>.<ext>`: the game is `jeopardy`,
-/// `feud`, `spynight`, `piechase`, or `shared` for a file every game uses, and the name is a sound such as `think` or `ding`.
+/// `feud`, `spynight`, `piechase`, `guysvsgals`, or `shared` for a file every game uses, and the name is a sound such as `think` or `ding`.
 enum BundledSounds {
     static let extensions = ["mp3", "m4a", "wav"]
 
@@ -11,7 +11,7 @@ enum BundledSounds {
         let parts = stem.components(separatedBy: "__")
         guard parts.count == 2, !parts[1].isEmpty else { return nil }
         let game = parts[0]
-        guard ["shared", "jeopardy", "feud", "spynight", "piechase"].contains(game) else { return nil }
+        guard ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"].contains(game) else { return nil }
         return (game == "shared" ? nil : game, parts[1])
     }
 

@@ -28,6 +28,11 @@ const CARDS = {
     tags: [['🎲', '2 to 6 players or teams'], ['🥧', 'Six wedges']],
     blurb: 'Roll, move round the wheel and answer to win a wedge in every category. Then race to the hub.',
   },
+  guysvsgals: {
+    title: 'Guys vs Gals', art: '/menu/guysvsgals.webp', accent: '#ff4fa3',
+    tags: [['⚔️', 'Guys against Gals'], ['⚡', 'Lightning Rounds']],
+    blurb: 'The Guys answer gal stuff, the Gals answer guy stuff. Vote on your phones and race to the finish.',
+  },
 };
 
 let selected = 0;   // the highlighted card, kept across redraws (the page redraws on every update)

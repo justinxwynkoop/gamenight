@@ -38,7 +38,7 @@ test('the host can see which sounds a TV can keep, and what is there', () => {
   assert.equal(r.ok, true);
   assert.equal(r.data.available, true);
   assert.deepEqual(r.data.files, []);
-  assert.deepEqual(r.data.games.map((g) => g.id), ['shared', 'jeopardy', 'feud', 'spynight', 'piechase']);
+  assert.deepEqual(r.data.games.map((g) => g.id), ['shared', 'jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals']);
   assert.ok(r.data.names.some((n) => n.name === 'lobby'));
 });
 

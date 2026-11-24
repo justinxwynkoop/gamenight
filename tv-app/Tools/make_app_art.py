@@ -1,8 +1,8 @@
 """Draws the Family Game Night app icon, Top Shelf images and the two home
-screen tiles (Singo Night, Jeopardy, Family Feud, Spy Night, Pie Chase).
+screen tiles (Singo Night, Jeopardy, Family Feud, Spy Night, Pie Chase, Guys vs Gals).
 
 `python3 Tools/make_app_art.py <Assets.xcassets> spynight [menu.webp]` draws only the Spy Night tile (and the website's menu picture);
-`... piechase [menu.webp]` the same for Pie Chase.
+`... piechase [menu.webp]` the same for Pie Chase, and `... guysvsgals [menu.webp]` for Guys vs Gals.
 
 Usage: python3 Tools/make_app_art.py FamilyGameNight/Assets.xcassets
 
@@ -556,6 +556,96 @@ def pie_tile(w, h):
     return img.convert("RGB")
 
 
+def _cubic(p0, p1, p2, p3, n=24):
+    out = []
+    for i in range(n + 1):
+        t = i / n
+        a = (1 - t) ** 3; b = 3 * (1 - t) ** 2 * t; c = 3 * (1 - t) * t ** 2; d = t ** 3
+        out.append((a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]))
+    return out
+
+
+def _path(start, curves):
+    """A closed shape from a start point and cubic curves [(c1, c2, end), ...] (the same paths as the web's emblems)."""
+    pts = [start]
+    cur = start
+    for c1, c2, end in curves:
+        pts += _cubic(cur, c1, c2, end)[1:]
+        cur = end
+    return pts
+
+
+MUSTACHE = _path((0, -4), [((-5, -13), (-17, -16), (-25, -8)), ((-30, -3), (-36, 2), (-46, -3)), ((-42, 11), (-26, 15), (-13, 9)),
+                           ((-7, 6), (-3, 4), (0, 3)), ((3, 4), (7, 6), (13, 9)), ((26, 15), (42, 11), (46, -3)),
+                           ((36, 2), (30, -3), (25, -8)), ((17, -16), (5, -13), (0, -4))])
+BOW_L = _path((-5, 0), [((-14, -17), (-40, -24), (-41, -2)), ((-42, 20), (-15, 17), (-5, 0))])
+BOW_R = [(-x, y) for x, y in BOW_L]
+
+
+def gvg_token(d, cx, cy, r, side, color):
+    """A Guys vs Gals token: a round badge in the side's colour, white ring, and the mustache or the bow."""
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color + (255,))
+    d.ellipse([cx - r * 0.93, cy - r * 0.93, cx + r * 0.93, cy + r * 0.93], outline=(255, 255, 255, 235), width=max(2, int(r * 0.09)))
+    k = r / 56 * 0.95
+    dy = 6 if side == "guys" else 2
+    shapes = [MUSTACHE] if side == "guys" else [BOW_L, BOW_R]
+    for sh in shapes:
+        d.polygon([(cx + x * k, cy + (y + dy) * k) for x, y in sh], fill=(255, 255, 255, 255))
+    if side == "gals":
+        d.ellipse([cx - 8 * k, cy - 7 * k, cx + 8 * k, cy + 11 * k], fill=(255, 255, 255, 255))
+
+
+def gvg_tile(w, h):
+    """Guys vs Gals: electric blue against hot pink, split by a lightning bolt, a token for each side, and the title."""
+    blue, pink, yellow = (59, 139, 255), (255, 79, 163), (255, 225, 77)
+    ss = 3
+    W, H = w * ss, h * ss
+    img = Image.new("RGBA", (W, H), (12, 10, 31, 255))
+    d = ImageDraw.Draw(img)
+    # The two halves, split on a slant.
+    d.polygon([(0, 0), (W * 0.56, 0), (W * 0.44, H), (0, H)], fill=(10, 26, 80, 255))
+    d.polygon([(W * 0.56, 0), (W, 0), (W, H), (W * 0.44, H)], fill=(74, 10, 52, 255))
+    img.alpha_composite(radial(W, H, W * 0.18, H * 0.3, H * 0.75, blue, 0.55))
+    img.alpha_composite(radial(W, H, W * 0.82, H * 0.3, H * 0.75, pink, 0.55))
+    # Little stars of light.
+    for i in range(70):
+        x = (i * 397) % W
+        y = (i * 211) % int(H * 0.7)
+        rr = ss * (1 + i % 3)
+        d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=(255, 255, 255, 40 + (i * 13) % 60))
+    # The bolt down the middle, with a glow.
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    bx, by, bs = W * 0.5, H * 0.36, H * 0.0062
+    boltpts = [(38, 0), (4, 56), (28, 56), (20, 100), (60, 38), (34, 38)]
+    pts = [(bx + (x - 32) * bs, by + (y - 50) * bs) for x, y in boltpts]
+    gd.polygon(pts, fill=yellow + (255,))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(radius=H * 0.03)))
+    d = ImageDraw.Draw(img)
+    d.polygon(pts, fill=yellow + (255,), outline=(120, 70, 0, 255))
+    # A token for each side.
+    tok = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    td = ImageDraw.Draw(tok)
+    for cx, side, col in ((W * 0.22, "guys", blue), (W * 0.78, "gals", pink)):
+        r = H * 0.22
+        td.ellipse([cx - r, H * 0.36 - r + r * 0.12, cx + r, H * 0.36 + r + r * 0.12], fill=(0, 0, 0, 120))
+        gvg_token(td, cx, H * 0.36, r, side, col)
+    img.alpha_composite(tok)
+    img = img.resize((w, h), Image.LANCZOS)
+    shade = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(shade).rounded_rectangle([-w * 0.02, h * 0.66, w * 1.02, h * 1.02], radius=h * 0.1, fill=(6, 4, 20, 215))
+    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(radius=h * 0.04)))
+    front = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    title = ImageFont.truetype(os.path.join(APP_FONTS, "Unbounded-Black.ttf"), int(h * 0.135))
+    gradient_text(front, (w * 0.25, h * 0.79), "GUYS", title, (214, 234, 255), blue, stroke=int(h * 0.008), stroke_fill=(6, 10, 40, 255), shadow=0.04, glow=blue + (120,))
+    gradient_text(front, (w * 0.5, h * 0.79), "VS", title, (255, 246, 176), (242, 162, 0), stroke=int(h * 0.008), stroke_fill=(60, 30, 0, 255), shadow=0.04, glow=yellow + (140,))
+    gradient_text(front, (w * 0.75, h * 0.79), "GALS", title, (255, 214, 236), pink, stroke=int(h * 0.008), stroke_fill=(40, 6, 24, 255), shadow=0.04, glow=pink + (120,))
+    tag = ImageFont.truetype(os.path.join(APP_FONTS, "Outfit-ExtraBold.ttf"), int(h * 0.058))
+    gradient_text(front, (w / 2, h * 0.925), "WHO KNOWS THE OTHER SIDE?", tag, (255, 236, 140), (255, 190, 50), shadow=0.06, spacing=h * 0.01)
+    img.alpha_composite(front)
+    return img.convert("RGB")
+
+
 # ---------- Writing the asset catalog ----------
 
 def save_stack(root, name, size, scales):
@@ -614,6 +704,12 @@ def main():
         save_tile(assets, "Tile-PieChase", pie_tile)
         if len(sys.argv) > 3:
             pie_tile(840, 504).save(sys.argv[3], quality=88)
+        return
+    if len(sys.argv) > 2 and sys.argv[2] == "guysvsgals":
+        # Only the Guys vs Gals tile (and its picture for the website's menu).
+        save_tile(assets, "Tile-GuysVsGals", gvg_tile)
+        if len(sys.argv) > 3:
+            gvg_tile(840, 504).save(sys.argv[3], quality=88)
         return
     mi.write_json(os.path.join(assets, "Contents.json"), {"info": {"author": "xcode", "version": 1}})
     brand = os.path.join(assets, "App Icon & Top Shelf Image.brandassets")

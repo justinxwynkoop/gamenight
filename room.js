@@ -12,6 +12,8 @@
 //   publicView() / hostView() what the TV+phones / the host may see
 //   toJSON() / restore(data)  saved with the room
 //   init()                    optional, called when the game is newly chosen
+//   teamsReady()              optional, called once the teams the game needs exist (after init)
+//   leave()                   optional, called when another game is chosen in its place
 //   contentChanged(setId)     optional, a question set was saved or deleted
 //   tick()                    optional, called ~20x a second; the place to expire timers
 // A game may also keep things that outlive the room (which clues this TV has already shown) with
@@ -168,10 +170,12 @@ export class Room {
     this.#lobbyOnly('Pick the game');
     const mod = this.games[id] ?? fail('No such game');
     if (this.gameId === id && this.game) return;
+    this.game?.leave?.();   // the game being put away tidies up (Guys vs Gals gives the teams their usual names back)
     this.gameId = id;
     this.game = mod.create(this);
     this.game.init?.();
     this.#reconcile();   // a game may need teams (or not)
+    this.game.teamsReady?.();   // and may dress the teams once they are there
     this.changed();
   }
   /** How to play: 'auto' (individuals up to INDIVIDUAL_MAX players, teams beyond that), or force 'players' or 'teams'. */

@@ -26,3 +26,10 @@ fanfare (the Resistance win), winner (the Spies win), join (a player joins).
 feud__lobby.m4a, feud__ding.m4a and feud__faceoff.m4a are Family Feud's own sounds (its theme tune, a right answer, and the face-off
 buzzer), original and CC0, synthesized by Tools/make_spynight_sounds.py (it also writes the website's copies in
 public/builtin-sounds/feud/). They are not recordings of the show.
+
+guysvsgals__*.m4a are Guys vs Gals' own sounds, all CC0, from other people (the website's copies are in
+public/builtin-sounds/guysvsgals/, whose CREDITS.txt lists every file). Music by HoliznaCC0 via Alvana Audio
+(https://github.com/seyedpouramir/alvana-audio): lobby = "Love Love Love", think = "50 Over The Speed Limit" (the
+Lightning Round). Effects from SFX Kit by Wyzowl (https://github.com/wyzowl/sfx-kit): open, lock, correct, wrong,
+timeup, pick (a token hops), dd (a Lightning Round begins), ding and strike (right and wrong in a Lightning Round),
+roundstart (the coin toss), fanfare (the winners), applause, join.

@@ -92,7 +92,7 @@ jobs:
           BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")
           xcrun simctl install "$UDID" "$APP"
           mkdir -p shots
-          for g in jeopardy feud singo spynight piechase; do
+          for g in jeopardy feud singo spynight piechase guysvsgals; do
             xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
             SIMCTL_CHILD_GN_HOME_FOCUS=$g xcrun simctl launch "$UDID" "$BUNDLE"
             sleep 10
@@ -143,6 +143,12 @@ jobs:
           shot pc-result-wedge pc-result-wedge
           shot pc-choose-final pc-choose-final
           shot pc-gameover pc-gameover
+          shot gvg-question gvg-question-voted
+          shot gvg-reveal gvg-reveal-right
+          shot gvg-toss gvg-toss
+          shot gvg-lightning gvg-lightning-flash
+          shot gvg-lightning-done gvg-lightning-done
+          shot gvg-gameover gvg-gameover
       - uses: actions/upload-artifact@v4
         with:
           name: home-screenshots
