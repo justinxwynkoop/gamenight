@@ -44,8 +44,16 @@ export function mount(container, { send }) {
         ? [btn(ready ? 'Start the battle!' : 'Both sides need a player', 'go huge', () => send({ t: 'start' }), { disabled: !ready }),
           h('p', { class: 'dim' }, 'You joined first, so you start the game when everyone is in.')]
         : h('p', { class: 'dim' }, g.hosted ? 'The host starts the game when everyone is in.' : 'The first player to join starts the game.'),
+      anotherPlayer(),
       rules(g),
     ];
+  }
+
+  /** Opens a new tab that joins as another player, for one phone shared by both sides (or trying it on your own). */
+  function anotherPlayer() {
+    const params = new URLSearchParams(location.search);
+    params.set('seat', String(Math.min(9, Number(params.get('seat') || 1) + 1)));
+    return h('a', { class: 'gv-btn gv-another', href: `${location.pathname}?${params}`, target: '_blank', rel: 'noopener' }, '＋ Add another player on this phone');
   }
 
   function rules(g) {
