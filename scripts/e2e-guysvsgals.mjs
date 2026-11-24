@@ -70,6 +70,10 @@ try {
     await page.getByRole('button', { name: /^join$/i }).click();
     await until(async () => (await page.locator('.gv-sides').count()) > 0, `${p.name}'s side picker`);
     if (p.name === 'Ann') await shot(page, 'phone-pick-side');
+    if (p.name === 'Ann') {
+      const href = await page.locator('.gv-another').getAttribute('href');
+      if (!/[?&]seat=2\b/.test(href ?? '')) throw new Error(`"Add another player on this phone" should open seat 2, got ${href}`);
+    }
     await page.locator(`button[data-side="${p.side}"]`).click();
     await until(async () => (await page.locator(`button[data-side="${p.side}"].on`).count()) > 0, `${p.name} on the ${p.side}`);
     p.page = page;

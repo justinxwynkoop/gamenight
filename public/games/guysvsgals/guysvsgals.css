@@ -291,3 +291,4 @@
 .gv-ptrack .gv-cell.finish { font-size: .8rem; }
 .gv-ptrack .gv-cell.light .gv-bolt { width: 14px; height: 14px; }
 .gv-ptrack .gv-runner .gv-token { width: 40px; height: 40px; margin-top: -14px; }
+.gv-another { display: grid; place-items: center; text-align: center; text-decoration: none; box-sizing: border-box; }
