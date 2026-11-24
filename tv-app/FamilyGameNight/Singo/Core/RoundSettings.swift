@@ -80,7 +80,8 @@ public struct RoundSettings: Codable, Equatable, Sendable {
     /// the reveal. The title hint is off unless the host turns it on.
     public var enabledHints: Set<Hint> = [.genre, .year, .art, .artist]
     public var background: BackgroundStyle = .black
-
+    /// Whether players get a bingo card on their phones (the QR code and join card are shown). Off for printed sheets.
+    public var phoneCards: Bool = true
 
     public init() {}
 
@@ -97,7 +98,7 @@ public struct RoundSettings: Codable, Equatable, Sendable {
         // without a way to change it) pick up the new 8-second default.
         case revealHold = "answerSeconds"
         case clipLength, startOffset, addTimeStep, titleHintStyle,
-             autoAdvance, enabledHints, background
+             autoAdvance, enabledHints, background, phoneCards
     }
 
     public init(from decoder: Decoder) throws {
@@ -111,6 +112,7 @@ public struct RoundSettings: Codable, Equatable, Sendable {
         autoAdvance = (try? c.decodeIfPresent(Bool.self, forKey: .autoAdvance)) ?? autoAdvance
         enabledHints = (try? c.decodeIfPresent(Set<Hint>.self, forKey: .enabledHints)) ?? enabledHints
         background = (try? c.decodeIfPresent(BackgroundStyle.self, forKey: .background)) ?? background
+        phoneCards = (try? c.decodeIfPresent(Bool.self, forKey: .phoneCards)) ?? phoneCards
     }
 
     /// The hints that are on, in the order they appear. Genre and year share

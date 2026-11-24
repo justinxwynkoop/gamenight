@@ -14,9 +14,46 @@ enum FamilyGame: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// The tiles are sized so that all of them fit in a row on a 1920-wide screen.
-    static var cardWidth: CGFloat { allCases.count > 4 ? 320 : allCases.count > 3 ? 400 : 480 }
-    static var cardSpacing: CGFloat { allCases.count > 4 ? 30 : allCases.count > 3 ? 40 : 56 }
+    // MARK: - The menu's layout
+    // Up to three games sit in one row. From four on they go in two staggered rows (brick fashion), which leaves room for
+    // much larger tiles than one long row would. The tile size is worked out from the number of games and the screen,
+    // so adding a game needs no change here.
+
+    /// Space for the tiles on a 1920 x 1080 screen, inside the menu's side padding and below the title.
+    private static let menuWidth: CGFloat = 1760
+    private static let menuHeight: CGFloat = 760
+    /// The colour band under a tile's picture, with the game's name and its two facts.
+    static let cardBand: CGFloat = 112
+    static let cardSpacing: CGFloat = 36
+    static let rowSpacing: CGFloat = 26
+
+    static var rowCount: Int { allCases.count <= 3 ? 1 : 2 }
+    static var perRow: Int { (allCases.count + rowCount - 1) / rowCount }
+    /// Two rows of the same length are slid half a tile apart so they still stagger.
+    static var rowsAreShifted: Bool { rowCount > 1 && allCases.count % rowCount == 0 }
+
+    static var cardWidth: CGFloat {
+        let across = CGFloat(perRow)
+        let byWidth = rowsAreShifted
+            ? (menuWidth - (across - 0.5) * cardSpacing) / (across + 0.5)
+            : (menuWidth - (across - 1) * cardSpacing) / across
+        let rows = CGFloat(rowCount)
+        let byHeight = (((menuHeight - (rows - 1) * rowSpacing) / rows) - cardBand) / 0.6
+        return min(480, byWidth, byHeight).rounded(.down)
+    }
+
+    /// The games laid out row by row.
+    static var rows: [[FamilyGame]] {
+        let all = Array(allCases)
+        return stride(from: 0, to: all.count, by: perRow).map { Array(all[$0 ..< min($0 + perRow, all.count)]) }
+    }
+
+    /// How far a row is slid sideways: the first row left and the second right by a quarter of a tile each.
+    static func rowShift(_ index: Int) -> CGFloat {
+        guard rowsAreShifted else { return 0 }
+        let quarter = (cardWidth + cardSpacing) / 4
+        return index == 0 ? -quarter : quarter
+    }
 
     var title: String {
         switch self {

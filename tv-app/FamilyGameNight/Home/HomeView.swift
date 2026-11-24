@@ -32,32 +32,38 @@ struct HomeView: View {
 
             VStack(spacing: 0) {
                 title
-                    .padding(.top, 40)
+                    .padding(.top, 24)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : -40)
 
-                Spacer(minLength: 30)
+                Spacer(minLength: 12)
 
-                HStack(spacing: FamilyGame.cardSpacing) {
-                    ForEach(Array(FamilyGame.allCases.enumerated()), id: \.element) { index, game in
-                        Button { open(game) } label: { GameCard(game: game) }
-                            .buttonStyle(TileButtonStyle())
-                            .focused($focused, equals: game)
-                            .accessibilityLabel(game.title)
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 80)
-                            .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15 + Double(index) * 0.1), value: appeared)
+                VStack(spacing: FamilyGame.rowSpacing) {
+                    ForEach(Array(FamilyGame.rows.enumerated()), id: \.offset) { rowIndex, row in
+                        HStack(spacing: FamilyGame.cardSpacing) {
+                            ForEach(row) { game in
+                                let index = FamilyGame.allCases.firstIndex(of: game) ?? 0
+                                Button { open(game) } label: { GameCard(game: game) }
+                                    .buttonStyle(TileButtonStyle())
+                                    .focused($focused, equals: game)
+                                    .accessibilityLabel(game.title)
+                                    .opacity(appeared ? 1 : 0)
+                                    .offset(y: appeared ? 0 : 80)
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15 + Double(index) * 0.1), value: appeared)
+                            }
+                        }
+                        .offset(x: FamilyGame.rowShift(rowIndex))
                     }
                 }
 
-                Spacer(minLength: 30)
+                Spacer(minLength: 12)
 
-                VStack(spacing: 14) {
+                VStack(spacing: 8) {
                     Text(highlighted.blurb)
-                        .font(.system(size: 34, weight: .medium))
+                        .font(.system(size: 30, weight: .medium))
                         .foregroundStyle(.white.opacity(0.85))
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 1300, minHeight: 90)
+                        .frame(maxWidth: 1300, minHeight: 76)
                         .id(highlighted)
                         .transition(.opacity)
                     Text(highlighted.players)
@@ -68,8 +74,8 @@ struct HomeView: View {
                 .animation(.easeInOut(duration: 0.25), value: highlighted)
 
                 footer
-                    .padding(.top, 30)
-                    .padding(.bottom, 20)
+                    .padding(.top, 14)
+                    .padding(.bottom, 14)
             }
             .padding(.horizontal, 80)
         }
@@ -87,13 +93,13 @@ struct HomeView: View {
     }
 
     private var title: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 2) {
             Text("FAMILY")
-                .font(.system(size: 34, weight: .heavy))
-                .tracking(22)
+                .font(.system(size: 28, weight: .heavy))
+                .tracking(20)
                 .foregroundStyle(Color(red: 1.0, green: 0.84, blue: 0.35))
             Text("Game Night")
-                .font(.system(size: 120, weight: .black, design: .rounded))
+                .font(.system(size: 88, weight: .black, design: .rounded))
                 .foregroundStyle(LinearGradient(colors: [.white, Color(red: 1.0, green: 0.86, blue: 0.45)],
                                                 startPoint: .top, endPoint: .bottom))
                 .shadow(color: highlighted.accent.opacity(0.9), radius: 30)
@@ -135,7 +141,7 @@ struct HomeView: View {
 private struct GameCard: View {
     let game: FamilyGame
     @Environment(\.isFocused) private var isFocused
-    private var compact: Bool { FamilyGame.cardWidth < 400 }
+    private var compact: Bool { FamilyGame.cardWidth < 450 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -156,7 +162,7 @@ private struct GameCard: View {
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(.white.opacity(isFocused ? 1 : 0))
                 }
-                // Five tiles in a row leave less room: the facts get a little smaller so both still fit.
+                // Smaller tiles leave less room: the facts get a little smaller so both still fit.
                 HStack(spacing: compact ? 8 : 10) {
                     ForEach(game.tags, id: \.self) { tag in
                         HStack(spacing: compact ? 6 : 8) {
@@ -171,7 +177,7 @@ private struct GameCard: View {
                 }
             }
             .padding(.horizontal, compact ? 18 : 26)
-            .frame(width: FamilyGame.cardWidth, height: 128, alignment: .leading)
+            .frame(width: FamilyGame.cardWidth, height: FamilyGame.cardBand, alignment: .leading)
             .background(game.accent.opacity(isFocused ? 0.95 : 0.55))
         }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))

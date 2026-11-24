@@ -39,6 +39,7 @@ struct RoundSetupView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 56) {
+                        cardsGroup
                         roundGroup
                         hintsGroup
                     }
@@ -95,7 +96,8 @@ struct RoundSetupView: View {
             } else if errorMessage == nil {
                 Button {
                     let controller = GameController(songs: songs, settings: settings, playlist: playlist)
-                    controller.phones = phones
+                    // With phone cards off there is no join card and the phones are not dealt in (printed sheets).
+                    controller.phones = settings.phoneCards ? phones : nil
                     round = controller
                 } label: {
                     Label("Start Round", systemImage: "play.fill")
@@ -110,7 +112,9 @@ struct RoundSetupView: View {
                 .font(.system(size: 22))
                 .foregroundStyle(.white.opacity(0.55))
 
-            SingoJoinCard(phones: phones, compact: false)
+            if settings.phoneCards {
+                SingoJoinCard(phones: phones, compact: false)
+            }
         }
     }
 
@@ -137,6 +141,14 @@ struct RoundSetupView: View {
     }
 
     // MARK: - Right: settings
+
+    private var cardsGroup: some View {
+        SettingsGroup("Bingo cards") {
+            ToggleSettingRow(icon: "qrcode", title: "Cards on phones",
+                             detail: settings.phoneCards ? "A QR code on the TV gives each player a card" : "No QR code. Hand out printed sheets",
+                             isOn: $store.settings.phoneCards)
+        }
+    }
 
     private var roundGroup: some View {
         SettingsGroup("Round") {
