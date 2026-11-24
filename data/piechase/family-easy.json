@@ -1,0 +1,1476 @@
+{
+ "title": "Family Easy",
+ "about": "Six categories of easy family trivia that kids and grown-ups can all answer: the default set.",
+ "categories": [
+  {
+   "name": "Geography",
+   "questions": [
+    {
+     "q": "What is the capital of the United States?",
+     "a": "Washington, D.C."
+    },
+    {
+     "q": "Which country is shaped like a boot?",
+     "a": "Italy"
+    },
+    {
+     "q": "What is the largest ocean on Earth?",
+     "a": "The Pacific"
+    },
+    {
+     "q": "How many continents are there?",
+     "a": "Seven"
+    },
+    {
+     "q": "On which continent is Egypt?",
+     "a": "Africa"
+    },
+    {
+     "q": "What is the biggest country in the world by area?",
+     "a": "Russia"
+    },
+    {
+     "q": "Which country is home to kangaroos and koalas?",
+     "a": "Australia"
+    },
+    {
+     "q": "What is the capital of France?",
+     "a": "Paris"
+    },
+    {
+     "q": "Which ocean lies between the United States and Europe?",
+     "a": "The Atlantic"
+    },
+    {
+     "q": "What is the name of the frozen continent at the South Pole?",
+     "a": "Antarctica"
+    },
+    {
+     "q": "In which U.S. state is Disney World?",
+     "a": "Florida"
+    },
+    {
+     "q": "Which U.S. state is made up of islands in the Pacific Ocean?",
+     "a": "Hawaii"
+    },
+    {
+     "q": "What is the largest U.S. state by area?",
+     "a": "Alaska"
+    },
+    {
+     "q": "Which country is directly north of the United States?",
+     "a": "Canada"
+    },
+    {
+     "q": "Which country is directly south of the United States?",
+     "a": "Mexico"
+    },
+    {
+     "q": "In which city is the Eiffel Tower?",
+     "a": "Paris"
+    },
+    {
+     "q": "In which country are the pyramids of Giza?",
+     "a": "Egypt"
+    },
+    {
+     "q": "What is the capital of England?",
+     "a": "London"
+    },
+    {
+     "q": "Which river runs through Egypt?",
+     "a": "The Nile"
+    },
+    {
+     "q": "What is the largest desert in Africa?",
+     "a": "The Sahara"
+    },
+    {
+     "q": "What is the tallest mountain in the world?",
+     "a": "Mount Everest"
+    },
+    {
+     "q": "Which country is famous for tulips and windmills?",
+     "a": "The Netherlands (Holland)"
+    },
+    {
+     "q": "Which country has a maple leaf on its flag?",
+     "a": "Canada"
+    },
+    {
+     "q": "In which city is the Statue of Liberty?",
+     "a": "New York City"
+    },
+    {
+     "q": "What is the capital of Japan?",
+     "a": "Tokyo"
+    },
+    {
+     "q": "Which country built the Great Wall?",
+     "a": "China"
+    },
+    {
+     "q": "Which famous canyon is in Arizona?",
+     "a": "The Grand Canyon"
+    },
+    {
+     "q": "How many U.S. states are there?",
+     "a": "50"
+    },
+    {
+     "q": "Which U.S. city is known as the Windy City?",
+     "a": "Chicago"
+    },
+    {
+     "q": "In which country would you find the city of Rome?",
+     "a": "Italy"
+    },
+    {
+     "q": "Which country is famous for pizza and pasta?",
+     "a": "Italy"
+    },
+    {
+     "q": "Which state is known as the Sunshine State?",
+     "a": "Florida"
+    },
+    {
+     "q": "What is the capital of Indiana?",
+     "a": "Indianapolis"
+    },
+    {
+     "q": "Which big lake borders Chicago?",
+     "a": "Lake Michigan"
+    },
+    {
+     "q": "Which two colours are on the flag of Japan?",
+     "a": "Red and white"
+    },
+    {
+     "q": "In which country is Big Ben?",
+     "a": "England (the United Kingdom)"
+    },
+    {
+     "q": "What do you call a piece of land with water all around it?",
+     "a": "An island"
+    },
+    {
+     "q": "What is the name of the line around the middle of the Earth?",
+     "a": "The equator"
+    },
+    {
+     "q": "Which country is known as the Land of the Rising Sun?",
+     "a": "Japan"
+    },
+    {
+     "q": "What is the biggest city in the United States?",
+     "a": "New York City"
+    },
+    {
+     "q": "Which U.S. city is famous for Hollywood?",
+     "a": "Los Angeles"
+    },
+    {
+     "q": "Which U.S. state is known for potatoes?",
+     "a": "Idaho"
+    },
+    {
+     "q": "In which country is the city of Sydney?",
+     "a": "Australia"
+    },
+    {
+     "q": "Which country is famous for the Taj Mahal?",
+     "a": "India"
+    },
+    {
+     "q": "Which famous waterfall sits on the border of the U.S. and Canada?",
+     "a": "Niagara Falls"
+    },
+    {
+     "q": "On which continent is Brazil?",
+     "a": "South America"
+    },
+    {
+     "q": "What is the capital of Italy?",
+     "a": "Rome"
+    },
+    {
+     "q": "What is the capital of Germany?",
+     "a": "Berlin"
+    },
+    {
+     "q": "What do you call a mountain that can erupt with lava?",
+     "a": "A volcano"
+    },
+    {
+     "q": "Which direction does a compass needle point?",
+     "a": "North"
+    },
+    {
+     "q": "What is the coldest continent?",
+     "a": "Antarctica"
+    },
+    {
+     "q": "In which country do giant pandas live in the wild?",
+     "a": "China"
+    },
+    {
+     "q": "Which state is the home of Mount Rushmore?",
+     "a": "South Dakota"
+    },
+    {
+     "q": "Which U.S. city is famous for the Golden Gate Bridge?",
+     "a": "San Francisco"
+    },
+    {
+     "q": "Which country is famous for the Amazon rainforest?",
+     "a": "Brazil"
+    },
+    {
+     "q": "How many oceans are there on Earth?",
+     "a": "Five"
+    },
+    {
+     "q": "Which city is the capital of Canada?",
+     "a": "Ottawa"
+    },
+    {
+     "q": "What is the largest continent?",
+     "a": "Asia"
+    },
+    {
+     "q": "Which country do Irish people come from?",
+     "a": "Ireland"
+    },
+    {
+     "q": "Which U.S. city hosts the Indy 500 car race?",
+     "a": "Indianapolis"
+    }
+   ]
+  },
+  {
+   "name": "Entertainment",
+   "questions": [
+    {
+     "q": "What is the name of Mickey Mouse's girlfriend?",
+     "a": "Minnie Mouse"
+    },
+    {
+     "q": "What kind of animal is Scooby-Doo?",
+     "a": "A dog (a Great Dane)"
+    },
+    {
+     "q": "Which princess loses a glass slipper?",
+     "a": "Cinderella"
+    },
+    {
+     "q": "What is the name of the snowman in Frozen?",
+     "a": "Olaf"
+    },
+    {
+     "q": "Who lives in a pineapple under the sea?",
+     "a": "SpongeBob SquarePants"
+    },
+    {
+     "q": "What colour is Shrek?",
+     "a": "Green"
+    },
+    {
+     "q": "In Toy Story, what is the name of the cowboy?",
+     "a": "Woody"
+    },
+    {
+     "q": "In Toy Story, what is the name of the space ranger?",
+     "a": "Buzz Lightyear"
+    },
+    {
+     "q": "What is Batman's real name?",
+     "a": "Bruce Wayne"
+    },
+    {
+     "q": "What is Spider-Man's real name?",
+     "a": "Peter Parker"
+    },
+    {
+     "q": "Which superhero is known as the Man of Steel?",
+     "a": "Superman"
+    },
+    {
+     "q": "Which green monster lives in a trash can on Sesame Street?",
+     "a": "Oscar the Grouch"
+    },
+    {
+     "q": "What is the name of the clownfish Marlin searches for?",
+     "a": "Nemo"
+    },
+    {
+     "q": "What kind of animal is Winnie-the-Pooh's friend Piglet?",
+     "a": "A pig"
+    },
+    {
+     "q": "What is the name of Harry Potter's school?",
+     "a": "Hogwarts"
+    },
+    {
+     "q": "What is the name of the famous Italian plumber in video games?",
+     "a": "Mario"
+    },
+    {
+     "q": "What is the name of Mario's brother?",
+     "a": "Luigi"
+    },
+    {
+     "q": "What kind of animal is Sonic in the video games?",
+     "a": "A hedgehog"
+    },
+    {
+     "q": "Which yellow cartoon family lives in Springfield?",
+     "a": "The Simpsons"
+    },
+    {
+     "q": "In The Lion King, what is the name of Simba's father?",
+     "a": "Mufasa"
+    },
+    {
+     "q": "Which princess has very long hair and lives in a tower?",
+     "a": "Rapunzel"
+    },
+    {
+     "q": "What kind of animal is Dumbo?",
+     "a": "An elephant"
+    },
+    {
+     "q": "Who is Mickey Mouse's dog?",
+     "a": "Pluto"
+    },
+    {
+     "q": "What does E.T. want to do?",
+     "a": "Phone home"
+    },
+    {
+     "q": "Which bear loves honey and lives in the Hundred Acre Wood?",
+     "a": "Winnie-the-Pooh"
+    },
+    {
+     "q": "Which Disney film features the song Let It Go?",
+     "a": "Frozen"
+    },
+    {
+     "q": "What is the name of the red Muppet who is three and a half?",
+     "a": "Elmo"
+    },
+    {
+     "q": "In Cars, what is the name of the red race car?",
+     "a": "Lightning McQueen"
+    },
+    {
+     "q": "Which dinosaur is purple and sings I Love You?",
+     "a": "Barney"
+    },
+    {
+     "q": "What is the name of the Disney mermaid?",
+     "a": "Ariel"
+    },
+    {
+     "q": "Which character says What's up, Doc?",
+     "a": "Bugs Bunny"
+    },
+    {
+     "q": "What kind of animal is Garfield?",
+     "a": "A cat"
+    },
+    {
+     "q": "Which famous little yellow creatures follow Gru?",
+     "a": "The Minions"
+    },
+    {
+     "q": "What are the names of the two chipmunks in Disney cartoons?",
+     "a": "Chip and Dale"
+    },
+    {
+     "q": "Which animated movie stars an old man who flies his house with balloons?",
+     "a": "Up"
+    },
+    {
+     "q": "What instrument does Lisa Simpson play?",
+     "a": "The saxophone"
+    },
+    {
+     "q": "What is the name of Shrek's donkey friend?",
+     "a": "Donkey"
+    },
+    {
+     "q": "In Finding Nemo, which blue fish keeps forgetting things?",
+     "a": "Dory"
+    },
+    {
+     "q": "What colour is the Cookie Monster?",
+     "a": "Blue"
+    },
+    {
+     "q": "Which wizard is Harry Potter's best friend with red hair?",
+     "a": "Ron Weasley"
+    },
+    {
+     "q": "Which game show asks you to spin a wheel and buy vowels?",
+     "a": "Wheel of Fortune"
+    },
+    {
+     "q": "What do you call a movie with drawings or computer pictures instead of actors?",
+     "a": "An animated movie (a cartoon)"
+    },
+    {
+     "q": "Which superhero carries a shield with a star on it?",
+     "a": "Captain America"
+    },
+    {
+     "q": "Which superhero has a hammer called Mjolnir?",
+     "a": "Thor"
+    },
+    {
+     "q": "What does Popeye eat to get strong?",
+     "a": "Spinach"
+    },
+    {
+     "q": "Which Disney film is about a girl who becomes a warrior in China?",
+     "a": "Mulan"
+    },
+    {
+     "q": "Which bear sings The Bare Necessities in The Jungle Book?",
+     "a": "Baloo"
+    },
+    {
+     "q": "Which Pixar movie has emotions called Joy, Sadness and Anger?",
+     "a": "Inside Out"
+    },
+    {
+     "q": "Which band was made up of John, Paul, George and Ringo?",
+     "a": "The Beatles"
+    },
+    {
+     "q": "What colour are the Smurfs?",
+     "a": "Blue"
+    },
+    {
+     "q": "Which video game has you build with blocks and fight creepers?",
+     "a": "Minecraft"
+    },
+    {
+     "q": "Who is Woody's horse in Toy Story?",
+     "a": "Bullseye"
+    },
+    {
+     "q": "What is the name of the Grinch's dog?",
+     "a": "Max"
+    },
+    {
+     "q": "In Beauty and the Beast, what is the name of the girl?",
+     "a": "Belle"
+    },
+    {
+     "q": "What kind of animal is Peppa?",
+     "a": "A pig"
+    },
+    {
+     "q": "What kind of animal is Kung Fu Panda's hero Po?",
+     "a": "A panda"
+    },
+    {
+     "q": "Which TV dog went on adventures with a boy named Timmy?",
+     "a": "Lassie"
+    },
+    {
+     "q": "Who sings the song Shake It Off?",
+     "a": "Taylor Swift"
+    },
+    {
+     "q": "What are the names of the two princess sisters in Frozen?",
+     "a": "Anna and Elsa"
+    },
+    {
+     "q": "Which superhero group includes Iron Man and the Hulk?",
+     "a": "The Avengers"
+    }
+   ]
+  },
+  {
+   "name": "History",
+   "questions": [
+    {
+     "q": "Who was the first President of the United States?",
+     "a": "George Washington"
+    },
+    {
+     "q": "On which holiday do Americans celebrate their independence?",
+     "a": "The Fourth of July"
+    },
+    {
+     "q": "In what year did Columbus first sail to the Americas?",
+     "a": "1492"
+    },
+    {
+     "q": "Which president is on the penny?",
+     "a": "Abraham Lincoln"
+    },
+    {
+     "q": "Which president is on the one-dollar bill?",
+     "a": "George Washington"
+    },
+    {
+     "q": "What did the Wright brothers invent?",
+     "a": "The airplane"
+    },
+    {
+     "q": "Who was the first person to walk on the Moon?",
+     "a": "Neil Armstrong"
+    },
+    {
+     "q": "Which ship sank in 1912 after hitting an iceberg?",
+     "a": "The Titanic"
+    },
+    {
+     "q": "What kind of animals were T. rex and Triceratops?",
+     "a": "Dinosaurs"
+    },
+    {
+     "q": "Which ancient people built the pyramids?",
+     "a": "The Egyptians"
+    },
+    {
+     "q": "Who invented the light bulb that lit up homes?",
+     "a": "Thomas Edison"
+    },
+    {
+     "q": "Who is known for inventing the telephone?",
+     "a": "Alexander Graham Bell"
+    },
+    {
+     "q": "What were the knights' big stone homes called?",
+     "a": "Castles"
+    },
+    {
+     "q": "Which holiday celebrates the Pilgrims' harvest feast?",
+     "a": "Thanksgiving"
+    },
+    {
+     "q": "On which ship did the Pilgrims sail to America?",
+     "a": "The Mayflower"
+    },
+    {
+     "q": "Which famous document begins with We the People?",
+     "a": "The U.S. Constitution"
+    },
+    {
+     "q": "Which document was signed on July 4, 1776?",
+     "a": "The Declaration of Independence"
+    },
+    {
+     "q": "Who wrote the Declaration of Independence?",
+     "a": "Thomas Jefferson"
+    },
+    {
+     "q": "What did Benjamin Franklin famously fly in a storm?",
+     "a": "A kite"
+    },
+    {
+     "q": "Which civil rights leader gave the I Have a Dream speech?",
+     "a": "Martin Luther King Jr."
+    },
+    {
+     "q": "Who refused to give up her bus seat in 1955?",
+     "a": "Rosa Parks"
+    },
+    {
+     "q": "What were Viking ships called?",
+     "a": "Longships"
+    },
+    {
+     "q": "In which country did the Olympic Games begin?",
+     "a": "Greece"
+    },
+    {
+     "q": "Which famous wall divided the city of Berlin?",
+     "a": "The Berlin Wall"
+    },
+    {
+     "q": "Where does the President of the United States live?",
+     "a": "The White House"
+    },
+    {
+     "q": "Which war was fought between the North and the South in America?",
+     "a": "The Civil War"
+    },
+    {
+     "q": "Who was president during the Civil War?",
+     "a": "Abraham Lincoln"
+    },
+    {
+     "q": "Which famous statue holds up a torch in New York Harbor?",
+     "a": "The Statue of Liberty"
+    },
+    {
+     "q": "What was the name of the first man-made satellite?",
+     "a": "Sputnik"
+    },
+    {
+     "q": "What did pirates bury, according to stories?",
+     "a": "Treasure"
+    },
+    {
+     "q": "Which famous queen of Egypt was the last pharaoh?",
+     "a": "Cleopatra"
+    },
+    {
+     "q": "Which famous nurse was called the Lady with the Lamp?",
+     "a": "Florence Nightingale"
+    },
+    {
+     "q": "In which country did the samurai fight?",
+     "a": "Japan"
+    },
+    {
+     "q": "Which country gave the Statue of Liberty to the United States?",
+     "a": "France"
+    },
+    {
+     "q": "What was the name of the famous ride Paul Revere made?",
+     "a": "The Midnight Ride"
+    },
+    {
+     "q": "What were the first thirteen states called before they were states?",
+     "a": "Colonies"
+    },
+    {
+     "q": "What did Rome's gladiators do?",
+     "a": "Fought in arenas for crowds"
+    },
+    {
+     "q": "What is the big round arena in Rome where gladiators fought?",
+     "a": "The Colosseum"
+    },
+    {
+     "q": "Which famous American wore a stovepipe hat?",
+     "a": "Abraham Lincoln"
+    },
+    {
+     "q": "Who was the first woman to fly solo across the Atlantic?",
+     "a": "Amelia Earhart"
+    },
+    {
+     "q": "Which spacecraft took the first people to the Moon?",
+     "a": "Apollo 11"
+    },
+    {
+     "q": "Which animal did Hannibal take over the Alps?",
+     "a": "Elephants"
+    },
+    {
+     "q": "In which country was Napoleon the emperor?",
+     "a": "France"
+    },
+    {
+     "q": "Which invention by Gutenberg made books easy to copy?",
+     "a": "The printing press"
+    },
+    {
+     "q": "Who was the British queen for 70 years until 2022?",
+     "a": "Queen Elizabeth II"
+    },
+    {
+     "q": "Which president's face is on the five-dollar bill?",
+     "a": "Abraham Lincoln"
+    },
+    {
+     "q": "Which king had six wives?",
+     "a": "Henry VIII"
+    },
+    {
+     "q": "What did the Pony Express carry?",
+     "a": "Mail"
+    },
+    {
+     "q": "Which gold rush began in California in 1848?",
+     "a": "The California Gold Rush"
+    },
+    {
+     "q": "What was the name of Columbus's largest ship?",
+     "a": "The Santa Maria"
+    },
+    {
+     "q": "Which famous bell cracked in Philadelphia?",
+     "a": "The Liberty Bell"
+    },
+    {
+     "q": "Which wars were fought by knights going to the Holy Land?",
+     "a": "The Crusades"
+    },
+    {
+     "q": "Who discovered penicillin?",
+     "a": "Alexander Fleming"
+    },
+    {
+     "q": "Which famous scientist came up with E = mc²?",
+     "a": "Albert Einstein"
+    },
+    {
+     "q": "What is the name for the time when people used stone tools?",
+     "a": "The Stone Age"
+    },
+    {
+     "q": "Which famous explorers crossed America with Sacagawea?",
+     "a": "Lewis and Clark"
+    },
+    {
+     "q": "In which city did the Boston Tea Party happen?",
+     "a": "Boston"
+    },
+    {
+     "q": "Which president is carved on Mount Rushmore wearing glasses?",
+     "a": "Theodore Roosevelt"
+    },
+    {
+     "q": "Which famous wall in China can be seen for miles?",
+     "a": "The Great Wall of China"
+    },
+    {
+     "q": "Which country did America win its independence from?",
+     "a": "Great Britain (England)"
+    }
+   ]
+  },
+  {
+   "name": "Arts & Literature",
+   "questions": [
+    {
+     "q": "Who wrote The Cat in the Hat?",
+     "a": "Dr. Seuss"
+    },
+    {
+     "q": "In the fairy tale, who meets the Big Bad Wolf on the way to Grandma's house?",
+     "a": "Little Red Riding Hood"
+    },
+    {
+     "q": "How many dwarfs live with Snow White?",
+     "a": "Seven"
+    },
+    {
+     "q": "Which boy never grows up and lives in Neverland?",
+     "a": "Peter Pan"
+    },
+    {
+     "q": "Which fairy is Peter Pan's friend?",
+     "a": "Tinker Bell"
+    },
+    {
+     "q": "In Goldilocks, how many bears live in the house?",
+     "a": "Three"
+    },
+    {
+     "q": "What is the name of the girl who falls down the rabbit hole?",
+     "a": "Alice"
+    },
+    {
+     "q": "Who wrote the Harry Potter books?",
+     "a": "J.K. Rowling"
+    },
+    {
+     "q": "Which Dr. Seuss character stole Christmas?",
+     "a": "The Grinch"
+    },
+    {
+     "q": "What colour are the primary colours red, blue and what else?",
+     "a": "Yellow"
+    },
+    {
+     "q": "What do you get when you mix blue and yellow paint?",
+     "a": "Green"
+    },
+    {
+     "q": "What do you get when you mix red and white paint?",
+     "a": "Pink"
+    },
+    {
+     "q": "What do you get when you mix red and yellow paint?",
+     "a": "Orange"
+    },
+    {
+     "q": "Who painted the Mona Lisa?",
+     "a": "Leonardo da Vinci"
+    },
+    {
+     "q": "Which artist cut off part of his own ear?",
+     "a": "Vincent van Gogh"
+    },
+    {
+     "q": "How many strings does a normal guitar have?",
+     "a": "Six"
+    },
+    {
+     "q": "How many keys are on a standard piano?",
+     "a": "88"
+    },
+    {
+     "q": "Which instrument has black and white keys?",
+     "a": "The piano"
+    },
+    {
+     "q": "What do you call a person who writes books?",
+     "a": "An author"
+    },
+    {
+     "q": "What do you call the person who draws the pictures in a book?",
+     "a": "An illustrator"
+    },
+    {
+     "q": "Which pig is the hero of Charlotte's Web?",
+     "a": "Wilbur"
+    },
+    {
+     "q": "What kind of animal is Charlotte in Charlotte's Web?",
+     "a": "A spider"
+    },
+    {
+     "q": "In the story, which animal wins the race against the hare?",
+     "a": "The tortoise"
+    },
+    {
+     "q": "How many little pigs are there in the fairy tale?",
+     "a": "Three"
+    },
+    {
+     "q": "What did the third little pig build his house with?",
+     "a": "Bricks"
+    },
+    {
+     "q": "Who wrote The Very Hungry Caterpillar?",
+     "a": "Eric Carle"
+    },
+    {
+     "q": "In Green Eggs and Ham, what colour are the eggs?",
+     "a": "Green"
+    },
+    {
+     "q": "Which famous detective lives at 221B Baker Street?",
+     "a": "Sherlock Holmes"
+    },
+    {
+     "q": "Which girl follows the yellow brick road to see a wizard?",
+     "a": "Dorothy"
+    },
+    {
+     "q": "In The Wizard of Oz, what is the name of Dorothy's dog?",
+     "a": "Toto"
+    },
+    {
+     "q": "Which boy wizard has a lightning-shaped scar?",
+     "a": "Harry Potter"
+    },
+    {
+     "q": "Which fairy-tale girl lets down her long hair from a tower?",
+     "a": "Rapunzel"
+    },
+    {
+     "q": "What did Cinderella's fairy godmother turn into a coach?",
+     "a": "A pumpkin"
+    },
+    {
+     "q": "Which fairy-tale princess sleeps for a hundred years?",
+     "a": "Sleeping Beauty"
+    },
+    {
+     "q": "Which wooden puppet wants to become a real boy?",
+     "a": "Pinocchio"
+    },
+    {
+     "q": "Who wrote Romeo and Juliet?",
+     "a": "William Shakespeare"
+    },
+    {
+     "q": "What do you call a story told with pictures in boxes, like a comic?",
+     "a": "A comic strip"
+    },
+    {
+     "q": "Which instrument do you hit with sticks?",
+     "a": "A drum"
+    },
+    {
+     "q": "What do you call a group of musicians who play together in a big concert hall?",
+     "a": "An orchestra"
+    },
+    {
+     "q": "Which boy in a story climbs a beanstalk?",
+     "a": "Jack"
+    },
+    {
+     "q": "What does the Very Hungry Caterpillar turn into?",
+     "a": "A butterfly"
+    },
+    {
+     "q": "In the nursery rhyme, who sat on a wall and had a great fall?",
+     "a": "Humpty Dumpty"
+    },
+    {
+     "q": "In the nursery rhyme, who jumped over the candlestick?",
+     "a": "Jack"
+    },
+    {
+     "q": "Which nursery rhyme animal jumped over the moon?",
+     "a": "The cow"
+    },
+    {
+     "q": "Who wrote Where the Wild Things Are?",
+     "a": "Maurice Sendak"
+    },
+    {
+     "q": "What is the name of the tiger in Winnie-the-Pooh?",
+     "a": "Tigger"
+    },
+    {
+     "q": "What is the name of Winnie-the-Pooh's sad donkey friend?",
+     "a": "Eeyore"
+    },
+    {
+     "q": "What colour do you get when you mix blue and red paint?",
+     "a": "Purple"
+    },
+    {
+     "q": "Which famous Spanish artist painted in a style called Cubism?",
+     "a": "Pablo Picasso"
+    },
+    {
+     "q": "Which ballet is about a toy that comes to life at Christmas?",
+     "a": "The Nutcracker"
+    },
+    {
+     "q": "What is a picture of a person called?",
+     "a": "A portrait"
+    },
+    {
+     "q": "Which bear from Peru loves marmalade sandwiches?",
+     "a": "Paddington"
+    },
+    {
+     "q": "Which girl is carried off by a friendly giant in a Roald Dahl book?",
+     "a": "Sophie (in The BFG)"
+    },
+    {
+     "q": "What does BFG stand for in Roald Dahl's book?",
+     "a": "Big Friendly Giant"
+    },
+    {
+     "q": "Who wrote The Adventures of Tom Sawyer?",
+     "a": "Mark Twain"
+    },
+    {
+     "q": "Which boy is raised by wolves in The Jungle Book?",
+     "a": "Mowgli"
+    },
+    {
+     "q": "Which famous mouse has his own clubhouse and was drawn by Walt Disney?",
+     "a": "Mickey Mouse"
+    },
+    {
+     "q": "What do you call the words of a song?",
+     "a": "The lyrics"
+    },
+    {
+     "q": "Which bird is said to bring babies in old stories?",
+     "a": "The stork"
+    },
+    {
+     "q": "Which Dr. Seuss book has a fish, a cat and Thing 1 and Thing 2?",
+     "a": "The Cat in the Hat"
+    }
+   ]
+  },
+  {
+   "name": "Science & Nature",
+   "questions": [
+    {
+     "q": "What is the closest planet to the Sun?",
+     "a": "Mercury"
+    },
+    {
+     "q": "Which planet do we live on?",
+     "a": "Earth"
+    },
+    {
+     "q": "Which planet is known as the Red Planet?",
+     "a": "Mars"
+    },
+    {
+     "q": "What is the biggest planet in our solar system?",
+     "a": "Jupiter"
+    },
+    {
+     "q": "Which planet has big rings around it?",
+     "a": "Saturn"
+    },
+    {
+     "q": "What do bees make?",
+     "a": "Honey"
+    },
+    {
+     "q": "What do caterpillars turn into?",
+     "a": "Butterflies or moths"
+    },
+    {
+     "q": "How many legs does a spider have?",
+     "a": "Eight"
+    },
+    {
+     "q": "How many legs does an insect have?",
+     "a": "Six"
+    },
+    {
+     "q": "What is the largest animal on Earth?",
+     "a": "The blue whale"
+    },
+    {
+     "q": "What is the tallest animal?",
+     "a": "The giraffe"
+    },
+    {
+     "q": "What is the fastest land animal?",
+     "a": "The cheetah"
+    },
+    {
+     "q": "What do plants need from the sky to grow?",
+     "a": "Sunlight (and rain)"
+    },
+    {
+     "q": "What gas do people breathe in to stay alive?",
+     "a": "Oxygen"
+    },
+    {
+     "q": "What is frozen water called?",
+     "a": "Ice"
+    },
+    {
+     "q": "At what temperature in Fahrenheit does water freeze?",
+     "a": "32 degrees"
+    },
+    {
+     "q": "How many days does it take the Earth to go around the Sun?",
+     "a": "365 (about a year)"
+    },
+    {
+     "q": "What is the name of our galaxy?",
+     "a": "The Milky Way"
+    },
+    {
+     "q": "What does the Moon go around?",
+     "a": "The Earth"
+    },
+    {
+     "q": "What do you call a baby frog?",
+     "a": "A tadpole"
+    },
+    {
+     "q": "What do you call a baby cat?",
+     "a": "A kitten"
+    },
+    {
+     "q": "What do you call a baby dog?",
+     "a": "A puppy"
+    },
+    {
+     "q": "What do you call a baby cow?",
+     "a": "A calf"
+    },
+    {
+     "q": "Which animal is known as the king of the jungle?",
+     "a": "The lion"
+    },
+    {
+     "q": "Which bird cannot fly but is a great swimmer and lives in Antarctica?",
+     "a": "The penguin"
+    },
+    {
+     "q": "How many hearts does a person have?",
+     "a": "One"
+    },
+    {
+     "q": "Which part of your body pumps blood?",
+     "a": "The heart"
+    },
+    {
+     "q": "Which organ do you think with?",
+     "a": "The brain"
+    },
+    {
+     "q": "How many teeth does an adult usually have?",
+     "a": "32"
+    },
+    {
+     "q": "What are the bones around your chest called?",
+     "a": "The ribs"
+    },
+    {
+     "q": "What is the hardest natural material?",
+     "a": "Diamond"
+    },
+    {
+     "q": "What do we call animals that eat only plants?",
+     "a": "Herbivores"
+    },
+    {
+     "q": "What do we call animals that eat only meat?",
+     "a": "Carnivores"
+    },
+    {
+     "q": "Which animal has a long trunk?",
+     "a": "The elephant"
+    },
+    {
+     "q": "Which animal changes colour to hide?",
+     "a": "The chameleon"
+    },
+    {
+     "q": "What is a group of fish swimming together called?",
+     "a": "A school"
+    },
+    {
+     "q": "What is the biggest cat in the world?",
+     "a": "The tiger"
+    },
+    {
+     "q": "What kind of animal is a whale: a fish or a mammal?",
+     "a": "A mammal"
+    },
+    {
+     "q": "What do you call a scientist who studies dinosaurs?",
+     "a": "A paleontologist"
+    },
+    {
+     "q": "Which star gives Earth light and heat?",
+     "a": "The Sun"
+    },
+    {
+     "q": "What force keeps our feet on the ground?",
+     "a": "Gravity"
+    },
+    {
+     "q": "What colour are most leaves in summer?",
+     "a": "Green"
+    },
+    {
+     "q": "What is the boiling point of water in Celsius?",
+     "a": "100 degrees"
+    },
+    {
+     "q": "What are the three states of water?",
+     "a": "Solid, liquid and gas (ice, water and steam)"
+    },
+    {
+     "q": "What do you call the tool used to see faraway stars?",
+     "a": "A telescope"
+    },
+    {
+     "q": "What do you call the tool used to see tiny things?",
+     "a": "A microscope"
+    },
+    {
+     "q": "Which animal is the only mammal that can truly fly?",
+     "a": "The bat"
+    },
+    {
+     "q": "What do pandas mostly eat?",
+     "a": "Bamboo"
+    },
+    {
+     "q": "What does a thermometer measure?",
+     "a": "Temperature"
+    },
+    {
+     "q": "Which part of a plant is under the ground?",
+     "a": "The roots"
+    },
+    {
+     "q": "What is the colour of a polar bear's skin under its fur?",
+     "a": "Black"
+    },
+    {
+     "q": "Which animal sleeps hanging upside down?",
+     "a": "The bat"
+    },
+    {
+     "q": "What is the young of a kangaroo called?",
+     "a": "A joey"
+    },
+    {
+     "q": "Which sea creature has eight arms?",
+     "a": "The octopus"
+    },
+    {
+     "q": "Which insect makes a silky cocoon?",
+     "a": "The silkworm"
+    },
+    {
+     "q": "What does a magnet stick to?",
+     "a": "Iron (and some other metals)"
+    },
+    {
+     "q": "What causes thunder?",
+     "a": "Lightning heating the air"
+    },
+    {
+     "q": "Which planet is closest in size to Earth?",
+     "a": "Venus"
+    },
+    {
+     "q": "How many colours are in a rainbow?",
+     "a": "Seven"
+    },
+    {
+     "q": "What do fish breathe with?",
+     "a": "Gills"
+    }
+   ]
+  },
+  {
+   "name": "Sports & Leisure",
+   "questions": [
+    {
+     "q": "How many players are on a soccer team on the field?",
+     "a": "Eleven"
+    },
+    {
+     "q": "In which sport do you hit a home run?",
+     "a": "Baseball"
+    },
+    {
+     "q": "In which sport do you score a touchdown?",
+     "a": "American football"
+    },
+    {
+     "q": "In which sport do you shoot a ball through a hoop?",
+     "a": "Basketball"
+    },
+    {
+     "q": "How many points is a touchdown worth?",
+     "a": "Six"
+    },
+    {
+     "q": "In which sport do you use a racket and a shuttlecock?",
+     "a": "Badminton"
+    },
+    {
+     "q": "In which sport do you use a racket to hit a ball over a net on a court?",
+     "a": "Tennis"
+    },
+    {
+     "q": "How many holes are there in a full round of golf?",
+     "a": "18"
+    },
+    {
+     "q": "What colour is the centre of an archery target?",
+     "a": "Gold (yellow)"
+    },
+    {
+     "q": "In which sport do you try to knock down ten pins?",
+     "a": "Bowling"
+    },
+    {
+     "q": "How many bases are there on a baseball field?",
+     "a": "Four"
+    },
+    {
+     "q": "What do you call it when a bowler knocks down all ten pins with one ball?",
+     "a": "A strike"
+    },
+    {
+     "q": "Which game has pieces called a king, queen and knight?",
+     "a": "Chess"
+    },
+    {
+     "q": "Which board game has you buy streets and build hotels?",
+     "a": "Monopoly"
+    },
+    {
+     "q": "How many squares are on a checkerboard?",
+     "a": "64"
+    },
+    {
+     "q": "In which sport do players use sticks to hit a puck?",
+     "a": "Ice hockey"
+    },
+    {
+     "q": "What is the name of the big American football game played each February?",
+     "a": "The Super Bowl"
+    },
+    {
+     "q": "How often are the Summer Olympics held?",
+     "a": "Every four years"
+    },
+    {
+     "q": "How many rings are on the Olympic flag?",
+     "a": "Five"
+    },
+    {
+     "q": "What colour medal do you get for first place?",
+     "a": "Gold"
+    },
+    {
+     "q": "What colour medal do you get for second place?",
+     "a": "Silver"
+    },
+    {
+     "q": "In which sport do you do a cannonball and a backstroke?",
+     "a": "Swimming"
+    },
+    {
+     "q": "Which sport is played at Wimbledon?",
+     "a": "Tennis"
+    },
+    {
+     "q": "How many dots are on a single die?",
+     "a": "21"
+    },
+    {
+     "q": "How many sides does a normal die have?",
+     "a": "Six"
+    },
+    {
+     "q": "In the card game Uno, what do you shout when you have one card left?",
+     "a": "Uno!"
+    },
+    {
+     "q": "What is a score of zero called in tennis?",
+     "a": "Love"
+    },
+    {
+     "q": "What do you call it when a soccer player scores three goals in a game?",
+     "a": "A hat trick"
+    },
+    {
+     "q": "Which sport do the Indianapolis Colts play?",
+     "a": "American football"
+    },
+    {
+     "q": "Which sport do the Indiana Pacers play?",
+     "a": "Basketball"
+    },
+    {
+     "q": "How many players are on a basketball team on the court?",
+     "a": "Five"
+    },
+    {
+     "q": "What do you call the person who decides fouls in soccer?",
+     "a": "The referee"
+    },
+    {
+     "q": "In which sport do you ride waves on a board?",
+     "a": "Surfing"
+    },
+    {
+     "q": "In which winter sport do you slide down mountains on two long boards?",
+     "a": "Skiing"
+    },
+    {
+     "q": "Which sport uses a bat and wickets, played a lot in England?",
+     "a": "Cricket"
+    },
+    {
+     "q": "How many cards are in a deck without jokers?",
+     "a": "52"
+    },
+    {
+     "q": "How many suits are in a deck of cards?",
+     "a": "Four"
+    },
+    {
+     "q": "Which playing card is marked with an A?",
+     "a": "The ace"
+    },
+    {
+     "q": "In which game do you move pieces up ladders and down snakes?",
+     "a": "Snakes and Ladders (Chutes and Ladders)"
+    },
+    {
+     "q": "In which game do you build words with letter tiles on a board?",
+     "a": "Scrabble"
+    },
+    {
+     "q": "Which playground game has one person who is it and chases the others?",
+     "a": "Tag"
+    },
+    {
+     "q": "In which sport do you wear a helmet and ride a bike on dirt ramps?",
+     "a": "BMX"
+    },
+    {
+     "q": "How many players are on a baseball team on the field?",
+     "a": "Nine"
+    },
+    {
+     "q": "What is the name for three strikes in baseball?",
+     "a": "A strikeout"
+    },
+    {
+     "q": "What shape is a soccer ball?",
+     "a": "Round (a sphere)"
+    },
+    {
+     "q": "What shape is an American football?",
+     "a": "An oval"
+    },
+    {
+     "q": "In which sport do horses race around a track?",
+     "a": "Horse racing"
+    },
+    {
+     "q": "What do you call the long race of 26.2 miles?",
+     "a": "A marathon"
+    },
+    {
+     "q": "Which famous basketball player wore number 23 for the Chicago Bulls?",
+     "a": "Michael Jordan"
+    },
+    {
+     "q": "Which sport do you play with a club and a little white ball?",
+     "a": "Golf"
+    },
+    {
+     "q": "What do you use to hit the ball in baseball?",
+     "a": "A bat"
+    },
+    {
+     "q": "In which game do you jump over a rope swung by two people?",
+     "a": "Double Dutch (jump rope)"
+    },
+    {
+     "q": "What do you call the hard frozen surface where hockey is played?",
+     "a": "An ice rink"
+    },
+    {
+     "q": "In which sport do you do flips on a beam and bars?",
+     "a": "Gymnastics"
+    },
+    {
+     "q": "Which famous race is called the Greatest Spectacle in Racing?",
+     "a": "The Indianapolis 500"
+    },
+    {
+     "q": "In which game do you try to get four of your coloured discs in a row?",
+     "a": "Connect Four"
+    },
+    {
+     "q": "In which game do you hide and someone counts to find you?",
+     "a": "Hide and seek"
+    },
+    {
+     "q": "What do you call a hole in one in golf?",
+     "a": "An ace"
+    },
+    {
+     "q": "Which sport is played on a table with paddles and a small light ball?",
+     "a": "Table tennis (ping-pong)"
+    },
+    {
+     "q": "In which sport do you dribble a ball and shoot free throws?",
+     "a": "Basketball"
+    }
+   ]
+  }
+ ]
+}

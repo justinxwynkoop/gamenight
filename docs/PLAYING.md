@@ -235,10 +235,11 @@ Answer it wrong and your turn ends: leave the hub on your next turn and come bac
 **Away players.** A player whose phone goes quiet does not hold the game up: the host (or, with no host, the first player)
 can **Skip** their turn from **Someone gone quiet?**, and the reader passes to the next player who is here.
 
-**Questions.** The shipped set is *Family Classic*, 60 or so questions in each category, written for a mixed family.
-Write your own in the **Questions** tab: six categories, as many questions as you like in each, or paste a list of
-`question | answer` lines. "All question sets (mixed)" plays every set together. A TV does not ask the same question
-twice until a category runs out.
+**Questions.** Two sets ship. *Family Easy* (360 questions, the default) is everyday trivia that kids and grown-ups can
+all answer; *Family Classic* (362) is harder, closer to the real board game's level. The host picks one in Settings
+before the game starts, or "All question sets (mixed)" to play them together. None are copied from the real game's
+cards. Write your own in the **Questions** tab: six categories, as many questions as you like in each, or paste a list of
+`question | answer` lines. A TV does not ask the same question twice until a category runs out.
 
 **Sounds.** Pie Chase borrows Jeopardy's built-in recordings: a roll of the die, a question coming up, right and wrong,
 a wedge won, the winning question, and applause at the end. Your own Jeopardy sound files are used here too, and files

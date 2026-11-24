@@ -315,8 +315,23 @@ test('teams play as one token each; any member rolls; a teammate cannot judge', 
   assert.equal(g.result.correct, false);
 });
 
+test('a new game uses the easy set; the host can pick Classic or every set mixed', () => {
+  const s = setup({ n: 2 });
+  assert.equal(s.g.settings.setId, 'family-easy');
+  assert.equal(s.room.publicView().game.setTitle, 'Family Easy');
+  begin(s);
+  const easy = new Set(SETS['family-easy'].categories[0].questions.map((q) => q.q));
+  s.g.phase = 'choose'; s.g.chooser = 'self';
+  s.g.act('choose', { cat: 0 });
+  assert.ok(easy.has(s.g.question.q), 'the question comes from Family Easy');
+  const t = setup({ n: 2 });
+  t.g.act('setSet', { id: 'family-classic' });
+  assert.equal(t.room.publicView().game.setTitle, 'Family Classic');
+});
+
 test('questions are not repeated on the same TV until a category runs out', () => {
   const s = setup({ n: 2 });
+  s.g.act('setSet', { id: 'all' });
   begin(s);
   const { g } = s;
   const seen = new Set();

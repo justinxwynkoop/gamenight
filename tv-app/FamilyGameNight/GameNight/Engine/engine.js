@@ -4149,6 +4149,7 @@
   var MAX_UNITS = 6;
   var DIE = 6;
   var ALL_SETS = "all";
+  var DEFAULT_SET = "family-easy";
   var CATEGORIES = [
     { key: "geography", name: "Geography", color: "#3b82f6" },
     { key: "entertainment", name: "Entertainment", color: "#ec4899" },
@@ -4188,7 +4189,7 @@
     constructor(room) {
       __privateAdd(this, _PieChaseGame_instances);
       this.room = room;
-      this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false };
+      this.settings = { setId: DEFAULT_SET, wedgesToWin: CATEGORY_COUNT, equalTurns: false };
       __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
     }
     /** One roll of the die (tests replace this to load the die). */
@@ -4530,7 +4531,7 @@
     }
     restore(d) {
       __privateMethod(this, _PieChaseGame_instances, reset_fn2).call(this);
-      this.settings = { setId: ALL_SETS, wedgesToWin: CATEGORY_COUNT, equalTurns: false, ...d.settings ?? {} };
+      this.settings = { setId: DEFAULT_SET, wedgesToWin: CATEGORY_COUNT, equalTurns: false, ...d.settings ?? {} };
       const valid = ["lobby", "rolloff", "roll", "move", "choose", "question", "result", "gameover"];
       this.phase = valid.includes(d.phase) ? d.phase : "lobby";
       Object.assign(this, {
@@ -4617,8 +4618,10 @@
   // ---------- questions ----------
   /** The question sets in play: one, or every set this TV has. */
   sets_fn = function() {
-    const ids = this.settings.setId === ALL_SETS ? this.room.listContent(GAME5).map((s) => s.id) : [this.settings.setId];
-    return ids.map((id) => this.room.loadContent(GAME5, id)).filter(Boolean);
+    const all = () => this.room.listContent(GAME5).map((s) => s.id).map((id) => this.room.loadContent(GAME5, id)).filter(Boolean);
+    if (this.settings.setId === ALL_SETS) return all();
+    const one = this.room.loadContent(GAME5, this.settings.setId);
+    return one ? [one] : all();
   };
   /** Category names: the set's own, or the usual ones when several sets are mixed. */
   categoryNames_fn = function() {
