@@ -176,7 +176,7 @@ function deckCard(g) {
         foot = c.stage === 'secret' ? `🤫 ${reader} is secretly picking the true one…`
           : c.challenged ? `The ${nameOf(g, c.about)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`
             : `The ${nameOf(g, g.turn)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`;
-      } else foot = c.challenged ? `The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}! The ${nameOf(g, g.turn)} judge.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
+      } else foot = c.challenged ? `Challenge! The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}. ${reader} judges.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
     }
   }
   return h('div', { class: `gv-card deck-${c.deck}`, 'data-n': c.n, style: { '--a': d.color } }, top, stamp, result ? pow(g) : null, middle,
@@ -225,10 +225,25 @@ export function render(v) {
   let over = null;
   if (g.phase === 'trophy') over = trophyScreen(g);
   else if (g.phase === 'gameover') over = winScreen(g);
+  if (center) requestAnimationFrame(() => fitCard(center));
   return h('div', { class: `gv-tv phase-${g.phase}` }, bg(),
     h('div', { class: 'gv-stage' }, teamPanel(g, 'guys'), h('div', { class: 'gv-center' }, center), teamPanel(g, 'gals')),
     strip,
     over, floats(g));
+}
+
+/** A long question (or a picture, three answers and the answer at once) shrinks its lettering until the card fits
+ *  between the team panels, instead of running off the bottom of the screen. */
+export function fitCard(card) {
+  const box = card.parentElement;
+  if (!box?.isConnected) return;
+  const room = box.clientHeight;
+  let fit = 1;
+  card.style.setProperty('--fit', '1');
+  while (card.scrollHeight > room + 1 && fit > 0.5) {
+    fit = Math.round((fit - 0.05) * 100) / 100;
+    card.style.setProperty('--fit', String(fit));
+  }
 }
 
 /** The trophy slides along the path to its new space (or, on a win, off the end into the winner's circle). */

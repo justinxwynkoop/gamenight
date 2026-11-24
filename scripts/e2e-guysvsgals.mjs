@@ -1,7 +1,7 @@
 // Plays a whole game of Guys vs Gals in a real browser (Chromium via Playwright): the website's TV page runs the game,
 // three phones join through a stand-in for Supabase Realtime and pick their sides, and the trophy tug of war is played
 // out: the readers judge on their phones (the Guys always right, the Gals always wrong), Our Lives secrets are picked and
-// guessed, charades are called, the Gals throw one challenge, and the Guys pull three trophies home.
+// guessed, charades are called, the Guys throw one challenge, and the Guys pull three trophies home.
 //   node scripts/e2e-guysvsgals.mjs            (SHOT_DIR=<folder> saves screenshots of the TV and the phones)
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
@@ -128,10 +128,14 @@ try {
     if (st.deck === 'pics' && !st.pic) fail('an Our Pics card without its picture');
     const guysTurn = st.turn === 'guys';
     let acted = false;
-    // The Gals throw one challenge on a spoken card of theirs; the Guys then answer it themselves (and get it).
-    if (!guysTurn && !challenged && ['facts', 'stuff', 'pics'].includes(st.deck) && (await bo.locator('.gv-challenge').count())) {
-      await shot(bo, 'phone-challenge');
-      await bo.locator('.gv-challenge').click(); challenged = true; acted = true;
+    // The Guys throw one challenge on a spoken card of theirs; the Gals then answer it themselves (and get it). Only the
+    // reader's phone ever shows the answer, so the Gal who answers has not seen it.
+    if (guysTurn && !challenged && ['facts', 'stuff', 'pics'].includes(st.deck) && (await ann.locator('.gv-challenge').count())) {
+      await shot(ann, 'phone-challenge');
+      const readers = [];
+      for (const p of players.slice(1)) if (await p.page.locator('.gv-pans').count()) readers.push(p.name);
+      if (readers.length !== 1) fail(`exactly one Gal (the reader) should see the answer, saw ${readers.length}`);
+      await ann.locator('.gv-challenge').click(); challenged = true; acted = true;
     } else if (await phoneWith('.gv-judge:not(.three) button.yes')) {
       const judge = await phoneWith('.gv-judge:not(.three) button.yes');
       if (st.challenged) await shot(tv, 'challenge');

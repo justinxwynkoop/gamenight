@@ -106,10 +106,12 @@ test('the Gals go first: a Guy reads them a guy-stuff card and judges it; the TV
   assert.equal(view(G[0]).me.reader, true);
   assert.equal(view(G[0]).me.canJudge, true);
   assert.ok(view(G[0]).me.answer);
-  assert.ok(view(G[1]).me.answer, 'the reader’s teammates can peek');
+  assert.equal(view(G[1]).me.answer, undefined, 'only the reader holds the card: their teammates never see the answer');
+  assert.equal(view(G[1]).me.canJudge, false);
   assert.equal(view(W[0]).me.answer, undefined);
   assert.equal(view(W[0]).me.canChallenge, true);
-  assert.throws(() => room.playerMessage(W[0].id, { t: 'judge', right: true }), /Guys judge/);
+  assert.throws(() => room.playerMessage(W[0].id, { t: 'judge', right: true }), /reader judges/);
+  assert.throws(() => room.playerMessage(G[1].id, { t: 'judge', right: true }), /reader judges/);
   // Right: one space toward the Gals, and they keep going.
   judge(true);
   assert.equal(g.phase, 'result');
@@ -170,35 +172,56 @@ test('first to three trophies wins (or one or two, if the host says so)', () => 
   assert.equal(room.publicView().game.line.text, 'The Gals win!');
 });
 
-test('a challenge: the readers answer it themselves, judged by the team that challenged', () => {
-  const { room, g, G, W, begin, msg, view, wait } = setup();
+test('a challenge: the readers’ team answers it themselves, without having seen the answer; the reader judges', () => {
+  const { room, g, G, W, begin, msg, view, wait, judge } = setup();
   begin();
   msg(W[0], { t: 'challenge' });
   assert.equal(g.tokens.gals, CHALLENGES - 1);
   assert.equal(g.card.challenged, true);
-  assert.equal(view(W[1]).me.canJudge, true);
-  assert.ok(view(W[1]).me.answer);
-  assert.equal(view(G[1]).me.answer, undefined, 'the Guys answer it now, so they lose the peek');
-  assert.throws(() => msg(G[0], { t: 'judge', right: true }), /Gals judge/);
+  assert.equal(view(G[0]).me.canJudge, true, 'the reader still holds the card');
+  assert.ok(view(G[0]).me.answer);
+  assert.equal(view(G[1]).me.answer, undefined, 'the reader’s teammate answers it, and never saw the answer');
+  for (const p of W) assert.equal(view(p).me.answer, undefined);
+  assert.throws(() => msg(W[1], { t: 'judge', right: true }), /reader judges/);
   assert.throws(() => msg(W[0], { t: 'challenge' }), /already/);
   // The Guys miss: the trophy comes to the Gals, who keep playing.
-  msg(W[1], { t: 'judge', right: false });
+  judge(false);
   assert.equal(g.pos, 1);
   wait(T.result);
   assert.equal(g.turn, 'gals');
   // The Guys get it: the trophy goes their way and it's their turn.
   msg(W[0], { t: 'challenge' });
-  msg(W[0], { t: 'judge', right: true });
+  judge(true);
   assert.equal(g.pos, 0);
   wait(T.result);
   assert.equal(g.turn, 'guys');
   assert.equal(room.publicView().game.teams.find((t) => t.side === 'gals').challenges, CHALLENGES - 2);
 });
 
+test('if the reader wanders off, their team judges; on a challenge, the team that challenged does', () => {
+  const { room, g, G, W, begin, msg, view } = setup();
+  begin();
+  room.setConnected(G[0].id, false);
+  assert.equal(view(G[1]).me.canJudge, true);
+  assert.ok(view(G[1]).me.answer);
+  msg(W[0], { t: 'challenge' });
+  assert.equal(view(G[1]).me.answer, undefined);
+  assert.equal(view(W[1]).me.canJudge, true);
+  msg(W[1], { t: 'judge', right: false });
+  assert.equal(g.pos, 1);
+});
+
+test('a challenge needs someone besides the reader to answer it', () => {
+  const { room, W, begin, msg, view } = setup({ guys: 1 });
+  begin();
+  assert.equal(view(W[0]).me.canChallenge, false);
+  assert.throws(() => msg(W[0], { t: 'challenge' }), /besides the reader/);
+});
+
 test('challenge tokens run out, and can be turned off', () => {
   const { room, g, W, begin, msg, judge, wait, at } = setup();
   begin();
-  for (let i = 0; i < CHALLENGES; i++) { at(0); msg(W[0], { t: 'challenge' }); msg(W[0], { t: 'judge', right: false }); wait(T.result); }
+  for (let i = 0; i < CHALLENGES; i++) { at(0); msg(W[0], { t: 'challenge' }); judge(false); wait(T.result); }
   assert.equal(g.tokens.gals, 0);
   assert.throws(() => msg(W[0], { t: 'challenge' }), /No challenge tokens/);
   judge(true);
@@ -231,7 +254,8 @@ test('Our Lives: the reader picks in secret, the team guesses on their phones', 
   assert.equal(g.card.stage, 'guess');
   assert.equal(room.publicView().game.card.secret, undefined, 'the TV doesn’t know');
   assert.equal(view(W[0]).me.secret, undefined);
-  assert.equal(view(G[1]).me.secret, 2, 'the readers can peek');
+  assert.equal(view(G[1]).me.secret, undefined, 'only the reader knows what they picked');
+  assert.equal(view(reader()).me.secret, 2);
   msg(W[0], { t: 'vote', choice: 2 });
   assert.equal(g.phase, 'card', 'waits for the whole team');
   msg(W[1], { t: 'vote', choice: 1 });
