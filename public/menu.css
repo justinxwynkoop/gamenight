@@ -48,7 +48,7 @@
 .mn .gamecard:active { transform: translateY(-1.2vh) scale(1.02); }
 .mn .gamecard .art { aspect-ratio: 5 / 3; overflow: hidden; }
 .mn .gamecard .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.mn .gamecard .body { padding: 2.2vh 2.6vh 2.6vh; display: grid; gap: 1.5vh; }
+.mn .gamecard .body { padding: 2.2vh 2.6vh 2.6vh; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5vh; }
 .mn .gamecard .top { display: flex; align-items: center; justify-content: space-between; gap: 1vw; }
 .mn .gamecard .name { font-family: var(--display); font-weight: 700; font-size: 3.4vh; white-space: nowrap; }
 .mn .gamecard .go { width: 5.4vh; height: 5.4vh; border-radius: 50%; display: inline-grid; place-items: center; font-size: 2.2vh; padding-left: .3vh; box-sizing: border-box;
@@ -60,6 +60,13 @@
 .mn .gamecard .tag i { font-style: normal; }
 .mn .gamecard.sel .tag { background: var(--accent); color: var(--ink); }
 .mn .gamecard .blurb { margin: 0; color: var(--muted); font-size: 2.3vh; line-height: 1.3; min-height: 2.6em; }
+/* Five or more games: narrower cards, so their words get a little smaller to fit. */
+.mn .gamepick.many .gamecard .body { padding: 1.8vh 1.9vh 2.2vh; gap: 1.2vh; }
+.mn .gamepick.many .gamecard .name { font-size: 2.5vh; }
+.mn .gamepick.many .gamecard .go { width: 4.2vh; height: 4.2vh; font-size: 1.8vh; flex: none; }
+.mn .gamepick.many .gamecard .tags { gap: .7vh; }
+.mn .gamepick.many .gamecard .tag { font-size: 1.65vh; padding: .55vh 1.1vh; }
+.mn .gamepick.many .gamecard .blurb { font-size: 1.95vh; }
 
 /* Joining: QR code, room code and who is here */
 .mn-join { width: min(24vw, 42vh); background: rgba(28, 31, 54, .82); border: .2vh solid var(--line); border-radius: 3.2vh; padding: 3vh 2.6vh;
@@ -86,6 +93,8 @@
 .mn.enter .gamecard, .mn.enter .mn-join { animation: mn-in .6s cubic-bezier(.2, 1, .3, 1) both; }
 .mn.enter .gamecard:nth-child(2) { animation-delay: .08s; }
 .mn.enter .gamecard:nth-child(3) { animation-delay: .16s; }
+.mn.enter .gamecard:nth-child(4) { animation-delay: .24s; }
+.mn.enter .gamecard:nth-child(5) { animation-delay: .32s; }
 .mn.enter .mn-join { animation-delay: .2s; }
 @keyframes mn-in { from { opacity: 0; transform: translateY(6vh); } }
 @media (prefers-reduced-motion: reduce) { .mn-glow, .mn .gamecard, .mn-join, .mn-join .av { animation: none; } }

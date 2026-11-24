@@ -245,6 +245,44 @@ cards. Write your own in the **Questions** tab: six categories, as many question
 a wedge won, the winning question, and applause at the end. Your own Jeopardy sound files are used here too, and files
 uploaded for Pie Chase itself take their place.
 
+## Guys vs Gals
+
+The battle of the sexes: **the Guys against the Gals**, each player on their own phone. The Guys answer questions about
+gal stuff, and the Gals answer questions about guy stuff. Who knows the other side better?
+
+**Sides.** Everyone picks **I'm a Guy** or **I'm a Gal** on their phone in the lobby (the host can move anyone). Both
+sides need at least one player. The first player to join (or the host) starts the battle.
+
+**The race.** Each side has a lane on the TV: start, a space for every step, and the finish (20 spaces in a Standard
+game; Quick is 15 and Long is 30). A **coin toss** picks who goes first, then the teams take turns.
+
+**A turn.** The TV shows a multiple-choice question about the other side's stuff, with four answers. Everyone on the
+team votes on their phone, and can see how their teammates voted. The team's favourite answer is locked in once everyone
+has voted (a tie goes to the answer voted for first), or when the clock runs out. **Right** moves the team 2 spaces;
+**wrong** stays put. The other team's phones know the answer, behind a **Peek** button, so they can enjoy the show.
+
+**Lightning Rounds.** Every fifth space is a lightning space. A team that reaches or passes one (for the first time)
+plays a Lightning Round: five true-or-false statements, as fast as they can, in 20 seconds. Anyone on the team can tap
+**True** or **False**. Every right answer is a space. A Lightning Round never starts another one.
+
+**Winning.** The first side to the finish wins. If the side that went first gets there, the other side gets one last
+turn to tie.
+
+**Reactions.** Once the game is under way, the phones have a row of emoji. They float up the sender's side of the TV.
+
+**The host.** The host page shows every question with its answer, and can **Lock in now**, throw out a dud with **New
+question**, nudge a token a space either way, and end the game. Before the game: who is on which side, the question set,
+the game length, the time to answer (20, 30 or 45 seconds, or no clock) and whether to play Lightning Rounds.
+
+**Questions.** *Family Battle* ships with over 220 easy questions (guy stuff and gal stuff) and 100 true-or-false
+statements, all written for this game. Write your own in the **Questions** tab: each half has its questions (the right
+answer and up to three wrong ones; the game shuffles them) and its Lightning Round statements, or paste a list of
+`question | right | wrong | wrong | wrong` lines. A TV does not ask the same question twice until they run out.
+
+**Sounds.** Guys vs Gals has its own recordings, all CC0 (credits beside them): lobby music, a coin toss, a question
+coming up, the answer locking in, right and wrong, a token moving, the Lightning Round's music and each true or false,
+and a fanfare for the winner. Files uploaded for Guys vs Gals take their place.
+
 ## Players and teams
 
 - **Jeopardy** is always individuals, up to ten players.

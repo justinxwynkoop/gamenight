@@ -7,7 +7,7 @@ struct SoundPlan: Equatable {
     var startFinalMusic = false
     /// There is no Final Jeopardy countdown running: stop that music if it is playing.
     var stopFinalMusic = false
-    /// Spy Night's music under the game itself: true while a game is under way, false in the lobby and at the end
+    /// Music under the game itself (Spy Night's, and Guys vs Gals' Lightning Rounds): true while a game is under way, false in the lobby and at the end
     /// (nil: no change).
     var playMusic: Bool? = nil
 }
@@ -36,6 +36,10 @@ enum SoundPlanner {
         }
         if let before = previous.pieChase, let after = next.pieChase {
             pieChasePlan(from: before, to: after, into: &plan)   // GameNight/Core/PieChaseState.swift
+            return plan
+        }
+        if let before = previous.guysVsGals, let after = next.guysVsGals {
+            guysVsGalsPlan(from: before, to: after, into: &plan)   // GameNight/Core/GuysVsGalsState.swift
             return plan
         }
         guard let before = previous.jeopardy, let after = next.jeopardy else { return plan }
@@ -177,6 +181,7 @@ enum SoundPlanner {
     /// the Final Jeopardy timer. Its last five seconds tick.
     static func activeTimer(in state: ServerState) -> TimerState? {
         if let feud = state.feud { return feudActiveTimer(in: state, game: feud) }
+        if let game = state.guysVsGals { return guysVsGalsActiveTimer(in: game) }
         guard let game = state.jeopardy, let timer = game.timer, !timer.timedOut else { return nil }
         switch game.phase {
         case .open, .answering, .ddAnswer, .finalAnswer: return timer

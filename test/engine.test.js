@@ -39,7 +39,7 @@ test('the bundle needs nothing from Node and carries no file-reading code', () =
   assert.doesNotMatch(bundle, /node:fs|require\(|process\.env/);
   const { E } = boot();
   const games = JSON.parse(E.games());
-  assert.deepEqual(games.map((g) => g.id), ['jeopardy', 'feud', 'spynight', 'piechase']);
+  assert.deepEqual(games.map((g) => g.id), ['jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals']);
 });
 
 test('a TV, the host and players talk to the engine in JSON', async () => {

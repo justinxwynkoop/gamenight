@@ -1,0 +1,220 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3"
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff"
+      }
+    ],
+    "units": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Mom",
+          "Maya"
+        ]
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "score": 11,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Dad",
+          "Leo"
+        ]
+      }
+    ],
+    "gameId": "guysvsgals",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "guysvsgals",
+    "scoreFormat": "none",
+    "lobbyTitle": "Guys vs Gals",
+    "phase": "lightning-done",
+    "status": "lightning-done",
+    "hosted": false,
+    "length": 20,
+    "step": 2,
+    "lightningAt": [
+      5,
+      10,
+      15
+    ],
+    "teams": [
+      {
+        "side": "guys",
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "pos": 11,
+        "used": [
+          5,
+          10
+        ],
+        "members": [
+          {
+            "id": "p3",
+            "name": "Dad",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p4",
+            "name": "Leo",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      },
+      {
+        "side": "gals",
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "pos": 0,
+        "used": [],
+        "members": [
+          {
+            "id": "p5",
+            "name": "Mom",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p6",
+            "name": "Maya",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      }
+    ],
+    "turn": "guys",
+    "order": [
+      "guys",
+      "gals"
+    ],
+    "lastChance": false,
+    "settings": {
+      "setId": "family",
+      "length": 20,
+      "answerSecs": 30,
+      "lightning": true
+    },
+    "line": {
+      "text": "5 right!",
+      "next": "The Guys move 5 spaces"
+    },
+    "timer": null,
+    "reactions": [],
+    "lengths": [
+      {
+        "n": 15,
+        "label": "Quick"
+      },
+      {
+        "n": 20,
+        "label": "Standard"
+      },
+      {
+        "n": 30,
+        "label": "Long"
+      }
+    ],
+    "reactionList": [
+      "😂",
+      "🔥",
+      "😱",
+      "👏",
+      "🙄",
+      "💪"
+    ],
+    "log": [
+      "Coin toss: the Guys go first",
+      "The Guys got it right",
+      "The Gals got it wrong",
+      "The Guys got it right",
+      "Lightning Round for the Guys!",
+      "Lightning Round: the Guys got 5 of 5"
+    ],
+    "lastMove": {
+      "side": "guys",
+      "from": 6,
+      "to": 11,
+      "n": 3
+    },
+    "lightning": {
+      "side": "guys",
+      "at": 5,
+      "total": 5,
+      "i": 5,
+      "rights": 5,
+      "over": true,
+      "current": null,
+      "done": [
+        {
+          "text": "Mascara goes on your eyelashes.",
+          "a": true,
+          "said": true,
+          "correct": true
+        },
+        {
+          "text": "Blush goes on your toes.",
+          "a": false,
+          "said": false,
+          "correct": true
+        },
+        {
+          "text": "A stiletto is a kind of high heel.",
+          "a": true,
+          "said": true,
+          "correct": true
+        },
+        {
+          "text": "A clutch is a small purse.",
+          "a": true,
+          "said": true,
+          "correct": true
+        },
+        {
+          "text": "A maxi dress is very short.",
+          "a": false,
+          "said": false,
+          "correct": true
+        }
+      ],
+      "flash": null
+    }
+  }
+}

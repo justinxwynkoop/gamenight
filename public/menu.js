@@ -28,6 +28,11 @@ const CARDS = {
     tags: [['🎲', '2 to 6 players or teams'], ['🥧', 'Six wedges']],
     blurb: 'Roll, move round the wheel and answer to win a wedge in every category. Then race to the hub.',
   },
+  guysvsgals: {
+    title: 'Guys vs Gals', art: '/menu/guysvsgals.webp', accent: '#ff4fa3',
+    tags: [['⚔️', 'Guys against Gals'], ['⚡', 'Lightning Rounds']],
+    blurb: 'The Guys answer gal stuff, the Gals answer guy stuff. Vote on your phones and race to the finish.',
+  },
 };
 
 let selected = 0;   // the highlighted card, kept across redraws (the page redraws on every update)
@@ -137,7 +142,7 @@ export function menuScreen(v, { info, qr, music, choose }) {
         h('div', { class: 'mn-bar' }, ['#ff5a5f', '#ff9f1c', '#ffd23f', '#3ddc97', '#3abeff', '#b388ff'].map((c) => h('i', { style: { background: c } })))),
       h('div', { class: 'mn-clock' }, h('div', { class: 'mn-time' }, timeText(now)), h('div', { class: 'mn-date' }, dateText(now)))),
     h('main', { class: 'mn-main' },
-      h('div', { class: 'gamepick', role: choose ? 'group' : null, 'aria-label': 'Games', style: { '--n': String(cards.length) } }, cards),
+      h('div', { class: `gamepick${cards.length >= 5 ? ' many' : ''}`, role: choose ? 'group' : null, 'aria-label': 'Games', style: { '--n': String(cards.length) } }, cards),
       join),
     h('footer', { class: 'mn-hints' },
       choose

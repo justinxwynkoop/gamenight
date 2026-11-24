@@ -6,5 +6,6 @@ import feud from './feud/index.js';
 import singo from './singo/index.js';
 import spynight from './spynight/index.js';
 import piechase from './piechase/index.js';
+import guysvsgals from './guysvsgals/index.js';
 
-export const GAMES = Object.fromEntries([jeopardy, feud, singo, spynight, piechase].map((g) => [g.id, g]));
+export const GAMES = Object.fromEntries([jeopardy, feud, singo, spynight, piechase, guysvsgals].map((g) => [g.id, g]));

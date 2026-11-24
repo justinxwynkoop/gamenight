@@ -54,6 +54,8 @@ const BUILTIN = {
   feud: ['lobby', 'ding', 'faceoff'],
   // Spy Night's own: original, made by tv-app/Tools/make_spynight_sounds.py (CC0, see builtin-sounds/spynight/CREDITS.txt).
   spynight: ['lobby', 'think', 'roundstart', 'pick', 'open', 'correct', 'wrong', 'lock', 'ding', 'strike', 'fanfare', 'winner', 'join'],
+  // Guys vs Gals' own, from other people (CC0: SFX Kit effects and HoliznaCC0 music, see builtin-sounds/guysvsgals/CREDITS.txt).
+  guysvsgals: ['lobby', 'think', 'open', 'lock', 'correct', 'wrong', 'timeup', 'pick', 'dd', 'ding', 'strike', 'roundstart', 'fanfare', 'applause', 'join'],
 };
 
 /** Fetch and decode the family's files in data/sounds/ (server mode), then the built-in recordings for any name still missing. */

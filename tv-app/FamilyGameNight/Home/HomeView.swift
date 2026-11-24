@@ -231,6 +231,7 @@ struct GameHost: View {
         case .feud: JeopardyRootView(title: "Family Feud", onExit: exit)
         case .spynight: JeopardyRootView(title: "Spy Night", onExit: exit)
         case .piechase: JeopardyRootView(title: "Pie Chase", onExit: exit)
+        case .guysvsgals: JeopardyRootView(title: "Guys vs Gals", onExit: exit)
         }
     }
 }

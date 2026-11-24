@@ -19,6 +19,7 @@ FamilyGameNight/GameNight/Sounds/*.wav
 !FamilyGameNight/GameNight/Sounds/feud__lobby.m4a
 !FamilyGameNight/GameNight/Sounds/feud__ding.m4a
 !FamilyGameNight/GameNight/Sounds/feud__faceoff.m4a
+!FamilyGameNight/GameNight/Sounds/guysvsgals__*.m4a
 # Extra question sets copied in on your Mac by Tools/install-sets.sh (some come from public survey data), never committed.
 FamilyGameNight/GameNight/Sets/*.json
 build/
