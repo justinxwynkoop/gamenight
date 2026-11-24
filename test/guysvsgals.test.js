@@ -386,3 +386,140 @@ test('a saved game comes back where it was', () => {
   assert.equal(again.game.phase, 'card');
   assert.equal(again.game.turn, 'gals');
 });
+
+// ---------- the pawn race ----------
+import { RACE_LEN, RACE_WILD, RACE_QUESTIONS, WILD_CARDS } from '../games/guysvsgals/game.js';
+
+function race(opts = {}) {
+  const s = setup(opts);
+  s.room.act('setRules', { mode: 'race' });
+  if (opts.pawns) s.room.act('setPawns', { n: opts.pawns });
+  return s;
+}
+const pawn = (g, side) => g.race.pawns[side].find((p) => p.state === 'board');
+
+test('the race: a coin toss, three questions a card, one space for each right answer', () => {
+  const { room, g, W, begin, judge, wait, view } = race();
+  begin();
+  assert.equal(g.turn, 'gals', 'random() is 0 here, so the toss goes to the Gals');
+  const tv = room.publicView().game;
+  assert.equal(tv.mode, 'race');
+  assert.equal(tv.race.toss, 'gals');
+  assert.equal(tv.race.len, RACE_LEN);
+  assert.deepEqual(tv.race.pawns.gals.map((p) => p.state), ['board', 'wait']);
+  assert.equal(tv.race.pawns.gals[0].x, RACE_LEN + 1, 'the Gals start on the right');
+  assert.equal(tv.card.q, 1);
+  assert.equal(tv.card.of, RACE_QUESTIONS);
+  assert.ok(['facts', 'stuff', 'pics'].includes(tv.card.deck));
+  assert.equal(tv.card.answer, undefined);
+  assert.equal(view(W[0]).me.canChallenge, false, 'no challenges in the race');
+  assert.throws(() => room.playerMessage(W[0].id, { t: 'challenge' }), /no challenges/);
+  const first = g.card.n;
+  judge(true);
+  assert.equal(pawn(g, 'gals').at, 1);
+  assert.equal(g.result.more, true);
+  wait(T.result);
+  assert.equal(g.turn, 'gals');
+  assert.equal(g.card.i, 1, 'the second question on the same card');
+  assert.notEqual(g.card.n, first);
+  judge(false);
+  assert.equal(g.result.more, false);
+  assert.equal(g.result.next, 'guys');
+  wait(T.result);
+  assert.equal(g.turn, 'guys');
+  assert.equal(g.card.i, 0);
+  // Three right ends the turn.
+  for (let i = 0; i < 3; i++) { judge(true); if (i < 2) { assert.equal(g.result.more, true); wait(T.result); } }
+  assert.equal(g.result.more, false);
+  assert.equal(pawn(g, 'guys').at >= 3, true);
+});
+
+test('the race: your own wild space draws a card at once; the other side’s only if you stop there', () => {
+  const { g, begin, judge, wait } = race();
+  begin();
+  // The Gals' own wild space is RACE_WILD.gals: x 10 is two spaces in from their START.
+  const gx = (at) => RACE_LEN + 1 - at;
+  pawn(g, 'gals').at = gx(RACE_WILD.gals[1]) - 1;
+  judge(true);
+  assert.ok(g.result.wild, 'landed on their own wild space');
+  assert.equal(g.result.wild.owner, 'gals');
+  assert.ok(WILD_CARDS.gals.some((c) => c.kind === g.result.wild.kind));
+  assert.ok(!g.result.wild.text.includes('{'));
+  // random() is 0: the first card, ahead 2. Keep going: same card, next question.
+  assert.equal(pawn(g, 'gals').at, gx(RACE_WILD.gals[1]) + 2);
+  assert.equal(g.result.more, true);
+  wait(T.wild);
+  // Land on the Guys' wild space mid-turn: nothing yet.
+  pawn(g, 'gals').at = gx(RACE_WILD.guys[1]) - 1;
+  judge(true);
+  assert.equal(g.result.wild, undefined, 'only if the turn ends there');
+  wait(T.result);
+  judge(false);
+  assert.equal(g.result.wild?.owner, 'guys', 'the turn ended on the Guys’ wild space');
+});
+
+test('the race: a pawn across brings on the next; both across wins', () => {
+  const { room, g, begin, judge, wait } = race();
+  begin();
+  pawn(g, 'gals').at = RACE_LEN;
+  judge(true);
+  assert.equal(g.result.crossed, 'gals');
+  assert.equal(g.result.more, false, 'getting across ends the turn');
+  assert.deepEqual(g.race.pawns.gals.map((p) => p.state), ['home', 'board']);
+  wait(T.result);
+  room.act('nudge', { delta: 1, side: 'guys' });
+  assert.equal(pawn(g, 'guys').at, 1, 'the host can nudge a pawn');
+  judge(false); wait(T.result);
+  pawn(g, 'gals').at = RACE_LEN;
+  judge(true);
+  assert.equal(g.result.won, 'gals');
+  wait(T.result);
+  assert.equal(g.phase, 'gameover');
+  assert.deepEqual(room.publicView().game.winners, ['gals']);
+});
+
+test('the race: ending a turn on the other team’s pawn takes it prisoner, once, and it is freed when the next one crosses', () => {
+  const { g, begin, judge, wait } = race();
+  begin();
+  // The Gals stop on the Guys' pawn.
+  pawn(g, 'guys').at = 4;              // x 4
+  pawn(g, 'gals').at = RACE_LEN - 4;   // x 5: one more right lands on x 4
+  judge(true); wait(g.result.wild ? T.wild : T.result);
+  judge(false);
+  assert.equal(g.result.captured, 'guys');
+  assert.deepEqual(g.race.pawns.guys.map((p) => p.state), ['jail', 'board']);
+  assert.equal(g.race.captured.gals, true);
+  wait(T.wild);
+  // The Guys' second pawn gets across: the prisoner comes back to START.
+  pawn(g, 'guys').at = RACE_LEN;
+  judge(true);
+  assert.deepEqual(g.race.pawns.guys.map((p) => p.state), ['board', 'home']);
+  assert.equal(pawn(g, 'guys').at, 0);
+});
+
+test('the race: one pawn each in a quick race, and no prisoners', () => {
+  const { g, begin, judge, wait } = race({ pawns: 1 });
+  begin();
+  assert.equal(g.race.pawns.gals.length, 1);
+  pawn(g, 'guys').at = 4;
+  pawn(g, 'gals').at = RACE_LEN - 4;
+  judge(true); wait(g.result.wild ? T.wild : T.result);
+  judge(false);
+  assert.equal(g.result.captured, undefined);
+  wait(T.wild);
+  pawn(g, 'guys').at = RACE_LEN;
+  judge(true);
+  assert.equal(g.result.won, 'guys', 'one pawn across wins a quick race');
+});
+
+test('the race survives a restart', () => {
+  const { room, g, begin, judge } = race();
+  begin();
+  judge(true);
+  const saved = JSON.parse(JSON.stringify(g.toJSON()));
+  const { room: room2 } = setup();
+  room2.game.restore(saved);
+  assert.equal(room2.game.settings.mode, 'race');
+  assert.equal(room2.publicView().game.race.pawns.gals[0].at, 1);
+  assert.ok(room.publicView().game.race);
+});

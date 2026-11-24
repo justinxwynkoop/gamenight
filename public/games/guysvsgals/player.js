@@ -5,10 +5,10 @@
 //    with a challenge token;
 //  - on an Our Moves card the reader picks an actor, the two of them see what to act out, and the reader calls who
 //    shouted it first.
-// Everyone on the reading team can peek at the answer (and has to keep a straight face). Emoji at the bottom float up
-// on the TV.
+// Only the reader's phone shows the answer, like holding the card. In the pawn race the reader reads three questions a
+// card and there are no challenges. Emoji at the bottom float up on the TV.
 import { h, setKids } from '../../common.js';
-import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, otherSide, LETTERS } from './shared.js';
+import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, otherSide, LETTERS, isRace, raceTrack, acrossText } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b'];
 
@@ -27,7 +27,8 @@ export function mount(container, { send }) {
     if (!t) return null;
     return h('div', { class: 'gv-phead', style: { '--c': t.color } }, token(side, t.color, 44),
       h('div', {}, h('b', {}, `Team ${t.name}`), h('div', { class: 'dim' }, `You answer ${aboutText(otherSide(side)).toLowerCase()}`)),
-      g.phase !== 'lobby' ? h('div', { class: 'gv-pstat' },
+      g.phase !== 'lobby' && isRace(g) ? h('div', { class: 'gv-pstat' }, h('span', {}, `🏁 ${acrossText(g, side)}`)) : null,
+      g.phase !== 'lobby' && !isRace(g) ? h('div', { class: 'gv-pstat' },
         h('span', { title: 'Trophies' }, `🏆 ${t.trophies}/${g.target}`),
         g.settings.challenges ? h('span', { title: 'Challenge tokens' }, `✋ ${t.challenges}`) : null) : null);
   }
@@ -47,6 +48,7 @@ export function mount(container, { send }) {
       card(h('h2', {}, g.me?.picked ? 'Your side' : 'Which side are you on?'),
         h('p', { class: 'dim' }, 'The Guys answer questions about gal stuff. The Gals answer questions about guy stuff. Who knows the other side better?'),
         sidePicker(g)),
+      modePicker(g),
       g.me?.canStart
         ? [btn(ready ? 'Start the battle!' : 'Both sides need a player', 'go huge', () => send({ t: 'start' }), { disabled: !ready }),
           h('p', { class: 'dim' }, 'You joined first, so you start the game when everyone is in.')]
@@ -54,6 +56,16 @@ export function mount(container, { send }) {
       anotherPlayer(),
       rules(g),
     ];
+  }
+
+  /** Tug of war or race: the first player (or the host) picks; everyone else sees which. */
+  function modePicker(g) {
+    const race = g.settings.mode === 'race';
+    if (!g.me?.canStart) return h('p', { class: 'dim' }, race ? '🏁 This game is the pawn race.' : '🏆 This game is the trophy tug of war.');
+    return card(h('h2', {}, 'Which game?'),
+      h('div', { class: 'gv-sides gv-modes' },
+        h('button', { type: 'button', class: `gv-side ${race ? '' : 'on'}`, 'data-mode': 'trophy', onclick: () => send({ t: 'mode', mode: 'trophy' }) }, '🏆 Tug of war', h('small', {}, 'Pull the trophy to your side')),
+        h('button', { type: 'button', class: `gv-side ${race ? 'on' : ''}`, 'data-mode': 'race', onclick: () => send({ t: 'mode', mode: 'race' }) }, '🏁 Race', h('small', {}, 'Get your pawns across'))));
   }
 
   /** Opens a new tab that joins as another player, for one phone shared by both sides (or trying it on your own). */
@@ -64,6 +76,15 @@ export function mount(container, { send }) {
   }
 
   function rules(g) {
+    if (g.settings.mode === 'race') {
+      const two = g.settings.pawns !== 1;
+      return h('details', { class: 'gv-pcard' }, h('summary', {}, 'How to play the race'),
+        h('p', {}, 'A coin toss says who goes first. A player on the other team reads you a card with three questions, and judges your answers on their phone.'),
+        h('p', {}, 'Every right answer moves your pawn one space and you get the next question. A miss, or all three right, ends your turn.'),
+        h('p', {}, 'Land on your own wild space and you draw a wild card at once. End your turn on the other team’s wild space and you draw one of theirs. Wild cards help the team they belong to.'),
+        two ? h('p', {}, 'Each team has two pawns: the second starts when the first gets across. Once a game, end your turn on the other team’s pawn to take it prisoner. It is freed when their other pawn gets across.') : null,
+        h('p', {}, two ? 'Get both pawns across first to win.' : 'Get your pawn across first to win.'));
+    }
     return h('details', { class: 'gv-pcard' }, h('summary', {}, 'How to play'),
       h('p', {}, `The trophy starts on START. The ${nameOf(g, g.first)} go first. A player on the other team reads you a card from their deck, and judges your answer on their phone.`),
       h('p', {}, 'Right: the trophy moves one space toward your end and you get another card. Wrong: the other team’s turn.'),
@@ -184,6 +205,16 @@ export function mount(container, { send }) {
   function result(g) {
     const c = g.card;
     const r = g.result;
+    if (isRace(g)) {
+      const head = r.won ? `🏁 The ${nameOf(g, r.won)} win the race!` : r.right ? 'Right!' : 'Wrong!';
+      return h('div', { class: 'gv-pcard accent' }, chips(g, c), h('h2', {}, head),
+        c.text ? h('div', { class: 'gv-pq' }, c.text) : null,
+        r.answer ? h('div', { class: 'gv-pans' }, h('small', {}, 'THE ANSWER'), r.answer) : null,
+        r.wild ? h('div', { class: 'gv-pans', style: { background: teamOf(g, r.wild.owner)?.color, color: '#fff' } }, h('small', {}, `${nameOf(g, r.wild.owner).toUpperCase()} WILD CARD`), r.wild.text) : null,
+        r.captured ? h('p', {}, `🔒 A ${nameOf(g, r.captured)} pawn is taken prisoner!`) : null,
+        r.crossed && !r.won ? h('p', {}, `🎉 A ${nameOf(g, r.crossed)} pawn is across!`) : null,
+        h('p', { class: 'dim' }, g.line.next));
+    }
     const head = r.trophy ? `🏆 The ${nameOf(g, r.trophy)} win the trophy!`
       : c.deck === 'moves' ? (r.moved ? `The ${nameOf(g, r.moved)} got it!` : r.timeout ? 'Time’s up!' : 'Nobody got it')
         : r.challenged ? (r.right ? `The ${nameOf(g, c.about)} beat the challenge!` : `The ${nameOf(g, c.about)} missed the challenge!`)
@@ -242,7 +273,7 @@ export function mount(container, { send }) {
     else if (g.phase === 'gameover') body = gameover(g);
     else body = waiting(g);
     setKids(container, h('div', { class: 'gv' }, header(g), body,
-      g.phase !== 'lobby' ? h('div', { class: 'gv-pcard gv-ppath' }, path(g, { compact: true })) : null,
+      g.phase !== 'lobby' ? h('div', { class: 'gv-pcard gv-ppath' }, isRace(g) ? raceTrack(g, { compact: true }) : path(g, { compact: true })) : null,
       helper(g), g.phase !== 'lobby' ? rules(g) : null, reacts(g)));
   }
 

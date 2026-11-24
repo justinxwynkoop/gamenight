@@ -99,6 +99,38 @@ struct GvgCard: Decodable, Equatable {
     var voters: [String]?
     /// Once it has been judged: the answer, the reader's secret pick, or what was acted out.
     var answer: String?
+    /// The pawn race: which of the card's questions this is ("2 of 3").
+    var q: Int?
+    var of: Int?
+}
+
+/// The pawn race: one of a team's pawns. `x` counts from the Guys' START (0) to the Gals' START (len + 1).
+struct GvgPawn: Decodable, Equatable {
+    var at: Int
+    var x: Int
+    /// board | wait | home | jail
+    var state: String
+}
+
+struct GvgRace: Decodable, Equatable {
+    var len: Int
+    /// Where each side's wild spaces are (as x).
+    var wild: [String: [Int]]
+    var toss: String?
+    var pawns: [String: [GvgPawn]]
+    var captured: [String: Bool]?
+    var skip: [String: Bool]?
+
+    func pawns(_ side: String) -> [GvgPawn] { pawns[side] ?? [] }
+    func across(_ side: String) -> Int { pawns(side).filter { $0.state == "home" }.count }
+    func wildSide(_ x: Int) -> String? { (wild["guys"] ?? []).contains(x) ? "guys" : (wild["gals"] ?? []).contains(x) ? "gals" : nil }
+}
+
+/// A wild card in the race, from `owner`'s pile.
+struct GvgWild: Decodable, Equatable {
+    var owner: String
+    var kind: String
+    var text: String
 }
 
 struct GvgResult: Decodable, Equatable {
@@ -117,6 +149,15 @@ struct GvgResult: Decodable, Equatable {
     /// Our Lives: the reader's secret pick and the team's guess.
     var secret: Int?
     var pick: Int?
+    /// The pawn race: the same team gets the next question on the card.
+    var more: Bool?
+    var wild: GvgWild?
+    /// A pawn of this side was taken prisoner.
+    var captured: String?
+    /// A pawn of this side got across.
+    var crossed: String?
+    /// This side won the race.
+    var won: String?
 }
 
 struct GuysVsGalsState: Decodable, Equatable {
@@ -146,6 +187,11 @@ struct GuysVsGalsState: Decodable, Equatable {
     var result: GvgResult?
     var trophyWon: String?
     var winners: [String]?
+    /// "trophy" (the tug of war) or "race" (the pawn race).
+    var mode: String?
+    var race: GvgRace?
+
+    var isRace: Bool { mode == "race" && race != nil }
 
     func team(_ side: String?) -> GvgTeam? {
         guard let side else { return nil }
@@ -203,6 +249,12 @@ extension SoundPlanner {
         case .result:
             if after.result?.timeout == true { plan.cues.append(.timeup) }
             else { plan.cues.append(after.result?.moved != nil ? .correct : .wrong) }
+            // The pawn race: a wild card, a prisoner, a pawn across.
+            if let r = after.result {
+                if r.wild != nil { plan.cues.append(.dd) }
+                else if r.captured != nil { plan.cues.append(.lock) }
+                else if r.crossed != nil, r.won == nil { plan.cues.append(.ding) }
+            }
         case .trophy:
             plan.cues.append(.ding)
             plan.cues.append(.applause)

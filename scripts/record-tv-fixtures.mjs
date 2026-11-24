@@ -126,7 +126,7 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
   tickBy(GT.result);                    // the Guys' turn, the trophy one space toward the Gals
   msg(guys[0], { t: 'challenge' });
   saveG('card-challenged');
-  msg(guys[1], { t: 'judge', right: false });   // the Gals miss their own question: the trophy comes to the Guys
+  judge(false);                         // the Gals miss their own question (their reader judges): the trophy comes to the Guys
   tickBy(GT.result);
   at(-2);
   saveG('pics');
@@ -155,6 +155,39 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
   at(5); judge(true); tickBy(GT.result);
   tickBy(GT.trophy);
   saveG('gameover');
+
+  // The pawn race (gvg-race-*.json): random() is 0, so the Gals win the coin toss and wild cards are the first of a pile.
+  groom.act('endGame');
+  groom.act('setRules', { mode: 'race' });
+  msg(guys[0], { t: 'start' });
+  const next = () => tickBy(gg.result.wild || gg.result.captured ? GT.wild : GT.result);
+  const pawn = (side) => gg.race.pawns[side].find((p) => p.state === 'board');
+  saveG('race-card');
+  judge(true);
+  saveG('race-result-right');           // one space, and the next question on the card
+  next();
+  judge(false);
+  next();                    // the Guys' turn
+  pawn('guys').at = 2;
+  judge(true);                          // onto their own wild space: a wild card at once
+  saveG('race-wild');
+  next();
+  judge(false); next();      // the Gals' turn
+  pawn('guys').at = 4;
+  pawn('gals').at = 8;                  // x 5: one more right lands on the Guys' pawn at x 4
+  judge(true); next();
+  judge(false);
+  saveG('race-capture');
+  next();
+  pawn('guys').at = 12;
+  judge(true);
+  saveG('race-across');
+  next();
+  pawn('gals').at = 12; gg.race.pawns.gals[1].state = 'home';   // the Gals' turn, one space from winning
+  judge(true);
+  saveG('race-won');
+  next();
+  saveG('race-gameover');
 }
 
 room.chooseGame('jeopardy');

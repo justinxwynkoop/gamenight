@@ -4887,9 +4887,38 @@
   var TARGETS = [1, 2, 3];
   var DEFAULT_TARGET = 3;
   var CHALLENGES = 3;
+  var MODES = ["trophy", "race"];
+  var RACE_LEN = 12;
+  var RACE_WILD = { guys: [3, 8], gals: [5, 10] };
+  var RACE_QUESTIONS = 3;
+  var PAWN_COUNTS = [1, 2];
+  var WILD_CARDS = {
+    guys: [
+      { kind: "ahead", n: 2, text: "Tailgate party! The {O} move ahead 2 spaces." },
+      { kind: "ahead", n: 1, text: "Found the remote! The {O} move ahead 1 space." },
+      { kind: "ahead", n: 1, text: "Fixed it with duct tape. The {O} move ahead 1 space." },
+      { kind: "ahead", n: 2, text: "Grill master! The {O} move ahead 2 spaces." },
+      { kind: "back", n: 2, text: "The {X} stopped to take a photo of their lunch. Back 2 spaces." },
+      { kind: "back", n: 1, text: "The {X} are still deciding where to eat. Back 1 space." },
+      { kind: "back", n: 3, text: "Wrong turn at the mall! The {X} go back 3 spaces." },
+      { kind: "skip", text: "Game day! The {X} sit out their next turn." }
+    ],
+    gals: [
+      { kind: "ahead", n: 2, text: "Girls\u2019 night out! The {O} move ahead 2 spaces." },
+      { kind: "ahead", n: 1, text: "Found the perfect outfit. The {O} move ahead 1 space." },
+      { kind: "ahead", n: 1, text: "Remembered everyone\u2019s birthday. The {O} move ahead 1 space." },
+      { kind: "ahead", n: 2, text: "Spa day! The {O} move ahead 2 spaces." },
+      { kind: "back", n: 2, text: "The {X} won\u2019t ask for directions. Back 2 spaces." },
+      { kind: "back", n: 1, text: "The {X} can\u2019t find the ketchup in the fridge. Back 1 space." },
+      { kind: "back", n: 3, text: "Man cold! The {X} go back 3 spaces." },
+      { kind: "skip", text: "The {X} are watching the game. They sit out their next turn." }
+    ]
+  };
   var T4 = {
     result: 4200,
     // right or wrong (and the answer), before the next card
+    wild: 6500,
+    // the same, with a wild card or a prisoner to read
     trophy: 5200,
     // a trophy is won, before the next one goes on START
     moves: 6e4
@@ -4931,12 +4960,12 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
       this.room = room;
-      this.settings = { setId: DEFAULT_SET2, target: DEFAULT_TARGET, challenges: true };
+      this.settings = { setId: DEFAULT_SET2, target: DEFAULT_TARGET, challenges: true, mode: "trophy", pawns: 2 };
       this.picked = {};
       this.reactions = [];
       this.reactionN = 0;
@@ -5011,8 +5040,15 @@
       this.settings = keep;
       this.deck = deck;
       this.room.resetScores();
-      this.turn = FIRST;
-      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, FIRST)} go first`);
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+        __privateMethod(this, _GuysVsGalsGame_instances, newRace_fn).call(this);
+        this.turn = this.room.rng() < 0.5 ? "gals" : "guys";
+        this.race.toss = this.turn;
+        __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `Coin toss: the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} go first`);
+      } else {
+        this.turn = FIRST;
+        __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, FIRST)} go first`);
+      }
       __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
     }
     /** Right or wrong, for an Our Facts, Stuff or Pics card (the reader's phone, or the host). */
@@ -5082,6 +5118,7 @@
       const c = this.card;
       const side = __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player);
       if (this.phase !== "card" || !c) fail("No card to challenge");
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) fail("There are no challenges in the race");
       if (!this.settings.challenges) fail("Challenges are turned off");
       if (side !== this.turn) fail("Only the team at play can challenge");
       if (c.challenged) fail("This card is already challenged");
@@ -5095,6 +5132,10 @@
       c.voteOrder = [];
       __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} challenge the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, c.about)}!`);
       __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** Where a side's pawn is on the track, counted from the Guys' START (0) to the Gals' (RACE_LEN + 1). */
+    raceX(side, at) {
+      return side === "guys" ? at : RACE_LEN + 1 - at;
     }
     // ---------- the host and the TV ----------
     /** Moves things along: locks in the guesses now, or skips the wait after a result or a trophy. */
@@ -5112,14 +5153,38 @@
     /** The host throws out a card (a dud, or one nobody could know) and deals the same team another. */
     newCard() {
       if (this.phase !== "card") fail("There is no card to change");
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+        const c = this.card;
+        const piles = this.deck[SIDES[this.turn].asks];
+        const item = __privateMethod(this, _GuysVsGalsGame_instances, draw_fn2).call(this, c.deck, piles[c.deck]);
+        if (item) c.qs[c.i] = { deck: c.deck, ...item };
+        this.cardN += 1;
+        c.n = this.cardN;
+        __privateMethod(this, _GuysVsGalsGame_instances, raceQuestion_fn).call(this);
+        __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+        return;
+      }
       if (this.card?.challenged) this.tokens[this.turn] = Math.min(CHALLENGES, this.tokens[this.turn] + 1);
       const reading = SIDES[this.turn].other;
       this.readerN[reading] = Math.max(0, this.readerN[reading] - 1);
       __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
     }
     /** The host nudges the trophy one space (a judgement call, a mistake). */
-    nudge(delta) {
+    nudge(delta, side) {
       if (this.phase === "lobby" || this.phase === "gameover") fail("Only during a game");
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+        const s = SIDES[side] ? side : this.turn;
+        const d2 = int(delta);
+        if (![-1, 1].includes(d2)) fail("Move one space at a time");
+        __privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, s, d2);
+        if (__privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s)) {
+          this.winners = [s];
+          __privateMethod(this, _GuysVsGalsGame_instances, end_fn3).call(this);
+          return;
+        }
+        __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+        return;
+      }
       const d = int(delta);
       if (![-1, 1].includes(d)) fail("Move one space at a time");
       const from = this.pos;
@@ -5152,6 +5217,20 @@
     setChallenges(on) {
       __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
       this.settings.challenges = !!on;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    /** The tug of war for trophies, or the pawn race. */
+    setMode(mode) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      if (!MODES.includes(mode)) fail("Pick the tug of war or the race");
+      this.settings.mode = mode;
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+    }
+    setPawns(n) {
+      __privateMethod(this, _GuysVsGalsGame_instances, lobby_fn).call(this);
+      const v = int(n);
+      if (!PAWN_COUNTS.includes(v)) fail("One or two pawns each");
+      this.settings.pawns = v;
       __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
     }
     /** A player picks their side (in the lobby; the host can also move people between teams). */
@@ -5192,7 +5271,7 @@
         case "actor":
           return this.pickActor("host", a.pid);
         case "nudge":
-          return this.nudge(a.delta);
+          return this.nudge(a.delta, a.side ? String(a.side) : null);
         case "endGame":
         case "playAgain":
           return this.endGame();
@@ -5202,6 +5281,10 @@
           return this.setTarget(a.n);
         case "setChallenges":
           return this.setChallenges(a.on);
+        case "setRules":
+          return this.setMode(String(a.mode ?? ""));
+        case "setPawns":
+          return this.setPawns(a.n);
         case "setSide":
           return this.setSide(this.room.player(String(a.pid ?? "")), String(a.side ?? ""));
         case "kick":
@@ -5221,6 +5304,10 @@
           return void 0;
         case "side":
           this.setSide(player, String(msg.side ?? ""));
+          return void 0;
+        case "mode":
+          if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id)) fail("Only the host can do that");
+          this.setMode(String(msg.mode ?? ""));
           return void 0;
         case "judge":
           this.judge(player, msg.right === true);
@@ -5266,6 +5353,7 @@
         trophy: this.trophyN,
         target: this.settings.target,
         settings: { ...this.settings },
+        mode: this.settings.mode,
         line: __privateMethod(this, _GuysVsGalsGame_instances, line_fn3).call(this),
         timer: __privateMethod(this, _GuysVsGalsGame_instances, timerView_fn3).call(this),
         reactions: this.reactions.map(({ id, e, side, name }) => ({ id, e, side, name })),
@@ -5274,6 +5362,7 @@
         log: this.log.slice()
       };
       if (this.lastMove) v.lastMove = { ...this.lastMove };
+      if (this.race && this.phase !== "lobby") v.race = __privateMethod(this, _GuysVsGalsGame_instances, raceView_fn).call(this);
       if (this.phase === "lobby") {
         v.sets = this.room.listContent(GAME6).map((s) => ({ id: s.id, title: s.title })).slice(0, 40);
         v.setTitle = this.settings.setId === ALL_SETS2 ? "All question sets" : this.room.listContent(GAME6).find((s) => s.id === this.settings.setId)?.title ?? "";
@@ -5312,7 +5401,7 @@
           me.canCall = side === reading;
           if (me.reader || me.actor) me.move = c.m;
         }
-        me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== "moves" && (c.stage === "read" || c.stage === "guess") && this.tokens[side] > 0 && __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, reading).some((p) => p.id !== c.reader));
+        me.canChallenge = !!(!__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this) && this.settings.challenges && side === this.turn && !c.challenged && c.deck !== "moves" && (c.stage === "read" || c.stage === "guess") && this.tokens[side] > 0 && __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, reading).some((p) => p.id !== c.reader));
       }
       v.me = me;
       return v;
@@ -5346,13 +5435,16 @@
         winners: this.winners,
         cardN: this.cardN,
         trophyN: this.trophyN,
-        log: this.log
+        log: this.log,
+        race: this.race
       };
     }
     restore(d) {
       __privateMethod(this, _GuysVsGalsGame_instances, reset_fn3).call(this);
-      this.settings = { setId: DEFAULT_SET2, target: DEFAULT_TARGET, challenges: true, ...d.settings ?? {} };
+      this.settings = { setId: DEFAULT_SET2, target: DEFAULT_TARGET, challenges: true, mode: "trophy", pawns: 2, ...d.settings ?? {} };
       if (!TARGETS.includes(this.settings.target)) this.settings.target = DEFAULT_TARGET;
+      if (!MODES.includes(this.settings.mode)) this.settings.mode = "trophy";
+      if (!PAWN_COUNTS.includes(this.settings.pawns)) this.settings.pawns = 2;
       this.picked = d.picked ?? {};
       const valid = ["lobby", "card", "result", "trophy", "gameover"];
       this.phase = valid.includes(d.phase) ? d.phase : "lobby";
@@ -5369,14 +5461,23 @@
         winners: d.winners ?? [],
         cardN: d.cardN ?? 0,
         trophyN: d.trophyN ?? 1,
-        log: d.log ?? []
+        log: d.log ?? [],
+        race: d.race ?? null
       });
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this) && this.phase !== "lobby" && !this.race?.pawns) {
+        this.phase = "lobby";
+        return;
+      }
       if (this.phase === "lobby" || this.phase === "gameover") return;
       if (!this.turn) {
         this.phase = "lobby";
         return;
       }
       __privateMethod(this, _GuysVsGalsGame_instances, buildDeck_fn2).call(this);
+      if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this) && this.phase === "result") {
+        __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.result, () => __privateMethod(this, _GuysVsGalsGame_instances, raceAfter_fn).call(this));
+        return;
+      }
       if (this.phase === "card") {
         if (!this.card || !DECKS[this.card.deck]) __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
         else if (this.card.stage === "act") __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.moves, () => __privateMethod(this, _GuysVsGalsGame_instances, movesDone_fn).call(this, null, true), "moves");
@@ -5409,6 +5510,10 @@
     this.cardN = 0;
     this.trophyN = 1;
     this.log = [];
+    this.race = null;
+  };
+  isRace_fn = function() {
+    return this.settings.mode === "race";
   };
   changed_fn6 = function() {
     this.room.changed();
@@ -5535,6 +5640,10 @@
     return p.id;
   };
   deal_fn = function() {
+    if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+      __privateMethod(this, _GuysVsGalsGame_instances, dealRace_fn).call(this);
+      return;
+    }
     const side = this.turn;
     const reading = SIDES[side].other;
     const d = __privateMethod(this, _GuysVsGalsGame_instances, deckFor_fn).call(this, side, this.spaceFor(side));
@@ -5616,6 +5725,10 @@
   };
   /** A spoken answer or a guess was right or wrong: who it counts for depends on a challenge. */
   answered_fn = function(right) {
+    if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+      __privateMethod(this, _GuysVsGalsGame_instances, raceAnswered_fn).call(this, right);
+      return;
+    }
     const c = this.card;
     const at = this.turn;
     if (!c.challenged) {
@@ -5688,6 +5801,169 @@
     this.card = null;
     __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
   };
+  // ---------- the pawn race ----------
+  newRace_fn = function() {
+    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, state: i ? "wait" : "board" }));
+    this.race = { len: RACE_LEN, pawns: { guys: pawns(), gals: pawns() }, captured: { guys: false, gals: false }, skip: { guys: false, gals: false }, toss: null };
+  };
+  pawn_fn = function(side) {
+    return this.race.pawns[side].find((p) => p.state === "board") ?? null;
+  };
+  /** Three questions from the decks the answering side plays (Our Facts, Stuff and Pics), read by the other team. */
+  dealRace_fn = function() {
+    const side = this.turn;
+    const reading = SIDES[side].other;
+    const piles = this.deck[SIDES[side].asks];
+    const decks = ["facts", "stuff", "pics"].filter((d) => piles[d].length);
+    const qs = [];
+    for (let i = 0; i < RACE_QUESTIONS; i++) {
+      const d = decks[Math.floor(this.room.rng() * decks.length)] ?? "facts";
+      const item = __privateMethod(this, _GuysVsGalsGame_instances, draw_fn2).call(this, d, piles[d]);
+      if (item) qs.push({ deck: d, ...item });
+    }
+    this.cardN += 1;
+    this.card = { n: this.cardN, about: reading, reader: __privateMethod(this, _GuysVsGalsGame_instances, nextReader_fn).call(this, reading), stage: "read", challenged: false, votes: {}, voteOrder: [], secret: null, pick: null, actor: null, qs, i: 0, right: 0 };
+    __privateMethod(this, _GuysVsGalsGame_instances, raceQuestion_fn).call(this);
+    this.result = null;
+    this.timer = null;
+    this.phase = "card";
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  /** Puts the card's current question up (each one counts as a new card for the screens). */
+  raceQuestion_fn = function() {
+    const c = this.card;
+    const q = c.qs[c.i];
+    for (const k of ["q", "a", "cat", "img"]) delete c[k];
+    Object.assign(c, { deck: q.deck, q: q.q, a: q.a, stage: "read" });
+    if (q.cat) c.cat = q.cat;
+    if (q.img) c.img = q.img;
+  };
+  /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
+  movePawn_fn = function(side, n) {
+    const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
+    if (!p) return false;
+    const from = p.at;
+    p.at = Math.max(0, Math.min(RACE_LEN + 1, p.at + n));
+    if (p.at !== from) this.lastMove = { from: this.raceX(side, from), to: this.raceX(side, p.at), n: (this.lastMove?.n ?? 0) + 1, side, trophy: false };
+    if (p.at < RACE_LEN + 1) return false;
+    p.state = "home";
+    const next = this.race.pawns[side].find((x) => x.state === "jail") ?? this.race.pawns[side].find((x) => x.state === "wait");
+    if (next) {
+      next.state = "board";
+      next.at = 0;
+    }
+    return true;
+  };
+  raceWon_fn = function(side) {
+    return this.race.pawns[side].every((p) => p.state === "home");
+  };
+  /** A wild card from `owner`'s pile, used at once. */
+  wild_fn = function(owner) {
+    const cards = WILD_CARDS[owner];
+    const card = cards[Math.floor(this.room.rng() * cards.length)];
+    const other = SIDES[owner].other;
+    const text2 = card.text.replaceAll("{O}", __privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, owner)).replaceAll("{X}", __privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, other));
+    let crossed = null;
+    if (card.kind === "ahead" && __privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, owner, card.n)) crossed = owner;
+    if (card.kind === "back") __privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, other, -card.n);
+    if (card.kind === "skip") this.race.skip[other] = true;
+    __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, text2);
+    return { owner, kind: card.kind, n: card.n ?? 0, text: text2, crossed };
+  };
+  /** Ending a turn on the other team's pawn takes it prisoner, once a game, while they still have a pawn waiting. */
+  capture_fn = function(side) {
+    const other = SIDES[side].other;
+    const mine = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
+    const theirs = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, other);
+    if (!mine || !theirs || this.race.captured[side] || mine.at === 0 || theirs.at === 0) return null;
+    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at)) return null;
+    const waiting = this.race.pawns[other].find((p) => p.state === "wait");
+    if (!waiting) return null;
+    theirs.state = "jail";
+    theirs.at = 0;
+    waiting.state = "board";
+    waiting.at = 0;
+    this.race.captured[side] = true;
+    __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} take a ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, other)} pawn prisoner!`);
+    return other;
+  };
+  raceAnswered_fn = function(right) {
+    const c = this.card;
+    const side = this.turn;
+    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
+    let crossed = null;
+    if (right) {
+      c.right += 1;
+      r.moved = side;
+      if (__privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, side, 1)) crossed = side;
+      else {
+        const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
+        if (p && RACE_WILD[side].includes(this.raceX(side, p.at))) r.wild = __privateMethod(this, _GuysVsGalsGame_instances, wild_fn).call(this, side);
+      }
+      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} got it right`);
+    } else __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} missed`);
+    crossed = crossed ?? r.wild?.crossed ?? null;
+    r.more = right && !crossed && c.i + 1 < c.qs.length && !SIDE_ORDER.some((s) => __privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s));
+    if (!r.more && !SIDE_ORDER.some((s) => __privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s))) {
+      const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
+      const other = SIDES[side].other;
+      if (!r.wild && p && p.at > 0 && RACE_WILD[other].includes(this.raceX(side, p.at))) {
+        r.wild = __privateMethod(this, _GuysVsGalsGame_instances, wild_fn).call(this, other);
+        crossed = crossed ?? r.wild.crossed;
+      }
+      if (!SIDE_ORDER.some((s) => __privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s))) r.captured = __privateMethod(this, _GuysVsGalsGame_instances, capture_fn).call(this, side);
+      let next = other;
+      if (this.race.skip[next]) {
+        this.race.skip[next] = false;
+        next = side;
+        __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, other)} sit this one out`);
+      }
+      r.next = next;
+    }
+    if (crossed) r.crossed = crossed;
+    if (!r.captured) delete r.captured;
+    if (!r.wild) delete r.wild;
+    const won = SIDE_ORDER.find((s) => __privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s));
+    if (won) {
+      this.winners = [won];
+      r.won = won;
+    }
+    this.result = r;
+    c.stage = "done";
+    this.phase = "result";
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, r.wild || r.captured ? T4.wild : T4.result, () => __privateMethod(this, _GuysVsGalsGame_instances, raceAfter_fn).call(this));
+    __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+  };
+  raceAfter_fn = function() {
+    const r = this.result;
+    if (this.winners.length) {
+      __privateMethod(this, _GuysVsGalsGame_instances, end_fn3).call(this);
+      return;
+    }
+    if (r?.more) {
+      const c = this.card;
+      c.i += 1;
+      this.cardN += 1;
+      c.n = this.cardN;
+      __privateMethod(this, _GuysVsGalsGame_instances, raceQuestion_fn).call(this);
+      this.result = null;
+      this.phase = "card";
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+      return;
+    }
+    __privateMethod(this, _GuysVsGalsGame_instances, next_fn).call(this, r?.next ?? SIDES[this.turn].other);
+  };
+  raceView_fn = function() {
+    const r = this.race;
+    return {
+      len: r.len,
+      wild: { guys: RACE_WILD.guys.slice(), gals: RACE_WILD.gals.slice() },
+      toss: r.toss,
+      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), state: p.state }))])),
+      captured: { ...r.captured },
+      skip: { ...r.skip }
+    };
+  };
   // ---------- settings (lobby) ----------
   lobby_fn = function() {
     if (this.phase !== "lobby") fail("Change this before the game starts");
@@ -5709,6 +5985,7 @@
       case "lobby":
         return { text: "Pick your side!", next: "Guys on one team, Gals on the other" };
       case "card": {
+        if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === "moves") {
           if (c.stage === "pick") return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} to act with` };
           return { text: "Act it out!", next: `${reader} and ${__privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.actor)} act out the same thing. Shout it first!` };
@@ -5722,6 +5999,14 @@
       }
       case "result": {
         const r = this.result;
+        if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
+          if (r.won) return { text: `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.won)} win the race!`, next: "" };
+          if (r.captured) return { text: "Prisoner!", next: `A ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.captured)} pawn is taken prisoner` };
+          if (r.wild) return { text: "Wild card!", next: r.wild.text };
+          if (r.crossed) return { text: "Across!", next: `A ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.crossed)} pawn made it to the other side` };
+          if (r.right) return { text: "Right!", next: r.more ? `${who} keep going` : `Over to the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.next)}` };
+          return { text: "Wrong!", next: `Over to the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.next)}` };
+        }
         if (r.trophy) return { text: "Trophy!", next: `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.trophy)} pull it into their winner\u2019s circle` };
         if (c?.deck === "moves") {
           return r.moved ? { text: r.stolen ? "Stolen!" : "Got it!", next: `The trophy moves toward the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.moved)}` } : { text: r.timeout ? "Time\u2019s up!" : "Nobody got it", next: `Over to the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, r.next)}` };
@@ -5773,6 +6058,10 @@
       v.voters = Object.keys(c.votes);
     }
     if (this.phase === "result" && this.result) v.answer = this.result.answer;
+    if (c.qs) {
+      v.q = c.i + 1;
+      v.of = c.qs.length;
+    }
     return v;
   };
 
@@ -5780,7 +6069,7 @@
   var guysvsgals_default = {
     id: "guysvsgals",
     name: NAME2,
-    description: "The battle of the sexes, tug-of-war style: the Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side through five decks (facts, stuff, pictures, guess-my-life and charades). First to three trophies wins.",
+    description: "The battle of the sexes, tug-of-war style: the Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side through five decks (facts, stuff, pictures, guess-my-life and charades). First to three trophies wins. Or play the classic pawn race, with wild cards and prisoners.",
     // Always two teams: the Guys and the Gals.
     needs: { teams: 2 },
     validateContent: validateSet4,
@@ -6448,17 +6737,17 @@
     { name: "timeup", label: "Time's up", games: ["shared", "jeopardy", "feud", "guysvsgals"], labels: { guysvsgals: "A charade runs out of time" } },
     { name: "tick", label: "Countdown tick (last five seconds)", games: ["shared", "jeopardy", "feud"] },
     { name: "reveal", label: "Answer shown after a skipped clue, and each Final Jeopardy response", games: ["shared", "jeopardy"] },
-    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "A challenge is thrown", piechase: "A wedge is won" } },
+    { name: "dd", label: "Daily Double", games: ["shared", "jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "A challenge is thrown, or a wild card in the race", piechase: "A wedge is won" } },
     { name: "final", label: "Final Jeopardy begins", games: ["shared", "jeopardy", "piechase"], labels: { piechase: "The winning question comes up" } },
     { name: "fanfare", label: "The winner", games: ["shared", "jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The winners", piechase: "The winning answer", spynight: "The Resistance win" } },
-    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The trophy slides along the path", piechase: "The die is rolled", spynight: "A leader starts picking a team" } },
+    { name: "pick", label: "A clue is picked", games: ["jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The trophy (or a pawn) moves", piechase: "The die is rolled", spynight: "A leader starts picking a team" } },
     { name: "board", label: "The board fills in", games: ["jeopardy"] },
-    { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy", "spynight", "guysvsgals"], labels: { guysvsgals: "Our Lives guessing or a charade begins", spynight: "The mission begins" } },
+    { name: "lock", label: "A Final Jeopardy wager or answer locks in", games: ["jeopardy", "spynight", "guysvsgals"], labels: { guysvsgals: "Our Lives guessing or a charade begins, or a pawn is taken prisoner", spynight: "The mission begins" } },
     { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy", "piechase"], labels: { piechase: "Landing on Roll Again" } },
     { name: "join", label: "A player joins", games: ["jeopardy", "spynight", "piechase", "guysvsgals"] },
     { name: "applause", label: "End of a round, and the winner", games: ["jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "A trophy is won, and the winners", piechase: "Game over" } },
     { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The game begins", piechase: "The game begins", spynight: "The roles are dealt" } },
-    { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight", "guysvsgals"], labels: { guysvsgals: "A trophy is won", spynight: "A mission succeeds" } },
+    { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight", "guysvsgals"], labels: { guysvsgals: "A trophy is won, or a pawn gets across", spynight: "A mission succeeds" } },
     { name: "strike", label: "A strike (the big X)", games: ["feud", "spynight"], labels: { spynight: "A mission fails" } },
     { name: "strikeout", label: "The third strike", games: ["feud"] },
     { name: "faceoff", label: "A face-off player buzzes in", games: ["feud"] },

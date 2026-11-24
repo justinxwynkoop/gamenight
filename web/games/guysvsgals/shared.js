@@ -86,3 +86,53 @@ export const spaceLeft = (g, n) => `${((n + g.green + 0.5) / (g.green * 2 + 1)) 
 
 /** The trophies a team has won, as "2 of 3". */
 export const trophyText = (g, side) => `${teamOf(g, side)?.trophies ?? 0} of ${g.target}`;
+
+/** The pawn race? (the classic race board instead of the trophy tug of war) */
+export const isRace = (g) => g?.mode === 'race' && !!g.race;
+
+/** Where a pawn sits on the race track, as a CSS left: x runs 0 (the Guys' START) to len + 1 (the Gals'). */
+export const raceLeft = (g, x) => `${((x + 0.5) / (g.race.len + 2)) * 100}%`;
+
+/** A team's pawns off the board: waiting to start, made it across, or a prisoner held at the other team's START. */
+function pawnBin(g, side, compact) {
+  const r = g.race;
+  const mine = r.pawns[side];
+  const size = compact ? 18 : 44;
+  const theirs = r.pawns[otherSide(side)];
+  return h('div', { class: `gv-bin ${side}`, style: { '--c': teamOf(g, side)?.color ?? '#888' } },
+    mine.filter((p) => p.state === 'wait').map(() => h('span', { class: 'wait', title: 'Waiting to start' }, token(side, '', size))),
+    theirs.filter((p) => p.state === 'home').map(() => h('span', { class: 'home', title: 'Made it across' }, token(otherSide(side), '', size))),
+    // A prisoner sits on the START of the team that took it.
+    theirs.filter((p) => p.state === 'jail').map(() => h('span', { class: 'jail', title: 'Prisoner' }, token(otherSide(side), '', size), h('b', {}, '🔒'))));
+}
+
+/**
+ * The race track: the Guys' START on the left, RACE_LEN spaces with the wild spaces in each side's colour, and the
+ * Gals' START on the right. Pawns on the board stand on their spaces; the rest wait (or sit in jail) by a START.
+ */
+export function raceTrack(g, { compact = false } = {}) {
+  const r = g.race;
+  const cells = [];
+  const wildSide = (x) => (r.wild.guys.includes(x) ? 'guys' : r.wild.gals.includes(x) ? 'gals' : null);
+  for (let x = 0; x <= r.len + 1; x++) {
+    const start = x === 0 ? 'guys' : x === r.len + 1 ? 'gals' : null;
+    const wild = wildSide(x);
+    const color = start ? teamOf(g, start)?.color : wild ? teamOf(g, wild)?.color : '#fff';
+    cells.push(h('div', { class: `gv-space ${start ? 'start' : ''} ${wild ? 'wild' : ''}`, 'data-x': x, style: { '--d': color ?? '#fff' } },
+      compact ? null : h('span', {}, start ? 'START' : wild ? 'WILD' : String(x))));
+  }
+  const pawns = [];
+  for (const side of ['guys', 'gals']) {
+    r.pawns[side].forEach((p, i) => {
+      if (p.state !== 'board') return;
+      const twin = r.pawns[otherSide(side)].some((o) => o.state === 'board' && o.x === p.x);
+      pawns.push(h('div', { class: `gv-pawn ${side} ${twin ? 'twin' : ''}`, 'data-side': side, 'data-i': i, style: { left: raceLeft(g, p.x) } }, token(side, '', compact ? 30 : 84)));
+    });
+  }
+  return h('div', { class: `gv-path gv-race ${compact ? 'compact' : ''}` }, pawnBin(g, 'guys', compact),
+    h('div', { class: 'gv-spaces', style: { gridTemplateColumns: `repeat(${r.len + 2}, 1fr)` } }, cells, pawns),
+    pawnBin(g, 'gals', compact));
+}
+
+/** "1 of 2 across" */
+export const acrossText = (g, side) => `${g.race.pawns[side].filter((p) => p.state === 'home').length} of ${g.race.pawns[side].length} across`;
