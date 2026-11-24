@@ -47,6 +47,7 @@ struct HomeView: View {
                                     .buttonStyle(TileButtonStyle())
                                     .focused($focused, equals: game)
                                     .accessibilityLabel(game.title)
+                                    .anchorPreference(key: TileFrames.self, value: .bounds) { [game: $0] }
                                     .opacity(appeared ? 1 : 0)
                                     .offset(y: appeared ? 0 : 80)
                                     .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15 + Double(index) * 0.1), value: appeared)
@@ -58,26 +59,19 @@ struct HomeView: View {
 
                 Spacer(minLength: 12)
 
-                VStack(spacing: 8) {
-                    Text(highlighted.blurb)
-                        .font(.system(size: 30, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 1300, minHeight: 76)
-                        .id(highlighted)
-                        .transition(.opacity)
-                    Text(highlighted.players)
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(highlighted.accent.opacity(0.95))
-                        .brightness(0.35)
-                }
-                .animation(.easeInOut(duration: 0.25), value: highlighted)
-
                 footer
                     .padding(.top, 14)
                     .padding(.bottom, 14)
             }
             .padding(.horizontal, 80)
+            .overlayPreferenceValue(TileFrames.self) { frames in
+                GeometryReader { proxy in
+                    if appeared, let game = focused, let anchor = frames[game] {
+                        tooltip(for: game, tile: proxy[anchor], in: proxy.size)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: focused)
+            }
         }
         .onAppear {
             focused = Self.focusForScreenshots ?? lastOpened ?? FamilyGame.allCases.first
@@ -90,6 +84,22 @@ struct HomeView: View {
             musicOn.toggle()
             if musicOn { MenuMusic.shared.start() } else { MenuMusic.shared.stop() }
         }
+    }
+
+    /// The pop-up for the focused tile: below it for the top row, above it for the bottom row, kept on screen.
+    @ViewBuilder
+    private func tooltip(for game: FamilyGame, tile: CGRect, in size: CGSize) -> some View {
+        let width = GameTooltip.width
+        let left = min(max(tile.midX - width / 2, 0), size.width - width)
+        let below = FamilyGame.rows.first?.contains(game) ?? true
+        let gap = tile.height * 0.06 + 14   // the focused tile is drawn a little larger than its frame
+        GameTooltip(game: game)
+            .padding(.leading, left)
+            .padding(below ? .top : .bottom, below ? tile.maxY + gap : size.height - tile.minY + gap)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: below ? .topLeading : .bottomLeading)
+            .transition(.opacity)
+            .id(game)
+            .allowsHitTesting(false)
     }
 
     private var title: some View {
@@ -137,54 +147,73 @@ struct HomeView: View {
     }
 }
 
-/// One game on the menu: its logo art, with the game's name and two quick facts on a band beneath.
+/// One game on the menu: its logo art. The name, description and facts are in the pop-up over the focused tile.
 private struct GameCard: View {
     let game: FamilyGame
     @Environment(\.isFocused) private var isFocused
-    private var compact: Bool { FamilyGame.cardWidth < 450 }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Image(game.tileImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: FamilyGame.cardWidth, height: FamilyGame.cardWidth * 0.6)
-                .clipped()
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(game.title)
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                    Spacer()
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(.white.opacity(isFocused ? 1 : 0))
-                }
-                // Smaller tiles leave less room: the facts get a little smaller so both still fit.
-                HStack(spacing: compact ? 8 : 10) {
-                    ForEach(game.tags, id: \.self) { tag in
-                        HStack(spacing: compact ? 6 : 8) {
-                            Image(systemName: tag.icon).font(.system(size: compact ? 14 : 17, weight: .bold))
-                            Text(tag.text).font(.system(size: compact ? 16 : 20, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, compact ? 10 : 14)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(.black.opacity(isFocused ? 0.28 : 0.35)))
+        Image(game.tileImage)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: FamilyGame.cardWidth, height: FamilyGame.cardWidth * FamilyGame.tileAspect)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(.white.opacity(isFocused ? 0.9 : 0.12), lineWidth: isFocused ? 5 : 2)
+            )
+    }
+}
+
+/// Where each tile is on screen, so the pop-up can sit next to the one that has focus.
+private struct TileFrames: PreferenceKey {
+    static var defaultValue: [FamilyGame: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [FamilyGame: Anchor<CGRect>], nextValue: () -> [FamilyGame: Anchor<CGRect>]) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
+/// The pop-up: the game's name, what it is, who plays and what you need.
+private struct GameTooltip: View {
+    static let width: CGFloat = 600
+    let game: FamilyGame
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(game.title)
+                .font(.system(size: 36, weight: .bold))
+            Text(game.blurb)
+                .font(.system(size: 26, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
+                .fixedSize(horizontal: false, vertical: true)
+            Text(game.players)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(game.accent)
+                .brightness(0.5)
+            HStack(spacing: 10) {
+                ForEach(game.tags, id: \.self) { tag in
+                    HStack(spacing: 8) {
+                        Image(systemName: tag.icon).font(.system(size: 17, weight: .bold))
+                        Text(tag.text).font(.system(size: 20, weight: .semibold)).lineLimit(1)
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.white.opacity(0.18)))
                 }
             }
-            .padding(.horizontal, compact ? 18 : 26)
-            .frame(width: FamilyGame.cardWidth, height: FamilyGame.cardBand, alignment: .leading)
-            .background(game.accent.opacity(isFocused ? 0.95 : 0.55))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.white.opacity(isFocused ? 0.9 : 0.12), lineWidth: isFocused ? 5 : 2)
+        .foregroundStyle(.white)
+        .padding(26)
+        .frame(width: Self.width, alignment: .leading)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 26, style: .continuous).fill(.black.opacity(0.82))
+                RoundedRectangle(cornerRadius: 26, style: .continuous).fill(game.accent.opacity(0.4))
+            }
         )
+        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.35), lineWidth: 2))
+        .shadow(color: .black.opacity(0.6), radius: 30, y: 12)
     }
 }
 
