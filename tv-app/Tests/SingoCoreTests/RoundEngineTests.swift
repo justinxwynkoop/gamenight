@@ -254,6 +254,16 @@ final class RoundEngineTests: XCTestCase {
         XCTAssertEqual(settings.clipLength, 20)
     }
 
+    func testPhoneCardsAreOnByDefaultAndOffSurvivesASave() throws {
+        // Settings saved before the switch existed still get phone cards.
+        let old = try JSONDecoder().decode(RoundSettings.self, from: Data(#"{"clipLength": 30}"#.utf8))
+        XCTAssertTrue(old.phoneCards)
+        var settings = RoundSettings()
+        settings.phoneCards = false
+        let data = try JSONEncoder().encode(settings)
+        XCTAssertFalse(try JSONDecoder().decode(RoundSettings.self, from: data).phoneCards)
+    }
+
     func testSettingsRoundTrip() throws {
         var settings = RoundSettings()
         settings.setEnabled(.art, false)
