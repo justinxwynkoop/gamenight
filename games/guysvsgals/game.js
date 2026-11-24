@@ -1,18 +1,27 @@
-// Guys vs Gals: the battle-of-the-sexes party trivia game. The Guys answer questions about the things gals are supposed to
-// know, the Gals answer questions about guy stuff, and both race their token up a track to the finish.
+// Guys vs Gals: the battle-of-the-sexes party game, played by the classic trophy tug-of-war rules. The Guys answer
+// questions about gal stuff, the Gals answer questions about guy stuff, and every right answer pulls the trophy one
+// space closer to your end of the path.
 //
 // How it plays (see docs/PLAYING.md):
 //  - Two teams, always: the Guys and the Gals. Everyone picks their side on their phone in the lobby.
-//  - A coin toss decides who goes first; then the teams take turns.
-//  - On a turn the team gets a multiple-choice question about the OTHER side's stuff. Everyone on the team votes on
-//    their phone; once they have all voted (or the clock runs out) the team's most popular pick is locked in.
-//    Right: the token moves forward two spaces. Wrong: it stays put. The other team sees the answer on their phones,
-//    and has to keep a straight face.
-//  - Lightning spaces: the first time a team reaches or passes one, it plays a Lightning Round straight away: a burst of
-//    true-or-false statements against the clock, answered by whoever on the team is quickest. Each right one is a
-//    space forward.
-//  - The first team to the finish wins. Equal turns: when the team that went first gets there, the other team has
-//    one last turn to get there too, and then it is a tie.
+//  - The trophy starts in the middle, on START. The Gals go first.
+//  - A turn: a player on the OTHER team reads a card from their own side's deck (the Guys read guy stuff to the Gals)
+//    and judges the answer on their phone. Readers take turns. The colour of the space the trophy is on picks the deck:
+//      START  Our Facts   questions about the other side's world
+//      1      Our Stuff   things they own, use and know
+//      2      Our Pics    a picture on the TV, and a question about it
+//      3      Our Lives   the reader secretly picks A, B or C about themselves; the team guesses on their phones
+//      4      Our Moves   charades: the reader picks an actor on the answering team, both act the same thing at once,
+//                         and whichever team shouts it first pulls the trophy their way
+//      green  any deck but Moves (the last space before your winner's circle)
+//  - Right: the trophy moves one space toward the answering team, and they get another card. Wrong: the other team's
+//    turn, with the trophy where it is (on the other team's side of START the same spaces count for them).
+//  - A right answer while the trophy is on your own green space wins it: one trophy for your team, and a new one goes on
+//    START with the other team to play. First to three trophies wins.
+//  - Challenge tokens: each team has three. On your turn (not on a Moves card) you can throw the card back: the other
+//    team must answer it themselves, without the reader's help. If they miss, the trophy comes your way and you keep
+//    playing; if they get it, the trophy goes their way and it is their turn.
+//  - No dice and no clock, except one minute for a charade.
 //
 // No sockets, files or real timers: everything runs from tick() and room.now().
 import { GameError, fail, int } from '../../lib.js';
@@ -22,67 +31,83 @@ export const NAME = 'Guys vs Gals';
 export const ALL_SETS = 'all';
 export const DEFAULT_SET = 'family';
 
-/** The two sides. `key` is the room's team that plays the side; `asks` is the half of a question set it answers. */
+/** The two sides. `key` is the room's team that plays the side; `asks` is the half of a question set it answers;
+ *  `dir` is the way a right answer pulls the trophy (the Guys' end of the path is on the left). */
 export const SIDES = {
-  guys: { key: 'blue', name: 'Guys', color: '#3b8bff', asks: 'galStuff', other: 'gals' },
-  gals: { key: 'red', name: 'Gals', color: '#ff4fa3', asks: 'guyStuff', other: 'guys' },
+  guys: { key: 'blue', name: 'Guys', color: '#3b8bff', asks: 'galStuff', other: 'gals', dir: -1 },
+  gals: { key: 'red', name: 'Gals', color: '#ff4fa3', asks: 'guyStuff', other: 'guys', dir: 1 },
 };
 export const SIDE_ORDER = ['guys', 'gals'];
+export const FIRST = 'gals';
 
-export const LENGTHS = { 15: 'Quick', 20: 'Standard', 30: 'Long' };
-export const DEFAULT_LENGTH = 20;
-export const STEP = 2;                 // spaces for a right answer
-export const LIGHTNING_EVERY = 5;      // a lightning space every this many spaces
-export const LIGHTNING_ITEMS = 5;      // statements in a Lightning Round
-export const ANSWER_TIMES = [20, 30, 45, 0];   // seconds to answer (0: no clock)
+/** The five decks, in the order they come along the path. */
+export const DECKS = {
+  facts: { name: 'Our Facts', short: 'Facts', color: '#9b5cff' },
+  stuff: { name: 'Our Stuff', short: 'Stuff', color: '#ffd23f' },
+  pics: { name: 'Our Pics', short: 'Pics', color: '#ff8a3d' },
+  lives: { name: 'Our Lives', short: 'Lives', color: '#2ec5ff' },
+  moves: { name: 'Our Moves', short: 'Moves', color: '#ff3b5c' },
+};
+export const DECK_ORDER = ['facts', 'stuff', 'pics', 'lives', 'moves'];
+/** The spaces from START out to one team's green space: the deck each one draws from ('any' on green). */
+export const PATH = ['facts', 'stuff', 'pics', 'lives', 'moves', 'any'];
+export const GREEN = PATH.length - 1;      // 5 spaces from START to each green space
+export const GREEN_COLOR = '#3ddc84';
+export const TARGETS = [1, 2, 3];          // trophies to win
+export const DEFAULT_TARGET = 3;
+export const CHALLENGES = 3;               // challenge tokens per team
 
 export const T = {
-  toss: 4200,          // the coin toss, before the first question
-  lockPause: 1400,     // the answer is locked in: a moment of suspense before the reveal
-  reveal: 4800,        // the right answer, before the next turn
-  lightningIntro: 3800,
-  lightning: 20000,    // the whole Lightning Round
-  lightningFlash: 900, // right or wrong on one statement, before the next
-  lightningDone: 4200,
-  lightningPerItem: 6000, // with no clock at all, each statement still gives up after this long
+  result: 4200,        // right or wrong (and the answer), before the next card
+  trophy: 5200,        // a trophy is won, before the next one goes on START
+  moves: 60000,        // the clock on a charade
 };
 
 const MAX_SEEN = 4000;
 const REACTIONS = ['😂', '🔥', '😱', '👏', '🙄', '💪'];
 const REACTION_MS = 4500;
 
-/** Checks a question set: a title, and for each side multiple-choice questions (and, if any, lightning statements). */
+const text = (s) => String(s ?? '').trim();
+
+/** Checks a question set: a title, and for each side some Facts or Stuff questions (the other decks are optional). */
 export function validateSet(set) {
   if (!set || typeof set !== 'object') fail('A question set must be an object');
-  if (!String(set.title ?? '').trim()) fail('Give the question set a title');
+  if (!text(set.title)) fail('Give the question set a title');
   for (const [part, label] of [['guyStuff', 'Guy stuff'], ['galStuff', 'Gal stuff']]) {
     const half = set[part];
     if (!half || typeof half !== 'object') fail(`${label}: add some questions`);
-    if (!Array.isArray(half.questions) || !half.questions.length) fail(`${label} needs at least one question`);
-    half.questions.forEach((q, n) => {
-      if (!q || !String(q.q ?? '').trim()) fail(`${label}, question ${n + 1}: write the question`);
-      if (!String(q.a ?? '').trim()) fail(`${label}, question ${n + 1}: write the right answer`);
-      const wrong = Array.isArray(q.wrong) ? q.wrong.filter((w) => String(w ?? '').trim()) : [];
-      if (!wrong.length) fail(`${label}, question ${n + 1}: give at least one wrong answer`);
-      if (wrong.length > 3) fail(`${label}, question ${n + 1}: at most three wrong answers`);
-    });
-    if (half.lightning !== undefined) {
-      if (!Array.isArray(half.lightning)) fail(`${label}: lightning statements must be a list`);
-      half.lightning.forEach((s, n) => {
-        if (!s || !String(s.q ?? '').trim()) fail(`${label}, lightning ${n + 1}: write the statement`);
-        if (typeof s.a !== 'boolean') fail(`${label}, lightning ${n + 1}: say whether it is true or false`);
+    for (const deck of DECK_ORDER) {
+      if (half[deck] !== undefined && !Array.isArray(half[deck])) fail(`${label}, ${DECKS[deck].name}: must be a list`);
+    }
+    if (!(half.facts?.length || half.stuff?.length)) fail(`${label} needs at least one Our Facts or Our Stuff question`);
+    for (const deck of ['facts', 'stuff', 'pics']) {
+      (half[deck] ?? []).forEach((q, n) => {
+        const where = `${label}, ${DECKS[deck].name} ${n + 1}`;
+        if (!q || !text(q.q)) fail(`${where}: write the question`);
+        if (!text(q.a)) fail(`${where}: write the answer`);
+        if (deck === 'pics' && !text(q.img)) fail(`${where}: choose a picture`);
       });
     }
+    (half.lives ?? []).forEach((q, n) => {
+      const where = `${label}, ${DECKS.lives.name} ${n + 1}`;
+      if (!q || !text(q.q)) fail(`${where}: write the question`);
+      const c = Array.isArray(q.choices) ? q.choices : [];
+      if (c.length !== 3 || c.some((x) => !text(x))) fail(`${where}: write all three choices, A, B and C`);
+    });
+    (half.moves ?? []).forEach((q, n) => {
+      if (!q || !text(q.m)) fail(`${label}, ${DECKS.moves.name} ${n + 1}: write what to act out`);
+    });
   }
   return true;
 }
 
-const keyOf = (text) => String(text).trim().toLowerCase().slice(0, 120);
+const keyOf = (s) => String(s).trim().toLowerCase().slice(0, 120);
+const cardKey = (deck, x) => `${deck}:${keyOf(x.q ?? x.m ?? '')}`;
 
 export class GuysVsGalsGame {
   constructor(room) {
     this.room = room;
-    this.settings = { setId: DEFAULT_SET, length: DEFAULT_LENGTH, answerSecs: 30, lightning: true };
+    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true };
     this.picked = {};   // player id -> true once they chose their side (kept across games)
     this.reactions = [];
     this.reactionN = 0;
@@ -91,31 +116,27 @@ export class GuysVsGalsGame {
   }
 
   #reset() {
-    this.phase = 'lobby';   // lobby | toss | question | reveal | lightning-intro | lightning | lightning-done | gameover
-    this.order = [];        // the two sides, in turn order (the toss decides)
-    this.turn = null;       // the side at play
-    this.pos = { guys: 0, gals: 0 };
-    this.used = { guys: [], gals: [] };   // lightning spaces each side has had (or passed during a Lightning Round)
-    this.turns = { guys: 0, gals: 0 };    // finished turns
-    this.question = null;   // { cat, about, q, choices, answer }
-    this.votes = {};        // player id -> choice index
-    this.voteOrder = [];    // player ids in the order they last voted
-    this.locked = false;
-    this.pick = null;       // the team's locked choice (null: no answer)
-    this.result = null;     // { correct, moved, timeout }
-    this.lightning = null;  // { side, items: [{q, a, said, correct}], i, rights, endsAt, flash }
-    this.lastMove = null;   // { side, from, to, n }
-    this.lastChance = false;
+    this.phase = 'lobby';   // lobby | card | result | trophy | gameover
+    this.turn = null;       // the side answering
+    this.pos = 0;           // the trophy: -GREEN (the Guys' green) .. 0 (START) .. GREEN (the Gals' green)
+    this.trophies = { guys: 0, gals: 0 };
+    this.tokens = { guys: CHALLENGES, gals: CHALLENGES };
+    this.readerN = { guys: 0, gals: 0 };
+    this.card = null;       // see #deal()
+    this.result = null;     // { right, moved, trophy, next, timeout, stolen, challenged, answer, secret, pick }
+    this.trophyWon = null;  // the side that just won a trophy
+    this.lastMove = null;   // { from, to, n, side, trophy }
     this.winners = [];
     this.timer = null;      // { at, fire, kind, totalMs }
     this.deck = null;       // runtime only
-    this.questionN = 0;
+    this.cardN = 0;
+    this.trophyN = 1;       // which trophy is in play
     this.log = [];
   }
   #changed() { this.room.changed(); }
   #now() { return this.room.now(); }
   #setTimer(ms, fire, kind = null) { this.timer = { at: this.#now() + ms, fire, kind, totalMs: ms }; }
-  #note(text) { this.log.push(text); if (this.log.length > 6) this.log.shift(); }
+  #note(s) { this.log.push(s); if (this.log.length > 6) this.log.shift(); }
 
   // ---------- the two sides and the room's teams ----------
   #team(side) { return this.room.teams.find((t) => t.key === SIDES[side]?.key) ?? null; }
@@ -127,13 +148,13 @@ export class GuysVsGalsGame {
   #members(side) { const t = this.#team(side); return t ? this.room.players.filter((p) => p.teamId === t.id) : []; }
   #here(side) { return this.#members(side).filter((p) => this.room.connected.has(p.id)); }
   #name(side) { return this.#team(side)?.name ?? SIDES[side]?.name ?? 'Someone'; }
+  #pname(id) { return this.room.players.find((p) => p.id === id)?.name ?? ''; }
   /** The room's two teams wear the sides' names and colours while this game is chosen. */
   #dress() {
     for (const side of SIDE_ORDER) {
       const t = this.#team(side);
       if (!t) continue;
-      const plain = ['Red', 'Blue'].includes(t.name);
-      if (plain) t.name = SIDES[side].name;
+      if (['Red', 'Blue'].includes(t.name)) t.name = SIDES[side].name;
       t.color = SIDES[side].color;
     }
   }
@@ -155,10 +176,11 @@ export class GuysVsGalsGame {
   tick() {
     const t = this.timer;
     if (t && this.#now() >= t.at) { this.timer = null; t.fire(); return; }
-    // Everyone on the team has voted (people who wandered off are not waited for).
-    if (this.phase === 'question' && !this.locked) {
-      const here = this.#here(this.turn);
-      if (here.length && here.every((p) => p.id in this.votes)) this.#lock();
+    // Everyone guessing an Our Lives card has voted (people who wandered off are not waited for).
+    const c = this.card;
+    if (this.phase === 'card' && c?.stage === 'guess') {
+      const here = this.#guessers().filter((id) => this.room.connected.has(id));
+      if (here.length && here.every((id) => id in c.votes)) this.#lockGuess();
     }
     if (this.reactions.length && this.reactions[0].at + REACTION_MS < this.#now()) {
       this.reactions = this.reactions.filter((r) => r.at + REACTION_MS >= this.#now());
@@ -166,16 +188,18 @@ export class GuysVsGalsGame {
     }
   }
   playerRemoved(id) {
-    delete this.votes[id];
-    this.voteOrder = this.voteOrder.filter((x) => x !== id);
     delete this.picked[id];
+    if (this.card) {
+      delete this.card.votes[id];
+      this.card.voteOrder = this.card.voteOrder.filter((x) => x !== id);
+    }
   }
   contentChanged(id) {
     if (this.phase === 'lobby' && this.settings.setId === id && !this.room.loadContent(GAME, id)) this.settings.setId = ALL_SETS;
     if (this.phase === 'lobby') this.deck = null;
   }
 
-  // ---------- questions ----------
+  // ---------- the decks ----------
   #sets() {
     const all = () => this.room.listContent(GAME).map((s) => this.room.loadContent(GAME, s.id)).filter(Boolean);
     if (this.settings.setId === ALL_SETS) return all();
@@ -183,292 +207,319 @@ export class GuysVsGalsGame {
     return one ? [one] : all();
   }
   #buildDeck() {
-    const deck = { guyStuff: { questions: [], lightning: [] }, galStuff: { questions: [], lightning: [] } };
+    const empty = () => Object.fromEntries(DECK_ORDER.map((d) => [d, []]));
+    const deck = { guyStuff: empty(), galStuff: empty() };
     const seen = new Set();
     for (const set of this.#sets()) {
       for (const part of ['guyStuff', 'galStuff']) {
-        for (const q of set[part]?.questions ?? []) {
-          const k = keyOf(q.q);
-          if (!String(q.q ?? '').trim() || seen.has(k)) continue;
-          seen.add(k);
-          const wrong = (q.wrong ?? []).map((w) => String(w).trim()).filter(Boolean).slice(0, 3);
-          deck[part].questions.push({ cat: String(q.cat ?? '').trim(), q: String(q.q).trim(), a: String(q.a).trim(), wrong });
-        }
-        for (const s of set[part]?.lightning ?? []) {
-          const k = keyOf(s.q);
-          if (!String(s.q ?? '').trim() || seen.has(k) || typeof s.a !== 'boolean') continue;
-          seen.add(k);
-          deck[part].lightning.push({ q: String(s.q).trim(), a: s.a });
+        for (const d of DECK_ORDER) {
+          for (const x of set[part]?.[d] ?? []) {
+            let item = null;
+            if (d === 'moves') { if (text(x?.m)) item = { m: text(x.m) }; }
+            else if (d === 'lives') {
+              const choices = (x?.choices ?? []).map(text);
+              if (text(x?.q) && choices.length === 3 && choices.every(Boolean)) item = { q: text(x.q), choices };
+            } else if (text(x?.q) && text(x?.a) && (d !== 'pics' || text(x?.img))) {
+              item = { q: text(x.q), a: text(x.a) };
+              if (text(x.cat)) item.cat = text(x.cat);
+              if (d === 'pics') item.img = text(x.img);
+            }
+            if (!item) continue;
+            const k = `${part}:${cardKey(d, item)}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            deck[part][d].push(item);
+          }
         }
       }
     }
     this.deck = deck;
   }
-  /** Some not yet asked on this TV (the oldest asked ones come back once a pile runs out). */
-  #draw(pool, n = 1) {
-    if (!pool.length) return [];
+  /** One card not yet seen on this TV (the oldest come back once a pile runs out). */
+  #draw(deckName, pool) {
+    if (!pool.length) return null;
     const memory = this.room.memory.load(GAME) ?? {};
     const seen = new Set(memory.seen ?? []);
-    let fresh = pool.filter((x) => !seen.has(keyOf(x.q)));
-    if (fresh.length < n) {
-      for (const x of pool) seen.delete(keyOf(x.q));
+    let fresh = pool.filter((x) => !seen.has(cardKey(deckName, x)));
+    if (!fresh.length) {
+      for (const x of pool) seen.delete(cardKey(deckName, x));
       fresh = pool.slice();
     }
-    const picks = [];
-    while (picks.length < n && fresh.length) {
-      const i = Math.floor(this.room.rng() * fresh.length);
-      picks.push(fresh.splice(i, 1)[0]);
-    }
-    this.room.memory.save(GAME, { ...memory, seen: [...seen, ...picks.map((x) => keyOf(x.q))].slice(-MAX_SEEN) });
-    return picks;
+    const pick = fresh[Math.floor(this.room.rng() * fresh.length)];
+    this.room.memory.save(GAME, { ...memory, seen: [...seen, cardKey(deckName, pick)].slice(-MAX_SEEN) });
+    return pick;
   }
-  #shuffle(list) {
-    const a = list.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(this.room.rng() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+  /** The deck a space draws from, for the side answering: a missing deck falls back to Facts, then Stuff. */
+  #deckFor(side, space) {
+    const piles = this.deck[SIDES[side].asks];
+    let want = PATH[Math.min(GREEN, Math.abs(space))];
+    if (want === 'any') {
+      const options = ['facts', 'stuff', 'pics', 'lives'].filter((d) => piles[d].length);
+      want = options[Math.floor(this.room.rng() * options.length)] ?? 'facts';
     }
-    return a;
+    for (const d of [want, 'facts', 'stuff']) if (piles[d]?.length) return d;
+    return 'facts';
   }
 
-  // ---------- the track ----------
-  length() { return this.settings.length; }
-  lightningSpaces() {
-    if (!this.settings.lightning) return [];
-    const out = [];
-    for (let s = LIGHTNING_EVERY; s < this.length(); s += LIGHTNING_EVERY) out.push(s);
-    return out;
-  }
-  #hasLightning(side) { return !!this.deck?.[SIDES[side].asks]?.lightning?.length; }
+  // ---------- the path ----------
+  /** The space the trophy is on, counted from START toward the side's own green space (negative: the other way). */
+  spaceFor(side) { return this.pos * SIDES[side].dir; }
+  #score() { for (const side of SIDE_ORDER) { const t = this.#team(side); if (t) t.score = this.trophies[side]; } }
 
   // ---------- starting ----------
-  /** Heads the Guys go first, tails the Gals (tests replace this). */
-  coinToss() { return this.room.rng() < 0.5 ? ['guys', 'gals'] : ['gals', 'guys']; }
   start() {
     if (this.phase !== 'lobby') fail('The game is already under way');
     this.#dress();
     for (const side of SIDE_ORDER) if (!this.#members(side).length) fail(`The ${this.#name(side)} need at least one player`);
     this.#buildDeck();
-    if (!this.deck.guyStuff.questions.length || !this.deck.galStuff.questions.length) fail('That question set needs questions for both sides');
+    for (const part of ['guyStuff', 'galStuff']) {
+      if (!this.deck[part].facts.length && !this.deck[part].stuff.length) fail('That question set needs questions for both sides');
+    }
     const keep = { ...this.settings };
     const deck = this.deck;
     this.#reset();
     this.settings = keep;
     this.deck = deck;
     this.room.resetScores();
-    this.order = this.coinToss();
-    this.turn = this.order[0];
-    this.phase = 'toss';
-    this.#note(`Coin toss: the ${this.#name(this.turn)} go first`);
-    this.#setTimer(T.toss, () => this.#ask());
-    this.#changed();
+    this.turn = FIRST;
+    this.#note(`The ${this.#name(FIRST)} go first`);
+    this.#deal();
   }
 
-  // ---------- a question ----------
-  #ask() {
-    const [q] = this.#draw(this.deck[SIDES[this.turn].asks].questions);
-    const choices = this.#shuffle([q.a, ...q.wrong]);
-    this.question = { cat: q.cat, about: SIDES[this.turn].other, q: q.q, choices, answer: choices.indexOf(q.a) };
-    this.questionN += 1;
-    this.votes = {}; this.voteOrder = []; this.locked = false; this.pick = null; this.result = null;
-    this.phase = 'question';
-    const secs = this.settings.answerSecs;
-    if (secs > 0) this.#setTimer(secs * 1000, () => this.#lock(), 'answer'); else this.timer = null;
+  // ---------- a card ----------
+  /** The next reader on a team: they take turns (people who wandered off are skipped). */
+  #nextReader(side) {
+    const here = this.#here(side);
+    const pool = here.length ? here : this.#members(side);
+    if (!pool.length) return null;
+    const p = pool[this.readerN[side] % pool.length];
+    this.readerN[side] += 1;
+    return p.id;
+  }
+  #deal() {
+    const side = this.turn;
+    const reading = SIDES[side].other;
+    const d = this.#deckFor(side, this.spaceFor(side));
+    const item = this.#draw(d, this.deck[SIDES[side].asks][d]);
+    this.cardN += 1;
+    const c = {
+      n: this.cardN, deck: d, about: reading, reader: this.#nextReader(reading),
+      stage: 'read', challenged: false, votes: {}, voteOrder: [], secret: null, pick: null, actor: null,
+    };
+    if (d === 'moves') c.m = item.m;
+    else { c.q = item.q; if (d === 'lives') c.choices = item.choices.slice(); else c.a = item.a; }
+    if (item.cat) c.cat = item.cat;
+    if (item.img) c.img = item.img;
+    this.card = c;
+    this.result = null;
+    this.trophyWon = null;
+    this.timer = null;
+    this.phase = 'card';
+    if (d === 'lives') c.stage = 'secret';
+    if (d === 'moves') {
+      const actors = this.#here(side).length ? this.#here(side) : this.#members(side);
+      if (actors.length === 1) this.#act(actors[0].id); else c.stage = 'pick';
+    }
     this.#changed();
   }
-  /** A player on the team at play votes (and can change their vote until the team's answer is locked). */
-  vote(player, choice) {
-    if (this.phase !== 'question' || this.locked) fail('No question to answer right now');
-    const side = this.#sideOf(player);
-    if (side !== this.turn) fail(`It is the ${this.#name(this.turn)}’ question. Keep a straight face!`);
-    const c = int(choice);
-    if (!(c >= 0 && c < this.question.choices.length)) fail('Pick one of the answers');
-    this.votes[player.id] = c;
-    this.voteOrder = [...this.voteOrder.filter((x) => x !== player.id), player.id];
-    const here = this.#here(side);
-    if (here.every((p) => p.id in this.votes)) this.#lock(); else this.#changed();
+  #act(actorId) {
+    const c = this.card;
+    c.actor = actorId;
+    c.stage = 'act';
+    this.#setTimer(T.moves, () => this.#movesDone(null, true), 'moves');
   }
-  /** The team's answer: the most votes; a tie goes to whichever of the tied answers was picked first. */
+  /** Who guesses an Our Lives card: the team at play, or, on a challenge, the reader's teammates. */
+  #guessers() {
+    const c = this.card;
+    if (!c) return [];
+    if (!c.challenged) return this.#members(this.turn).map((p) => p.id);
+    return this.#members(c.about).map((p) => p.id).filter((id) => id !== c.reader);
+  }
+  /** The side whose phones judge a spoken answer: the reader's team, or on a challenge the team that challenged. */
+  #judgeSide() { return this.card?.challenged ? this.turn : this.card?.about; }
+  #mayJudge(by) { return by === 'host' || (!!by && this.#sideOf(by) === this.#judgeSide()); }
+
+  /** Right or wrong, for an Our Facts, Stuff or Pics card (the reader's phone, or the host). */
+  judge(by, right) {
+    const c = this.card;
+    if (this.phase !== 'card' || !c || c.stage !== 'read') fail('Nothing to judge right now');
+    if (!this.#mayJudge(by)) fail(`The ${this.#name(this.#judgeSide())} judge this one`);
+    this.#answered(!!right);
+  }
+  /** The reader secretly picks the true answer about themselves on an Our Lives card. */
+  secretPick(player, choice) {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'secret') fail('Nothing to pick right now');
+    const mine = player.id === c.reader || (!this.room.connected.has(c.reader) && this.#sideOf(player) === c.about);
+    if (!mine) fail(`${this.#pname(c.reader)} picks this one`);
+    const v = int(choice);
+    if (!(v >= 0 && v < 3)) fail('Pick A, B or C');
+    c.secret = v;
+    c.reader = player.id;
+    c.stage = 'guess';
+    this.#changed();
+  }
+  /** A guess on an Our Lives card (people can change their mind until it locks). */
+  vote(player, choice) {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'guess') fail('Nothing to guess right now');
+    if (!this.#guessers().includes(player.id)) fail(c.challenged ? `The ${this.#name(c.about)} are guessing this one` : `It is the ${this.#name(this.turn)}’ guess. Keep a straight face!`);
+    const v = int(choice);
+    if (!(v >= 0 && v < 3)) fail('Pick A, B or C');
+    c.votes[player.id] = v;
+    c.voteOrder = [...c.voteOrder.filter((x) => x !== player.id), player.id];
+    const here = this.#guessers().filter((id) => this.room.connected.has(id));
+    if (here.every((id) => id in c.votes)) this.#lockGuess(); else this.#changed();
+  }
+  /** The team's guess: the most votes; a tie goes to whichever of the tied answers was picked first. */
   teamPick() {
+    const c = this.card;
     const counts = new Map();
-    for (const c of Object.values(this.votes)) counts.set(c, (counts.get(c) ?? 0) + 1);
+    for (const v of Object.values(c?.votes ?? {})) counts.set(v, (counts.get(v) ?? 0) + 1);
     if (!counts.size) return null;
     const best = Math.max(...counts.values());
-    const tied = new Set([...counts].filter(([, n]) => n === best).map(([c]) => c));
-    for (const id of this.voteOrder) if (tied.has(this.votes[id])) return this.votes[id];
+    const tied = new Set([...counts].filter(([, n]) => n === best).map(([v]) => v));
+    for (const id of c.voteOrder) if (tied.has(c.votes[id])) return c.votes[id];
     return [...tied][0];
   }
-  #lock() {
-    if (this.phase !== 'question' || this.locked) return;
-    this.locked = true;
-    this.pick = this.teamPick();
-    // A moment of suspense, then the answer.
-    this.#setTimer(this.pick === null ? 300 : T.lockPause, () => this.#reveal());
+  #lockGuess() {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'guess') return;
+    c.pick = this.teamPick();
+    this.#answered(c.pick !== null && c.pick === c.secret);
+  }
+  /** The reader picks who on the answering team acts out the charade with them. */
+  pickActor(by, pid) {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'pick') fail('No actor to pick right now');
+    if (by !== 'host' && this.#sideOf(by) !== c.about) fail(`${this.#pname(c.reader)} picks the actor`);
+    const id = String(pid ?? '');
+    if (!this.#members(this.turn).some((p) => p.id === id)) fail(`Pick someone on the ${this.#name(this.turn)}`);
+    this.#act(id);
     this.#changed();
   }
-  #reveal() {
-    const side = this.turn;
-    const correct = this.pick !== null && this.pick === this.question.answer;
-    const from = this.pos[side];
-    const to = correct ? Math.min(this.length(), from + STEP) : from;
-    this.pos[side] = to;
-    this.result = { correct, moved: to - from, timeout: this.pick === null };
-    if (to !== from) this.lastMove = { side, from, to, n: (this.lastMove?.n ?? 0) + 1 };
+  /** Who shouted the charade first: a side, or nobody. */
+  movesWinner(by, side) {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'act') fail('No charade right now');
+    if (by !== 'host' && this.#sideOf(by) !== c.about) fail(`The ${this.#name(c.about)} call this one`);
+    if (side && !SIDES[side]) fail('Pick the Guys, the Gals or nobody');
+    this.#movesDone(side || null, false);
+  }
+  #movesDone(side, timeout) {
+    const at = this.turn;
+    if (side === at) this.#outcome({ right: true, moveSide: at, next: at, timeout });
+    else if (side) this.#outcome({ right: false, moveSide: side, next: side, timeout, stolen: true });
+    else this.#outcome({ right: false, moveSide: null, next: SIDES[at].other, timeout });
+  }
+  /** The team at play throws the card back at the readers' team. */
+  challenge(player) {
+    const c = this.card;
+    const side = this.#sideOf(player);
+    if (this.phase !== 'card' || !c) fail('No card to challenge');
+    if (!this.settings.challenges) fail('Challenges are turned off');
+    if (side !== this.turn) fail('Only the team at play can challenge');
+    if (c.challenged) fail('This card is already challenged');
+    if (c.deck === 'moves') fail('Our Moves cards can’t be challenged');
+    if (c.stage !== 'read' && c.stage !== 'guess') fail('Wait for the reader to pick first');
+    if (this.tokens[side] <= 0) fail('No challenge tokens left');
+    if (c.deck === 'lives' && !this.#members(c.about).some((p) => p.id !== c.reader)) fail(`The ${this.#name(c.about)} need someone besides the reader to guess`);
+    this.tokens[side] -= 1;
+    c.challenged = true;
+    c.votes = {}; c.voteOrder = [];
+    this.#note(`The ${this.#name(side)} challenge the ${this.#name(c.about)}!`);
+    this.#changed();
+  }
+  /** A spoken answer or a guess was right or wrong: who it counts for depends on a challenge. */
+  #answered(right) {
+    const c = this.card;
+    const at = this.turn;
+    if (!c.challenged) {
+      if (right) this.#outcome({ right: true, moveSide: at, next: at });
+      else this.#outcome({ right: false, moveSide: null, next: SIDES[at].other });
+    } else if (right) this.#outcome({ right: true, moveSide: c.about, next: c.about });   // the challenged team got it
+    else this.#outcome({ right: false, moveSide: at, next: at });                           // they missed: it's ours
+  }
+  /** The trophy moves (or a team wins it), the answer shows, and then the next card. */
+  #outcome({ right, moveSide, next, timeout = false, stolen = false }) {
+    const c = this.card;
+    const from = this.pos;
+    let trophy = null;
+    if (moveSide) {
+      if (this.spaceFor(moveSide) >= GREEN) trophy = moveSide;
+      else this.pos += SIDES[moveSide].dir;
+      this.lastMove = { from, to: this.pos, n: (this.lastMove?.n ?? 0) + 1, side: moveSide, trophy: !!trophy };
+    }
+    this.result = {
+      right, moved: moveSide, trophy, next, timeout, stolen, challenged: !!c.challenged,
+      answer: c.deck === 'moves' ? c.m : c.deck === 'lives' ? (c.secret === null ? null : c.choices[c.secret]) : c.a,
+      secret: c.secret ?? null, pick: c.pick ?? null,
+    };
+    c.stage = 'done';
+    this.phase = 'result';
+    const at = this.turn;
+    if (c.deck === 'moves') this.#note(moveSide ? `The ${this.#name(moveSide)} got the charade` : 'Nobody got the charade');
+    else if (c.challenged) this.#note(right ? `The ${this.#name(c.about)} beat the challenge` : `The ${this.#name(c.about)} missed the challenge`);
+    else this.#note(right ? `The ${this.#name(at)} got it right` : `The ${this.#name(at)} missed`);
+    this.#setTimer(T.result, () => (trophy ? this.#winTrophy(trophy) : this.#next(next)));
+    this.#changed();
+  }
+  #next(side) {
+    this.turn = side;
+    this.#deal();
+  }
+  #winTrophy(side) {
+    this.trophies[side] += 1;
     this.#score();
-    this.phase = 'reveal';
-    this.#note(correct ? `The ${this.#name(side)} got it right` : this.pick === null ? `The ${this.#name(side)} ran out of time` : `The ${this.#name(side)} got it wrong`);
-    this.#setTimer(T.reveal, () => this.#afterMove(side, from, to));
+    this.trophyWon = side;
+    this.phase = 'trophy';
+    this.card = null;
+    this.result = null;
+    this.#note(`The ${this.#name(side)} win trophy ${this.trophyN}!`);
+    if (this.trophies[side] >= this.settings.target) {
+      this.winners = [side];
+      this.#setTimer(T.trophy, () => this.#end());
+    } else {
+      this.#setTimer(T.trophy, () => this.#newTrophy(side));
+    }
     this.#changed();
   }
-  /** After a token has moved: a Lightning Round if it reached one, the finish, or the other team's turn. */
-  #afterMove(side, from, to) {
-    if (to >= this.length()) { this.#finished(side); return; }
-    const hit = this.lightningSpaces().filter((s) => s > from && s <= to && !this.used[side].includes(s));
-    if (hit.length && this.#hasLightning(side)) {
-      this.used[side].push(...hit);
-      this.#startLightning(side, hit.at(-1));
-      return;
-    }
-    this.used[side].push(...hit);
-    this.#endTurn(side);
-  }
-  #endTurn(side) {
-    this.turns[side] += 1;
-    if (this.lastChance) { this.#end(); return; }
-    this.turn = SIDES[side].other;
-    this.#ask();
-  }
-  #finished(side) {
-    this.turns[side] += 1;
-    if (!this.winners.includes(side)) this.winners.push(side);
-    const other = SIDES[side].other;
-    // The team that went first got there: the other team has one last turn to catch up.
-    if (!this.lastChance && this.turns[other] < this.turns[side]) {
-      this.lastChance = true;
-      this.turn = other;
-      this.#note(`The ${this.#name(side)} reached the finish! One last chance for the ${this.#name(other)}`);
-      this.#ask();
-      return;
-    }
-    this.#end();
+  /** A new trophy on START, and the team that didn't win the last one to play. */
+  #newTrophy(lastWinner) {
+    this.trophyN += 1;
+    this.pos = 0;
+    this.lastMove = null;
+    this.#next(SIDES[lastWinner]?.other ?? FIRST);
   }
   #end() {
     this.phase = 'gameover';
     this.timer = null;
-    this.lightning = null;
-    if (!this.winners.length) {
-      // The last chance ran out: whoever is ahead (only the first finisher can be).
-      const best = Math.max(this.pos.guys, this.pos.gals);
-      this.winners = SIDE_ORDER.filter((s) => this.pos[s] === best);
-    }
-    this.#changed();
-  }
-  #score() {
-    for (const side of SIDE_ORDER) { const t = this.#team(side); if (t) t.score = this.pos[side]; }
-  }
-
-  // ---------- the Lightning Round ----------
-  #startLightning(side, at) {
-    const items = this.#draw(this.deck[SIDES[side].asks].lightning, LIGHTNING_ITEMS).map((s) => ({ q: s.q, a: s.a, said: null, correct: null }));
-    this.lightning = { side, at, items, i: 0, rights: 0, endsAt: null, flash: null, started: false };
-    this.turn = side;
-    this.question = null; this.result = null; this.pick = null;
-    this.phase = 'lightning-intro';
-    this.#note(`Lightning Round for the ${this.#name(side)}!`);
-    this.#setTimer(T.lightningIntro, () => this.#runLightning());
-    this.#changed();
-  }
-  #runLightning() {
-    const L = this.lightning;
-    this.phase = 'lightning';
-    L.started = true;
-    const ms = this.settings.answerSecs > 0 ? T.lightning : T.lightningPerItem * L.items.length;
-    L.endsAt = this.#now() + ms;
-    L.totalMs = ms;
-    this.#setTimer(ms, () => this.#finishLightning(), 'lightning');
-    this.#changed();
-  }
-  /** Anyone on the team at play answers the current statement: true or false. The first answer counts. */
-  lightningAnswer(player, said) {
-    const L = this.lightning;
-    if (this.phase !== 'lightning' || !L) fail('No Lightning Round right now');
-    if (this.#sideOf(player) !== L.side) fail(`It is the ${this.#name(L.side)}’ Lightning Round`);
-    if (L.flash && this.#now() < L.flash.until) return;   // the last one is still showing
-    this.#answerItem(!!said);
-  }
-  #answerItem(said) {
-    const L = this.lightning;
-    const item = L.items[L.i];
-    if (!item) return;
-    item.said = said;
-    item.correct = said === item.a;
-    if (item.correct) L.rights += 1;
-    L.flash = { i: L.i, correct: item.correct, until: this.#now() + T.lightningFlash };
-    L.i += 1;
-    if (L.i >= L.items.length) {
-      this.#finishLightning(T.lightningFlash);
-      return;
-    }
-    this.#changed();
-  }
-  #finishLightning(delay = 0) {
-    const L = this.lightning;
-    if (!L || this.phase !== 'lightning') return;
-    if (delay) {
-      // Let the last answer show before the summary.
-      this.timer = { at: this.#now() + delay, fire: () => this.#lightningDone(), kind: null, totalMs: delay };
-      L.over = true;
-      this.#changed();
-      return;
-    }
-    this.#lightningDone();
-  }
-  #lightningDone() {
-    const L = this.lightning;
-    const side = L.side;
-    const from = this.pos[side];
-    const to = Math.min(this.length(), from + L.rights);
-    this.pos[side] = to;
-    // Lightning spaces passed during a Lightning Round don't start another one.
-    for (const s of this.lightningSpaces()) if (s > from && s <= to && !this.used[side].includes(s)) this.used[side].push(s);
-    if (to !== from) this.lastMove = { side, from, to, n: (this.lastMove?.n ?? 0) + 1 };
-    this.#score();
-    L.over = true;
-    this.phase = 'lightning-done';
-    this.#note(`Lightning Round: the ${this.#name(side)} got ${L.rights} of ${L.items.length}`);
-    this.#setTimer(T.lightningDone, () => {
-      this.lightning = null;
-      if (to >= this.length()) this.#finished(side); else this.#endTurn(side);
-    });
+    this.card = null;
     this.#changed();
   }
 
   // ---------- the host and the TV ----------
-  /** Moves things along: locks the answer in now, skips the wait after a reveal, or ends the Lightning Round. */
+  /** Moves things along: locks in the guesses now, or skips the wait after a result or a trophy. */
   advance() {
-    switch (this.phase) {
-      case 'toss': this.timer = null; this.#ask(); return;
-      case 'question': if (!this.locked) this.#lock(); else { this.timer = null; this.#reveal(); } return;
-      case 'reveal': { const t = this.timer; this.timer = null; t?.fire(); return; }
-      case 'lightning-intro': this.timer = null; this.#runLightning(); return;
-      case 'lightning': if (!this.lightning.over) { this.timer = null; this.#lightningDone(); } return;
-      case 'lightning-done': { const t = this.timer; this.timer = null; t?.fire(); return; }
-      default: return;
-    }
+    if (this.phase === 'card' && this.card?.stage === 'guess') { this.#lockGuess(); return; }
+    if (this.phase === 'result' || this.phase === 'trophy') { const t = this.timer; this.timer = null; t?.fire(); }
   }
-  /** The host throws out a question (a dud, or one nobody could know) and asks the same team another. */
-  newQuestion() {
-    if (this.phase !== 'question') fail('There is no question to change');
-    this.#ask();
+  /** The host throws out a card (a dud, or one nobody could know) and deals the same team another. */
+  newCard() {
+    if (this.phase !== 'card') fail('There is no card to change');
+    if (this.card?.challenged) this.tokens[this.turn] = Math.min(CHALLENGES, this.tokens[this.turn] + 1);
+    const reading = SIDES[this.turn].other;
+    this.readerN[reading] = Math.max(0, this.readerN[reading] - 1);   // the same reader again
+    this.#deal();
   }
-  /** The host nudges a team's token (a judgement call, a mistake). */
-  nudge(side, delta) {
-    if (!SIDES[side]) fail('No such team');
+  /** The host nudges the trophy one space (a judgement call, a mistake). */
+  nudge(delta) {
     if (this.phase === 'lobby' || this.phase === 'gameover') fail('Only during a game');
     const d = int(delta);
     if (![-1, 1].includes(d)) fail('Move one space at a time');
-    this.pos[side] = Math.max(0, Math.min(this.length() - 1, this.pos[side] + d));
-    this.#score();
+    const from = this.pos;
+    this.pos = Math.max(-GREEN, Math.min(GREEN, this.pos + d));
+    if (this.pos !== from) this.lastMove = { from, to: this.pos, n: (this.lastMove?.n ?? 0) + 1, side: d > 0 ? 'gals' : 'guys', trophy: false };
     this.#changed();
   }
   endGame() {
@@ -488,21 +539,14 @@ export class GuysVsGalsGame {
     this.settings.setId = want; this.deck = null;
     this.#changed();
   }
-  setLength(n) {
+  setTarget(n) {
     this.#lobby();
     const v = int(n);
-    if (!LENGTHS[v]) fail('Pick a quick, standard or long game');
-    this.settings.length = v;
+    if (!TARGETS.includes(v)) fail('Play to 1, 2 or 3 trophies');
+    this.settings.target = v;
     this.#changed();
   }
-  setAnswerTime(s) {
-    this.#lobby();
-    const v = int(s);
-    if (!ANSWER_TIMES.includes(v)) fail('Pick 20, 30 or 45 seconds, or no clock');
-    this.settings.answerSecs = v;
-    this.#changed();
-  }
-  setLightning(on) { this.#lobby(); this.settings.lightning = !!on; this.#changed(); }
+  setChallenges(on) { this.#lobby(); this.settings.challenges = !!on; this.#changed(); }
   /** A player picks their side (in the lobby; the host can also move people between teams). */
   setSide(player, side) {
     if (!SIDES[side]) fail('Pick the Guys or the Gals');
@@ -530,13 +574,15 @@ export class GuysVsGalsGame {
     switch (action) {
       case 'start': return this.start();
       case 'advance': return this.advance();
-      case 'newQuestion': return this.newQuestion();
-      case 'nudge': return this.nudge(String(a.side ?? ''), a.delta);
+      case 'newCard': case 'newQuestion': return this.newCard();
+      case 'judge': return this.judge('host', a.right === true);
+      case 'moves': return this.movesWinner('host', a.side ? String(a.side) : null);
+      case 'actor': return this.pickActor('host', a.pid);
+      case 'nudge': return this.nudge(a.delta);
       case 'endGame': case 'playAgain': return this.endGame();
       case 'setSet': return this.setSet(a.id);
-      case 'setLength': return this.setLength(a.n);
-      case 'setAnswerTime': return this.setAnswerTime(a.secs);
-      case 'setLightning': return this.setLightning(a.on);
+      case 'setTarget': return this.setTarget(a.n);
+      case 'setChallenges': return this.setChallenges(a.on);
       case 'setSide': return this.setSide(this.room.player(String(a.pid ?? '')), String(a.side ?? ''));
       case 'kick':
         if (this.phase !== 'lobby') fail('Players can only be removed before the game starts');
@@ -552,8 +598,12 @@ export class GuysVsGalsGame {
         this.act({ start: 'start', advance: 'advance', 'play-again': 'playAgain' }[msg.t]);
         return undefined;
       case 'side': this.setSide(player, String(msg.side ?? '')); return undefined;
+      case 'judge': this.judge(player, msg.right === true); return undefined;
+      case 'secret': this.secretPick(player, msg.choice); return undefined;
       case 'vote': this.vote(player, msg.choice); return { t: 'ack', what: 'vote' };
-      case 'lightning': this.lightningAnswer(player, msg.said === true); return { t: 'ack', what: 'lightning' };
+      case 'actor': this.pickActor(player, msg.pid); return undefined;
+      case 'moves': this.movesWinner(player, msg.side ? String(msg.side) : null); return undefined;
+      case 'challenge': this.challenge(player); return undefined;
       case 'react': this.react(player, msg.e); return undefined;
       default: return undefined;
     }
@@ -566,19 +616,38 @@ export class GuysVsGalsGame {
     return { kind: t.kind, totalMs: t.totalMs, leftMs: Math.max(0, Math.round(t.at - this.#now())) };
   }
   #line() {
+    const c = this.card;
     const who = this.turn ? `The ${this.#name(this.turn)}` : '';
-    const about = this.question ? (this.question.about === 'guys' ? 'Guy stuff' : 'Gal stuff') : '';
+    const reader = c ? this.#pname(c.reader) : '';
     switch (this.phase) {
       case 'lobby': return { text: 'Pick your side!', next: 'Guys on one team, Gals on the other' };
-      case 'toss': return { text: `Coin toss: the ${this.#name(this.turn)} go first!`, next: 'Then the teams take turns' };
-      case 'question': return this.locked
-        ? { text: this.pick === null ? 'Time’s up!' : 'Final answer!', next: '' }
-        : { text: `${who}: ${about}`, next: this.lastChance ? 'Last chance to catch up!' : 'Vote on your phones' };
-      case 'reveal': return this.result.correct ? { text: 'Right!', next: `${who} move ${STEP} spaces` } : { text: this.result.timeout ? 'Out of time!' : 'Wrong!', next: `${who} stay put` };
-      case 'lightning-intro': return { text: 'Lightning Round!', next: `${who}: true or false, as fast as you can` };
-      case 'lightning': return { text: 'Lightning Round!', next: 'True or false?' };
-      case 'lightning-done': return { text: `${this.lightning?.rights ?? 0} right!`, next: `${who} move ${this.lightning?.rights ?? 0} ${this.lightning?.rights === 1 ? 'space' : 'spaces'}` };
-      default: return { text: this.winners.length > 1 ? 'It’s a tie!' : `The ${this.#name(this.winners[0])} win!`, next: '' };
+      case 'card': {
+        if (c.deck === 'moves') {
+          if (c.stage === 'pick') return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${this.#name(this.turn)} to act with` };
+          return { text: 'Act it out!', next: `${reader} and ${this.#pname(c.actor)} act out the same thing. Shout it first!` };
+        }
+        if (c.challenged) {
+          return c.deck === 'lives'
+            ? { text: 'Challenge!', next: `The ${this.#name(c.about)} guess what ${reader} picked, on their phones` }
+            : { text: 'Challenge!', next: `The ${this.#name(c.about)} answer it themselves, no help from ${reader}` };
+        }
+        if (c.stage === 'secret') return { text: `${who}: Our Lives`, next: `${reader} secretly picks the true answer` };
+        if (c.stage === 'guess') return { text: `${who}: Our Lives`, next: `Guess what ${reader} picked, on your phones` };
+        return { text: `${who}: ${DECKS[c.deck].name}`, next: `${reader} reads. Say your answer out loud!` };
+      }
+      case 'result': {
+        const r = this.result;
+        if (r.trophy) return { text: 'Trophy!', next: `The ${this.#name(r.trophy)} pull it into their winner’s circle` };
+        if (c?.deck === 'moves') {
+          return r.moved
+            ? { text: r.stolen ? 'Stolen!' : 'Got it!', next: `The trophy moves toward the ${this.#name(r.moved)}` }
+            : { text: r.timeout ? 'Time’s up!' : 'Nobody got it', next: `Over to the ${this.#name(r.next)}` };
+        }
+        if (r.challenged) return { text: r.right ? 'Challenge beaten!' : 'Challenge won!', next: `The trophy moves toward the ${this.#name(r.moved)}` };
+        return r.right ? { text: 'Right!', next: `${who} keep going` } : { text: 'Wrong!', next: `Over to the ${this.#name(r.next)}` };
+      }
+      case 'trophy': return { text: `The ${this.#name(this.trophyWon)} win a trophy!`, next: this.winners.length ? '' : 'A new trophy goes on START' };
+      default: return { text: `The ${this.#name(this.winners[0])} win!`, next: '' };
     }
   }
   #teamsView() {
@@ -587,24 +656,44 @@ export class GuysVsGalsGame {
       const members = this.#members(side);
       return {
         side, id: t?.id ?? null, name: this.#name(side), color: t?.color ?? SIDES[side].color,
-        pos: this.pos[side], used: this.used[side].slice(),
+        trophies: this.trophies[side], challenges: this.tokens[side],
         members: members.map((p) => ({ id: p.id, name: p.name, connected: this.room.connected.has(p.id), picked: !!this.picked[p.id] })),
         connected: members.some((p) => this.room.connected.has(p.id)),
       };
     });
   }
+  #cardView() {
+    const c = this.card;
+    if (!c) return null;
+    const v = {
+      n: c.n, deck: c.deck, deckName: DECKS[c.deck].name, about: c.about, stage: c.stage, challenged: c.challenged,
+      reader: { id: c.reader, name: this.#pname(c.reader) },
+    };
+    if (c.actor) v.actor = { id: c.actor, name: this.#pname(c.actor) };
+    if (c.deck !== 'moves') v.text = c.q;
+    if (c.cat) v.cat = c.cat;
+    if (c.img) v.img = c.img;
+    if (c.choices) v.choices = c.choices.slice();
+    if (c.deck === 'lives') {
+      v.guessers = this.#guessers();
+      v.voters = Object.keys(c.votes);
+    }
+    if (this.phase === 'result' && this.result) v.answer = this.result.answer;
+    return v;
+  }
   publicView() {
     const v = {
       game: GAME, scoreFormat: 'none', lobbyTitle: NAME,
       phase: this.phase, status: this.phase, hosted: this.room.hosts > 0,
-      length: this.length(), step: STEP, lightningAt: this.lightningSpaces(),
-      teams: this.#teamsView(), turn: this.turn, order: this.order.slice(), lastChance: this.lastChance,
+      pos: this.pos, green: GREEN, path: PATH.slice(), greenColor: GREEN_COLOR, first: FIRST,
+      decks: DECK_ORDER.map((id) => ({ id, ...DECKS[id] })),
+      teams: this.#teamsView(), turn: this.turn, trophy: this.trophyN, target: this.settings.target,
       settings: { ...this.settings },
       line: this.#line(),
       timer: this.#timerView(),
       reactions: this.reactions.map(({ id, e, side, name }) => ({ id, e, side, name })),
-      lengths: Object.entries(LENGTHS).map(([n, label]) => ({ n: Number(n), label })),
       reactionList: REACTIONS,
+      targets: TARGETS.slice(),
       log: this.log.slice(),
     };
     if (this.lastMove) v.lastMove = { ...this.lastMove };
@@ -612,84 +701,97 @@ export class GuysVsGalsGame {
       v.sets = this.room.listContent(GAME).map((s) => ({ id: s.id, title: s.title })).slice(0, 40);
       v.setTitle = this.settings.setId === ALL_SETS ? 'All question sets' : (this.room.listContent(GAME).find((s) => s.id === this.settings.setId)?.title ?? '');
     }
-    if ((this.phase === 'question' || this.phase === 'reveal') && this.question) {
-      const q = this.question;
-      const counts = q.choices.map(() => 0);
-      for (const c of Object.values(this.votes)) counts[c] += 1;
-      v.question = {
-        n: this.questionN, cat: q.cat, about: q.about, text: q.q, choices: q.choices.slice(), counts,
-        voters: Object.keys(this.votes), locked: this.locked, pick: this.locked ? this.pick : null,
-      };
-      if (this.phase === 'reveal') { v.question.answer = q.answer; v.result = { ...this.result }; }
-    }
-    if (this.lightning && this.phase.startsWith('lightning')) {
-      const L = this.lightning;
-      v.lightning = {
-        side: L.side, at: L.at, total: L.items.length, i: L.i, rights: L.rights, over: !!L.over,
-        current: !L.over && L.started && L.items[L.i] ? L.items[L.i].q : null,
-        done: L.items.slice(0, L.i).map((x) => ({ text: x.q, a: x.a, said: x.said, correct: x.correct })),
-        flash: L.flash && this.#now() < L.flash.until ? { i: L.flash.i, correct: L.flash.correct } : null,
-      };
-    }
+    const card = this.#cardView();
+    if (card && (this.phase === 'card' || this.phase === 'result')) v.card = card;
+    if (this.phase === 'result' && this.result) v.result = { ...this.result };
+    if (this.phase === 'trophy' || this.phase === 'gameover') v.trophyWon = this.trophyWon ?? this.winners[0] ?? null;
     if (this.phase === 'gameover') v.winners = this.winners.slice();
     return v;
   }
   playerView(player) {
     const v = this.publicView();
     const side = this.#sideOf(player);
-    v.me = { id: player.id, side, picked: !!this.picked[player.id], canStart: this.#starter(player.id), myTurn: !!side && side === this.turn };
-    if (v.question) {
-      if (player.id in this.votes) v.me.vote = this.votes[player.id];
-      // The other team knows this stuff: their phones show the answer (behind a peek button).
-      if (side && side !== this.turn && this.question) v.me.answer = this.question.answer;
+    const c = this.card;
+    const me = { id: player.id, side, picked: !!this.picked[player.id], canStart: this.#starter(player.id), myTurn: !!side && side === this.turn };
+    if (c && this.phase === 'card') {
+      const reading = c.about;
+      me.reader = c.reader === player.id;
+      me.actor = c.actor === player.id;
+      if (c.stage === 'read') {
+        me.canJudge = side === this.#judgeSide();
+        if (me.canJudge) me.answer = c.a;
+      }
+      if (c.stage === 'secret') me.canPick = me.reader || (!this.room.connected.has(c.reader) && side === reading);
+      if (c.stage === 'guess') {
+        me.canGuess = this.#guessers().includes(player.id);
+        if (player.id in c.votes) me.vote = c.votes[player.id];
+        // The reader knows, and so do the people judging a challenge: they can peek (and keep a straight face).
+        if (me.reader || (!c.challenged && side === reading) || (c.challenged && side === this.turn)) me.secret = c.secret;
+      }
+      if (c.stage === 'pick') {
+        me.canPickActor = side === reading;
+        if (me.canPickActor) me.actors = this.#members(this.turn).map((p) => ({ id: p.id, name: p.name }));
+      }
+      if (c.stage === 'act') {
+        me.canCall = side === reading;
+        if (me.reader || me.actor) me.move = c.m;
+      }
+      me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== 'moves'
+        && (c.stage === 'read' || c.stage === 'guess') && this.tokens[side] > 0
+        && (c.deck !== 'lives' || this.#members(reading).some((p) => p.id !== c.reader)));
     }
-    if (v.lightning && side && side !== this.lightning.side && v.lightning.current) {
-      v.me.lightningAnswer = this.lightning.items[this.lightning.i]?.a;
-    }
+    v.me = me;
     return v;
   }
   hostView() {
     const v = this.publicView();
-    if (v.question) v.question.answer = this.question.answer;
-    if (v.lightning && v.lightning.current) v.lightning.currentAnswer = this.lightning.items[this.lightning.i]?.a;
+    const c = this.card;
+    if (v.card && c) {
+      if (c.a) v.card.answer = c.a;
+      if (c.m) v.card.move = c.m;
+      if (c.secret !== null) v.card.secret = c.secret;
+      if (c.stage === 'pick') v.card.actors = this.#members(this.turn).map((p) => ({ id: p.id, name: p.name }));
+    }
     return v;
   }
 
   // ---------- saving ----------
   toJSON() {
     return {
-      settings: this.settings, picked: this.picked, phase: this.phase, order: this.order, turn: this.turn, pos: this.pos,
-      used: this.used, turns: this.turns, question: this.question, votes: this.votes, voteOrder: this.voteOrder,
-      locked: this.locked, pick: this.pick, result: this.result, lightning: this.lightning, lastMove: this.lastMove,
-      lastChance: this.lastChance, winners: this.winners, questionN: this.questionN, log: this.log,
+      settings: this.settings, picked: this.picked, phase: this.phase, turn: this.turn, pos: this.pos, trophies: this.trophies,
+      tokens: this.tokens, readerN: this.readerN, card: this.card, result: this.result, trophyWon: this.trophyWon,
+      lastMove: this.lastMove, winners: this.winners, cardN: this.cardN, trophyN: this.trophyN, log: this.log,
     };
   }
   restore(d) {
     this.#reset();
-    this.settings = { setId: DEFAULT_SET, length: DEFAULT_LENGTH, answerSecs: 30, lightning: true, ...(d.settings ?? {}) };
-    if (!LENGTHS[this.settings.length]) this.settings.length = DEFAULT_LENGTH;
+    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true, ...(d.settings ?? {}) };
+    if (!TARGETS.includes(this.settings.target)) this.settings.target = DEFAULT_TARGET;
     this.picked = d.picked ?? {};
-    const valid = ['lobby', 'toss', 'question', 'reveal', 'lightning-intro', 'lightning', 'lightning-done', 'gameover'];
+    const valid = ['lobby', 'card', 'result', 'trophy', 'gameover'];
     this.phase = valid.includes(d.phase) ? d.phase : 'lobby';
     Object.assign(this, {
-      order: d.order ?? [], turn: d.turn ?? null, pos: { guys: 0, gals: 0, ...(d.pos ?? {}) }, used: { guys: [], gals: [], ...(d.used ?? {}) },
-      turns: { guys: 0, gals: 0, ...(d.turns ?? {}) }, question: d.question ?? null, votes: d.votes ?? {}, voteOrder: d.voteOrder ?? [],
-      locked: !!d.locked, pick: d.pick ?? null, result: d.result ?? null, lightning: d.lightning ?? null, lastMove: d.lastMove ?? null,
-      lastChance: !!d.lastChance, winners: d.winners ?? [], questionN: d.questionN ?? 0, log: d.log ?? [],
+      turn: SIDES[d.turn] ? d.turn : null, pos: Math.max(-GREEN, Math.min(GREEN, int(d.pos) || 0)),
+      trophies: { guys: 0, gals: 0, ...(d.trophies ?? {}) }, tokens: { guys: CHALLENGES, gals: CHALLENGES, ...(d.tokens ?? {}) },
+      readerN: { guys: 0, gals: 0, ...(d.readerN ?? {}) }, card: d.card ?? null, result: d.result ?? null,
+      trophyWon: d.trophyWon ?? null, lastMove: d.lastMove ?? null, winners: d.winners ?? [], cardN: d.cardN ?? 0,
+      trophyN: d.trophyN ?? 1, log: d.log ?? [],
     });
-    if (this.phase !== 'lobby' && this.phase !== 'gameover') {
-      this.#buildDeck();
-      // Timers do not survive a restart: pick up where things were, as near as we can.
-      if (!this.turn || !SIDES[this.turn]) { this.phase = 'lobby'; return; }
-      if (this.phase === 'toss') this.#setTimer(T.toss, () => this.#ask());
-      else if (this.phase === 'question') { if (!this.question) this.#ask(); else if (this.locked) this.#setTimer(T.lockPause, () => this.#reveal()); else if (this.settings.answerSecs > 0) this.#setTimer(this.settings.answerSecs * 1000, () => this.#lock(), 'answer'); }
-      else if (this.phase === 'reveal') { const side = this.turn; const to = this.pos[side]; const from = to - (this.result?.moved ?? 0); this.#setTimer(T.reveal, () => this.#afterMove(side, from, to)); }
-      else if (this.lightning) {
-        const L = this.lightning;
-        if (this.phase === 'lightning-intro') this.#setTimer(T.lightningIntro, () => this.#runLightning());
-        else if (this.phase === 'lightning') this.#runLightning();
-        else { const side = L.side; this.#setTimer(T.lightningDone, () => { this.lightning = null; if (this.pos[side] >= this.length()) this.#finished(side); else this.#endTurn(side); }); }
-      } else { this.phase = 'question'; this.#ask(); }
+    if (this.phase === 'lobby' || this.phase === 'gameover') return;
+    if (!this.turn) { this.phase = 'lobby'; return; }
+    this.#buildDeck();
+    // Timers do not survive a restart: pick up where things were, as near as we can.
+    if (this.phase === 'card') {
+      if (!this.card || !DECKS[this.card.deck]) this.#deal();
+      else if (this.card.stage === 'act') this.#setTimer(T.moves, () => this.#movesDone(null, true), 'moves');
+    } else if (this.phase === 'result') {
+      const r = this.result;
+      if (!r || !this.card) this.#deal();
+      else this.#setTimer(T.result, () => (r.trophy ? this.#winTrophy(r.trophy) : this.#next(r.next)));
+    } else if (this.phase === 'trophy') {
+      const side = this.trophyWon;
+      if (this.winners.length) this.#setTimer(T.trophy, () => this.#end());
+      else this.#setTimer(T.trophy, () => this.#newTrophy(side));
     }
   }
 }

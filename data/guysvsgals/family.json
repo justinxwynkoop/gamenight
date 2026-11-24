@@ -1,2645 +1,2703 @@
 {
  "title": "Family Battle",
- "about": "Guy stuff for the Gals, gal stuff for the Guys. Written for Guys vs Gals.",
+ "about": "Every deck for both sides: Our Facts, Our Stuff, Our Pics, Our Lives and Our Moves. All original questions, written for the family.",
  "guyStuff": {
-  "questions": [
+  "facts": [
    {
     "cat": "Sports",
     "q": "How many points is a touchdown worth in American football (before the extra point)?",
-    "a": "6",
-    "wrong": [
-     "3",
-     "7",
-     "10"
-    ]
+    "a": "6"
    },
    {
     "cat": "Sports",
     "q": "In which sport would you hit a home run?",
-    "a": "Baseball",
-    "wrong": [
-     "Basketball",
-     "Soccer",
-     "Hockey"
-    ]
+    "a": "Baseball"
    },
    {
     "cat": "Sports",
     "q": "How many players does a basketball team have on the court at once?",
-    "a": "5",
-    "wrong": [
-     "6",
-     "7",
-     "11"
-    ]
+    "a": "5"
    },
    {
     "cat": "Sports",
     "q": "What is the name of the NFL's championship game?",
-    "a": "The Super Bowl",
-    "wrong": [
-     "The World Series",
-     "The Stanley Cup",
-     "The Final Four"
-    ]
+    "a": "The Super Bowl"
    },
    {
     "cat": "Sports",
     "q": "What do hockey players hit instead of a ball?",
-    "a": "A puck",
-    "wrong": [
-     "A shuttlecock",
-     "A disc",
-     "A cone"
-    ]
+    "a": "A puck"
    },
    {
     "cat": "Sports",
     "q": "In golf, what is one stroke under par called?",
-    "a": "A birdie",
-    "wrong": [
-     "A bogey",
-     "An eagle",
-     "A double"
-    ]
+    "a": "A birdie"
    },
    {
     "cat": "Sports",
     "q": "How many holes are played in a standard round of golf?",
-    "a": "18",
-    "wrong": [
-     "9",
-     "12",
-     "21"
-    ]
+    "a": "18"
    },
    {
     "cat": "Sports",
     "q": "Which trophy does the winner of the NHL playoffs get?",
-    "a": "The Stanley Cup",
-    "wrong": [
-     "The Lombardi Trophy",
-     "The Ryder Cup",
-     "The Davis Cup"
-    ]
+    "a": "The Stanley Cup"
    },
    {
     "cat": "Sports",
     "q": "In bowling, what is it called when you knock down all ten pins with your first ball?",
-    "a": "A strike",
-    "wrong": [
-     "A spare",
-     "A split",
-     "A gutter"
-    ]
+    "a": "A strike"
    },
    {
     "cat": "Sports",
     "q": "How many bases are there on a baseball field, counting home plate?",
-    "a": "4",
-    "wrong": [
-     "3",
-     "5",
-     "6"
-    ]
+    "a": "4"
    },
    {
     "cat": "Sports",
     "q": "Which sport is played at Wimbledon?",
-    "a": "Tennis",
-    "wrong": [
-     "Golf",
-     "Cricket",
-     "Rugby"
-    ]
+    "a": "Tennis"
    },
    {
     "cat": "Sports",
     "q": "What color jersey does the leader of the Tour de France wear?",
-    "a": "Yellow",
-    "wrong": [
-     "Green",
-     "Red",
-     "Blue"
-    ]
+    "a": "Yellow"
    },
    {
     "cat": "Sports",
     "q": "How long is a marathon, roughly?",
-    "a": "26.2 miles",
-    "wrong": [
-     "10 miles",
-     "13.1 miles",
-     "50 miles"
-    ]
+    "a": "26.2 miles"
    },
    {
     "cat": "Sports",
     "q": "In football, what do you call the player who usually throws the ball?",
-    "a": "The quarterback",
-    "wrong": [
-     "The linebacker",
-     "The tight end",
-     "The kicker"
-    ]
+    "a": "The quarterback"
    },
    {
     "cat": "Sports",
     "q": "In which sport do players try to sink the 8-ball last?",
-    "a": "Pool (billiards)",
-    "wrong": [
-     "Bowling",
-     "Golf",
-     "Darts"
-    ]
+    "a": "Pool (billiards)"
    },
    {
     "cat": "Sports",
     "q": "How many points is a basket from behind the arc worth in basketball?",
-    "a": "3",
-    "wrong": [
-     "2",
-     "4",
-     "1"
-    ]
+    "a": "3"
    },
    {
     "cat": "Sports",
     "q": "What is the highest score you can get in a single game of bowling?",
-    "a": "300",
-    "wrong": [
-     "100",
-     "200",
-     "500"
-    ]
+    "a": "300"
    },
    {
     "cat": "Sports",
     "q": "In soccer, which player is allowed to use their hands?",
-    "a": "The goalkeeper",
-    "wrong": [
-     "The striker",
-     "The captain",
-     "The defender"
-    ]
+    "a": "The goalkeeper"
    },
    {
     "cat": "Sports",
     "q": "How often are the Summer Olympics held?",
-    "a": "Every 4 years",
-    "wrong": [
-     "Every year",
-     "Every 2 years",
-     "Every 5 years"
-    ]
+    "a": "Every 4 years"
    },
    {
     "cat": "Sports",
     "q": "What is a 'hat trick' in hockey or soccer?",
-    "a": "Three goals by one player",
-    "wrong": [
-     "A goal from behind the net",
-     "A trick shot with a hat",
-     "Three saves in a row"
-    ]
+    "a": "Three goals by one player"
    },
    {
     "cat": "Sports",
     "q": "Michael Jordan is famous for playing which sport?",
-    "a": "Basketball",
-    "wrong": [
-     "Baseball",
-     "Football",
-     "Golf"
-    ]
+    "a": "Basketball"
    },
    {
     "cat": "Sports",
     "q": "Tom Brady played which position?",
-    "a": "Quarterback",
-    "wrong": [
-     "Pitcher",
-     "Goalie",
-     "Point guard"
-    ]
+    "a": "Quarterback"
    },
    {
     "cat": "Sports",
     "q": "What is the area at each end of a football field where touchdowns are scored called?",
-    "a": "The end zone",
-    "wrong": [
-     "The red zone",
-     "The bullpen",
-     "The paint"
-    ]
+    "a": "The end zone"
    },
    {
     "cat": "Sports",
     "q": "In baseball, how many strikes make an out?",
-    "a": "3",
-    "wrong": [
-     "2",
-     "4",
-     "5"
-    ]
+    "a": "3"
    },
    {
     "cat": "Sports",
     "q": "Which sport uses the terms 'love', 'deuce' and 'ace'?",
-    "a": "Tennis",
-    "wrong": [
-     "Golf",
-     "Poker",
-     "Boxing"
-    ]
+    "a": "Tennis"
    },
    {
     "cat": "Sports",
     "q": "What shape is a rugby or American football ball?",
-    "a": "Oval (egg-shaped)",
-    "wrong": [
-     "Perfectly round",
-     "Square",
-     "Flat like a disc"
-    ]
+    "a": "Oval (egg-shaped)"
    },
    {
     "cat": "Sports",
     "q": "In which sport would you see a slam dunk?",
-    "a": "Basketball",
-    "wrong": [
-     "Volleyball",
-     "Tennis",
-     "Baseball"
-    ]
+    "a": "Basketball"
    },
    {
     "cat": "Sports",
     "q": "What do you call a score of zero in tennis?",
-    "a": "Love",
-    "wrong": [
-     "Nil",
-     "Zip",
-     "Duck"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which pedal makes a car go faster?",
-    "a": "The gas pedal",
-    "wrong": [
-     "The brake",
-     "The clutch",
-     "The parking brake"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a car's odometer measure?",
-    "a": "Total miles driven",
-    "wrong": [
-     "Speed",
-     "Engine temperature",
-     "Fuel left"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a tachometer on the dashboard show?",
-    "a": "Engine RPM",
-    "wrong": [
-     "Tire pressure",
-     "Oil level",
-     "Outside temperature"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which car company makes the Mustang?",
-    "a": "Ford",
-    "wrong": [
-     "Chevrolet",
-     "Dodge",
-     "Toyota"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which company makes the Corvette?",
-    "a": "Chevrolet",
-    "wrong": [
-     "Ford",
-     "Honda",
-     "Jeep"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does 'MPG' stand for?",
-    "a": "Miles per gallon",
-    "wrong": [
-     "Motor power gauge",
-     "Maximum pressure grade",
-     "Miles per gear"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a car battery mostly power before the engine is running?",
-    "a": "The starter motor",
-    "wrong": [
-     "The tires",
-     "The exhaust",
-     "The gas tank"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which of these is an electric car brand?",
-    "a": "Tesla",
-    "wrong": [
-     "Harley-Davidson",
-     "Caterpillar",
-     "Schwinn"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "How many wheels does a typical semi truck (18-wheeler) have?",
-    "a": "18",
-    "wrong": [
-     "10",
-     "12",
-     "24"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is the famous race held every Memorial Day weekend in Indianapolis?",
-    "a": "The Indy 500",
-    "wrong": [
-     "The Daytona 500",
-     "Le Mans",
-     "The Monaco Grand Prix"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "NASCAR races are mostly driven on what kind of track?",
-    "a": "Oval tracks",
-    "wrong": [
-     "Dirt mountain roads",
-     "Ice",
-     "Straight drag strips only"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What fluid needs changing in a car roughly every few thousand miles?",
-    "a": "Engine oil",
-    "wrong": [
-     "Windshield washer fluid",
-     "Coolant every week",
-     "Brake light fluid"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What part of a car do you check with a tire gauge?",
-    "a": "Tire pressure",
-    "wrong": [
-     "Tread color",
-     "Wheel size",
-     "Hubcap shine"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which brand is famous for the Wrangler?",
-    "a": "Jeep",
-    "wrong": [
-     "Subaru",
-     "BMW",
-     "Kia"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does 4WD stand for?",
-    "a": "Four-wheel drive",
-    "wrong": [
-     "Four-way door",
-     "Fourth wheel down",
-     "Four-wheel diesel"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What do you call a car with two doors and a sloping roof, built for speed?",
-    "a": "A coupe",
-    "wrong": [
-     "A minivan",
-     "A sedan",
-     "A wagon"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is the most popular selling truck line in America for decades?",
-    "a": "Ford F-Series",
-    "wrong": [
-     "Honda Ridgeline",
-     "Toyota Prius",
-     "Mini Cooper"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a muffler do?",
-    "a": "Makes the engine quieter",
-    "wrong": [
-     "Keeps the driver warm",
-     "Cleans the windshield",
-     "Cools the brakes"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What kind of fuel do most big pickup diesel trucks use?",
-    "a": "Diesel",
-    "wrong": [
-     "Jet fuel",
-     "Kerosene",
-     "Propane"
-    ]
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Ferrari and Lamborghini come from which country?",
-    "a": "Italy",
-    "wrong": [
-     "Germany",
-     "Japan",
-     "France"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "Which tool would you use to drive a nail?",
-    "a": "A hammer",
-    "wrong": [
-     "A wrench",
-     "A level",
-     "A saw"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a Phillips screwdriver's tip shaped like?",
-    "a": "A cross (plus sign)",
-    "wrong": [
-     "A flat line",
-     "A star with six points",
-     "A square"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What tool shows whether a shelf is perfectly flat?",
-    "a": "A level",
-    "wrong": [
-     "A tape measure",
-     "A chisel",
-     "A clamp"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "Which saw is powered and has a round spinning blade?",
-    "a": "A circular saw",
-    "wrong": [
-     "A hacksaw",
-     "A coping saw",
-     "A handsaw"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is WD-40 mostly used for?",
-    "a": "Loosening stuck parts and stopping squeaks",
-    "wrong": [
-     "Gluing wood",
-     "Painting walls",
-     "Cleaning windows"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do you use sandpaper for?",
-    "a": "Smoothing a surface",
-    "wrong": [
-     "Sticking things together",
-     "Measuring",
-     "Cutting metal"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "A stud finder helps you find what inside a wall?",
-    "a": "The wooden or metal beams",
-    "wrong": [
-     "Lost earrings",
-     "Water pipes only",
-     "Mice"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "Which tool tightens and loosens nuts and bolts?",
-    "a": "A wrench",
-    "wrong": [
-     "A hammer",
-     "A file",
-     "A trowel"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is 'righty tighty, lefty loosey' about?",
-    "a": "Which way to turn a screw",
-    "wrong": [
-     "How to hold a saw",
-     "Which hand to hammer with",
-     "Which side to paint first"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does duct tape look like most often?",
-    "a": "Silver-gray",
-    "wrong": [
-     "Clear",
-     "Bright orange",
-     "Black and white stripes"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a tape measure usually marked in, in the US?",
-    "a": "Inches and feet",
-    "wrong": [
-     "Pounds",
-     "Degrees",
-     "Gallons"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do you call the tool that makes holes using spinning bits?",
-    "a": "A drill",
-    "wrong": [
-     "A sander",
-     "A plane",
-     "A vise"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "Which of these holds two pieces of wood together while glue dries?",
-    "a": "A clamp",
-    "wrong": [
-     "A chisel",
-     "A crowbar",
-     "A funnel"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "Which store would you go to for lumber and power tools?",
-    "a": "A hardware store",
-    "wrong": [
-     "A bakery",
-     "A pharmacy",
-     "A shoe store"
-    ]
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do you flip at the breaker box when the power goes out in one room?",
-    "a": "A circuit breaker",
-    "wrong": [
-     "A thermostat",
-     "A water valve",
-     "A doorbell"
-    ]
+    "a": "Love"
    },
    {
     "cat": "Video Games",
     "q": "What is the name of the famous plumber in Nintendo games?",
-    "a": "Mario",
-    "wrong": [
-     "Sonic",
-     "Link",
-     "Pac-Man"
-    ]
+    "a": "Mario"
    },
    {
     "cat": "Video Games",
     "q": "What color is Sonic the Hedgehog?",
-    "a": "Blue",
-    "wrong": [
-     "Red",
-     "Green",
-     "Yellow"
-    ]
+    "a": "Blue"
    },
    {
     "cat": "Video Games",
     "q": "In Minecraft, which green creature explodes?",
-    "a": "A Creeper",
-    "wrong": [
-     "A Zombie",
-     "An Enderman",
-     "A Slime"
-    ]
+    "a": "A Creeper"
    },
    {
     "cat": "Video Games",
     "q": "Which company makes the PlayStation?",
-    "a": "Sony",
-    "wrong": [
-     "Nintendo",
-     "Microsoft",
-     "Apple"
-    ]
+    "a": "Sony"
    },
    {
     "cat": "Video Games",
     "q": "Which company makes the Xbox?",
-    "a": "Microsoft",
-    "wrong": [
-     "Sony",
-     "Nintendo",
-     "Samsung"
-    ]
+    "a": "Microsoft"
    },
    {
     "cat": "Video Games",
     "q": "What does Pac-Man eat as he goes through the maze?",
-    "a": "Dots (pellets)",
-    "wrong": [
-     "Coins",
-     "Mushrooms",
-     "Bananas"
-    ]
+    "a": "Dots (pellets)"
    },
    {
     "cat": "Video Games",
     "q": "What is the name of Mario's brother?",
-    "a": "Luigi",
-    "wrong": [
-     "Wario",
-     "Toad",
-     "Bowser"
-    ]
+    "a": "Luigi"
    },
    {
     "cat": "Video Games",
     "q": "In the Legend of Zelda games, what is the hero's name?",
-    "a": "Link",
-    "wrong": [
-     "Zelda",
-     "Ganon",
-     "Kirby"
-    ]
+    "a": "Link"
    },
    {
     "cat": "Video Games",
     "q": "Which game is about building with blocks and surviving the night?",
-    "a": "Minecraft",
-    "wrong": [
-     "Tetris",
-     "Pong",
-     "Frogger"
-    ]
+    "a": "Minecraft"
    },
    {
     "cat": "Video Games",
     "q": "Which falling-block puzzle game came from Russia?",
-    "a": "Tetris",
-    "wrong": [
-     "Candy Crush",
-     "Bejeweled",
-     "Snake"
-    ]
+    "a": "Tetris"
    },
    {
     "cat": "Video Games",
     "q": "What do you collect in Super Mario to grow bigger?",
-    "a": "A mushroom",
-    "wrong": [
-     "A star",
-     "A coin",
-     "A flower"
-    ]
+    "a": "A mushroom"
    },
    {
     "cat": "Video Games",
     "q": "In Fortnite, how many players start a standard Battle Royale match?",
-    "a": "100",
-    "wrong": [
-     "10",
-     "50",
-     "1,000"
-    ]
+    "a": "100"
    },
    {
     "cat": "Video Games",
     "q": "What is the name of the yellow electric Pokémon?",
-    "a": "Pikachu",
-    "wrong": [
-     "Charmander",
-     "Squirtle",
-     "Bulbasaur"
-    ]
+    "a": "Pikachu"
    },
    {
     "cat": "Video Games",
     "q": "Which yellow character's main enemies are ghosts?",
-    "a": "Pac-Man",
-    "wrong": [
-     "Pikachu",
-     "Kirby",
-     "Donkey Kong"
-    ]
+    "a": "Pac-Man"
    },
    {
     "cat": "Video Games",
     "q": "What is the bad guy in most Mario games called?",
-    "a": "Bowser",
-    "wrong": [
-     "Ganon",
-     "Dr. Eggman",
-     "King Dedede"
-    ]
+    "a": "Bowser"
    },
    {
     "cat": "Video Games",
     "q": "Which handheld Nintendo console can also plug into the TV?",
-    "a": "Nintendo Switch",
-    "wrong": [
-     "Game Boy",
-     "Nintendo DS",
-     "Wii"
-    ]
+    "a": "Nintendo Switch"
    },
    {
     "cat": "Video Games",
     "q": "What does 'NPC' mean in a video game?",
-    "a": "Non-player character",
-    "wrong": [
-     "New power-up chest",
-     "Next player's controller",
-     "No pause can"
-    ]
+    "a": "Non-player character"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What is Superman's weakness?",
-    "a": "Kryptonite",
-    "wrong": [
-     "Water",
-     "Garlic",
-     "Silver"
-    ]
+    "a": "Kryptonite"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which superhero is also called the Dark Knight?",
-    "a": "Batman",
-    "wrong": [
-     "Superman",
-     "Iron Man",
-     "Thor"
-    ]
+    "a": "Batman"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What is Spider-Man's real name?",
-    "a": "Peter Parker",
-    "wrong": [
-     "Bruce Wayne",
-     "Clark Kent",
-     "Tony Stark"
-    ]
+    "a": "Peter Parker"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What is the name of Thor's hammer?",
-    "a": "Mjolnir",
-    "wrong": [
-     "Excalibur",
-     "Stormbreaker",
-     "Gungnir"
-    ]
+    "a": "Mjolnir"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which hero carries a round shield with a star on it?",
-    "a": "Captain America",
-    "wrong": [
-     "Black Panther",
-     "Hawkeye",
-     "Green Lantern"
-    ]
+    "a": "Captain America"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Who is Iron Man under the suit?",
-    "a": "Tony Stark",
-    "wrong": [
-     "Steve Rogers",
-     "Bruce Banner",
-     "Wade Wilson"
-    ]
+    "a": "Tony Stark"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What color does Bruce Banner turn when he gets angry?",
-    "a": "Green",
-    "wrong": [
-     "Red",
-     "Blue",
-     "Purple"
-    ]
+    "a": "Green"
    },
    {
     "cat": "Superheroes & Action",
     "q": "In Star Wars, who is Luke Skywalker's father?",
-    "a": "Darth Vader",
-    "wrong": [
-     "Obi-Wan Kenobi",
-     "Han Solo",
-     "Yoda"
-    ]
+    "a": "Darth Vader"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What kind of sword does a Jedi use?",
-    "a": "A lightsaber",
-    "wrong": [
-     "A katana",
-     "A cutlass",
-     "A laser whip"
-    ]
+    "a": "A lightsaber"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which superhero comes from the country of Wakanda?",
-    "a": "Black Panther",
-    "wrong": [
-     "Aquaman",
-     "Doctor Strange",
-     "The Flash"
-    ]
+    "a": "Black Panther"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What city does Batman protect?",
-    "a": "Gotham City",
-    "wrong": [
-     "Metropolis",
-     "Star City",
-     "New York"
-    ]
+    "a": "Gotham City"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which wizarding hero has a lightning-bolt scar?",
-    "a": "Harry Potter",
-    "wrong": [
-     "Gandalf",
-     "Merlin",
-     "Doctor Strange"
-    ]
+    "a": "Harry Potter"
    },
    {
     "cat": "Superheroes & Action",
     "q": "In Jurassic Park, what kind of animals escape?",
-    "a": "Dinosaurs",
-    "wrong": [
-     "Sharks",
-     "Robots",
-     "Aliens"
-    ]
+    "a": "Dinosaurs"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What is the name of the hairy Star Wars co-pilot who flies with Han Solo?",
-    "a": "Chewbacca",
-    "wrong": [
-     "R2-D2",
-     "Yoda",
-     "Jabba"
-    ]
+    "a": "Chewbacca"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which superhero is super fast and wears red with a lightning bolt?",
-    "a": "The Flash",
-    "wrong": [
-     "Superman",
-     "Daredevil",
-     "Ant-Man"
-    ]
+    "a": "The Flash"
    },
    {
     "cat": "Superheroes & Action",
     "q": "Which movie franchise features cars, heists and 'family', starring Vin Diesel?",
-    "a": "Fast & Furious",
-    "wrong": [
-     "Transformers",
-     "Mission: Impossible",
-     "Top Gun"
-    ]
+    "a": "Fast & Furious"
    },
    {
     "cat": "Superheroes & Action",
     "q": "In Top Gun, what does Maverick fly?",
-    "a": "Fighter jets",
-    "wrong": [
-     "Helicopters",
-     "Race cars",
-     "Spaceships"
-    ]
+    "a": "Fighter jets"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What are the giant robots that turn into cars called?",
-    "a": "Transformers",
-    "wrong": [
-     "Power Rangers",
-     "Gundams",
-     "Terminators"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is the most common fuel for a backyard grill besides propane?",
-    "a": "Charcoal",
-    "wrong": [
-     "Firewood logs",
-     "Diesel",
-     "Candles"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What temperature should a steak be inside for 'medium rare'?",
-    "a": "About 130°F",
-    "wrong": [
-     "About 200°F",
-     "About 90°F",
-     "About 165°F"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What cut of beef is also called a 'New York strip'?",
-    "a": "Strip steak",
-    "wrong": [
-     "Brisket",
-     "Flank",
-     "Ribs"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What do you call meat cooked low and slow in smoke for hours?",
-    "a": "Barbecue (smoked)",
-    "wrong": [
-     "Fried",
-     "Microwaved",
-     "Poached"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "Which hot dog topping is yellow?",
-    "a": "Mustard",
-    "wrong": [
-     "Relish",
-     "Ketchup",
-     "Sauerkraut"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is beef jerky?",
-    "a": "Dried meat",
-    "wrong": [
-     "Frozen meat",
-     "Raw meat",
-     "Meat in jelly"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "Which of these is a famous BBQ style city?",
-    "a": "Kansas City",
-    "wrong": [
-     "Seattle",
-     "Boston",
-     "Anchorage"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What part of the pig does bacon usually come from?",
-    "a": "The belly",
-    "wrong": [
-     "The ear",
-     "The leg bone",
-     "The snout"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is a 'slider'?",
-    "a": "A small burger",
-    "wrong": [
-     "A long hot dog",
-     "A kind of fork",
-     "A pizza slice"
-    ]
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What do you call wings tossed in hot sauce, named after a New York city?",
-    "a": "Buffalo wings",
-    "wrong": [
-     "Albany wings",
-     "Brooklyn wings",
-     "Rochester wings"
-    ]
+    "a": "Transformers"
    },
    {
     "cat": "Outdoors",
     "q": "What do you put on a fishing hook to catch a fish?",
-    "a": "Bait",
-    "wrong": [
-     "Glue",
-     "Salt",
-     "A feather duster"
-    ]
+    "a": "Bait"
    },
    {
     "cat": "Outdoors",
     "q": "Which direction does a compass needle point?",
-    "a": "North",
-    "wrong": [
-     "South",
-     "East",
-     "West"
-    ]
+    "a": "North"
    },
    {
     "cat": "Outdoors",
     "q": "What do you call a shelter made of fabric that you sleep in when camping?",
-    "a": "A tent",
-    "wrong": [
-     "A cabin",
-     "A hammock",
-     "A tarp"
-    ]
+    "a": "A tent"
    },
    {
     "cat": "Outdoors",
     "q": "Which tool do you use to split firewood?",
-    "a": "An axe",
-    "wrong": [
-     "A rake",
-     "A shovel",
-     "A hoe"
-    ]
+    "a": "An axe"
    },
    {
     "cat": "Outdoors",
     "q": "What does 'catch and release' mean in fishing?",
-    "a": "Letting the fish go after catching it",
-    "wrong": [
-     "Catching two fish at once",
-     "Fishing without a hook",
-     "Selling the fish"
-    ]
+    "a": "Letting the fish go after catching it"
    },
    {
     "cat": "Outdoors",
     "q": "What do you need to make s'mores besides chocolate and graham crackers?",
-    "a": "Marshmallows",
-    "wrong": [
-     "Peanut butter",
-     "Cheese",
-     "Bananas"
+    "a": "Marshmallows"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A soccer match is 90 minutes long, not counting extra time.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A baseball team has 11 players on the field.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Super Bowl is played in football.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A hockey puck is made of rubber.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: In golf, a bogey is one under par.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Basketball hoops are 10 feet high.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A touchdown is worth 3 points.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Tennis players use rackets.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Daytona 500 is a famous car race.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A Jeep Wrangler is made by Ford.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Most cars have 4 wheels.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Diesel and gasoline are the same fuel.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A wrench is used to drive nails.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A Phillips screwdriver has a cross-shaped tip.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A level has a bubble in it.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A hacksaw is made for cutting metal.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Mario wears a red cap.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Sonic the Hedgehog is green.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Pikachu is a Pokémon.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Minecraft is made of blocks.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Luigi is Mario's sister.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Tetris uses falling blocks.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The PlayStation is made by Nintendo.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Batman has superpowers.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Superman comes from the planet Krypton.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Spider-Man's real name is Peter Parker.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Hulk turns blue when he's angry.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Captain America carries a shield.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Darth Vader is a Star Wars villain.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Thor's weapon is a hammer.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Iron Man's name is Bruce Wayne.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Charcoal is a fuel for grills.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Brisket comes from a chicken.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Bacon comes from pigs.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A burger patty is usually made of beef.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A compass needle points north.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Fish breathe with lungs.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Worms are a common fishing bait.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A football field is 100 yards between the goal lines.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Michael Jordan played hockey.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A bowling strike knocks down all ten pins.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: NASCAR races are usually run on ovals.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Indy 500 is 500 miles long.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: An axe is used to split wood.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A home run is scored in basketball.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A hat trick is three goals.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Ferrari is an Italian car company.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A Tesla runs on gasoline.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Duct tape is often silver.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Olympics happen every year.",
+    "a": "False"
+   }
+  ],
+  "stuff": [
+   {
+    "cat": "Cars & Trucks",
+    "q": "Which pedal makes a car go faster?",
+    "a": "The gas pedal"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a car's odometer measure?",
+    "a": "Total miles driven"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a tachometer on the dashboard show?",
+    "a": "Engine RPM"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Which car company makes the Mustang?",
+    "a": "Ford"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Which company makes the Corvette?",
+    "a": "Chevrolet"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does 'MPG' stand for?",
+    "a": "Miles per gallon"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a car battery mostly power before the engine is running?",
+    "a": "The starter motor"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Name a car brand that only makes electric cars.",
+    "a": "Tesla (also Rivian, Lucid, Polestar)"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "How many wheels does a typical semi truck (18-wheeler) have?",
+    "a": "18"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is the famous race held every Memorial Day weekend in Indianapolis?",
+    "a": "The Indy 500"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "NASCAR races are mostly driven on what kind of track?",
+    "a": "Oval tracks"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What fluid needs changing in a car roughly every few thousand miles?",
+    "a": "Engine oil"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What part of a car do you check with a tire gauge?",
+    "a": "Tire pressure"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Which brand is famous for the Wrangler?",
+    "a": "Jeep"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does 4WD stand for?",
+    "a": "Four-wheel drive"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What do you call a car with two doors and a sloping roof, built for speed?",
+    "a": "A coupe"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is the most popular selling truck line in America for decades?",
+    "a": "Ford F-Series"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a muffler do?",
+    "a": "Makes the engine quieter"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What kind of fuel do most big pickup diesel trucks use?",
+    "a": "Diesel"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Ferrari and Lamborghini come from which country?",
+    "a": "Italy"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Which tool would you use to drive a nail?",
+    "a": "A hammer"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a Phillips screwdriver's tip shaped like?",
+    "a": "A cross (plus sign)"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What tool shows whether a shelf is perfectly flat?",
+    "a": "A level"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Which saw is powered and has a round spinning blade?",
+    "a": "A circular saw"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is WD-40 mostly used for?",
+    "a": "Loosening stuck parts and stopping squeaks"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What do you use sandpaper for?",
+    "a": "Smoothing a surface"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "A stud finder helps you find what inside a wall?",
+    "a": "The wooden or metal beams"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Which tool tightens and loosens nuts and bolts?",
+    "a": "A wrench"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is 'righty tighty, lefty loosey' about?",
+    "a": "Which way to turn a screw"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What does duct tape look like most often?",
+    "a": "Silver-gray"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a tape measure usually marked in, in the US?",
+    "a": "Inches and feet"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What do you call the tool that makes holes using spinning bits?",
+    "a": "A drill"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What tool squeezes two pieces of wood together while the glue dries?",
+    "a": "A clamp"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Which store would you go to for lumber and power tools?",
+    "a": "A hardware store"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What do you flip at the breaker box when the power goes out in one room?",
+    "a": "A circuit breaker"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is the most common fuel for a backyard grill besides propane?",
+    "a": "Charcoal"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What temperature should a steak be inside for 'medium rare'?",
+    "a": "About 130°F"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What cut of beef is also called a 'New York strip'?",
+    "a": "Strip steak"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What do you call meat cooked low and slow in smoke for hours?",
+    "a": "Barbecue (smoked)"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "Which hot dog topping is yellow?",
+    "a": "Mustard"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is beef jerky?",
+    "a": "Dried meat"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "Name a US city famous for its own style of barbecue.",
+    "a": "Kansas City (also Memphis, St. Louis, Texas cities)"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What part of the pig does bacon usually come from?",
+    "a": "The belly"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is a 'slider'?",
+    "a": "A small burger"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What do you call wings tossed in hot sauce, named after a New York city?",
+    "a": "Buffalo wings"
+   }
+  ],
+  "pics": [
+   {
+    "img": "wrench",
+    "q": "A wrench whose jaws slide open and shut to fit any bolt is called a what?",
+    "a": "An adjustable (crescent) wrench"
+   },
+   {
+    "img": "hammer",
+    "q": "The split end of this hammer that pulls out nails is called the what?",
+    "a": "The claw"
+   },
+   {
+    "img": "screwdriver",
+    "q": "A screwdriver with an X-shaped tip is called a what?",
+    "a": "A Phillips"
+   },
+   {
+    "img": "toolbox",
+    "q": "Which tool in this box has a little bubble to show something is straight?",
+    "a": "A level"
+   },
+   {
+    "img": "nut-and-bolt",
+    "q": "Which way do you turn a bolt to loosen it?",
+    "a": "Counterclockwise (lefty loosey)"
+   },
+   {
+    "img": "fishing-pole",
+    "q": "Letting a fish go after you catch it is called catch and what?",
+    "a": "Release"
+   },
+   {
+    "img": "american-football",
+    "q": "A perfect, tight throw of this ball is called a what?",
+    "a": "A spiral"
+   },
+   {
+    "img": "baseball",
+    "q": "A home run with the bases loaded is called a what?",
+    "a": "A grand slam"
+   },
+   {
+    "img": "racing-car",
+    "q": "In a car race, what does the checkered flag mean?",
+    "a": "The race is over"
+   },
+   {
+    "img": "pickup-truck",
+    "q": "The open back of a pickup truck is called the what?",
+    "a": "The bed"
+   },
+   {
+    "img": "motorcycle",
+    "q": "Riding a motorcycle on only its back wheel is called a what?",
+    "a": "A wheelie"
+   },
+   {
+    "img": "video-game",
+    "q": "Which video game company makes the Switch?",
+    "a": "Nintendo"
+   },
+   {
+    "img": "axe",
+    "q": "A small axe you swing with one hand is called a what?",
+    "a": "A hatchet"
+   },
+   {
+    "img": "carpentry-saw",
+    "q": "Cutting wood along the grain is a rip cut. Cutting across the grain is called a what?",
+    "a": "A crosscut"
+   },
+   {
+    "img": "ladder",
+    "q": "A ladder that stands up on its own in an A shape is called a what?",
+    "a": "A stepladder"
+   },
+   {
+    "img": "bow-and-arrow",
+    "q": "A bow with pulleys and cables on it is called a what?",
+    "a": "A compound bow"
+   },
+   {
+    "img": "ice-hockey",
+    "q": "The hard rubber disc in hockey is called a what?",
+    "a": "A puck"
+   },
+   {
+    "img": "boxing-glove",
+    "q": "A punch that swings up from below to the chin is called a what?",
+    "a": "An uppercut"
+   },
+   {
+    "img": "flying-disc",
+    "q": "Golf played by throwing these at metal baskets is called what?",
+    "a": "Disc golf"
+   },
+   {
+    "img": "tractor",
+    "q": "Which tractor brand is famous for green paint and a leaping deer?",
+    "a": "John Deere"
+   },
+   {
+    "img": "fuel-pump",
+    "q": "In the US, what octane number is regular gas?",
+    "a": "87"
+   },
+   {
+    "img": "necktie",
+    "q": "The big, wide necktie knot named after a British duke is called the what?",
+    "a": "The Windsor"
+   },
+   {
+    "img": "flag-in-hole",
+    "q": "One stroke under par on a golf hole is called a what?",
+    "a": "A birdie"
+   },
+   {
+    "img": "bowling",
+    "q": "Three strikes in a row in bowling is called a what?",
+    "a": "A turkey"
+   },
+   {
+    "img": "pool-8-ball",
+    "q": "In pool, are balls 9 to 15 solids or stripes?",
+    "a": "Stripes"
+   },
+   {
+    "img": "bullseye",
+    "q": "In darts, how many points is the outer ring of the bullseye worth?",
+    "a": "25"
+   },
+   {
+    "img": "tent",
+    "q": "What do you hammer into the ground to hold a tent down?",
+    "a": "Stakes"
+   },
+   {
+    "img": "cut-of-meat",
+    "q": "A T-bone steak has a strip steak on one side of the bone. What is on the other side?",
+    "a": "Filet mignon (tenderloin)"
+   },
+   {
+    "img": "hot-pepper",
+    "q": "The heat of hot peppers is measured on what scale?",
+    "a": "The Scoville scale"
+   }
+  ],
+  "lives": [
+   {
+    "q": "On a free Saturday, I'd rather:",
+    "choices": [
+     "Watch sports all day",
+     "Work on a project in the garage",
+     "Sleep in and play video games"
+    ]
+   },
+   {
+    "q": "My dream car is:",
+    "choices": [
+     "A big pickup truck",
+     "A fast sports car",
+     "Something cheap that never breaks"
+    ]
+   },
+   {
+    "q": "At a buffet, I go straight for:",
+    "choices": [
+     "The meat carving station",
+     "The dessert table",
+     "A bit of everything, piled high"
+    ]
+   },
+   {
+    "q": "If I got lost driving, I would:",
+    "choices": [
+     "Keep going, I'll figure it out",
+     "Check the map on my phone",
+     "Pull over and ask someone"
+    ]
+   },
+   {
+    "q": "My karaoke song would be:",
+    "choices": [
+     "A classic rock anthem",
+     "A country song",
+     "Nothing. You'll never get me up there"
+    ]
+   },
+   {
+    "q": "The chore I hate most is:",
+    "choices": [
+     "Doing the dishes",
+     "Folding laundry",
+     "Cleaning the bathroom"
+    ]
+   },
+   {
+    "q": "If I had a superpower, I'd pick:",
+    "choices": [
+     "Flying",
+     "Being invisible",
+     "Super strength"
+    ]
+   },
+   {
+    "q": "My perfect vacation is:",
+    "choices": [
+     "A beach with no plans",
+     "A cabin in the woods",
+     "A big city with lots to see"
+    ]
+   },
+   {
+    "q": "When I'm sick, I:",
+    "choices": [
+     "Act like I'm dying",
+     "Pretend I'm fine",
+     "Sleep for two days straight"
+    ]
+   },
+   {
+    "q": "On the grill, I'm best at:",
+    "choices": [
+     "Burgers",
+     "Steak",
+     "Ordering pizza instead"
+    ]
+   },
+   {
+    "q": "After the people and pets, the thing I'd grab in a fire is:",
+    "choices": [
+     "My phone",
+     "My wallet",
+     "My favorite hat or jersey"
+    ]
+   },
+   {
+    "q": "My first job was closest to:",
+    "choices": [
+     "Restaurant or fast food",
+     "Outdoor or yard work",
+     "A store or an office"
+    ]
+   },
+   {
+    "q": "When I watch a scary movie, I:",
+    "choices": [
+     "Love every minute",
+     "Laugh at it",
+     "Secretly look away"
+    ]
+   },
+   {
+    "q": "At a wedding, I'm the one who:",
+    "choices": [
+     "Dances all night",
+     "Stays at the table eating",
+     "Talks to everyone at the bar"
+    ]
+   },
+   {
+    "q": "If I won the lottery, the first thing I'd buy is:",
+    "choices": [
+     "A new truck or car",
+     "A big house",
+     "A trip around the world"
+    ]
+   },
+   {
+    "q": "My closet is:",
+    "choices": [
+     "Neat and organized",
+     "A pile on a chair",
+     "Mostly the same five shirts"
+    ]
+   },
+   {
+    "q": "I'd rather give up for a month:",
+    "choices": [
+     "Coffee",
+     "Dessert",
+     "My phone"
+    ]
+   },
+   {
+    "q": "My favorite way to relax is:",
+    "choices": [
+     "A nap on the couch",
+     "Being outside",
+     "Gaming or TV"
+    ]
+   },
+   {
+    "q": "When something breaks at home, I:",
+    "choices": [
+     "Fix it myself",
+     "Watch videos and give it a try",
+     "Call someone"
+    ]
+   },
+   {
+    "q": "Breakfast for me is usually:",
+    "choices": [
+     "Eggs and bacon",
+     "Cereal or a bar on the go",
+     "Just coffee"
+    ]
+   },
+   {
+    "q": "My biggest fear is:",
+    "choices": [
+     "Spiders or snakes",
+     "Heights",
+     "Speaking in public"
+    ]
+   },
+   {
+    "q": "I'd rather spend an evening:",
+    "choices": [
+     "At a ballgame",
+     "At a nice dinner",
+     "At home in sweatpants"
+    ]
+   },
+   {
+    "q": "The sport I'd be worst at is:",
+    "choices": [
+     "Figure skating",
+     "Gymnastics",
+     "Ballet"
+    ]
+   },
+   {
+    "q": "In a zombie movie, I'd be the one who:",
+    "choices": [
+     "Leads the group",
+     "Finds all the supplies",
+     "Gets bitten first"
+    ]
+   },
+   {
+    "q": "If I could live in any decade, I'd pick:",
+    "choices": [
+     "The 1950s",
+     "The 1980s",
+     "Right now"
+    ]
+   },
+   {
+    "q": "My shoes are mostly:",
+    "choices": [
+     "Sneakers",
+     "Boots",
+     "Flip-flops or slides"
+    ]
+   },
+   {
+    "q": "I have cried at:",
+    "choices": [
+     "A sad movie",
+     "A sports game",
+     "Nothing, ever (sure)"
+    ]
+   },
+   {
+    "q": "The pet I'd want most is:",
+    "choices": [
+     "A big dog",
+     "A cat",
+     "Something weird, like a lizard"
+    ]
+   },
+   {
+    "q": "When I get a new gadget, I:",
+    "choices": [
+     "Read the manual",
+     "Figure it out as I go",
+     "Ask the kids to set it up"
+    ]
+   },
+   {
+    "q": "My hidden talent is closest to:",
+    "choices": [
+     "Cooking",
+     "Singing or music",
+     "Fixing or building things"
+    ]
+   },
+   {
+    "q": "My dream job as a kid was:",
+    "choices": [
+     "Pro athlete",
+     "Astronaut or pilot",
+     "Something with cars or trucks"
+    ]
+   },
+   {
+    "q": "When I'm hungry and grumpy, I want:",
+    "choices": [
+     "A burger, right now",
+     "Pizza",
+     "Whatever is in the fridge, cold"
     ]
    }
   ],
-  "lightning": [
+  "moves": [
    {
-    "q": "A soccer match is 90 minutes long, not counting extra time.",
-    "a": true
+    "m": "Changing a flat tire"
    },
    {
-    "q": "A baseball team has 11 players on the field.",
-    "a": false
+    "m": "Casting a fishing line and reeling in a big one"
    },
    {
-    "q": "The Super Bowl is played in football.",
-    "a": true
+    "m": "Flipping burgers on the grill"
    },
    {
-    "q": "A hockey puck is made of rubber.",
-    "a": true
+    "m": "Throwing a touchdown pass"
    },
    {
-    "q": "In golf, a bogey is one under par.",
-    "a": false
+    "m": "Bench pressing a heavy weight"
    },
    {
-    "q": "Basketball hoops are 10 feet high.",
-    "a": true
+    "m": "Starting a lawn mower that won't start"
    },
    {
-    "q": "A touchdown is worth 3 points.",
-    "a": false
+    "m": "Hammering a nail and hitting your thumb"
    },
    {
-    "q": "Tennis players use rackets.",
-    "a": true
+    "m": "Shaving your face"
    },
    {
-    "q": "The Daytona 500 is a famous car race.",
-    "a": true
+    "m": "Tying a necktie"
    },
    {
-    "q": "A Jeep Wrangler is made by Ford.",
-    "a": false
+    "m": "Backing up a truck with a trailer"
    },
    {
-    "q": "Most cars have 4 wheels.",
-    "a": true
+    "m": "Losing at a video game"
    },
    {
-    "q": "Diesel and gasoline are the same fuel.",
-    "a": false
+    "m": "Riding a motorcycle"
    },
    {
-    "q": "A wrench is used to drive nails.",
-    "a": false
+    "m": "Chopping wood"
    },
    {
-    "q": "A Phillips screwdriver has a cross-shaped tip.",
-    "a": true
+    "m": "Swinging a golf club and missing"
    },
    {
-    "q": "A level has a bubble in it.",
-    "a": true
+    "m": "Bowling a strike"
    },
    {
-    "q": "A hacksaw is made for cutting metal.",
-    "a": true
+    "m": "Doing a touchdown dance"
    },
    {
-    "q": "Mario wears a red cap.",
-    "a": true
+    "m": "Being a referee calling a foul"
    },
    {
-    "q": "Sonic the Hedgehog is green.",
-    "a": false
+    "m": "Using a power drill"
    },
    {
-    "q": "Pikachu is a Pokémon.",
-    "a": true
+    "m": "Jump-starting a car"
    },
    {
-    "q": "Minecraft is made of blocks.",
-    "a": true
+    "m": "Pitching a tent in the wind"
    },
    {
-    "q": "Luigi is Mario's sister.",
-    "a": false
+    "m": "Fixing a leaky pipe under the sink"
    },
    {
-    "q": "Tetris uses falling blocks.",
-    "a": true
+    "m": "Shooting a free throw"
    },
    {
-    "q": "The PlayStation is made by Nintendo.",
-    "a": false
+    "m": "Playing air guitar"
    },
    {
-    "q": "Batman has superpowers.",
-    "a": false
+    "m": "Arm wrestling"
    },
    {
-    "q": "Superman comes from the planet Krypton.",
-    "a": true
+    "m": "Building furniture without reading the instructions"
    },
    {
-    "q": "Spider-Man's real name is Peter Parker.",
-    "a": true
+    "m": "Skateboarding"
    },
    {
-    "q": "The Hulk turns blue when he's angry.",
-    "a": false
+    "m": "Surfing a big wave"
    },
    {
-    "q": "Captain America carries a shield.",
-    "a": true
+    "m": "Throwing darts"
    },
    {
-    "q": "Darth Vader is a Star Wars villain.",
-    "a": true
+    "m": "Playing pool"
    },
    {
-    "q": "Thor's weapon is a hammer.",
-    "a": true
+    "m": "Waxing a car"
    },
    {
-    "q": "Iron Man's name is Bruce Wayne.",
-    "a": false
+    "m": "Wrestling an alligator"
    },
    {
-    "q": "Charcoal is a fuel for grills.",
-    "a": true
+    "m": "Shooting a bow and arrow"
    },
    {
-    "q": "Brisket comes from a chicken.",
-    "a": false
+    "m": "Being a hockey goalie"
    },
    {
-    "q": "Bacon comes from pigs.",
-    "a": true
+    "m": "Hitting a home run"
    },
    {
-    "q": "A burger patty is usually made of beef.",
-    "a": true
+    "m": "Lifting something way too heavy"
    },
    {
-    "q": "A compass needle points north.",
-    "a": true
+    "m": "Mowing the lawn"
    },
    {
-    "q": "Fish breathe with lungs.",
-    "a": false
+    "m": "Doing push-ups"
    },
    {
-    "q": "Worms are a common fishing bait.",
-    "a": true
+    "m": "Driving a race car"
    },
    {
-    "q": "A football field is 100 yards between the goal lines.",
-    "a": true
+    "m": "Fixing the TV antenna on the roof"
    },
    {
-    "q": "Michael Jordan played hockey.",
-    "a": false
+    "m": "Hunting for the TV remote"
    },
    {
-    "q": "A bowling strike knocks down all ten pins.",
-    "a": true
+    "m": "Cheering at a monster truck show"
    },
    {
-    "q": "NASCAR races are usually run on ovals.",
-    "a": true
+    "m": "Being a lumberjack"
    },
    {
-    "q": "The Indy 500 is 500 miles long.",
-    "a": true
+    "m": "Carving the turkey"
    },
    {
-    "q": "An axe is used to split wood.",
-    "a": true
-   },
-   {
-    "q": "A home run is scored in basketball.",
-    "a": false
-   },
-   {
-    "q": "A hat trick is three goals.",
-    "a": true
-   },
-   {
-    "q": "Ferrari is an Italian car company.",
-    "a": true
-   },
-   {
-    "q": "A Tesla runs on gasoline.",
-    "a": false
-   },
-   {
-    "q": "Duct tape is often silver.",
-    "a": true
-   },
-   {
-    "q": "The Olympics happen every year.",
-    "a": false
+    "m": "Playing the drums"
    }
   ]
  },
  "galStuff": {
-  "questions": [
-   {
-    "cat": "Fashion",
-    "q": "What is a stiletto?",
-    "a": "A shoe with a tall, thin heel",
-    "wrong": [
-     "A kind of scarf",
-     "A summer dress",
-     "A hair clip"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call the little bag a woman carries at a fancy evening event?",
-    "a": "A clutch",
-    "wrong": [
-     "A backpack",
-     "A duffel",
-     "A tote"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What are 'jeggings'?",
-    "a": "Leggings that look like jeans",
-    "wrong": [
-     "Jeans for jogging",
-     "A jean jacket",
-     "Jean shorts"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call a dress that ends just above the knee or higher?",
-    "a": "A mini dress",
-    "wrong": [
-     "A maxi dress",
-     "A ball gown",
-     "A sari"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a maxi dress?",
-    "a": "A long dress that reaches the ankles",
-    "wrong": [
-     "A very short dress",
-     "A dress with big shoulders",
-     "A dress for running"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "Which of these is a famous fashion house from Paris?",
-    "a": "Chanel",
-    "wrong": [
-     "Nike",
-     "IKEA",
-     "Levi's"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'cardigan'?",
-    "a": "A sweater that buttons down the front",
-    "wrong": [
-     "A kind of hat",
-     "A long skirt",
-     "A pair of boots"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What are espadrilles?",
-    "a": "Shoes with rope soles",
-    "wrong": [
-     "Sparkly earrings",
-     "Lace gloves",
-     "Silk pajamas"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call the shoes with no back that you slip your feet into?",
-    "a": "Mules",
-    "wrong": [
-     "Oxfords",
-     "Boots",
-     "Cleats"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'little black dress' known as for short?",
-    "a": "An LBD",
-    "wrong": [
-     "A BLD",
-     "A DBL",
-     "A LDB"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call a top that shows your stomach?",
-    "a": "A crop top",
-    "wrong": [
-     "A tank top",
-     "A tube top",
-     "A turtleneck"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "Which fabric is made by silkworms?",
-    "a": "Silk",
-    "wrong": [
-     "Cotton",
-     "Denim",
-     "Wool"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'peplum'?",
-    "a": "A flared ruffle at the waist of a top",
-    "wrong": [
-     "A type of sandal",
-     "A pearl necklace",
-     "A hair braid"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'fascinator'?",
-    "a": "A small fancy hat or headpiece",
-    "wrong": [
-     "A tiny purse",
-     "A sparkly belt",
-     "A fancy glove"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is the shoe called with a thick heel all the way under the foot?",
-    "a": "A wedge",
-    "wrong": [
-     "A stiletto",
-     "A kitten heel",
-     "A flat"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "Which famous red-soled shoes are by designer Christian ___?",
-    "a": "Louboutin",
-    "wrong": [
-     "Dior",
-     "Lauren",
-     "Klein"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call a scarf-like wrap worn over the shoulders?",
-    "a": "A shawl",
-    "wrong": [
-     "A sash",
-     "A cuff",
-     "A collar"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "Which of these is a neutral color that goes with almost everything?",
-    "a": "Beige",
-    "wrong": [
-     "Neon green",
-     "Hot pink",
-     "Turquoise"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call shorts made from cut-off jeans?",
-    "a": "Cut-offs",
-    "wrong": [
-     "Capris",
-     "Culottes",
-     "Chinos"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "Capri pants stop around which part of the leg?",
-    "a": "Mid-calf",
-    "wrong": [
-     "The ankle",
-     "Upper thigh",
-     "The knee exactly"
-    ]
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is 'athleisure'?",
-    "a": "Workout clothes worn as everyday outfits",
-    "wrong": [
-     "Fancy clothes for the gym",
-     "A brand of sneakers",
-     "Clothes for sleeping"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is mascara put on?",
-    "a": "Eyelashes",
-    "wrong": [
-     "Lips",
-     "Nails",
-     "Cheeks"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does blush add color to?",
-    "a": "Cheeks",
-    "wrong": [
-     "Eyelids",
-     "Lips",
-     "Eyebrows"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What tool makes hair curly using heat?",
-    "a": "A curling iron",
-    "wrong": [
-     "A hair straightener only",
-     "A blow-dryer brush",
-     "A comb"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'mani-pedi'?",
-    "a": "A manicure and a pedicure",
-    "wrong": [
-     "A haircut and color",
-     "A face mask",
-     "A type of massage"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What do you call hair cut short in a straight line around the jaw?",
-    "a": "A bob",
-    "wrong": [
-     "A mullet",
-     "A pixie",
-     "A perm"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is foundation used for?",
-    "a": "Evening out skin tone",
-    "wrong": [
-     "Painting nails",
-     "Curling hair",
-     "Shaping eyebrows"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are 'highlights' at the salon?",
-    "a": "Lighter streaks of hair color",
-    "wrong": [
-     "A short haircut",
-     "A shiny hair spray",
-     "Long fake nails"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is eyeliner used for?",
-    "a": "Drawing a line along the eyes",
-    "wrong": [
-     "Covering pimples",
-     "Making lips shiny",
-     "Thickening hair"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does SPF on sunscreen stand for?",
-    "a": "Sun protection factor",
-    "wrong": [
-     "Skin perfect formula",
-     "Super pore filler",
-     "Sun proof fabric"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does a flat iron do to hair?",
-    "a": "Straightens it",
-    "wrong": [
-     "Curls it",
-     "Cuts it",
-     "Dyes it"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'balayage'?",
-    "a": "A hand-painted hair coloring style",
-    "wrong": [
-     "A ballet move",
-     "A French dessert",
-     "A nail shape"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a French manicure?",
-    "a": "Pink or nude nails with white tips",
-    "wrong": [
-     "Bright red nails",
-     "Glitter on every nail",
-     "Nails painted blue, white and red"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does a 'perm' do to hair?",
-    "a": "Makes it curly for months",
-    "wrong": [
-     "Makes it straight for a day",
-     "Colors it permanently",
-     "Makes it grow faster"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What do you call the ponytail made by twisting three strands together?",
-    "a": "A braid",
-    "wrong": [
-     "A bun",
-     "A bob",
-     "A beehive"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'messy bun'?",
-    "a": "Hair loosely twisted up on the head",
-    "wrong": [
-     "A cinnamon roll gone wrong",
-     "A frizzy perm",
-     "A style with bangs"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are acrylics at the nail salon?",
-    "a": "Fake nails",
-    "wrong": [
-     "A type of polish remover",
-     "A foot scrub",
-     "A hand cream"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is lip gloss for?",
-    "a": "Making lips shiny",
-    "wrong": [
-     "Making eyes bigger",
-     "Covering freckles",
-     "Drying nail polish"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What do you call the hair cut to fall across the forehead?",
-    "a": "Bangs",
-    "wrong": [
-     "Layers",
-     "Sideburns",
-     "Extensions"
-    ]
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a pixie cut?",
-    "a": "A very short haircut",
-    "wrong": [
-     "Long wavy hair",
-     "A braided crown",
-     "Hair dyed pink"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Which ingredient makes bread rise?",
-    "a": "Yeast",
-    "wrong": [
-     "Salt",
-     "Sugar",
-     "Butter"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "How many teaspoons are in a tablespoon?",
-    "a": "3",
-    "wrong": [
-     "2",
-     "4",
-     "5"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does 'preheat the oven' mean?",
-    "a": "Heat it up before the food goes in",
-    "wrong": [
-     "Turn it off early",
-     "Clean it first",
-     "Open the door to let heat out"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What do you call cooking food in hot fat in a pan, quickly?",
-    "a": "Sautéing",
-    "wrong": [
-     "Steaming",
-     "Poaching",
-     "Boiling"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is the main ingredient in guacamole?",
-    "a": "Avocado",
-    "wrong": [
-     "Peas",
-     "Spinach",
-     "Cucumber"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is meringue mostly made from?",
-    "a": "Egg whites and sugar",
-    "wrong": [
-     "Flour and milk",
-     "Cream cheese",
-     "Butter and salt"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What do you call the frosting between layers and on top of a cake?",
-    "a": "Icing (frosting)",
-    "wrong": [
-     "Glaze-only",
-     "Batter",
-     "Dough"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What kitchen tool is used to beat eggs by hand?",
-    "a": "A whisk",
-    "wrong": [
-     "A ladle",
-     "A spatula",
-     "Tongs"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does 'al dente' pasta mean?",
-    "a": "Cooked but still a little firm",
-    "wrong": [
-     "Very soft and mushy",
-     "Raw",
-     "Fried until crispy"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Which spice is in pumpkin spice besides cinnamon, ginger and cloves?",
-    "a": "Nutmeg",
-    "wrong": [
-     "Paprika",
-     "Cumin",
-     "Oregano"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a 'charcuterie board'?",
-    "a": "A board of meats, cheeses and snacks",
-    "wrong": [
-     "A cutting board for bread only",
-     "A chalkboard menu",
-     "A board game about food"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Croissants are made with what kind of dough?",
-    "a": "Flaky, buttery layered pastry",
-    "wrong": [
-     "Pizza dough",
-     "Pie crust",
-     "Cookie dough"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What kind of cheese is traditionally on a classic cheesecake?",
-    "a": "Cream cheese",
-    "wrong": [
-     "Cheddar",
-     "Swiss",
-     "Blue cheese"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Which appliance slowly cooks a meal all day, also called a Crock-Pot?",
-    "a": "A slow cooker",
-    "wrong": [
-     "A toaster",
-     "A blender",
-     "A waffle iron"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does a recipe mean by 'a pinch' of salt?",
-    "a": "A tiny amount between your fingers",
-    "wrong": [
-     "A full cup",
-     "A tablespoon",
-     "Half the shaker"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What makes a cake 'red velvet' red?",
-    "a": "Red food coloring (and a little cocoa)",
-    "wrong": [
-     "Strawberries",
-     "Tomatoes",
-     "Red wine"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What are you doing when you 'fold' ingredients?",
-    "a": "Gently mixing so it stays fluffy",
-    "wrong": [
-     "Stirring as fast as you can",
-     "Folding the dough in half",
-     "Freezing them"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Tiramisu is a dessert from which country?",
-    "a": "Italy",
-    "wrong": [
-     "France",
-     "Mexico",
-     "Japan"
-    ]
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is sourdough bread made with?",
-    "a": "A fermented starter",
-    "wrong": [
-     "Lemons",
-     "Vinegar and soda",
-     "Sour cream"
-    ]
-   },
+  "facts": [
    {
     "cat": "Movies & TV",
     "q": "In Frozen, what is the name of Elsa's sister?",
-    "a": "Anna",
-    "wrong": [
-     "Ariel",
-     "Belle",
-     "Moana"
-    ]
+    "a": "Anna"
    },
    {
     "cat": "Movies & TV",
     "q": "In Beauty and the Beast, what is Belle's favorite thing to do?",
-    "a": "Read books",
-    "wrong": [
-     "Sing in the rain",
-     "Ride horses",
-     "Bake bread"
-    ]
+    "a": "Read books"
    },
    {
     "cat": "Movies & TV",
     "q": "In the show Friends, what is the coffee shop where the friends hang out?",
-    "a": "Central Perk",
-    "wrong": [
-     "Monk's Café",
-     "Luke's Diner",
-     "The Peach Pit"
-    ]
+    "a": "Central Perk"
    },
    {
     "cat": "Movies & TV",
     "q": "What does Cinderella lose at the ball?",
-    "a": "A glass slipper",
-    "wrong": [
-     "A ring",
-     "A tiara",
-     "Her gloves"
-    ]
+    "a": "A glass slipper"
    },
    {
     "cat": "Movies & TV",
     "q": "In The Little Mermaid, what does Ariel give up to become human?",
-    "a": "Her voice",
-    "wrong": [
-     "Her tail forever only",
-     "Her hair",
-     "Her friends"
-    ]
+    "a": "Her voice"
    },
    {
     "cat": "Movies & TV",
     "q": "Which reality show hands out roses at a ceremony?",
-    "a": "The Bachelor",
-    "wrong": [
-     "Survivor",
-     "Big Brother",
-     "The Voice"
-    ]
+    "a": "The Bachelor"
    },
    {
     "cat": "Movies & TV",
     "q": "In Mean Girls, what color do they wear on Wednesdays?",
-    "a": "Pink",
-    "wrong": [
-     "Black",
-     "Purple",
-     "Red"
-    ]
+    "a": "Pink"
    },
    {
     "cat": "Movies & TV",
     "q": "In The Notebook, the love story takes place in which part of the US?",
-    "a": "The South (the Carolinas)",
-    "wrong": [
-     "Alaska",
-     "Hawaii",
-     "New York City"
-    ]
+    "a": "The South (the Carolinas)"
    },
    {
     "cat": "Movies & TV",
     "q": "Which movie has the line 'Nobody puts Baby in a corner'?",
-    "a": "Dirty Dancing",
-    "wrong": [
-     "Grease",
-     "Footloose",
-     "Pretty Woman"
-    ]
+    "a": "Dirty Dancing"
    },
    {
     "cat": "Movies & TV",
     "q": "In Grease, what is the name of the girl gang?",
-    "a": "The Pink Ladies",
-    "wrong": [
-     "The Plastics",
-     "The Spice Girls",
-     "The Barden Bellas"
-    ]
+    "a": "The Pink Ladies"
    },
    {
     "cat": "Movies & TV",
     "q": "Which doll got her own big movie in 2023?",
-    "a": "Barbie",
-    "wrong": [
-     "Polly Pocket",
-     "Bratz",
-     "American Girl"
-    ]
+    "a": "Barbie"
    },
    {
     "cat": "Movies & TV",
     "q": "In Gilmore Girls, which inn does Lorelai manage in the early seasons?",
-    "a": "The Independence Inn",
-    "wrong": [
-     "The Grand Budapest",
-     "The Overlook",
-     "The Plaza"
-    ]
+    "a": "The Independence Inn"
    },
    {
     "cat": "Movies & TV",
     "q": "What is the British royal family drama on Netflix called?",
-    "a": "The Crown",
-    "wrong": [
-     "Downton Abbey",
-     "Bridgerton",
-     "Victoria"
-    ]
+    "a": "The Crown"
    },
    {
     "cat": "Movies & TV",
     "q": "In the show Bridgerton, what is the 'season' all about?",
-    "a": "Finding a match to marry",
-    "wrong": [
-     "Winning a cooking contest",
-     "Solving murders",
-     "Running a farm"
-    ]
+    "a": "Finding a match to marry"
    },
    {
     "cat": "Movies & TV",
     "q": "Which chef-judge is famous for yelling on Hell's Kitchen?",
-    "a": "Gordon Ramsay",
-    "wrong": [
-     "Bobby Flay",
-     "Guy Fieri",
-     "Emeril"
-    ]
+    "a": "Gordon Ramsay"
    },
    {
     "cat": "Movies & TV",
     "q": "In Tangled, what is special about Rapunzel's hair?",
-    "a": "It's magic and super long",
-    "wrong": [
-     "It's blue",
-     "It's made of gold thread",
-     "It can talk"
-    ]
+    "a": "It's magic and super long"
    },
    {
     "cat": "Movies & TV",
     "q": "Which show follows Carrie Bradshaw and her friends in New York?",
-    "a": "Sex and the City",
-    "wrong": [
-     "Girls",
-     "Friends",
-     "Gossip Girl"
-    ]
+    "a": "Sex and the City"
    },
    {
     "cat": "Movies & TV",
     "q": "In The Wizard of Oz, what color are Dorothy's famous slippers?",
-    "a": "Ruby red",
-    "wrong": [
-     "Silver",
-     "Glass",
-     "Gold"
-    ]
+    "a": "Ruby red"
    },
    {
     "cat": "Movies & TV",
     "q": "Which Disney princess has a tiger named Rajah?",
-    "a": "Jasmine",
-    "wrong": [
-     "Mulan",
-     "Pocahontas",
-     "Tiana"
-    ]
+    "a": "Jasmine"
    },
    {
     "cat": "Movies & TV",
     "q": "What is Mary Poppins famous for flying with?",
-    "a": "An umbrella",
-    "wrong": [
-     "A broomstick",
-     "A carpet",
-     "A kite"
-    ]
+    "a": "An umbrella"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer calls her fans 'Swifties'?",
-    "a": "Taylor Swift",
-    "wrong": [
-     "Adele",
-     "Beyoncé",
-     "Katy Perry"
-    ]
+    "a": "Taylor Swift"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer is known as 'Queen B' with fans called the BeyHive?",
-    "a": "Beyoncé",
-    "wrong": [
-     "Britney Spears",
-     "Rihanna",
-     "Lady Gaga"
-    ]
+    "a": "Beyoncé"
    },
    {
     "cat": "Music & Stars",
     "q": "Which British singer had huge hits called 'Hello' and 'Rolling in the Deep'?",
-    "a": "Adele",
-    "wrong": [
-     "Dua Lipa",
-     "Ed Sheeran",
-     "Lily Allen"
-    ]
+    "a": "Adele"
    },
    {
     "cat": "Music & Stars",
     "q": "Which group sang 'Wannabe' ('I'll tell you what I want, what I really really want')?",
-    "a": "The Spice Girls",
-    "wrong": [
-     "Destiny's Child",
-     "The Pussycat Dolls",
-     "TLC"
-    ]
+    "a": "The Spice Girls"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer wore a famous dress made of meat?",
-    "a": "Lady Gaga",
-    "wrong": [
-     "Madonna",
-     "Cher",
-     "Shakira"
-    ]
+    "a": "Lady Gaga"
    },
    {
     "cat": "Music & Stars",
     "q": "Shania Twain, Dolly Parton and Carrie Underwood are stars of which kind of music?",
-    "a": "Country",
-    "wrong": [
-     "Heavy metal",
-     "Opera",
-     "Rap"
-    ]
+    "a": "Country"
    },
    {
     "cat": "Music & Stars",
     "q": "Which boy band had Harry Styles in it?",
-    "a": "One Direction",
-    "wrong": [
-     "Backstreet Boys",
-     "NSYNC",
-     "Jonas Brothers"
-    ]
+    "a": "One Direction"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer was famous as a teen pop star with '...Baby One More Time'?",
-    "a": "Britney Spears",
-    "wrong": [
-     "Christina Aguilera",
-     "Jessica Simpson",
-     "Mandy Moore"
-    ]
+    "a": "Britney Spears"
    },
    {
     "cat": "Music & Stars",
     "q": "Whose fans are known as 'Little Monsters'?",
-    "a": "Lady Gaga",
-    "wrong": [
-     "Billie Eilish",
-     "Ariana Grande",
-     "Selena Gomez"
-    ]
+    "a": "Lady Gaga"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer is famous for her high ponytail and the song 'Thank U, Next'?",
-    "a": "Ariana Grande",
-    "wrong": [
-     "Miley Cyrus",
-     "Demi Lovato",
-     "Camila Cabello"
-    ]
+    "a": "Ariana Grande"
    },
    {
     "cat": "Music & Stars",
     "q": "What was Miley Cyrus's Disney Channel pop star character called?",
-    "a": "Hannah Montana",
-    "wrong": [
-     "Lizzie McGuire",
-     "Raven",
-     "Sabrina"
-    ]
+    "a": "Hannah Montana"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer's 'Eras Tour' became one of the biggest concert tours ever?",
-    "a": "Taylor Swift",
-    "wrong": [
-     "Pink",
-     "Shakira",
-     "Adele"
-    ]
+    "a": "Taylor Swift"
    },
    {
     "cat": "Music & Stars",
     "q": "Celine Dion sang the love song from which giant movie about a sinking ship?",
-    "a": "Titanic",
-    "wrong": [
-     "Pearl Harbor",
-     "The Notebook",
-     "Jaws"
-    ]
+    "a": "Titanic"
    },
    {
     "cat": "Music & Stars",
     "q": "Which family of sisters starred in 'Keeping Up with the...'?",
-    "a": "Kardashians",
-    "wrong": [
-     "Hiltons",
-     "Osbournes",
-     "Jonases"
-    ]
+    "a": "Kardashians"
    },
    {
     "cat": "Music & Stars",
     "q": "Which singer had the hit 'Material Girl' in the 1980s?",
-    "a": "Madonna",
-    "wrong": [
-     "Whitney Houston",
-     "Cyndi Lauper",
-     "Janet Jackson"
-    ]
+    "a": "Madonna"
    },
    {
     "cat": "Music & Stars",
     "q": "What is the famous fashion party held at a New York museum every May?",
-    "a": "The Met Gala",
-    "wrong": [
-     "The Oscars",
-     "The Grammys",
-     "Fashion Week"
-    ]
+    "a": "The Met Gala"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Mascara goes on your eyelashes.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Blush goes on your toes.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A stiletto is a kind of high heel.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A clutch is a small purse.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A maxi dress is very short.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Silk comes from silkworms.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A French manicure has white tips.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A flat iron makes hair curly.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A bob is a short haircut.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Lip gloss makes lips shiny.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: SPF is about protection from the sun.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Bangs are hair over the forehead.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Chanel is a fashion house from Paris.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A cardigan is a pair of shoes.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Yeast helps bread rise.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: There are 3 teaspoons in a tablespoon.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Guacamole is made from avocado.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A whisk is used to beat eggs.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Meringue is made from egg yolks and flour.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Tiramisu comes from Italy.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Cheesecake is usually made with cheddar.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Preheating means warming the oven first.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Elsa's sister in Frozen is named Anna.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Cinderella loses a glass slipper.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Ariel is a mermaid.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Belle hates reading.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: On The Bachelor, roses are handed out.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: In Mean Girls, they wear pink on Wednesdays.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Dorothy's slippers in The Wizard of Oz are blue.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Mary Poppins flies with an umbrella.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Rapunzel has very short hair.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Taylor Swift's fans are called Swifties.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Adele is from Australia.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: The Spice Girls sang 'Wannabe'.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Harry Styles was in One Direction.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Lady Gaga's fans are called Little Monsters.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Dolly Parton is a country singer.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Beyoncé's fans are the BeyHive.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Celine Dion sang the song from Titanic.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Madonna sang 'Material Girl'.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: IKEA is from Sweden.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: BOGO means buy one, get one.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Black Friday is the day after Christmas.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A duvet is a kind of curtain.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Sephora sells car parts.",
+    "a": "False"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Target's logo is a bullseye.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Tea lights are small candles.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Pumpkin spice includes cinnamon.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: Sourdough is made with a starter.",
+    "a": "True"
+   },
+   {
+    "cat": "True or false",
+    "q": "True or false: A pixie cut is very long hair.",
+    "a": "False"
+   }
+  ],
+  "stuff": [
+   {
+    "cat": "Fashion",
+    "q": "What is a stiletto?",
+    "a": "A shoe with a tall, thin heel"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call the little bag a woman carries at a fancy evening event?",
+    "a": "A clutch"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What are 'jeggings'?",
+    "a": "Leggings that look like jeans"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call a dress that ends just above the knee or higher?",
+    "a": "A mini dress"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a maxi dress?",
+    "a": "A long dress that reaches the ankles"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Name a famous fashion house from Paris.",
+    "a": "Chanel (also Dior, Hermès, Louis Vuitton, Saint Laurent)"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'cardigan'?",
+    "a": "A sweater that buttons down the front"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What are espadrilles?",
+    "a": "Shoes with rope soles"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call the shoes with no back that you slip your feet into?",
+    "a": "Mules"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'little black dress' known as for short?",
+    "a": "An LBD"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call a top that shows your stomach?",
+    "a": "A crop top"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Which fabric is made by silkworms?",
+    "a": "Silk"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'peplum'?",
+    "a": "A flared ruffle at the waist of a top"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'fascinator'?",
+    "a": "A small fancy hat or headpiece"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is the shoe called with a thick heel all the way under the foot?",
+    "a": "A wedge"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Which famous red-soled shoes are by designer Christian ___?",
+    "a": "Louboutin"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call a scarf-like wrap worn over the shoulders?",
+    "a": "A shawl"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Name a neutral color that goes with almost everything.",
+    "a": "Beige (also black, white, gray, navy)"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What do you call shorts made from cut-off jeans?",
+    "a": "Cut-offs"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Capri pants stop around which part of the leg?",
+    "a": "Mid-calf"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is 'athleisure'?",
+    "a": "Workout clothes worn as everyday outfits"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is mascara put on?",
+    "a": "Eyelashes"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does blush add color to?",
+    "a": "Cheeks"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What tool makes hair curly using heat?",
+    "a": "A curling iron"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a 'mani-pedi'?",
+    "a": "A manicure and a pedicure"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What do you call hair cut short in a straight line around the jaw?",
+    "a": "A bob"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is foundation used for?",
+    "a": "Evening out skin tone"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What are 'highlights' at the salon?",
+    "a": "Lighter streaks of hair color"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is eyeliner used for?",
+    "a": "Drawing a line along the eyes"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does SPF on sunscreen stand for?",
+    "a": "Sun protection factor"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does a flat iron do to hair?",
+    "a": "Straightens it"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is 'balayage'?",
+    "a": "A hand-painted hair coloring style"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a French manicure?",
+    "a": "Pink or nude nails with white tips"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does a 'perm' do to hair?",
+    "a": "Makes it curly for months"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What do you call the ponytail made by twisting three strands together?",
+    "a": "A braid"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a 'messy bun'?",
+    "a": "Hair loosely twisted up on the head"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What are acrylics at the nail salon?",
+    "a": "Fake nails"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is lip gloss for?",
+    "a": "Making lips shiny"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What do you call the hair cut to fall across the forehead?",
+    "a": "Bangs"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a pixie cut?",
+    "a": "A very short haircut"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Which ingredient makes bread rise?",
+    "a": "Yeast"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "How many teaspoons are in a tablespoon?",
+    "a": "3"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does 'preheat the oven' mean?",
+    "a": "Heat it up before the food goes in"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What do you call cooking food in hot fat in a pan, quickly?",
+    "a": "Sautéing"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is the main ingredient in guacamole?",
+    "a": "Avocado"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is meringue mostly made from?",
+    "a": "Egg whites and sugar"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What do you call the frosting between layers and on top of a cake?",
+    "a": "Icing (frosting)"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What kitchen tool is used to beat eggs by hand?",
+    "a": "A whisk"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does 'al dente' pasta mean?",
+    "a": "Cooked but still a little firm"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Which spice is in pumpkin spice besides cinnamon, ginger and cloves?",
+    "a": "Nutmeg"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a 'charcuterie board'?",
+    "a": "A board of meats, cheeses and snacks"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Croissants are made with what kind of dough?",
+    "a": "Flaky, buttery layered pastry"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What kind of cheese is traditionally on a classic cheesecake?",
+    "a": "Cream cheese"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Which appliance slowly cooks a meal all day, also called a Crock-Pot?",
+    "a": "A slow cooker"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does a recipe mean by 'a pinch' of salt?",
+    "a": "A tiny amount between your fingers"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What makes a cake 'red velvet' red?",
+    "a": "Red food coloring (and a little cocoa)"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What are you doing when you 'fold' ingredients?",
+    "a": "Gently mixing so it stays fluffy"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Tiramisu is a dessert from which country?",
+    "a": "Italy"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is sourdough bread made with?",
+    "a": "A fermented starter"
    },
    {
     "cat": "Home & Shopping",
     "q": "What is a 'throw pillow'?",
-    "a": "A decorative pillow for a couch or bed",
-    "wrong": [
-     "A pillow for pillow fights only",
-     "A pillow you throw away",
-     "A camping pillow"
-    ]
+    "a": "A decorative pillow for a couch or bed"
    },
    {
     "cat": "Home & Shopping",
     "q": "What does a store mean by 'BOGO'?",
-    "a": "Buy one, get one",
-    "wrong": [
-     "Bring our goods outside",
-     "Best offer goes online",
-     "Box of gift options"
-    ]
+    "a": "Buy one, get one"
    },
    {
     "cat": "Home & Shopping",
     "q": "Which Swedish store is famous for flat-pack furniture and meatballs?",
-    "a": "IKEA",
-    "wrong": [
-     "Target",
-     "Costco",
-     "Walmart"
-    ]
+    "a": "IKEA"
    },
    {
     "cat": "Home & Shopping",
     "q": "What is a 'duvet'?",
-    "a": "A soft quilt that goes in a cover",
-    "wrong": [
-     "A kind of curtain",
-     "A fancy rug",
-     "A footstool"
-    ]
+    "a": "A soft quilt that goes in a cover"
    },
    {
     "cat": "Home & Shopping",
     "q": "What does 'thread count' describe?",
-    "a": "How soft and fine bed sheets are",
-    "wrong": [
-     "How many buttons a shirt has",
-     "The number of curtains",
-     "The length of a rug"
-    ]
+    "a": "How soft and fine bed sheets are"
    },
    {
     "cat": "Home & Shopping",
     "q": "What is a 'centerpiece'?",
-    "a": "A decoration in the middle of a table",
-    "wrong": [
-     "The middle cushion on a couch",
-     "A puzzle piece",
-     "A chandelier bulb"
-    ]
+    "a": "A decoration in the middle of a table"
    },
    {
     "cat": "Home & Shopping",
     "q": "What do you call candles in little metal cups?",
-    "a": "Tea lights",
-    "wrong": [
-     "Tapers",
-     "Pillars",
-     "Sparklers"
-    ]
+    "a": "Tea lights"
    },
    {
     "cat": "Home & Shopping",
     "q": "What do you call a sale on the day after Thanksgiving?",
-    "a": "Black Friday",
-    "wrong": [
-     "Cyber Monday",
-     "Boxing Day",
-     "Super Saturday"
-    ]
+    "a": "Black Friday"
    },
    {
     "cat": "Home & Shopping",
     "q": "What is a 'Pinterest board'?",
-    "a": "A collection of saved ideas and pictures",
-    "wrong": [
-     "A cork board for pins",
-     "A cutting board",
-     "A diving board"
-    ]
+    "a": "A collection of saved ideas and pictures"
    },
    {
     "cat": "Home & Shopping",
     "q": "Which color would make a small room feel bigger and brighter?",
-    "a": "A light color",
-    "wrong": [
-     "Very dark brown",
-     "Black",
-     "Deep purple"
-    ]
+    "a": "A light color"
    },
    {
     "cat": "Home & Shopping",
     "q": "What is a 'farmhouse sink'?",
-    "a": "A big deep sink with an exposed front",
-    "wrong": [
-     "A sink outside in a barn",
-     "A sink made of wood",
-     "A sink with no faucet"
-    ]
+    "a": "A big deep sink with an exposed front"
    },
    {
     "cat": "Home & Shopping",
     "q": "Which store with a red bullseye logo is a favorite for 'just a quick trip'?",
-    "a": "Target",
-    "wrong": [
-     "Kohl's",
-     "Macy's",
-     "Sephora"
-    ]
+    "a": "Target"
    },
    {
     "cat": "Home & Shopping",
     "q": "Which store is famous for beauty products and a big Beauty Insider program?",
-    "a": "Sephora",
-    "wrong": [
-     "Home Depot",
-     "GameStop",
-     "AutoZone"
-    ]
+    "a": "Sephora"
    },
    {
     "cat": "Home & Shopping",
     "q": "What do you call houseplants that are hard to kill, like snake plants and succulents?",
-    "a": "Low-maintenance plants",
-    "wrong": [
-     "Carnivorous plants",
-     "Hothouse orchids",
-     "Weeds"
+    "a": "Low-maintenance plants"
+   }
+  ],
+  "pics": [
+   {
+    "img": "high-heeled-shoe",
+    "q": "A shoe with a very tall, very thin heel like this is called a what?",
+    "a": "A stiletto"
+   },
+   {
+    "img": "lipstick",
+    "q": "Lipstick that dries flat with no shine at all has what kind of finish?",
+    "a": "Matte"
+   },
+   {
+    "img": "handbag",
+    "q": "A big, roomy bag with an open top and two handles is called a what?",
+    "a": "A tote"
+   },
+   {
+    "img": "nail-polish",
+    "q": "What clear polish goes on first, to protect the nail?",
+    "a": "A base coat"
+   },
+   {
+    "img": "ring",
+    "q": "On which hand and finger is an engagement ring usually worn?",
+    "a": "The left ring finger"
+   },
+   {
+    "img": "dress",
+    "q": "A long dress that goes all the way down to the ankles is called a what?",
+    "a": "A maxi dress"
+   },
+   {
+    "img": "bikini",
+    "q": "A swimsuit with a bikini bottom and a tank-top style top is called a what?",
+    "a": "A tankini"
+   },
+   {
+    "img": "ballet-shoes",
+    "q": "Ballet shoes with stiff tips for dancing up on your toes are called what?",
+    "a": "Pointe shoes"
+   },
+   {
+    "img": "lotion-bottle",
+    "q": "What does SPF on a bottle of lotion measure?",
+    "a": "Protection from sunburn"
+   },
+   {
+    "img": "mirror",
+    "q": "A small folding mirror you carry in your purse is called a what?",
+    "a": "A compact"
+   },
+   {
+    "img": "ribbon",
+    "q": "The ribbon a pageant winner wears across her body is called a what?",
+    "a": "A sash"
+   },
+   {
+    "img": "bouquet",
+    "q": "At a wedding, who throws the bouquet over her shoulder?",
+    "a": "The bride"
+   },
+   {
+    "img": "kimono",
+    "q": "This traditional robe comes from which country?",
+    "a": "Japan"
+   },
+   {
+    "img": "teapot",
+    "q": "The padded fabric cover that keeps a teapot warm is called a what?",
+    "a": "A tea cozy"
+   },
+   {
+    "img": "cupcake",
+    "q": "The sweet topping swirled on a cupcake is called frosting, or what?",
+    "a": "Icing"
+   },
+   {
+    "img": "purse",
+    "q": "Which fashion house uses two back-to-back interlocking Cs as its logo?",
+    "a": "Chanel"
+   },
+   {
+    "img": "clutch-bag",
+    "q": "A small evening bag with no handle that you hold in your hand is called a what?",
+    "a": "A clutch"
+   },
+   {
+    "img": "sewing-needle",
+    "q": "The little metal cap that protects your finger while sewing is called a what?",
+    "a": "A thimble"
+   },
+   {
+    "img": "yarn",
+    "q": "Knitting uses two needles. Which yarn craft uses a single hook?",
+    "a": "Crochet"
+   },
+   {
+    "img": "gem-stone",
+    "q": "Which gem is the birthstone for April?",
+    "a": "Diamond"
+   },
+   {
+    "img": "sari",
+    "q": "A sari is the traditional dress of which country?",
+    "a": "India"
+   },
+   {
+    "img": "scarf",
+    "q": "A big scarf worn over the shoulders, often in soft wool, is called a what?",
+    "a": "A shawl (or pashmina)"
+   },
+   {
+    "img": "hair-pick",
+    "q": "This wide-tooth comb is made for what kind of hair?",
+    "a": "Curly or natural hair (an Afro)"
+   },
+   {
+    "img": "shortcake",
+    "q": "Strawberry shortcake is topped with strawberries and what?",
+    "a": "Whipped cream"
+   },
+   {
+    "img": "soap",
+    "q": "A fizzy ball you drop in the bath that bubbles and smells nice is called a what?",
+    "a": "A bath bomb"
+   },
+   {
+    "img": "sponge",
+    "q": "A soft, egg-shaped sponge for blending makeup is called a beauty what?",
+    "a": "A beauty blender"
+   },
+   {
+    "img": "shopping-bags",
+    "q": "The big shopping day after Thanksgiving is called what?",
+    "a": "Black Friday"
+   },
+   {
+    "img": "folding-hand-fan",
+    "q": "Which country is famous for flamenco dancers who use fans like this?",
+    "a": "Spain"
+   }
+  ],
+  "lives": [
+   {
+    "q": "My perfect Friday night is:",
+    "choices": [
+     "Dinner out with friends",
+     "A movie and a blanket at home",
+     "Dancing"
+    ]
+   },
+   {
+    "q": "The thing I take forever to choose is:",
+    "choices": [
+     "What to wear",
+     "What to eat",
+     "What to watch"
+    ]
+   },
+   {
+    "q": "My purse always has:",
+    "choices": [
+     "Snacks",
+     "Way too many receipts",
+     "Lip balm, at least three"
+    ]
+   },
+   {
+    "q": "If I had a free day, I would:",
+    "choices": [
+     "Go shopping",
+     "Get a massage or a facial",
+     "Sleep in and binge a show"
+    ]
+   },
+   {
+    "q": "My dream vacation is:",
+    "choices": [
+     "A tropical beach",
+     "Paris or somewhere in Europe",
+     "A cozy cabin"
+    ]
+   },
+   {
+    "q": "The chore I hate most is:",
+    "choices": [
+     "Doing the dishes",
+     "Folding laundry",
+     "Cleaning the bathroom"
+    ]
+   },
+   {
+    "q": "My karaoke song would be:",
+    "choices": [
+     "A pop diva power ballad",
+     "A country song",
+     "A 90s throwback"
+    ]
+   },
+   {
+    "q": "When I watch a scary movie, I:",
+    "choices": [
+     "Love every minute",
+     "Hide under a blanket",
+     "Refuse to watch"
+    ]
+   },
+   {
+    "q": "If I won the lottery, the first thing I'd buy is:",
+    "choices": [
+     "A new house",
+     "A shopping spree",
+     "A trip around the world"
+    ]
+   },
+   {
+    "q": "My coffee order is:",
+    "choices": [
+     "Plain and black",
+     "Something sweet with whipped cream",
+     "I don't drink coffee"
+    ]
+   },
+   {
+    "q": "My favorite season is:",
+    "choices": [
+     "Spring",
+     "Summer",
+     "Fall"
+    ]
+   },
+   {
+    "q": "If I had a superpower, I'd pick:",
+    "choices": [
+     "Reading minds",
+     "Teleporting",
+     "Freezing time"
+    ]
+   },
+   {
+    "q": "The shoes I own the most of are:",
+    "choices": [
+     "Sneakers",
+     "Boots",
+     "Heels or sandals"
+    ]
+   },
+   {
+    "q": "My biggest pet peeve is:",
+    "choices": [
+     "Loud chewing",
+     "People who are late",
+     "A messy kitchen"
+    ]
+   },
+   {
+    "q": "On a road trip, I'm in charge of:",
+    "choices": [
+     "The music",
+     "The snacks",
+     "Sleeping"
+    ]
+   },
+   {
+    "q": "My favorite thing to bake is:",
+    "choices": [
+     "Cookies",
+     "Cakes or cupcakes",
+     "Nothing. I buy them"
+    ]
+   },
+   {
+    "q": "If I could only eat one food forever, it'd be:",
+    "choices": [
+     "Pizza",
+     "Tacos",
+     "Chocolate"
+    ]
+   },
+   {
+    "q": "When I'm stressed, I:",
+    "choices": [
+     "Clean the house",
+     "Go shopping",
+     "Eat something sweet"
+    ]
+   },
+   {
+    "q": "Getting my hair ready takes:",
+    "choices": [
+     "Five minutes",
+     "Half an hour",
+     "Don't ask"
+    ]
+   },
+   {
+    "q": "I'd rather:",
+    "choices": [
+     "Go camping",
+     "Stay in a fancy hotel",
+     "Stay home"
+    ]
+   },
+   {
+    "q": "The show I'd binge first is:",
+    "choices": [
+     "A reality show",
+     "A crime show",
+     "A comedy"
+    ]
+   },
+   {
+    "q": "My biggest fear is:",
+    "choices": [
+     "Spiders or snakes",
+     "Heights",
+     "Speaking in public"
+    ]
+   },
+   {
+    "q": "At a party, I'm the one who:",
+    "choices": [
+     "Dances first",
+     "Helps in the kitchen",
+     "Leaves early"
+    ]
+   },
+   {
+    "q": "After the people and pets, the thing I'd grab in a fire is:",
+    "choices": [
+     "My phone",
+     "My photos",
+     "My jewelry"
+    ]
+   },
+   {
+    "q": "My nails are usually:",
+    "choices": [
+     "Painted bright",
+     "Plain and short",
+     "Done at the salon"
+    ]
+   },
+   {
+    "q": "If I could live in any decade, I'd pick:",
+    "choices": [
+     "The 1950s",
+     "The 1980s",
+     "Right now"
+    ]
+   },
+   {
+    "q": "My first concert was closest to:",
+    "choices": [
+     "A boy band or pop star",
+     "A country star",
+     "A rock band"
+    ]
+   },
+   {
+    "q": "The pet I'd want most is:",
+    "choices": [
+     "A small fluffy dog",
+     "A cat",
+     "A horse"
+    ]
+   },
+   {
+    "q": "When I get a new phone, I:",
+    "choices": [
+     "Set it up perfectly",
+     "Use it right out of the box",
+     "Ask someone to do it"
+    ]
+   },
+   {
+    "q": "I have cried at:",
+    "choices": [
+     "A sad movie",
+     "A commercial",
+     "Every single wedding"
+    ]
+   },
+   {
+    "q": "My dream job as a kid was:",
+    "choices": [
+     "Teacher or nurse",
+     "Singer or actress",
+     "Veterinarian"
+    ]
+   },
+   {
+    "q": "When I'm hungry and grumpy, I want:",
+    "choices": [
+     "Something salty",
+     "Something sweet",
+     "Someone else to decide"
     ]
    }
   ],
-  "lightning": [
+  "moves": [
    {
-    "q": "Mascara goes on your eyelashes.",
-    "a": true
+    "m": "Putting on mascara"
    },
    {
-    "q": "Blush goes on your toes.",
-    "a": false
+    "m": "Painting your nails and blowing them dry"
    },
    {
-    "q": "A stiletto is a kind of high heel.",
-    "a": true
+    "m": "Walking in high heels"
    },
    {
-    "q": "A clutch is a small purse.",
-    "a": true
+    "m": "Doing a yoga pose"
    },
    {
-    "q": "A maxi dress is very short.",
-    "a": false
+    "m": "Curling your hair"
    },
    {
-    "q": "Silk comes from silkworms.",
-    "a": true
+    "m": "Taking the perfect selfie"
    },
    {
-    "q": "A French manicure has white tips.",
-    "a": true
+    "m": "Doing a Zumba class"
    },
    {
-    "q": "A flat iron makes hair curly.",
-    "a": false
+    "m": "Putting on lipstick"
    },
    {
-    "q": "A bob is a short haircut.",
-    "a": true
+    "m": "Trying on clothes in a dressing room"
    },
    {
-    "q": "Lip gloss makes lips shiny.",
-    "a": true
+    "m": "Shaving your legs"
    },
    {
-    "q": "SPF is about protection from the sun.",
-    "a": true
+    "m": "Putting in contact lenses"
    },
    {
-    "q": "Bangs are hair over the forehead.",
-    "a": true
+    "m": "Doing a ballet twirl"
    },
    {
-    "q": "Chanel is a fashion house from Paris.",
-    "a": true
+    "m": "Braiding hair"
    },
    {
-    "q": "A cardigan is a pair of shoes.",
-    "a": false
+    "m": "Knitting a scarf"
    },
    {
-    "q": "Yeast helps bread rise.",
-    "a": true
+    "m": "Rolling out pie dough"
    },
    {
-    "q": "There are 3 teaspoons in a tablespoon.",
-    "a": true
+    "m": "Frosting a cake"
    },
    {
-    "q": "Guacamole is made from avocado.",
-    "a": true
+    "m": "Folding laundry"
    },
    {
-    "q": "A whisk is used to beat eggs.",
-    "a": true
+    "m": "Catching the bouquet at a wedding"
    },
    {
-    "q": "Meringue is made from egg yolks and flour.",
-    "a": false
+    "m": "Walking a runway"
    },
    {
-    "q": "Tiramisu comes from Italy.",
-    "a": true
+    "m": "Getting a facial with cucumbers on your eyes"
    },
    {
-    "q": "Cheesecake is usually made with cheddar.",
-    "a": false
+    "m": "Plucking your eyebrows"
    },
    {
-    "q": "Preheating means warming the oven first.",
-    "a": true
+    "m": "Carrying too many shopping bags"
    },
    {
-    "q": "Elsa's sister in Frozen is named Anna.",
-    "a": true
+    "m": "Being a cheerleader"
    },
    {
-    "q": "Cinderella loses a glass slipper.",
-    "a": true
+    "m": "Hula hooping"
    },
    {
-    "q": "Ariel is a mermaid.",
-    "a": true
+    "m": "Jumping rope"
    },
    {
-    "q": "Belle hates reading.",
-    "a": false
+    "m": "Rocking a baby to sleep"
    },
    {
-    "q": "On The Bachelor, roses are handed out.",
-    "a": true
+    "m": "Doing a pageant wave"
    },
    {
-    "q": "In Mean Girls, they wear pink on Wednesdays.",
-    "a": true
+    "m": "Blow-drying your hair"
    },
    {
-    "q": "Dorothy's slippers in The Wizard of Oz are blue.",
-    "a": false
+    "m": "Doing a dance for a video"
    },
    {
-    "q": "Mary Poppins flies with an umbrella.",
-    "a": true
+    "m": "Squeezing into skinny jeans"
    },
    {
-    "q": "Rapunzel has very short hair.",
-    "a": false
+    "m": "Planting flowers in the garden"
    },
    {
-    "q": "Taylor Swift's fans are called Swifties.",
-    "a": true
+    "m": "Sewing on a button"
    },
    {
-    "q": "Adele is from Australia.",
-    "a": false
+    "m": "Wrapping a present"
    },
    {
-    "q": "The Spice Girls sang 'Wannabe'.",
-    "a": true
+    "m": "Putting on earrings"
    },
    {
-    "q": "Harry Styles was in One Direction.",
-    "a": true
+    "m": "Getting a pedicure"
    },
    {
-    "q": "Lady Gaga's fans are called Little Monsters.",
-    "a": true
+    "m": "Figure skating a spin"
    },
    {
-    "q": "Dolly Parton is a country singer.",
-    "a": true
+    "m": "Doing a cartwheel"
    },
    {
-    "q": "Beyoncé's fans are the BeyHive.",
-    "a": true
+    "m": "Pouring tea at a fancy tea party"
    },
    {
-    "q": "Celine Dion sang the song from Titanic.",
-    "a": true
+    "m": "Applying fake eyelashes"
    },
    {
-    "q": "Madonna sang 'Material Girl'.",
-    "a": true
+    "m": "Zipping up a dress on your own"
    },
    {
-    "q": "IKEA is from Sweden.",
-    "a": true
+    "m": "Doing a high kick like a dancer"
    },
    {
-    "q": "BOGO means buy one, get one.",
-    "a": true
+    "m": "Spraying perfume and walking into it"
    },
    {
-    "q": "Black Friday is the day after Christmas.",
-    "a": false
+    "m": "Unpacking groceries"
    },
    {
-    "q": "A duvet is a kind of curtain.",
-    "a": false
-   },
-   {
-    "q": "Sephora sells car parts.",
-    "a": false
-   },
-   {
-    "q": "Target's logo is a bullseye.",
-    "a": true
-   },
-   {
-    "q": "Tea lights are small candles.",
-    "a": true
-   },
-   {
-    "q": "Pumpkin spice includes cinnamon.",
-    "a": true
-   },
-   {
-    "q": "Sourdough is made with a starter.",
-    "a": true
-   },
-   {
-    "q": "A pixie cut is very long hair.",
-    "a": false
+    "m": "Choosing a nail polish color"
    }
   ]
  }

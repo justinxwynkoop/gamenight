@@ -7,7 +7,7 @@ struct SoundPlan: Equatable {
     var startFinalMusic = false
     /// There is no Final Jeopardy countdown running: stop that music if it is playing.
     var stopFinalMusic = false
-    /// Music under the game itself (Spy Night's, and Guys vs Gals' Lightning Rounds): true while a game is under way, false in the lobby and at the end
+    /// Music under the game itself (Spy Night's, and Guys vs Gals' charades): true while a game is under way, false in the lobby and at the end
     /// (nil: no change).
     var playMusic: Bool? = nil
 }

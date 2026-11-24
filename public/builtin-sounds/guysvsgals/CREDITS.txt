@@ -2,21 +2,21 @@ All sounds here are CC0 (public domain dedication), free for any use. None are r
 
 Music, both by HoliznaCC0 (CC0), via Alvana Audio (https://github.com/seyedpouramir/alvana-audio):
 lobby = "Love Love Love" (album Happy Pop Electronic), the first two minutes, faded to loop while players pick their sides
-think = "50 Over The Speed Limit" (album Retro Wave), 38 seconds: the music under a Lightning Round
+think = "50 Over The Speed Limit" (album Retro Wave), 38 seconds: the music under a charade (Our Moves)
 
 Effects: SFX Kit by Wyzowl (CC0), https://github.com/wyzowl/sfx-kit
-open       = whoosh-medium-medium         a question comes up
-lock       = pop-large-in                 the team's answer is locked in
-correct    = notification-success-fanfare a right answer
-wrong      = notification-failure-wobble  a wrong answer
-timeup     = time-timer                   out of time
-pick       = move-spring                  a token hops along the track
-dd         = cinematic-thunder-big        a Lightning Round begins
-ding       = tone-ding-high               a right answer in a Lightning Round
-strike     = notification-failure-knock   a wrong answer in a Lightning Round
-roundstart = sting-playful-long           the coin toss, the game begins
+open       = whoosh-medium-medium         a card is dealt
+lock       = pop-large-in                 Our Lives guessing or a charade begins
+correct    = notification-success-fanfare the trophy moves toward a team
+wrong      = notification-failure-wobble  a miss: over to the other team
+timeup     = time-timer                   a charade runs out of time
+pick       = move-spring                  the trophy slides along the path
+dd         = cinematic-thunder-big        a challenge is thrown
+ding       = tone-ding-high               a trophy is won
+strike     = notification-failure-knock   (not used any more)
+roundstart = sting-playful-long           the game begins
 fanfare    = celebration-fireworks        the winners
-applause   = celebration-applause-big     after the winners
+applause   = celebration-applause-big     a trophy is won, and the winners
 join       = pop-medium-bubble            someone joins
 
 Levelled with ffmpeg loudnorm (effects about -18 LUFS, music -20) and converted to mono mp3. The Apple TV app has the

@@ -1,36 +1,54 @@
-// The Guys vs Gals question editor. A set has two halves: Guy stuff (the Gals answer it) and Gal stuff (the Guys answer
-// it). Each has multiple-choice questions (the right answer and up to three wrong ones; the game shuffles them) and
-// true-or-false statements for the Lightning Rounds. The page (editor.js) handles the PIN, the Save bar and importing.
+// The Guys vs Gals question editor. A set has two halves: Guy stuff (read by the Guys, answered by the Gals) and Gal
+// stuff (read by the Gals, answered by the Guys). Each half has the five decks:
+//   Our Facts, Our Stuff   a question and its answer (and a category, if you like)
+//   Our Pics               a picture (one of ours, or a web address), a question about it, and its answer
+//   Our Lives              a question about the reader, and three answers, A, B and C
+//   Our Moves              something to act out
+// Only Our Facts or Our Stuff is needed; a deck left empty is played as Our Facts. The page (editor.js) handles the
+// PIN, the Save bar and importing.
 import { h, setKids } from '../../common.js';
 import { field, row, btn, accordionGroup, slug } from '../../editkit.js';
+import { PICS, picUrl } from './shared.js';
 
 const HALVES = [
-  { key: 'guyStuff', title: 'Guy stuff', who: 'the Gals answer these', color: '#3b8bff' },
-  { key: 'galStuff', title: 'Gal stuff', who: 'the Guys answer these', color: '#ff4fa3' },
+  { key: 'guyStuff', title: 'Guy stuff', who: 'the Guys read, the Gals answer', color: '#3b8bff' },
+  { key: 'galStuff', title: 'Gal stuff', who: 'the Gals read, the Guys answer', color: '#ff4fa3' },
 ];
-const blankQ = () => ({ cat: '', q: '', a: '', wrong: ['', '', ''] });
-const blankS = () => ({ q: '', a: true });
-const blank = () => ({ title: '', guyStuff: { questions: [blankQ(), blankQ()], lightning: [blankS()] }, galStuff: { questions: [blankQ(), blankQ()], lightning: [blankS()] } });
+const DECKS = [
+  { key: 'facts', name: 'Our Facts', color: '#9b5cff', blank: () => ({ cat: '', q: '', a: '' }) },
+  { key: 'stuff', name: 'Our Stuff', color: '#ffd23f', blank: () => ({ cat: '', q: '', a: '' }) },
+  { key: 'pics', name: 'Our Pics', color: '#ff8a3d', blank: () => ({ img: '', q: '', a: '' }) },
+  { key: 'lives', name: 'Our Lives', color: '#2ec5ff', blank: () => ({ q: '', choices: ['', '', ''] }) },
+  { key: 'moves', name: 'Our Moves', color: '#ff3b5c', blank: () => ({ m: '' }) },
+];
+const t = (s) => String(s ?? '').trim();
+const filledOf = (deck, x) => {
+  if (deck === 'moves') return !!t(x.m);
+  if (deck === 'lives') return !!t(x.q) && x.choices.every((c) => t(c));
+  return !!t(x.q) && !!t(x.a) && (deck !== 'pics' || !!t(x.img));
+};
+const blankHalf = () => Object.fromEntries(DECKS.map((d) => [d.key, d.key === 'facts' ? [d.blank(), d.blank()] : []]));
+const blank = () => ({ title: '', guyStuff: blankHalf(), galStuff: blankHalf() });
 
-/** "Question | right answer | wrong | wrong | wrong", one per line (a tab works too). */
-export function parseQuestions(text) {
+/** Pasting a list, one per line, the parts split with | (or a tab). */
+export function parseCards(deck, text) {
   const found = []; const bad = [];
   for (const line of String(text).split('\n').map((l) => l.trim()).filter(Boolean)) {
     const m = line.split(/\s*\|\s*|\t+/).map((x) => x.trim());
-    if (m.length >= 3 && m[0] && m[1] && m[2]) found.push({ cat: '', q: m[0], a: m[1], wrong: [m[2], m[3] ?? '', m[4] ?? ''] }); else bad.push(line);
+    if (deck === 'moves') found.push({ m: m[0] });
+    else if (deck === 'lives') { if (m.length >= 4 && m.slice(0, 4).every(Boolean)) found.push({ q: m[0], choices: m.slice(1, 4) }); else bad.push(line); }
+    else if (deck === 'pics') { if (m.length >= 3 && m.slice(0, 3).every(Boolean)) found.push({ img: m[0], q: m[1], a: m[2] }); else bad.push(line); }
+    else if (m.length >= 2 && m[0] && m[1]) found.push({ cat: m[2] ?? '', q: m[0], a: m[1] }); else bad.push(line);
   }
   return { found, bad };
 }
-/** "Statement | true" (or false, yes, no, t, f), one per line. */
-export function parseStatements(text) {
-  const found = []; const bad = [];
-  for (const line of String(text).split('\n').map((l) => l.trim()).filter(Boolean)) {
-    const m = line.split(/\s*\|\s*|\t+/).map((x) => x.trim());
-    const v = (m[1] ?? '').toLowerCase();
-    if (m[0] && ['true', 'false', 't', 'f', 'yes', 'no'].includes(v)) found.push({ q: m[0], a: ['true', 't', 'yes'].includes(v) }); else bad.push(line);
-  }
-  return { found, bad };
-}
+const PASTE_HINT = {
+  facts: 'One per line: question | answer | category (optional)\nHow many points is a touchdown? | 6 | Sports',
+  stuff: 'One per line: question | answer | category (optional)\nWhat is a stiletto? | A shoe with a tall, thin heel',
+  pics: 'One per line: picture | question | answer\nwrench | What is this tool called? | A wrench',
+  lives: 'One per line: question | A | B | C\nMy dream car is: | A truck | A sports car | Anything cheap',
+  moves: 'One per line: something to act out\nChanging a flat tire',
+};
 
 export function mount(container, api, ui) {
   let sets = [];
@@ -39,14 +57,17 @@ export function mount(container, api, ui) {
   let doc = blank();
   let dirty = false;
   let label = '';
-  let openKey = 'guyStuff:q';
+  let openKey = 'guyStuff:facts';
   const touch = () => { dirty = true; ui.changed(); };
 
-  /** A set from the file, with room to type: three wrong-answer boxes on every question. */
+  /** A set from the file, with room to type. */
   const loaded = (d) => {
     const half = (x) => ({
-      questions: (x?.questions ?? []).map((q) => ({ cat: q.cat ?? '', q: q.q ?? '', a: q.a ?? '', wrong: [...(q.wrong ?? []), '', '', ''].slice(0, 3) })),
-      lightning: (x?.lightning ?? []).map((s) => ({ q: s.q ?? '', a: s.a === true })),
+      facts: (x?.facts ?? []).map((q) => ({ cat: q.cat ?? '', q: q.q ?? '', a: q.a ?? '' })),
+      stuff: (x?.stuff ?? []).map((q) => ({ cat: q.cat ?? '', q: q.q ?? '', a: q.a ?? '' })),
+      pics: (x?.pics ?? []).map((q) => ({ img: q.img ?? '', q: q.q ?? '', a: q.a ?? '' })),
+      lives: (x?.lives ?? []).map((q) => ({ q: q.q ?? '', choices: [...(q.choices ?? []), '', '', ''].slice(0, 3) })),
+      moves: (x?.moves ?? []).map((q) => ({ m: q.m ?? '' })),
     });
     return { ...d, title: d.title ?? '', guyStuff: half(d.guyStuff), galStuff: half(d.galStuff) };
   };
@@ -66,18 +87,20 @@ export function mount(container, api, ui) {
   }
   function tidy() {
     const half = (x) => ({
-      questions: x.questions.filter((q) => q.q.trim() && q.a.trim() && q.wrong.some((w) => w.trim()))
-        .map((q) => ({ ...(q.cat.trim() ? { cat: q.cat.trim() } : {}), q: q.q.trim(), a: q.a.trim(), wrong: q.wrong.map((w) => w.trim()).filter(Boolean) })),
-      lightning: x.lightning.filter((s) => s.q.trim()).map((s) => ({ q: s.q.trim(), a: !!s.a })),
+      facts: x.facts.filter((q) => filledOf('facts', q)).map((q) => ({ ...(t(q.cat) ? { cat: t(q.cat) } : {}), q: t(q.q), a: t(q.a) })),
+      stuff: x.stuff.filter((q) => filledOf('stuff', q)).map((q) => ({ ...(t(q.cat) ? { cat: t(q.cat) } : {}), q: t(q.q), a: t(q.a) })),
+      pics: x.pics.filter((q) => filledOf('pics', q)).map((q) => ({ img: t(q.img), q: t(q.q), a: t(q.a) })),
+      lives: x.lives.filter((q) => filledOf('lives', q)).map((q) => ({ q: t(q.q), choices: q.choices.map(t) })),
+      moves: x.moves.filter((q) => filledOf('moves', q)).map((q) => ({ m: t(q.m) })),
     });
-    return { title: doc.title.trim(), ...(doc.about ? { about: doc.about } : {}), guyStuff: half(doc.guyStuff), galStuff: half(doc.galStuff) };
+    return { title: t(doc.title), ...(doc.about ? { about: doc.about } : {}), guyStuff: half(doc.guyStuff), galStuff: half(doc.galStuff) };
   }
   async function save() {
-    const t = tidy();
-    for (const hf of HALVES) if (!t[hf.key].questions.length) return { ok: false, text: `${hf.title} needs at least one question with a right and a wrong answer.` };
+    const out = tidy();
+    for (const hf of HALVES) if (!out[hf.key].facts.length && !out[hf.key].stuff.length) return { ok: false, text: `${hf.title} needs at least one Our Facts or Our Stuff question with its answer.` };
     const sid = isNew ? slug(id || doc.title) : id;
     if (!sid) return { ok: false, text: 'Give the set a title first.' };
-    await api.put(sid, t);
+    await api.put(sid, out);
     id = sid; isNew = false; dirty = false; label = `Saved “${doc.title}”`;
     sets = await api.list();
     render();
@@ -91,76 +114,65 @@ export function mount(container, api, ui) {
     return { ok: true, text: 'Deleted.' };
   }
 
-  function pasteBox(placeholder, parse, add) {
-    const box = h('textarea', { rows: 4, placeholder });
+  function pasteBox(deck, add) {
+    const box = h('textarea', { rows: 4, placeholder: PASTE_HINT[deck] });
     const out = h('div', { class: 'tag' });
-    const wrap = h('div', { class: 'paste hidden' }, box,
+    return h('div', { class: 'paste hidden' }, box,
       btn('Add these', () => {
-        const { found, bad } = parse(box.value);
+        const { found, bad } = parseCards(deck, box.value);
         add(found);
         out.textContent = bad.length ? `Could not read: ${bad.join(' · ')}` : `Added ${found.length}.`;
         if (!bad.length) box.value = '';
       }, { small: true }), out);
-    return wrap;
   }
 
-  function questionsAcc(group, hf) {
+  const input = (obj, key, placeholder, after, max = 240) => field('input', obj, key, { placeholder, maxLength: max, autocomplete: 'off' }, () => { touch(); after(); });
+
+  /** The boxes for one card. */
+  function cardFields(deck, x, after) {
+    if (deck === 'moves') return [input(x, 'm', 'Something to act out, e.g. Changing a flat tire', after, 120)];
+    if (deck === 'lives') {
+      return [input(x, 'q', 'A question about the reader, e.g. My dream car is:', after),
+        ['A', 'B', 'C'].map((l, i) => h('div', { class: 'ans' }, h('div', { class: 'rank' }, l), input(x.choices, String(i), `Answer ${l}`, after, 120)))];
+    }
+    const parts = [];
+    if (deck === 'pics') {
+      const preview = h('img', { src: x.img ? picUrl(x.img) : '', alt: '', style: { width: '48px', height: '48px', objectFit: 'contain', visibility: x.img ? 'visible' : 'hidden' } });
+      const pick = field('input', x, 'img', { placeholder: 'Picture: one of ours (e.g. wrench) or a web address', maxLength: 400, autocomplete: 'off', list: 'gv-pics' }, () => {
+        touch(); after(); preview.src = x.img ? picUrl(x.img) : ''; preview.style.visibility = x.img ? 'visible' : 'hidden';
+      });
+      parts.push(h('div', { class: 'ans' }, preview, pick));
+    }
+    parts.push(input(x, 'q', 'Question', after));
+    parts.push(h('div', { class: 'ans' }, h('div', { class: 'rank' }, '✓'), input(x, 'a', 'Answer', after, 120)));
+    if (deck !== 'pics') parts.push(h('div', { class: 'ans' }, h('div', { class: 'rank' }, '#'), field('input', x, 'cat', { placeholder: 'Category (optional), e.g. Sports', maxLength: 40, autocomplete: 'off' }, touch)));
+    return parts;
+  }
+
+  function deckAcc(group, hf, d) {
     const half = doc[hf.key];
     let item;
-    const filled = () => half.questions.filter((q) => q.q.trim() && q.a.trim() && q.wrong.some((w) => w.trim())).length;
-    const summary = () => ({ title: `${hf.title}: questions`, meta: `${filled()} · ${hf.who}`, ok: filled() > 0 });
+    const filled = () => half[d.key].filter((x) => filledOf(d.key, x)).length;
+    const summary = () => ({ title: `${hf.title}: ${d.name}`, meta: `${filled()} · ${hf.who}`, ok: d.key === 'facts' || d.key === 'stuff' ? filled() > 0 || half.facts.concat(half.stuff).some((x) => filledOf('facts', x)) : true });
     const after = () => item?.update(summary());
     const list = h('div', { class: 'answers' });
     const draw = () => {
-      list.replaceChildren(...half.questions.map((q, n) => h('div', { class: 'ans-item' },
-        h('div', { class: 'ans' }, h('div', { class: 'rank' }, String(n + 1)),
-          field('input', q, 'q', { placeholder: 'Question', maxLength: 240, autocomplete: 'off' }, () => { touch(); after(); }),
-          btn('✕', () => { half.questions.splice(n, 1); if (!half.questions.length) half.questions.push(blankQ()); touch(); draw(); after(); }, { small: true, aria: 'Remove this question' })),
-        h('div', { class: 'ans' }, h('div', { class: 'rank' }, '✓'), field('input', q, 'a', { placeholder: 'Right answer', maxLength: 120, autocomplete: 'off' }, () => { touch(); after(); })),
-        [0, 1, 2].map((w) => h('div', { class: 'ans' }, h('div', { class: 'rank' }, '✗'), field('input', q.wrong, String(w), { placeholder: w ? 'Another wrong answer (optional)' : 'Wrong answer', maxLength: 120, autocomplete: 'off' }, () => { touch(); after(); }))),
-        h('div', { class: 'ans' }, h('div', { class: 'rank' }, '#'), field('input', q, 'cat', { placeholder: 'Category (optional), e.g. Sports', maxLength: 40, autocomplete: 'off' }, touch)))));
+      list.replaceChildren(...half[d.key].map((x, n) => h('div', { class: 'ans-item' },
+        h('div', { class: 'ans' }, h('div', { class: 'rank' }, String(n + 1)), h('div', { class: 'grow' }),
+          btn('✕', () => { half[d.key].splice(n, 1); touch(); draw(); after(); }, { small: true, aria: 'Remove this card' })),
+        cardFields(d.key, x, after))));
     };
-    const paste = pasteBox('One per line: question | right | wrong | wrong | wrong\nWhat is mascara for? | Eyelashes | Lips | Nails', parseQuestions, (found) => {
-      half.questions = half.questions.filter((q) => q.q.trim() || q.a.trim()).concat(found);
-      if (!half.questions.length) half.questions.push(blankQ());
+    const paste = pasteBox(d.key, (found) => {
+      half[d.key] = half[d.key].filter((x) => filledOf(d.key, x)).concat(found);
       touch(); draw(); after();
     });
     const body = h('div', { style: { display: 'contents' } }, list,
       h('div', { class: 'row-actions' },
-        btn('＋ Add a question', () => { half.questions.push(blankQ()); touch(); draw(); after(); }, { small: true }),
+        btn('＋ Add a card', () => { half[d.key].push(d.blank()); touch(); draw(); after(); }, { small: true }),
         btn('Paste a list', () => paste.classList.toggle('hidden'), { small: true })),
       paste);
-    const key = `${hf.key}:q`;
-    item = group.add({ badge: h('span', { style: { display: 'inline-block', width: '14px', height: '14px', borderRadius: '4px', background: hf.color } }), ...summary(), body, open: openKey === key, onToggle: (on) => { if (on) openKey = key; } });
-    draw();
-    return item.el;
-  }
-
-  function lightningAcc(group, hf) {
-    const half = doc[hf.key];
-    let item;
-    const filled = () => half.lightning.filter((s) => s.q.trim()).length;
-    const summary = () => ({ title: `${hf.title}: lightning`, meta: `${filled()} true-or-false`, ok: true });
-    const after = () => item?.update(summary());
-    const list = h('div', { class: 'answers' });
-    const draw = () => {
-      list.replaceChildren(...half.lightning.map((st, n) => h('div', { class: 'ans' }, h('div', { class: 'rank' }, String(n + 1)),
-        field('input', st, 'q', { placeholder: 'A statement that is true or false', maxLength: 200, autocomplete: 'off' }, () => { touch(); after(); }),
-        h('select', { 'aria-label': 'True or false', onchange: (e) => { st.a = e.target.value === 'true'; touch(); } },
-          h('option', { value: 'true', selected: st.a }, 'True'), h('option', { value: 'false', selected: !st.a }, 'False')),
-        btn('✕', () => { half.lightning.splice(n, 1); touch(); draw(); after(); }, { small: true, aria: 'Remove this statement' }))));
-    };
-    const paste = pasteBox('One per line: statement | true or false\nMascara goes on your eyelashes. | true', parseStatements, (found) => {
-      half.lightning = half.lightning.filter((s) => s.q.trim()).concat(found);
-      touch(); draw(); after();
-    });
-    const body = h('div', { style: { display: 'contents' } }, list,
-      h('div', { class: 'row-actions' },
-        btn('＋ Add a statement', () => { half.lightning.push(blankS()); touch(); draw(); after(); }, { small: true }),
-        btn('Paste a list', () => paste.classList.toggle('hidden'), { small: true })),
-      paste);
-    const key = `${hf.key}:l`;
-    item = group.add({ badge: h('span', {}, '⚡'), ...summary(), body, open: openKey === key, onToggle: (on) => { if (on) openKey = key; } });
+    const key = `${hf.key}:${d.key}`;
+    item = group.add({ badge: h('span', { style: { display: 'inline-block', width: '14px', height: '14px', borderRadius: '4px', background: d.color, border: `3px solid ${hf.color}` } }), ...summary(), body, open: openKey === key, onToggle: (on) => { if (on) openKey = key; } });
     draw();
     return item.el;
   }
@@ -171,8 +183,9 @@ export function mount(container, api, ui) {
       h('option', { value: '' }, '＋ New question set'), sets.map((x) => h('option', { value: x.id, selected: !isNew && x.id === id }, x.title)));
     const titleInput = field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. The Smith Family Battle', autocomplete: 'off' }, touch);
     setKids(container, h('div', { class: 'card' }, row('Question set', picker), row('Title', titleInput)),
-      h('div', { class: 'tag' }, 'Guy stuff is what the Gals get asked; gal stuff is what the Guys get asked. Write the right answer and up to three wrong ones: the game shuffles them. Lightning statements are true or false.'),
-      HALVES.map((hf) => [questionsAcc(group, hf), lightningAcc(group, hf)]));
+      h('datalist', { id: 'gv-pics' }, PICS.map((p) => h('option', { value: p }))),
+      h('div', { class: 'tag' }, 'Guy stuff is read by the Guys to the Gals; gal stuff is read by the Gals to the Guys. Every half has the five decks. Our Facts or Our Stuff is a must; an empty deck is played as Our Facts. Our Lives cards are about the reader: they secretly pick A, B or C. Our Moves cards are charades.'),
+      HALVES.map((hf) => DECKS.map((d) => deckAcc(group, hf, d))));
   }
 
   refresh();

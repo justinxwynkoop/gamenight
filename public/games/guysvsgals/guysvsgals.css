@@ -36,23 +36,23 @@
 .gv-head .gv-teamtag.gals { justify-self: start; }
 .gv-head .gv-teamtag.guys { justify-self: end; }
 
-/* the race strip along the foot */
-.gv-tracks { display: grid; gap: 1.4vmin; padding: 1.8vmin 2vmin; background: #fff; }
-.gv-lane { position: relative; height: 7vmin; }
-.gv-cells { position: absolute; inset: 0; display: grid; gap: .8vmin; }
-.gv-cell { display: grid; place-items: center; font-family: 'Bangers', sans-serif; font-size: 3.2vmin; color: var(--gv-ink); background: var(--gv-paper);
-  border: .4vmin solid var(--gv-ink); transition: background .3s; }
-.gv-cell span { transform: rotate(-4deg); }
-.gv-cell.passed { background: var(--c); color: #fff; -webkit-text-stroke: .25vmin var(--gv-ink); paint-order: stroke fill; }
-.gv-cell.light { background: var(--gv-yellow); }
-.gv-cell.light .gv-bolt { width: 5vmin; height: 5vmin; }
-.gv-cell.light.used { filter: grayscale(1) opacity(.55); }
-.gv-cell.start { font-size: 3vmin; background: var(--gv-ink); color: #fff; }
-.gv-cell.finish { font-size: 4vmin; background: #fff; }
-.gv-runner { position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 2; }
-.gv-runner .gv-token { width: 10vmin; height: 10vmin; margin-top: -2vmin; }
-.gv-lane.turn .gv-runner .gv-token { animation: gv-bob .9s ease-in-out infinite; }
+/* the tug-of-war path along the foot: winner's circle, green, the coloured spaces, START, and back out the other side */
+.gv-tracks { padding: 1.6vmin 2vmin; background: #fff; }
+.gv-path { display: grid; grid-template-columns: auto 1fr auto; gap: 1.6vmin; align-items: center; }
+.gv-spaces { position: relative; display: grid; height: 9vmin; }
+.gv-space { position: relative; display: grid; place-items: center; margin: 0 .35vmin; background: var(--d); border: .45vmin solid var(--gv-ink); font-family: 'Bangers', sans-serif;
+  font-size: 2.4vmin; letter-spacing: .04em; color: var(--gv-ink); transform: skewX(-8deg); }
+.gv-space span { transform: skewX(8deg); }
+.gv-space.start { background: #9b5cff; color: #fff; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-space.green { background: #3ddc84; }
+.gv-space.here { box-shadow: 0 0 0 .5vmin #fff, 0 0 0 1vmin var(--gv-ink); z-index: 1; }
+.gv-cup { position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 3; transition: left .2s; pointer-events: none; }
+.gv-cup .gv-trophy { width: 11vmin; height: 11vmin; margin-top: -3vmin; filter: drop-shadow(.5vmin .5vmin 0 var(--gv-ink)); animation: gv-bob 1.4s ease-in-out infinite; }
 @keyframes gv-bob { 50% { transform: translateY(-1vmin) rotate(-4deg); } }
+.gv-circle { display: flex; gap: .6vmin; padding: .8vmin 1.2vmin; background: var(--c); border: .45vmin solid var(--gv-ink); border-radius: 50% / 40%; min-height: 6vmin; align-items: center; }
+.gv-circle .gv-trophy { width: 5vmin; height: 5vmin; }
+.gv-trophy.empty { filter: grayscale(1) brightness(1.6) opacity(.45); }
+.gv-trophy.won { filter: drop-shadow(.3vmin .3vmin 0 var(--gv-ink)); animation: gv-pop .4s cubic-bezier(.3, 1.8, .5, 1) both; }
 
 /* the stage: a tall panel for each team either side of the question */
 .gv-stage { display: grid; grid-template-columns: 24vw 1fr 24vw; gap: 3.4vmin; min-height: 0; align-items: stretch; }
@@ -81,9 +81,13 @@
 .gv-member.voted { background: var(--gv-yellow); }
 .gv-member.voted .chk { color: var(--gv-ink); }
 .gv-pos { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1vmin; padding: .8vmin 1.6vmin; background: var(--gv-yellow); border: .5vmin solid var(--gv-ink); }
-.gv-pos span { font-weight: 900; font-size: 2.1vmin; line-height: 1.1; }
-.gv-pos b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 7vmin; line-height: .9; }
-.gv-pos small { font-size: 3vmin; opacity: .7; }
+.gv-cups { display: flex; gap: .6vmin; }
+.gv-cups .gv-trophy { width: 6.4vmin; height: 6.4vmin; }
+.gv-tokens { display: flex; gap: .5vmin; }
+.gv-tokens i { font-style: normal; font-size: 3.4vmin; width: 5vmin; height: 5vmin; display: grid; place-items: center; background: #fff; border: .35vmin solid var(--gv-ink); border-radius: 50%; filter: grayscale(1) opacity(.35); }
+.gv-tokens i.on { filter: none; }
+.gv-member .role { font-style: normal; }
+.gv-clock-badge.reading { background: var(--gv-cyan); }
 
 /* the question: a white panel with the question in a speech balloon */
 .gv-center { position: relative; display: grid; place-items: center; min-height: 0; }
@@ -151,45 +155,15 @@
 .gv-tv > .gv-over { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; text-align: center; }
 .gv-over::before { content: ''; position: absolute; inset: 0; background: repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,.18) 0 5deg, transparent 5deg 12deg); }
 .gv-over > * { position: relative; }
-.gv-toss { background: var(--gv-cyan); }
-.gv-coin { width: 34vmin; height: 34vmin; margin: 0 auto 3vmin; position: relative; transform-style: preserve-3d; animation: gv-flip 2.6s cubic-bezier(.25, .7, .3, 1) both; }
-.gv-coin > div { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; display: grid; place-items: center; overflow: hidden; border: .8vmin solid var(--gv-ink); }
-.gv-coin .face-guys { background: var(--gv-blue); }
-.gv-coin .face-gals { background: var(--gv-pink); transform: rotateY(180deg); }
-.gv-coin .gv-token { width: 82%; height: 82%; margin-top: 18%; }
-@keyframes gv-flip { from { transform: rotateY(0) translateY(0); } 40% { transform: rotateY(900deg) translateY(-12vmin); } to { transform: rotateY(var(--end)) translateY(0); } }
-.gv-big { font-size: 11vmin; animation: gv-slam .6s 2.2s cubic-bezier(.2, 1.6, .4, 1) both; }
+.gv-big { font-size: 11vmin; animation: gv-slam .6s cubic-bezier(.2, 1.6, .4, 1) both; }
 .gv-big.now { animation-delay: 0s; }
-.gv-sub { display: inline-block; color: var(--gv-ink); font-size: 3vmin; font-weight: 900; margin-top: 2vmin; padding: 1vmin 2.4vmin; background: #fff; border: .45vmin solid var(--gv-ink); box-shadow: .6vmin .6vmin 0 var(--gv-ink); }
+.gv-sub { display: inline-block; color: var(--gv-ink); font-size: 3vmin; font-weight: 900; margin-top: 2vmin; padding: .6vmin 2vmin; background: #fff; border: .45vmin solid var(--gv-ink); }
 
-.gv-lightning { background: #5b2bd6; overflow: hidden; }
-.gv-lightning::after { content: ''; position: absolute; inset: 0; background: #fff6c8; opacity: 0; animation: gv-strike 4s infinite; pointer-events: none; }
-@keyframes gv-strike { 0%, 6%, 9%, 100% { opacity: 0; } 7%, 8.4% { opacity: .6; } }
-.gv-l-wrap { width: min(150vmin, 92vw); display: grid; gap: 3vmin; justify-items: center; position: relative; }
-.gv-l-title { display: flex; align-items: center; gap: 2vmin; animation: gv-slam .6s cubic-bezier(.2, 1.6, .4, 1) both; }
-.gv-l-title .gv-letters { font-size: 11vmin; color: var(--gv-yellow); }
-.gv-l-title .gv-bolt { width: 13vmin; height: 13vmin; animation: gv-zap .9s steps(2) infinite; }
-@keyframes gv-zap { 50% { transform: rotate(-12deg) scale(1.1); } }
-.gv-l-team { font-size: 3.4vmin; font-weight: 900; color: var(--gv-ink); display: flex; align-items: center; gap: 1.4vmin; padding: .6vmin 2.4vmin .6vmin 1vmin; background: #fff; border: .45vmin solid var(--gv-ink); }
-.gv-l-team .gv-token { width: 7vmin; height: 7vmin; }
-.gv-l-q { min-height: 22vmin; display: grid; place-items: center; font-size: 6vmin; font-weight: 900; line-height: 1.1; text-wrap: balance; padding: 3vmin 4vmin; width: 100%; box-sizing: border-box; color: var(--gv-ink);
-  background: #fff; border: .6vmin solid var(--gv-ink); box-shadow: 1vmin 1vmin 0 var(--gv-ink); animation: gv-card-in .35s cubic-bezier(.2, .9, .3, 1.2) both; }
-.gv-l-q.right { background: #c9f7d9; }
-.gv-l-q.wrong { background: #ffd0d0; animation: gv-shake .45s; }
-.gv-tf { display: flex; gap: 4vmin; }
-.gv-tf span { font-family: 'Bangers', sans-serif; font-size: 6vmin; letter-spacing: .05em; padding: .6vmin 5vmin; border: .5vmin solid var(--gv-ink); box-shadow: .7vmin .7vmin 0 var(--gv-ink); }
-.gv-tf .t { background: var(--gv-green); transform: rotate(-2deg); }
-.gv-tf .f { background: var(--gv-red); color: #fff; transform: rotate(2deg); }
-.gv-pips { display: flex; gap: 1.6vmin; }
-.gv-pips i { width: 6.4vmin; height: 6.4vmin; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 3.4vmin; background: #fff; border: .45vmin solid var(--gv-ink); }
-.gv-pips i.now { background: var(--gv-yellow); animation: gv-throb 1s infinite; }
-.gv-pips i.yes { background: var(--gv-green); animation: gv-pop .3s both; }
-.gv-pips i.no { background: var(--gv-red); color: #fff; animation: gv-pop .3s both; }
-.gv-bar { width: 100%; height: 3vmin; background: #fff; border: .45vmin solid var(--gv-ink); overflow: hidden; }
-.gv-bar i { display: block; height: 100%; background: var(--gv-yellow); transform-origin: left; animation: gv-shrink linear forwards; }
-@keyframes gv-shrink { to { transform: scaleX(0); } }
-.gv-l-score { font-family: 'Bangers', sans-serif; font-size: 18vmin; color: var(--gv-yellow); -webkit-text-stroke: 1vmin var(--gv-ink); paint-order: stroke fill; text-shadow: 1vmin 1vmin 0 var(--gv-ink);
-  animation: gv-slam .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+/* a trophy won */
+.gv-trophy-won { background: var(--c); }
+.gv-trophy-won .gv-win-hero { display: flex; align-items: flex-end; gap: 2vmin; }
+.gv-trophy-won .gv-trophy.big { width: 44vmin; height: 44vmin; filter: drop-shadow(1.2vmin 1.2vmin 0 var(--gv-ink)); animation: gv-slam .7s cubic-bezier(.2, 1.6, .4, 1) both; }
+.gv-trophy-won .beside { width: 24vmin; height: 24vmin; filter: drop-shadow(1vmin 1vmin 0 var(--gv-ink)); }
 
 .gv-win { background: var(--c); }
 .gv-win-hero { position: relative; width: max-content; margin: 0 auto 2vmin; animation: gv-slam .7s cubic-bezier(.2, 1.6, .4, 1) both; }
@@ -232,6 +206,28 @@
 .gv-rules { display: flex; justify-content: center; gap: 2vmin; flex-wrap: wrap; color: var(--gv-ink); font-size: 2.3vmin; font-weight: 800; }
 .gv-rules span { display: inline-flex; align-items: center; gap: 1vmin; padding: .8vmin 1.8vmin; background: #fff; border: .35vmin solid var(--gv-ink); }
 .gv-rules .gv-bolt { width: 3vmin; height: 3vmin; }
+
+/* the five decks */
+.gv-chip.deck { background: var(--d); color: var(--gv-ink); }
+.gv-deckpill { background: var(--d) !important; font-family: 'Bangers', sans-serif; letter-spacing: .05em; font-size: 2.6vmin; }
+.gv-card { border-top: 2.2vmin solid var(--a); }
+.gv-body { display: grid; gap: 2vmin; }
+.gv-body.with-pic { grid-template-columns: auto 1fr; align-items: center; }
+.gv-body.with-pic > :not(.gv-pic) { grid-column: 2; }
+.gv-body.with-pic .gv-pic { grid-row: span 2; }
+.gv-pic { width: 30vmin; height: 30vmin; object-fit: contain; padding: 2vmin; background: var(--gv-paper); border: .5vmin solid var(--gv-ink); box-shadow: .8vmin .8vmin 0 var(--gv-ink); transform: rotate(-2deg); }
+.gv-choices.three { grid-template-columns: 1fr; gap: 1.6vmin; }
+.gv-answer { justify-self: center; text-align: center; font-size: 4.4vmin; font-weight: 900; padding: 1.2vmin 3vmin; background: var(--gv-green); border: .5vmin solid var(--gv-ink); box-shadow: .7vmin .7vmin 0 var(--gv-ink);
+  animation: gv-slam .5s cubic-bezier(.2, 1.6, .4, 1) both; transform: rotate(-1deg); }
+.gv-answer small { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2.4vmin; letter-spacing: .1em; }
+.gv-moves { display: grid; gap: 2.6vmin; justify-items: center; }
+.gv-moves .gv-q { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: .04em; font-size: 8vmin; }
+.gv-actors { display: flex; align-items: center; gap: 3vmin; }
+.gv-actors span { font-size: 3.6vmin; font-weight: 900; padding: .8vmin 2.4vmin; background: var(--c); color: #fff; border: .5vmin solid var(--gv-ink); box-shadow: .6vmin .6vmin 0 var(--gv-ink);
+  -webkit-text-stroke: .3vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-actors b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 5vmin; }
+.gv-stamp { position: absolute; z-index: 4; right: -3vmin; bottom: 2vmin; font-family: 'Bangers', sans-serif; font-size: 6vmin; letter-spacing: .06em; color: #fff; padding: .2vmin 2.4vmin;
+  background: var(--gv-red); border: .6vmin solid var(--gv-ink); box-shadow: .8vmin .8vmin 0 var(--gv-ink); transform: rotate(-10deg); animation: gv-stamp .5s cubic-bezier(.2, 1.6, .4, 1) both; }
 
 /* ---------- the phone: the same comic book, one panel at a time ---------- */
 .gv { display: grid; gap: 16px; padding: 14px 12px 104px; margin: 0 -4px; color: var(--gv-ink); font-family: 'Outfit', system-ui, sans-serif; background: var(--gv-paper);
@@ -292,3 +288,31 @@
 .gv-ptrack .gv-cell.light .gv-bolt { width: 14px; height: 14px; }
 .gv-ptrack .gv-runner .gv-token { width: 40px; height: 40px; margin-top: -14px; }
 .gv-another { display: grid; place-items: center; text-align: center; text-decoration: none; box-sizing: border-box; }
+
+/* the phone: the path, the card, judging */
+.gv-ppath { padding: 12px 10px 10px; }
+.gv-path.compact { gap: 6px; }
+.gv-path.compact .gv-spaces { height: 26px; }
+.gv-path.compact .gv-space { margin: 0 1px; border-width: 2px; }
+.gv-path.compact .gv-space.here { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gv-ink); }
+.gv-path.compact .gv-cup .gv-trophy { width: 34px; height: 34px; margin-top: -12px; }
+.gv-path.compact .gv-circle { gap: 2px; padding: 3px 5px; border-width: 2px; min-height: 0; }
+.gv-path.compact .gv-circle .gv-trophy { width: 16px; height: 16px; }
+.gv-pchip { display: inline-block; font-family: 'Bangers', sans-serif; font-size: 1.1rem; letter-spacing: .05em; padding: 0 8px; border: 2px solid var(--gv-ink); background: var(--d, var(--gv-cyan)); color: var(--gv-ink); }
+.gv-pchip.guys { background: var(--gv-blue); color: #fff; } .gv-pchip.gals { background: var(--gv-pink); color: #fff; }
+.gv-pcard .gv-pic { width: 150px; height: 150px; justify-self: center; padding: 10px; border-width: 3px; box-shadow: 4px 4px 0 var(--gv-ink); }
+.gv-pans { font-size: 1.5rem; font-weight: 900; padding: 10px 12px; background: #c9f7d9; border: 3px solid var(--gv-ink); }
+.gv-pans small { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: .9rem; letter-spacing: .1em; }
+.gv-judge { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.gv-judge button { all: unset; box-sizing: border-box; cursor: pointer; text-align: center; min-height: 110px; font-family: 'Bangers', sans-serif; font-size: 2.2rem; letter-spacing: .05em;
+  border: 3px solid var(--gv-ink); box-shadow: 5px 5px 0 var(--gv-ink); }
+.gv-judge .yes { background: var(--gv-green); color: var(--gv-ink); transform: rotate(-1.5deg); }
+.gv-judge .no { background: var(--gv-red); color: #fff; transform: rotate(1.5deg); }
+.gv-judge button:active { translate: 3px 3px; box-shadow: 2px 2px 0 var(--gv-ink); }
+.gv-judge.three { grid-template-columns: 1fr; }
+.gv-judge.three button { min-height: 70px; font-size: 1.6rem; transform: none; background: var(--c, #fff); color: #fff; -webkit-text-stroke: 3px var(--gv-ink); paint-order: stroke fill; }
+.gv-judge.three button.nobody { background: #fff; color: var(--gv-ink); -webkit-text-stroke: 0; }
+.gv-challenge { background: var(--gv-red) !important; color: #fff !important; font-family: 'Bangers', sans-serif; font-weight: 400 !important; font-size: 1.5rem !important; letter-spacing: .05em; }
+.gv-move { font-family: 'Bangers', sans-serif; font-size: 2.4rem; letter-spacing: .04em; line-height: 1.05; text-align: center; padding: 18px 10px; background: var(--gv-yellow); border: 3px solid var(--gv-ink); }
+.gv-pstat { display: flex; gap: 8px; align-items: center; margin-left: auto; margin-bottom: 8px; }
+.gv-pstat span { font-family: 'Bangers', sans-serif; font-size: 1.2rem; color: var(--gv-ink); background: var(--gv-yellow); border: 3px solid var(--gv-ink); padding: 0 8px; white-space: nowrap; }

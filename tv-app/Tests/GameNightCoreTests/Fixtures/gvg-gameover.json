@@ -25,7 +25,7 @@
         "id": "t1",
         "name": "Gals",
         "color": "#ff4fa3",
-        "score": 0,
+        "score": 2,
         "connected": true,
         "members": 2,
         "memberNames": [
@@ -37,7 +37,7 @@
         "id": "t2",
         "name": "Guys",
         "color": "#3b8bff",
-        "score": 20,
+        "score": 0,
         "connected": true,
         "members": 2,
         "memberNames": [
@@ -62,12 +62,49 @@
     "phase": "gameover",
     "status": "gameover",
     "hosted": false,
-    "length": 20,
-    "step": 2,
-    "lightningAt": [
-      5,
-      10,
-      15
+    "pos": 5,
+    "green": 5,
+    "path": [
+      "facts",
+      "stuff",
+      "pics",
+      "lives",
+      "moves",
+      "any"
+    ],
+    "greenColor": "#3ddc84",
+    "first": "gals",
+    "decks": [
+      {
+        "id": "facts",
+        "name": "Our Facts",
+        "short": "Facts",
+        "color": "#9b5cff"
+      },
+      {
+        "id": "stuff",
+        "name": "Our Stuff",
+        "short": "Stuff",
+        "color": "#ffd23f"
+      },
+      {
+        "id": "pics",
+        "name": "Our Pics",
+        "short": "Pics",
+        "color": "#ff8a3d"
+      },
+      {
+        "id": "lives",
+        "name": "Our Lives",
+        "short": "Lives",
+        "color": "#2ec5ff"
+      },
+      {
+        "id": "moves",
+        "name": "Our Moves",
+        "short": "Moves",
+        "color": "#ff3b5c"
+      }
     ],
     "teams": [
       {
@@ -75,11 +112,8 @@
         "id": "t2",
         "name": "Guys",
         "color": "#3b8bff",
-        "pos": 20,
-        "used": [
-          5,
-          10
-        ],
+        "trophies": 0,
+        "challenges": 2,
         "members": [
           {
             "id": "p3",
@@ -101,8 +135,8 @@
         "id": "t1",
         "name": "Gals",
         "color": "#ff4fa3",
-        "pos": 0,
-        "used": [],
+        "trophies": 2,
+        "challenges": 3,
         "members": [
           {
             "id": "p5",
@@ -121,37 +155,19 @@
       }
     ],
     "turn": "gals",
-    "order": [
-      "guys",
-      "gals"
-    ],
-    "lastChance": true,
+    "trophy": 2,
+    "target": 2,
     "settings": {
       "setId": "family",
-      "length": 20,
-      "answerSecs": 30,
-      "lightning": true
+      "target": 2,
+      "challenges": true
     },
     "line": {
-      "text": "The Guys win!",
+      "text": "The Gals win!",
       "next": ""
     },
     "timer": null,
     "reactions": [],
-    "lengths": [
-      {
-        "n": 15,
-        "label": "Quick"
-      },
-      {
-        "n": 20,
-        "label": "Standard"
-      },
-      {
-        "n": 30,
-        "label": "Long"
-      }
-    ],
     "reactionList": [
       "😂",
       "🔥",
@@ -160,22 +176,29 @@
       "🙄",
       "💪"
     ],
+    "targets": [
+      1,
+      2,
+      3
+    ],
     "log": [
-      "Lightning Round for the Guys!",
-      "Lightning Round: the Guys got 5 of 5",
-      "The Gals got it wrong",
-      "The Guys got it right",
-      "The Guys reached the finish! One last chance for the Gals",
-      "The Gals got it wrong"
+      "The Gals got the charade",
+      "The Gals got it right",
+      "The Gals win trophy 1!",
+      "The Guys missed",
+      "The Gals got it right",
+      "The Gals win trophy 2!"
     ],
     "lastMove": {
-      "side": "guys",
-      "from": 18,
-      "to": 20,
-      "n": 4
+      "from": 5,
+      "to": 5,
+      "n": 1,
+      "side": "gals",
+      "trophy": true
     },
+    "trophyWon": "gals",
     "winners": [
-      "guys"
+      "gals"
     ]
   }
 }

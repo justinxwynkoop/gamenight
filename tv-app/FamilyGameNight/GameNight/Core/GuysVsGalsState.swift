@@ -1,22 +1,17 @@
 import Foundation
 
 // What the engine pushes to a TV while Guys vs Gals is the active game (`publicView()` in the repository's
-// games/guysvsgals/game.js). Same rules as ServerState.swift: only what the TV draws is decoded, extra fields are
-// ignored, and unknown phases become `.unknown`. The right answer to a question only arrives once it is revealed.
+// games/guysvsgals/game.js): the trophy tug-of-war rules. Same rules as ServerState.swift: only what the TV draws is
+// decoded, extra fields are ignored, and unknown phases become `.unknown`. A card's answer only arrives once it has
+// been judged, and an Our Moves card never says what is being acted out until then.
 
 enum GvgPhase: String, Decodable, Equatable {
-    case lobby, toss, question, reveal
-    case lightningIntro = "lightning-intro"
-    case lightning
-    case lightningDone = "lightning-done"
-    case gameover, unknown
+    case lobby, card, result, trophy, gameover, unknown
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
         self = GvgPhase(rawValue: raw) ?? .unknown
     }
-
-    var isLightning: Bool { self == .lightningIntro || self == .lightning || self == .lightningDone }
 }
 
 struct GvgMember: Decodable, Equatable, Identifiable {
@@ -33,10 +28,10 @@ struct GvgTeam: Decodable, Equatable, Identifiable {
     var name: String
     /// "#3b8bff"
     var color: String
-    /// Spaces along the track, 0 to the game's length.
-    var pos: Int
-    /// Lightning spaces this team has already played.
-    var used: [Int]
+    /// Trophies won so far.
+    var trophies: Int
+    /// Challenge tokens left.
+    var challenges: Int
     var members: [GvgMember]
 
     var id: String { side }
@@ -47,12 +42,25 @@ struct GvgLine: Decodable, Equatable {
     var next: String
 }
 
+/// One of the five decks: "facts", "stuff", "pics", "lives" or "moves".
+struct GvgDeck: Decodable, Equatable, Identifiable {
+    var id: String
+    /// "Our Facts"
+    var name: String
+    /// "Facts"
+    var short: String
+    /// "#9b5cff"
+    var color: String
+}
+
 struct GvgMove: Decodable, Equatable {
-    var side: String
     var from: Int
     var to: Int
     /// Counts moves, so the same move twice still animates.
     var n: Int
+    var side: String?
+    /// The trophy went off the end of the path into a winner's circle.
+    var trophy: Bool?
 }
 
 struct GvgReaction: Decodable, Equatable, Identifiable {
@@ -62,51 +70,53 @@ struct GvgReaction: Decodable, Equatable, Identifiable {
     var name: String
 }
 
-struct GvgQuestion: Decodable, Equatable {
+struct GvgPerson: Decodable, Equatable {
+    var id: String?
+    var name: String
+}
+
+struct GvgCard: Decodable, Equatable {
     var n: Int
-    var cat: String?
-    /// Whose stuff it is about: "guys" (answered by the Gals) or "gals".
+    var deck: String
+    var deckName: String
+    /// Whose stuff it is (the reading team): "guys" (answered by the Gals) or "gals".
     var about: String
-    var text: String
-    var choices: [String]
-    /// Votes for each choice.
-    var counts: [Int]
-    /// Who on the team has voted.
-    var voters: [String]
-    var locked: Bool
-    /// The team's answer, once it is locked in (nil: nobody voted in time).
-    var pick: Int?
-    /// Only once it is revealed.
-    var answer: Int?
+    /// read | secret | guess | pick | act | done
+    var stage: String
+    var challenged: Bool
+    var reader: GvgPerson
+    /// Our Moves: who acts for the answering team.
+    var actor: GvgPerson?
+    /// The question (not on an Our Moves card).
+    var text: String?
+    var cat: String?
+    /// Our Pics: one of the pictures that come with the game (Assets GvgPic-<name>), or a web address.
+    var img: String?
+    /// Our Lives: A, B and C.
+    var choices: [String]?
+    /// Our Lives: who is guessing, and who has.
+    var guessers: [String]?
+    var voters: [String]?
+    /// Once it has been judged: the answer, the reader's secret pick, or what was acted out.
+    var answer: String?
 }
 
 struct GvgResult: Decodable, Equatable {
-    var correct: Bool
-    var moved: Int?
+    var right: Bool
+    /// The side the trophy moved toward (nil: it stayed).
+    var moved: String?
+    /// The side that won the trophy with this card.
+    var trophy: String?
+    /// Whose turn it is next.
+    var next: String
     var timeout: Bool?
-}
-
-struct GvgLightningItem: Decodable, Equatable {
-    var text: String
-    var a: Bool
-    var correct: Bool?
-}
-
-struct GvgFlash: Decodable, Equatable {
-    var i: Int
-    var correct: Bool
-}
-
-struct GvgLightning: Decodable, Equatable {
-    var side: String
-    var total: Int
-    var i: Int
-    var rights: Int
-    var over: Bool
-    var current: String?
-    var done: [GvgLightningItem]
-    /// Right or wrong on the statement just answered, for a moment.
-    var flash: GvgFlash?
+    /// Our Moves: the readers' team shouted it first.
+    var stolen: Bool?
+    var challenged: Bool?
+    var answer: String?
+    /// Our Lives: the reader's secret pick and the team's guess.
+    var secret: Int?
+    var pick: Int?
 }
 
 struct GuysVsGalsState: Decodable, Equatable {
@@ -114,20 +124,27 @@ struct GuysVsGalsState: Decodable, Equatable {
     var lobbyTitle: String
     var phase: GvgPhase
     var hosted: Bool?
-    var length: Int
-    var step: Int
-    var lightningAt: [Int]
+    /// The trophy: -green (the Guys' green space) through 0 (START) to green (the Gals').
+    var pos: Int
+    var green: Int
+    /// The deck each space draws from, out from START ("any" on green).
+    var path: [String]
+    var greenColor: String?
+    var decks: [GvgDeck]
     var teams: [GvgTeam]
     var turn: String?
-    var lastChance: Bool?
+    /// Which trophy is in play.
+    var trophy: Int
+    /// Trophies to win.
+    var target: Int
     var line: GvgLine
     var timer: TimerState?
     var reactions: [GvgReaction]?
     var lastMove: GvgMove?
     var setTitle: String?
-    var question: GvgQuestion?
+    var card: GvgCard?
     var result: GvgResult?
-    var lightning: GvgLightning?
+    var trophyWon: String?
     var winners: [String]?
 
     func team(_ side: String?) -> GvgTeam? {
@@ -137,71 +154,68 @@ struct GuysVsGalsState: Decodable, Equatable {
 
     func name(_ side: String?) -> String { team(side)?.name ?? (side == "gals" ? "Gals" : "Guys") }
 
+    func deck(_ id: String?) -> GvgDeck? { decks.first { $0.id == id } }
+
+    /// The deck a space draws from (n steps from START, either way).
+    func spaceDeck(_ n: Int) -> GvgDeck {
+        let i = min(green, abs(n))
+        let id = path.indices.contains(i) ? path[i] : "facts"
+        if id == "any" { return GvgDeck(id: "any", name: "Any deck", short: "Any", color: greenColor ?? "#3ddc84") }
+        return deck(id) ?? GvgDeck(id: id, name: id, short: id, color: "#cccccc")
+    }
+
     static func otherSide(_ side: String) -> String { side == "guys" ? "gals" : "guys" }
 
     /// "Guy stuff" or "Gal stuff".
     static func aboutText(_ side: String) -> String { side == "guys" ? "Guy stuff" : "Gal stuff" }
-
-    /// "Standard game · 20 spaces"
-    var lengthText: String {
-        let label = [15: "Quick game", 20: "Standard game", 30: "Long game"][length] ?? "Race"
-        return "\(label) · \(length) spaces"
-    }
 }
 
 extension DisplayScreen {
-    /// Which Guys vs Gals screen the TV shows: the shared lobby, or the race.
+    /// Which Guys vs Gals screen the TV shows: the shared lobby, or the tug of war.
     static func guysVsGalsScreen(for game: GuysVsGalsState, inProgress: Bool) -> DisplayScreen {
         (!inProgress || game.phase == .lobby) ? .lobby : .guysVsGals
     }
 }
 
 extension SoundPlanner {
-    /// Guys vs Gals has recordings of its own (CC0, Sounds/CREDITS.txt). The coin toss (roundstart), a question
-    /// (open), the team's answer locking in (lock), a token moving (pick), right, wrong or out of time (correct, wrong,
-    /// timeup), a Lightning Round (dd, then each statement ding or strike, with the "think" music under it), the winner
-    /// (fanfare, applause). Follows the web TV (public/games/guysvsgals/tv.js, onChange).
+    /// Guys vs Gals has recordings of its own (CC0, Sounds/CREDITS.txt). The game begins (roundstart), a card is dealt
+    /// (open), a challenge is thrown (dd), the Our Lives guessing or a charade begins (lock, with the "think" music under
+    /// a charade), the trophy moves (pick), right, wrong or out of time (correct, wrong, timeup), a trophy is won (ding,
+    /// applause), the winners (fanfare, applause). Follows the web TV (public/games/guysvsgals/tv.js, onChange).
     static func guysVsGalsPlan(from before: GuysVsGalsState, to after: GuysVsGalsState, into plan: inout SoundPlan) {
         let joined = { (g: GuysVsGalsState) in g.teams.reduce(0) { $0 + $1.members.count } }
         if after.phase == .lobby, before.phase == .lobby, joined(after) > joined(before) {
             plan.cues.append(.join)
         }
-        plan.playMusic = after.phase == .lightning
-        if let move = after.lastMove, move.n != before.lastMove?.n {
+        plan.playMusic = after.phase == .card && after.card?.stage == "act"
+        if let move = after.lastMove, move.n != before.lastMove?.n, move.trophy != true {
             plan.cues.append(.pick)
         }
-        if after.phase == .question, before.phase == .question, let q = after.question, let p = before.question {
-            if q.n == p.n, !p.locked, q.locked { plan.cues.append(.lock) }
-            if q.n != p.n { plan.cues.append(.open) }
-        }
-        if after.phase == .lightning, before.phase == .lightning, let l = after.lightning, let p = before.lightning, l.i > p.i {
-            plan.cues.append(l.done.last?.correct == true ? .ding : .strike)
+        if after.phase == .card, let c = after.card {
+            if c.n != before.card?.n { plan.cues.append(.open) }
+            else if c.challenged, before.card?.challenged != true { plan.cues.append(.dd) }
+            else if c.stage != before.card?.stage, c.stage == "guess" || c.stage == "act" { plan.cues.append(.lock) }
         }
         guard after.phase != before.phase else { return }
         switch after.phase {
-        case .toss: plan.cues.append(.roundstart)
-        case .question: plan.cues.append(.open)
-        case .reveal:
-            if after.result?.correct == true { plan.cues.append(.correct) }
-            else { plan.cues.append(after.result?.timeout == true ? .timeup : .wrong) }
-        case .lightningIntro: plan.cues.append(.dd)
-        case .lightningDone:
-            // The clock beat them.
-            if let l = after.lightning, l.done.count < l.total { plan.cues.append(.timeup) }
+        case .card:
+            if before.phase == .lobby { plan.cues.append(.roundstart) }
+        case .result:
+            if after.result?.timeout == true { plan.cues.append(.timeup) }
+            else { plan.cues.append(after.result?.moved != nil ? .correct : .wrong) }
+        case .trophy:
+            plan.cues.append(.ding)
+            plan.cues.append(.applause)
         case .gameover:
             plan.cues.append(.fanfare)
             plan.cues.append(.applause)
-        case .lobby, .lightning, .unknown: break
+        case .lobby, .unknown: break
         }
     }
 
-    /// The answer clock and the Lightning Round's clock tick in their last seconds.
+    /// A charade's clock ticks in its last seconds.
     static func guysVsGalsActiveTimer(in game: GuysVsGalsState) -> TimerState? {
-        guard let timer = game.timer, !timer.timedOut else { return nil }
-        switch game.phase {
-        case .question where game.question?.locked != true: return timer
-        case .lightning: return timer
-        default: return nil
-        }
+        guard let timer = game.timer, !timer.timedOut, game.phase == .card, timer.kind == "moves" else { return nil }
+        return timer
     }
 }
