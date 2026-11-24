@@ -4,9 +4,9 @@ import UIKit
 
 // Guys vs Gals on the TV, drawn as a comic book page: newsprint paper, ink outlines with hard offset shadows, halftone
 // dots and Bangers lettering. A tall panel for each team with its superhero (art from Microsoft's Fluent Emoji, MIT,
-// public/games/guysvsgals/art/SOURCES.md), the question in a speech balloon between them, and the race strip along the
-// foot. The coin toss, the Lightning Rounds and the winner come up over everything. These follow the web TV
-// (public/games/guysvsgals/tv.js). The lobby is the shared lobby screen.
+// public/games/guysvsgals/art/SOURCES.md), the card being read in a speech balloon between them, and the tug-of-war
+// path along the foot with the trophy on it. A trophy won and the winners come up over everything. These follow the web
+// TV (public/games/guysvsgals/tv.js). The lobby is the shared lobby screen.
 
 enum GV {
     static let paper = Color(hex: 0xFBF1DC)
@@ -19,7 +19,7 @@ enum GV {
     static let red = Color(hex: 0xFF4D4D)
     static let purple = Color(hex: 0x5B2BD6)
     static let dim = Color(hex: 0x5D5668)
-    static let letters = ["A", "B", "C", "D"]
+    static let letters = ["A", "B", "C"]
 
     /// Bangers ships inside the app (GameNight/Fonts, open source). If it is missing the system font stands in.
     private static let bangersLoaded: Bool = {
@@ -69,7 +69,7 @@ struct GuysVsGalsScreen: View {
                     GvgTeamPanel(game: game, side: "gals").rotationEffect(.degrees(1.2))
                 }
                 .frame(maxHeight: .infinity)
-                GvgTracks(game: game)
+                GvgPath(game: game)
             }
             .padding(.horizontal, 60)
             .padding(.top, 40)
@@ -82,9 +82,9 @@ struct GuysVsGalsScreen: View {
 
     @ViewBuilder
     private var center: some View {
-        if (game.phase == .question || game.phase == .reveal), game.question != nil {
-            GvgQuestionCard(game: game, receivedAt: receivedAt)
-                .id(game.question?.n)
+        if (game.phase == .card || game.phase == .result), game.card != nil {
+            GvgDeckCard(game: game, receivedAt: receivedAt)
+                .id(game.card?.n)
                 .transition(.scale(scale: 0.8).combined(with: .opacity))
         } else {
             VStack(spacing: 20) {
@@ -103,10 +103,8 @@ struct GuysVsGalsScreen: View {
     @ViewBuilder
     private var overlay: some View {
         switch game.phase {
-        case .toss:
-            GvgTossScreen(game: game).transition(.opacity)
-        case .lightningIntro, .lightning, .lightningDone:
-            if game.lightning != nil { GvgLightningScreen(game: game, receivedAt: receivedAt).transition(.opacity) }
+        case .trophy:
+            GvgTrophyScreen(game: game).transition(.opacity)
         case .gameover:
             GvgWinScreen(game: game).transition(.opacity)
         default:
@@ -265,75 +263,66 @@ private struct Sticker: View {
     }
 }
 
-// MARK: - The race strip
+// MARK: - The tug-of-war path
 
-private struct GvgTracks: View {
+/// The Guys' winner's circle, their green space, the coloured spaces out to START and back to the Gals' green space
+/// and winner's circle, with the trophy on the space it is on.
+private struct GvgPath: View {
     let game: GuysVsGalsState
 
     var body: some View {
-        VStack(spacing: 14) {
-            GvgLane(game: game, side: "guys")
-            GvgLane(game: game, side: "gals")
+        HStack(spacing: 18) {
+            circle("guys")
+            GeometryReader { proxy in
+                let n = game.green * 2 + 1
+                let w = proxy.size.width / CGFloat(n)
+                let x = { (pos: Int) in (CGFloat(pos + game.green) + 0.5) * w }
+                ZStack(alignment: .leading) {
+                    HStack(spacing: 0) {
+                        ForEach(-game.green...game.green, id: \.self) { i in
+                            space(i).padding(.horizontal, 4).frame(width: w, height: proxy.size.height)
+                        }
+                    }
+                    Image("GvgTrophy").resizable().interpolation(.high).scaledToFit()
+                        .frame(width: proxy.size.height * 1.3, height: proxy.size.height * 1.3)
+                        .shadow(color: GV.ink, radius: 0, x: 5, y: 5)
+                        .position(x: x(min(game.green, max(-game.green, game.pos))), y: proxy.size.height * 0.32)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.6), value: game.pos)
+                }
+            }
+            .frame(height: 84)
+            circle("gals")
         }
-        .padding(.horizontal, 22).padding(.vertical, 20)
+        .padding(.horizontal, 22).padding(.vertical, 18)
         .comicPanel(.white)
     }
-}
 
-/// Start, a box for every space (lightning ones in yellow, greyed once played), the finish, and the superhero.
-private struct GvgLane: View {
-    let game: GuysVsGalsState
-    let side: String
-
-    var body: some View {
-        let n = max(1, game.length)
-        let team = game.team(side)
-        let pos = min(n, max(0, team?.pos ?? 0))
-        let color = GV.color(game, side)
-        let lit = Set(game.lightningAt)
-        let used = Set(team?.used ?? [])
-        let turn = game.turn == side
-        GeometryReader { proxy in
-            let gap: CGFloat = 8
-            let cell = (proxy.size.width - gap * CGFloat(n)) / CGFloat(n + 1)
-            let x = { (i: Int) in CGFloat(i) * (cell + gap) + cell / 2 }
-            ZStack(alignment: .leading) {
-                HStack(spacing: gap) {
-                    ForEach(0...n, id: \.self) { i in
-                        space(i, n: n, pos: pos, color: color, lit: lit.contains(i), used: used.contains(i))
-                            .frame(width: cell, height: proxy.size.height)
-                    }
-                }
-                GvgToken(side: side, size: proxy.size.height * 1.5)
-                    .rotationEffect(.degrees(turn ? -4 : 0))
-                    .position(x: x(pos), y: proxy.size.height * 0.35)
-                    .animation(.spring(response: 0.9, dampingFraction: 0.62), value: pos)
-            }
+    private func space(_ i: Int) -> some View {
+        let d = game.spaceDeck(i)
+        let here = i == game.pos
+        let fill: Color = i == 0 ? Color(hex: 0x9B5CFF) : Color(playerHex: d.color)
+        return ZStack {
+            Rectangle().fill(fill)
+            Rectangle().strokeBorder(GV.ink, lineWidth: 5)
+            Text(i == 0 ? "START" : d.short.uppercased()).font(GV.bangers(26)).foregroundStyle(i == 0 ? .white : GV.ink)
+                .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 4)
         }
-        .frame(height: 70)
+        .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.14, d: 1, tx: 6, ty: 0))
+        .overlay(Rectangle().strokeBorder(here ? GV.ink : .clear, lineWidth: 6).padding(-10))
+        .zIndex(here ? 1 : 0)
     }
 
-    @ViewBuilder
-    private func space(_ i: Int, n: Int, pos: Int, color: Color, lit: Bool, used: Bool) -> some View {
-        let box = Rectangle()
-        ZStack {
-            if i == n {
-                box.fill(.white)
-                Image("GvgTrophy").resizable().scaledToFit().padding(6)
-            } else if i == 0 {
-                box.fill(GV.ink)
-                Text("GO").font(GV.bangers(30)).foregroundStyle(.white)
-            } else if lit {
-                box.fill(GV.yellow)
-                Image("GvgBolt").resizable().scaledToFit().padding(8)
-            } else {
-                box.fill(i <= pos ? color : GV.paper)
-                Text("\(i)").font(GV.bangers(32)).foregroundStyle(i <= pos ? .white : GV.ink).rotationEffect(.degrees(-4))
+    private func circle(_ side: String) -> some View {
+        let won = game.team(side)?.trophies ?? 0
+        return HStack(spacing: 6) {
+            ForEach(0..<max(1, game.target), id: \.self) { i in
+                Image("GvgTrophy").resizable().scaledToFit().frame(width: 44, height: 44)
+                    .saturation(i < won ? 1 : 0).opacity(i < won ? 1 : 0.4)
             }
-            box.strokeBorder(GV.ink, lineWidth: 4)
         }
-        .saturation(lit && used ? 0 : 1)
-        .opacity(lit && used ? 0.55 : 1)
+        .padding(.horizontal, 18).padding(.vertical, 10)
+        .background(Capsule().fill(GV.color(game, side)))
+        .overlay(Capsule().strokeBorder(GV.ink, lineWidth: 5))
     }
 }
 
@@ -346,41 +335,49 @@ private struct GvgTeamPanel: View {
     var body: some View {
         let team = game.team(side)
         let color = GV.color(game, side)
-        let onClock = game.turn == side && (game.phase == .question || game.phase == .reveal)
-        let asking = onClock && game.phase == .question
-        let voters = Set(game.question?.voters ?? [])
+        let live = game.phase == .card || game.phase == .result
+        let turn = live && game.turn == side
+        let reading = live && game.card?.about == side
+        let c = game.card
+        let guessing = game.phase == .card && c?.deck == "lives" && c?.stage == "guess"
+        let guessers = Set(guessing ? c?.guessers ?? [] : [])
+        let voters = Set(guessing ? c?.voters ?? [] : [])
         VStack(spacing: 12) {
             Lettering(text: (team?.name ?? side.capitalized).uppercased(), size: 110)
             GvgToken(side: side, size: 330)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-                .scaleEffect(onClock ? 1.04 : 1, anchor: .bottom)
+                .scaleEffect(turn ? 1.04 : 1, anchor: .bottom)
             HStack(spacing: 8) {
                 ForEach((team?.members ?? []).prefix(4)) { m in
                     HStack(spacing: 4) {
                         Text(m.name).lineLimit(1)
-                        if asking { Text(voters.contains(m.id) ? "✓" : "…") }
+                        if live, c?.reader.id == m.id { Text("📖") }
+                        else if live, c?.actor?.id == m.id { Text("🎭") }
+                        else if guessers.contains(m.id) { Text(voters.contains(m.id) ? "✓" : "…") }
                     }
                     .font(GV.body(22, .black)).foregroundStyle(GV.ink)
                     .padding(.horizontal, 10).padding(.vertical, 3)
-                    .background(Rectangle().fill(asking && voters.contains(m.id) ? GV.yellow : .white))
+                    .background(Rectangle().fill(voters.contains(m.id) ? GV.yellow : .white))
                     .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 3))
                     .opacity(m.connected ? 1 : 0.5)
                 }
             }
-            HStack(alignment: .center) {
-                Text("Answers \(GuysVsGalsState.aboutText(GuysVsGalsState.otherSide(side)).lowercased())")
-                    .font(GV.body(21, .black)).foregroundStyle(GV.ink).lineLimit(2)
-                Spacer(minLength: 4)
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("\(team?.pos ?? 0)").font(GV.bangers(84)).contentTransition(.numericText())
-                    Text("/\(game.length)").font(GV.bangers(36)).opacity(0.7)
+            HStack(spacing: 8) {
+                ForEach(0..<max(1, game.target), id: \.self) { i in
+                    Image("GvgTrophy").resizable().scaledToFit().frame(width: 64, height: 64)
+                        .saturation(i < (team?.trophies ?? 0) ? 1 : 0).opacity(i < (team?.trophies ?? 0) ? 1 : 0.4)
                 }
-                .foregroundStyle(GV.ink)
+                Spacer(minLength: 4)
+                ForEach(0..<3, id: \.self) { i in
+                    Text("✋").font(.system(size: 30)).frame(width: 50, height: 50)
+                        .background(Circle().fill(.white)).overlay(Circle().strokeBorder(GV.ink, lineWidth: 3))
+                        .saturation(i < (team?.challenges ?? 0) ? 1 : 0).opacity(i < (team?.challenges ?? 0) ? 1 : 0.35)
+                }
             }
-            .padding(.horizontal, 18).padding(.vertical, 6)
+            .padding(.horizontal, 18).padding(.vertical, 8)
             .background(Rectangle().fill(GV.yellow))
             .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 5))
-            .animation(.default, value: team?.pos)
+            .animation(.default, value: team?.trophies)
         }
         .padding(22)
         .frame(width: 450)
@@ -395,10 +392,10 @@ private struct GvgTeamPanel: View {
         }
         .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 6))
         .background(Rectangle().fill(GV.ink).offset(x: 12, y: 12))
-        .saturation(onClock ? 1 : 0.7)
+        .saturation(turn ? 1 : 0.7)
         .overlay(alignment: side == "guys" ? .topTrailing : .topLeading) {
-            if onClock {
-                Sticker(text: game.lastChance == true ? "LAST CHANCE!" : "ON THE CLOCK!", fill: .white, size: 44)
+            if turn || reading {
+                Sticker(text: turn ? "YOUR TURN!" : "READING!", fill: turn ? .white : GV.cyan, size: 44)
                     .background(Rectangle().fill(GV.ink).offset(x: 6, y: 6))
                     .rotationEffect(.degrees(side == "guys" ? 7 : -7))
                     .offset(x: side == "guys" ? 16 : -16, y: 150)
@@ -408,107 +405,188 @@ private struct GvgTeamPanel: View {
     }
 }
 
-// MARK: - The question
+// MARK: - The card
 
-private struct GvgQuestionCard: View {
+/// An Our Pics picture: one that comes with the game, or one from the web.
+private struct GvgPic: View {
+    let img: String
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if UIImage(named: "GvgPic-\(img)") != nil {
+                Image("GvgPic-\(img)").resizable().interpolation(.high).scaledToFit()
+            } else if img.hasPrefix("http"), let url = URL(string: img) {
+                AsyncImage(url: url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
+            } else {
+                Text("🖼️").font(.system(size: size * 0.5))
+            }
+        }
+        .padding(size * 0.08)
+        .frame(width: size, height: size)
+        .comicPanel(GV.paper, line: 5, drop: 9)
+        .rotationEffect(.degrees(-2))
+    }
+}
+
+private struct GvgDeckCard: View {
     let game: GuysVsGalsState
     let receivedAt: Date
 
     var body: some View {
-        let q = game.question!
-        let reveal = game.phase == .reveal
-        let teamColor = GV.color(game, game.turn)
+        let c = game.card!
+        let result = game.phase == .result
+        let deckColor = Color(playerHex: game.deck(c.deck)?.color ?? "#cccccc")
         VStack(spacing: 22) {
             HStack(spacing: 12) {
-                Sticker(text: GuysVsGalsState.aboutText(q.about).uppercased(), fill: GV.color(game, q.about), ink: .white, size: 38)
-                if let cat = q.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 38).lineLimit(1).minimumScaleFactor(0.5) }
-                Spacer(minLength: 160)
+                Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 38)
+                Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: GV.color(game, c.about), ink: .white, size: 38)
+                if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 38).lineLimit(1).minimumScaleFactor(0.5) }
+                Spacer(minLength: 120)
             }
-            Text(q.text)
-                .font(GV.body(52, .black))
-                .foregroundStyle(GV.ink)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.55)
-                .padding(.horizontal, 60).padding(.vertical, 34)
-                .frame(maxWidth: .infinity)
-                .background(Balloon().fill(.white))
-                .overlay(Balloon().stroke(GV.ink, lineWidth: 6))
-                .background(Balloon().fill(GV.ink).offset(x: 9, y: 9))
-                .padding(.bottom, 34)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 26), GridItem(.flexible(), spacing: 26)], spacing: 22) {
-                ForEach(Array(q.choices.enumerated()), id: \.offset) { i, c in
-                    choice(i, c, q: q, reveal: reveal, teamColor: teamColor)
-                }
-            }
-            footer(q: q, reveal: reveal)
+            middle(c, result: result)
+            footer(c, result: result)
         }
         .padding(.horizontal, 34).padding(.vertical, 28)
+        .padding(.top, 14)
         .comicPanel(.white)
+        .overlay(alignment: .top) { Rectangle().fill(deckColor).frame(height: 22).overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 6)) }
         .rotationEffect(.degrees(0.4))
         .overlay(alignment: .topTrailing) {
-            if reveal, let r = game.result {
-                Pow(text: r.correct ? "POW!" : r.timeout == true ? "TOO SLOW!" : "OOF!", fill: r.correct ? GV.yellow : GV.red, ink: r.correct ? GV.ink : .white)
+            if result, let r = game.result {
+                Pow(text: powWord(c, r), fill: r.moved != nil ? GV.yellow : GV.red, ink: r.moved != nil ? GV.ink : .white)
                     .offset(x: 60, y: -70)
                     .transition(.scale(scale: 0.1).combined(with: .opacity))
-            } else if !q.locked, let timer = game.timer, timer.kind == "answer" {
+            } else if c.deck == "moves", let timer = game.timer, timer.kind == "moves" {
                 GvgClock(timer: timer, receivedAt: receivedAt, size: 170).offset(x: 60, y: -70)
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if c.challenged, !result {
+                Sticker(text: "CHALLENGE!", fill: GV.red, ink: .white, size: 64)
+                    .background(Rectangle().fill(GV.ink).offset(x: 8, y: 8))
+                    .rotationEffect(.degrees(-10))
+                    .offset(x: 40, y: -20)
+                    .transition(.scale(scale: 2.4).combined(with: .opacity))
             }
         }
     }
 
+    private func powWord(_ c: GvgCard, _ r: GvgResult) -> String {
+        if r.trophy != nil { return "TROPHY!" }
+        if c.deck == "moves" { return r.moved != nil ? (r.stolen == true ? "STOLEN!" : "GOT IT!") : r.timeout == true ? "TIME!" : "NOPE!" }
+        if r.challenged == true { return r.right ? "BLOCKED!" : "GOTCHA!" }
+        return r.right ? "POW!" : "OOF!"
+    }
+
+    private func balloon(_ text: String, size: CGFloat = 52, font: Font? = nil) -> some View {
+        Text(text)
+            .font(font ?? GV.body(size, .black))
+            .foregroundStyle(GV.ink)
+            .multilineTextAlignment(.center)
+            .lineLimit(4)
+            .minimumScaleFactor(0.5)
+            .padding(.horizontal, 60).padding(.vertical, 34)
+            .frame(maxWidth: .infinity)
+            .background(Balloon().fill(.white))
+            .overlay(Balloon().stroke(GV.ink, lineWidth: 6))
+            .background(Balloon().fill(GV.ink).offset(x: 9, y: 9))
+            .padding(.bottom, 34)
+    }
+
     @ViewBuilder
-    private func choice(_ i: Int, _ text: String, q: GvgQuestion, reveal: Bool, teamColor: Color) -> some View {
-        let right = reveal && q.answer == i
-        let wrong = reveal && q.pick == i && q.answer != i
-        let picked = !reveal && q.locked && q.pick == i
-        let faded = reveal && !right && !wrong
-        let votes = q.counts.indices.contains(i) ? q.counts[i] : 0
-        let tilt: [Double] = [-0.8, 0.8, 0.6, -0.6]
-        HStack(spacing: 18) {
-            Text(GV.letters[min(i, 3)]).font(GV.bangers(52)).foregroundStyle(GV.ink)
-                .frame(width: 68, height: 68)
-                .background(Rectangle().fill(right ? .white : GV.yellow))
-                .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 4))
-            Text(text).font(GV.body(36, .black)).foregroundStyle(wrong ? .white : GV.ink)
-                .lineLimit(2).minimumScaleFactor(0.6)
-            Spacer(minLength: 0)
-            if votes > 0 && !reveal {
-                HStack(spacing: 5) {
-                    ForEach(0..<min(votes, 8), id: \.self) { _ in
-                        Circle().fill(teamColor).overlay(Circle().strokeBorder(GV.ink, lineWidth: 3)).frame(width: 24, height: 24)
+    private func middle(_ c: GvgCard, result: Bool) -> some View {
+        if c.deck == "moves" {
+            VStack(spacing: 26) {
+                balloon(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : "ACT IT OUT!",
+                        font: result ? nil : GV.bangers(96))
+                HStack(spacing: 30) {
+                    actor("🎭 \(c.reader.name)", side: c.about)
+                    Text("VS").font(GV.bangers(60)).foregroundStyle(GV.ink)
+                    actor("🎭 \(c.actor?.name ?? "?")", side: game.turn ?? GuysVsGalsState.otherSide(c.about))
+                }
+            }
+        } else {
+            HStack(spacing: 30) {
+                if let img = c.img { GvgPic(img: img, size: 300) }
+                VStack(spacing: 18) {
+                    balloon(c.text ?? "", size: c.img == nil ? 52 : 46)
+                    if let choices = c.choices {
+                        VStack(spacing: 14) {
+                            ForEach(Array(choices.enumerated()), id: \.offset) { i, text in choice(i, text, result: result) }
+                        }
+                    } else if result, let answer = game.result?.answer ?? c.answer {
+                        VStack(spacing: 2) {
+                            Text("ANSWER").font(GV.bangers(26)).tracking(3)
+                            Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.5)
+                        }
+                        .foregroundStyle(GV.ink)
+                        .padding(.horizontal, 30).padding(.vertical, 12)
+                        .comicPanel(GV.green, line: 5, drop: 8)
+                        .rotationEffect(.degrees(-1))
+                        .transition(.scale(scale: 2).combined(with: .opacity))
                     }
                 }
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .frame(maxWidth: .infinity, minHeight: 100)
-        .comicPanel(right ? GV.green : wrong ? GV.red : picked ? GV.yellow : GV.paper, line: 5, drop: 8)
-        .overlay(alignment: .topTrailing) {
-            if right || wrong {
-                Image(systemName: right ? "checkmark" : "xmark").font(.system(size: 32, weight: .black)).foregroundStyle(GV.ink)
-                    .frame(width: 60, height: 60).background(Circle().fill(.white)).overlay(Circle().strokeBorder(GV.ink, lineWidth: 4))
-                    .offset(x: 18, y: -20)
-            }
-        }
-        .opacity(faded ? 0.3 : 1)
-        .scaleEffect(right ? 1.06 : picked ? 1.03 : 1)
-        .rotationEffect(.degrees(right ? -1.5 : tilt[min(i, 3)]))
-        .zIndex(right ? 1 : 0)
+    }
+
+    private func actor(_ text: String, side: String) -> some View {
+        Text(text).font(GV.body(38, .black)).foregroundStyle(.white)
+            .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+            .padding(.horizontal, 26).padding(.vertical, 8)
+            .comicPanel(GV.color(game, side), line: 5, drop: 7)
     }
 
     @ViewBuilder
-    private func footer(q: GvgQuestion, reveal: Bool) -> some View {
-        if reveal, let r = game.result {
-            Sticker(text: r.correct ? "RIGHT! +\(r.moved ?? game.step) SPACES" : r.timeout == true ? "OUT OF TIME!" : "WRONG!",
-                    fill: r.correct ? GV.green : GV.red, ink: r.correct ? GV.ink : .white, size: 56)
+    private func choice(_ i: Int, _ text: String, result: Bool) -> some View {
+        let r = game.result
+        let right = result && r?.secret == i
+        let wrong = result && r?.pick == i && r?.secret != i
+        let faded = result && !right && !wrong
+        HStack(spacing: 18) {
+            Text(GV.letters[min(i, 2)]).font(GV.bangers(48)).foregroundStyle(GV.ink)
+                .frame(width: 62, height: 62)
+                .background(Rectangle().fill(right ? .white : GV.yellow))
+                .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 4))
+            Text(text).font(GV.body(34, .black)).foregroundStyle(wrong ? .white : GV.ink).lineLimit(2).minimumScaleFactor(0.6)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 84)
+        .comicPanel(right ? GV.green : wrong ? GV.red : GV.paper, line: 5, drop: 8)
+        .opacity(faded ? 0.3 : 1)
+        .scaleEffect(right ? 1.04 : 1)
+    }
+
+    @ViewBuilder
+    private func footer(_ c: GvgCard, result: Bool) -> some View {
+        if result, let r = game.result {
+            let text = r.trophy != nil ? "THE \(game.name(r.trophy).uppercased()) WIN THE TROPHY!"
+                : r.moved != nil ? "TROPHY \(r.moved == "guys" ? "◀" : "▶") \(game.name(r.moved).uppercased())"
+                : "OVER TO THE \(game.name(r.next).uppercased())"
+            Sticker(text: text, fill: r.moved != nil ? GV.green : GV.red, ink: r.moved != nil ? GV.ink : .white, size: 52)
                 .background(Rectangle().fill(GV.ink).offset(x: 7, y: 7))
                 .transition(.scale(scale: 2.2).combined(with: .opacity))
-        } else if q.locked {
-            Sticker(text: q.pick == nil ? "TIME’S UP!" : "FINAL ANSWER…", fill: GV.yellow, size: 48)
         } else {
-            Text("The \(game.name(game.turn)) vote on their phones. \(game.name(q.about)), zip it 🤐")
-                .font(GV.body(26, .black)).foregroundStyle(GV.ink).multilineTextAlignment(.center)
+            Text(footText(c)).font(GV.body(26, .black)).foregroundStyle(GV.ink).multilineTextAlignment(.center)
+        }
+    }
+
+    private func footText(_ c: GvgCard) -> String {
+        let reader = c.reader.name
+        let turn = game.name(game.turn)
+        switch c.deck {
+        case "moves":
+            return c.stage == "pick" ? "\(reader) picks someone on the \(turn) to act with"
+                : "Both act out the same thing. Each team shouts at their own actor. First to say it wins!"
+        case "lives":
+            if c.stage == "secret" { return "🤫 \(reader) is secretly picking the true one…" }
+            let who = c.challenged ? game.name(c.about) : turn
+            return "The \(who) guess what \(reader) picked, on their phones (\(c.voters?.count ?? 0) of \(c.guessers?.count ?? 0))"
+        default:
+            return c.challenged ? "The \(game.name(c.about)) answer it themselves, no help from \(reader)! The \(turn) judge."
+                : "📖 \(reader) reads · the \(turn) say the answer out loud"
         }
     }
 }
@@ -588,169 +666,64 @@ private struct Splash: View {
     }
 }
 
-/// The coin flips and lands on the side that goes first.
-private struct GvgTossScreen: View {
+/// A trophy is won: the trophy and the team's superhero, with confetti.
+private struct GvgTrophyScreen: View {
     let game: GuysVsGalsState
-    @State private var spin = 0.0
+    @State private var hit = false
 
     var body: some View {
-        let first = game.turn ?? "guys"
-        let face = spin < 1 ? GuysVsGalsState.otherSide(first) : first
+        let side = game.trophyWon ?? "gals"
         ZStack {
-            Splash(color: GV.cyan)
-            VStack(spacing: 40) {
-                ZStack {
-                    Circle().fill(GV.color(game, face))
-                    GvgToken(side: face, size: 300, outline: false).offset(y: 50).clipShape(Circle())
-                    Circle().strokeBorder(GV.ink, lineWidth: 12)
-                }
-                .frame(width: 360, height: 360)
-                .background(Circle().fill(GV.ink).offset(x: 12, y: 12))
-                .rotation3DEffect(.degrees(spin * 1800), axis: (x: 0, y: 1, z: 0))
-                .offset(y: spin < 1 ? -60 : 0)
-                if spin >= 1 {
-                    VStack(spacing: 20) {
-                        Lettering(text: "THE \(game.name(first).uppercased()) GO FIRST!", size: 120)
-                        Sticker(text: "THEN THE TEAMS TAKE TURNS", fill: .white, size: 40)
-                    }
-                    .transition(.scale(scale: 1.6).combined(with: .opacity))
-                } else {
-                    Lettering(text: "COIN TOSS!", size: 120, fill: GV.yellow)
-                }
-            }
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 2.4)) { spin = 1 }
-        }
-    }
-}
-
-/// The Lightning Round: a statement at a time, true or false, against the clock.
-private struct GvgLightningScreen: View {
-    let game: GuysVsGalsState
-    let receivedAt: Date
-
-    var body: some View {
-        let l = game.lightning!
-        ZStack {
-            Splash(color: GV.purple)
-            VStack(spacing: 34) {
-                HStack(spacing: 20) {
-                    Image("GvgBolt").resizable().scaledToFit().frame(width: 130, height: 130).rotationEffect(.degrees(-10))
-                    Lettering(text: "LIGHTNING ROUND!", size: 130, fill: GV.yellow)
-                    Image("GvgBolt").resizable().scaledToFit().frame(width: 130, height: 130).rotationEffect(.degrees(10))
-                }
-                HStack(spacing: 14) {
-                    GvgToken(side: l.side, size: 80, outline: false)
-                    Text("The \(game.name(l.side))").font(GV.body(40, .black)).foregroundStyle(GV.ink)
-                }
-                .padding(.leading, 10).padding(.trailing, 26).padding(.vertical, 4)
-                .comicPanel(.white, line: 5, drop: 7)
-                middle(l)
-                pips(l)
-            }
-            .padding(.horizontal, 140)
-        }
-    }
-
-    @ViewBuilder
-    private func middle(_ l: GvgLightning) -> some View {
-        switch game.phase {
-        case .lightningIntro:
-            VStack(spacing: 22) {
-                Lettering(text: "\(game.name(l.side).uppercased()), GET READY!", size: 110)
-                Text("\(l.total) true-or-false statements about \(GuysVsGalsState.aboutText(GuysVsGalsState.otherSide(l.side)).lowercased()). Anyone on the team can answer. Fast!")
-                    .font(GV.body(34, .black)).foregroundStyle(GV.ink).multilineTextAlignment(.center)
-                    .padding(.horizontal, 30).padding(.vertical, 14).comicPanel(.white, line: 5, drop: 8)
-            }
-        case .lightningDone:
-            VStack(spacing: 18) {
-                Lettering(text: "+\(l.rights)", size: 220, fill: GV.yellow)
-                Sticker(text: "\(l.rights) OF \(l.total) RIGHT: THE \(game.name(l.side).uppercased()) MOVE \(l.rights) \(l.rights == 1 ? "SPACE" : "SPACES")!", fill: .white, size: 44)
-            }
-        default:
-            let last = l.done.last
-            let flash = l.flash
-            let text = (flash != nil ? last?.text : nil) ?? l.current ?? last?.text ?? ""
-            let fill: Color = flash.map { $0.correct ? Color(hex: 0xC9F7D9) : Color(hex: 0xFFD0D0) } ?? .white
+            Splash(color: GV.color(game, side))
+            GvgConfetti()
             VStack(spacing: 30) {
-                Text(text)
-                    .font(GV.body(64, .black))
-                    .foregroundStyle(GV.ink)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3).minimumScaleFactor(0.5)
-                    .padding(.horizontal, 50).padding(.vertical, 40)
-                    .frame(maxWidth: .infinity, minHeight: 240)
-                    .comicPanel(fill)
-                    .id(l.i)
-                if let flash, let last {
-                    Sticker(text: "\(last.a ? "TRUE" : "FALSE")\(flash.correct ? "! ✓" : " ✗")", fill: flash.correct ? GV.green : GV.red, ink: flash.correct ? GV.ink : .white, size: 70)
-                        .transition(.scale(scale: 2).combined(with: .opacity))
-                } else {
-                    HStack(spacing: 50) {
-                        Sticker(text: "TRUE", fill: GV.green, size: 70).background(Rectangle().fill(GV.ink).offset(x: 8, y: 8)).rotationEffect(.degrees(-2))
-                        Sticker(text: "FALSE", fill: GV.red, ink: .white, size: 70).background(Rectangle().fill(GV.ink).offset(x: 8, y: 8)).rotationEffect(.degrees(2))
-                    }
+                HStack(alignment: .bottom, spacing: 40) {
+                    Image("GvgTrophy").resizable().interpolation(.high).scaledToFit().frame(width: 440, height: 440)
+                        .shadow(color: GV.ink, radius: 0, x: 12, y: 12)
+                        .scaleEffect(hit ? 1 : 0.2).rotationEffect(.degrees(hit ? 0 : -30))
+                    GvgToken(side: side, size: 260)
                 }
-                if let timer = game.timer, timer.kind == "lightning" {
-                    CountdownBar(timer: timer, receivedAt: receivedAt, tint: GV.yellow)
-                        .frame(maxWidth: 1000)
-                        .padding(6).background(Rectangle().fill(.white)).overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 5))
-                }
+                Lettering(text: "THE \(game.name(side).uppercased()) WIN A TROPHY!", size: 130)
+                Sticker(text: game.teams.map { "\($0.name.uppercased()) \($0.trophies)" }.joined(separator: "  ·  ") + "  ·  FIRST TO \(game.target)", fill: .white, size: 44)
             }
         }
-    }
-
-    private func pips(_ l: GvgLightning) -> some View {
-        HStack(spacing: 18) {
-            ForEach(0..<max(l.total, 0), id: \.self) { i in
-                let d = l.done.indices.contains(i) ? l.done[i] : nil
-                let now = d == nil && i == l.i && !l.over && game.phase == .lightning
-                ZStack {
-                    Rectangle().fill(d.map { $0.correct == true ? GV.green : GV.red } ?? (now ? GV.yellow : .white))
-                    Rectangle().strokeBorder(GV.ink, lineWidth: 4)
-                    if let d { Image(systemName: d.correct == true ? "checkmark" : "xmark").font(.system(size: 30, weight: .black)).foregroundStyle(GV.ink) }
-                }
-                .frame(width: 64, height: 64)
-                .scaleEffect(now ? 1.12 : 1)
-            }
-        }
+        .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) { hit = true } }
     }
 }
 
-/// The winner (or a tie), crowned, with confetti.
+/// The winners, crowned, with confetti.
 private struct GvgWinScreen: View {
     let game: GuysVsGalsState
-    @State private var fall = false
+    @State private var shown = false
 
     var body: some View {
-        let winners = game.winners ?? []
-        let tie = winners.count > 1
-        let first = winners.first ?? "guys"
+        let first = game.winners?.first ?? "gals"
         ZStack {
-            Splash(color: tie ? GV.yellow : GV.color(game, first))
-            confetti
+            Splash(color: GV.color(game, first))
+            GvgConfetti()
             VStack(spacing: 26) {
                 ZStack(alignment: .top) {
-                    HStack(spacing: 50) {
-                        ForEach(winners, id: \.self) { s in GvgToken(side: s, size: tie ? 330 : 420) }
-                    }
-                    .padding(.top, 110)
+                    GvgToken(side: first, size: 420).padding(.top, 110)
                     Image("GvgCrown").resizable().scaledToFit().frame(width: 200, height: 200)
                         .shadow(color: GV.ink, radius: 0, x: 7, y: 7).rotationEffect(.degrees(-8))
                 }
-                Lettering(text: tie ? "IT’S A TIE!" : "THE \(game.name(first).uppercased()) WIN!", size: 140)
-                Sticker(text: tie ? "BOTH SIDES MADE IT HOME. REMATCH?" : game.teams.map { "\($0.name.uppercased()) \($0.pos)" }.joined(separator: "  ·  "), fill: .white, size: 44)
+                Lettering(text: "THE \(game.name(first).uppercased()) WIN!", size: 140)
+                Sticker(text: game.teams.map { "\($0.name.uppercased()) \($0.trophies) \($0.trophies == 1 ? "TROPHY" : "TROPHIES")" }.joined(separator: "  ·  "), fill: .white, size: 44)
             }
-            .scaleEffect(fall ? 1 : 0.6)
-            .opacity(fall ? 1 : 0)
+            .scaleEffect(shown ? 1 : 0.6)
+            .opacity(shown ? 1 : 0)
         }
-        .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.55)) { fall = true } }
+        .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.55)) { shown = true } }
     }
+}
 
-    private var confetti: some View {
+/// Confetti falling over a splash page.
+private struct GvgConfetti: View {
+    @State private var fall = false
+
+    var body: some View {
         let colors: [Color] = [GV.blue, GV.pink, GV.yellow, GV.green, .white, GV.cyan]
-        return GeometryReader { proxy in
+        GeometryReader { proxy in
             ForEach(0..<70, id: \.self) { i in
                 Rectangle()
                     .fill(colors[i % colors.count])
@@ -763,6 +736,8 @@ private struct GvgWinScreen: View {
             }
         }
         .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .onAppear { fall = true }
     }
 }
 

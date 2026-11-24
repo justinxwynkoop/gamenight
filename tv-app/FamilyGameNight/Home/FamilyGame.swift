@@ -75,7 +75,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
         case .spynight: return "Most of you are the Resistance. A few are Spies. Your phone tells you which."
         case .piechase: return "Roll, move round the wheel and answer to win a wedge in all six categories. Then race back to the hub."
-        case .guysvsgals: return "The Guys answer about gal stuff, the Gals about guy stuff. Race to the finish, with Lightning Rounds on the way."
+        case .guysvsgals: return "The Guys answer about gal stuff, the Gals about guy stuff. Pull the trophy to your side: first to three trophies wins."
         }
     }
 
@@ -99,7 +99,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return [GameTag("person.2.fill", "Two teams"), GameTag("bolt.fill", "Fast Money")]
         case .spynight: return [GameTag("person.3.fill", "5–10 players"), GameTag("eye.slash.fill", "Secret roles")]
         case .piechase: return [GameTag("person.3.fill", "2–6 players"), GameTag("die.face.5.fill", "Six wedges")]
-        case .guysvsgals: return [GameTag("person.2.fill", "Two sides"), GameTag("bolt.fill", "Lightning")]
+        case .guysvsgals: return [GameTag("person.2.fill", "Two sides"), GameTag("trophy.fill", "Tug of war")]
         }
     }
 

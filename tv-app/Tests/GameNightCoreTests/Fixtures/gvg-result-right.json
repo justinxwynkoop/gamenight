@@ -1,0 +1,223 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3"
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff"
+      }
+    ],
+    "units": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Mom",
+          "Maya"
+        ]
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Dad",
+          "Leo"
+        ]
+      }
+    ],
+    "gameId": "guysvsgals",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "guysvsgals",
+    "scoreFormat": "none",
+    "lobbyTitle": "Guys vs Gals",
+    "phase": "result",
+    "status": "result",
+    "hosted": false,
+    "pos": 1,
+    "green": 5,
+    "path": [
+      "facts",
+      "stuff",
+      "pics",
+      "lives",
+      "moves",
+      "any"
+    ],
+    "greenColor": "#3ddc84",
+    "first": "gals",
+    "decks": [
+      {
+        "id": "facts",
+        "name": "Our Facts",
+        "short": "Facts",
+        "color": "#9b5cff"
+      },
+      {
+        "id": "stuff",
+        "name": "Our Stuff",
+        "short": "Stuff",
+        "color": "#ffd23f"
+      },
+      {
+        "id": "pics",
+        "name": "Our Pics",
+        "short": "Pics",
+        "color": "#ff8a3d"
+      },
+      {
+        "id": "lives",
+        "name": "Our Lives",
+        "short": "Lives",
+        "color": "#2ec5ff"
+      },
+      {
+        "id": "moves",
+        "name": "Our Moves",
+        "short": "Moves",
+        "color": "#ff3b5c"
+      }
+    ],
+    "teams": [
+      {
+        "side": "guys",
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "trophies": 0,
+        "challenges": 3,
+        "members": [
+          {
+            "id": "p3",
+            "name": "Dad",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p4",
+            "name": "Leo",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      },
+      {
+        "side": "gals",
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "trophies": 0,
+        "challenges": 3,
+        "members": [
+          {
+            "id": "p5",
+            "name": "Mom",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p6",
+            "name": "Maya",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      }
+    ],
+    "turn": "gals",
+    "trophy": 1,
+    "target": 3,
+    "settings": {
+      "setId": "family",
+      "target": 3,
+      "challenges": true
+    },
+    "line": {
+      "text": "Right!",
+      "next": "The Gals keep going"
+    },
+    "timer": null,
+    "reactions": [],
+    "reactionList": [
+      "😂",
+      "🔥",
+      "😱",
+      "👏",
+      "🙄",
+      "💪"
+    ],
+    "targets": [
+      1,
+      2,
+      3
+    ],
+    "log": [
+      "The Gals go first",
+      "The Gals got it right"
+    ],
+    "lastMove": {
+      "from": 0,
+      "to": 1,
+      "n": 1,
+      "side": "gals",
+      "trophy": false
+    },
+    "card": {
+      "n": 1,
+      "deck": "facts",
+      "deckName": "Our Facts",
+      "about": "guys",
+      "stage": "done",
+      "challenged": false,
+      "reader": {
+        "id": "p3",
+        "name": "Dad"
+      },
+      "text": "How many points is a touchdown worth in American football (before the extra point)?",
+      "cat": "Sports",
+      "answer": "6"
+    },
+    "result": {
+      "right": true,
+      "moved": "gals",
+      "trophy": null,
+      "next": "gals",
+      "timeout": false,
+      "stolen": false,
+      "challenged": false,
+      "answer": "6",
+      "secret": null,
+      "pick": null
+    }
+  }
+}

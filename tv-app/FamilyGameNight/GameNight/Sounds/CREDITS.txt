@@ -29,7 +29,7 @@ public/builtin-sounds/feud/). They are not recordings of the show.
 
 guysvsgals__*.m4a are Guys vs Gals' own sounds, all CC0, from other people (the website's copies are in
 public/builtin-sounds/guysvsgals/, whose CREDITS.txt lists every file). Music by HoliznaCC0 via Alvana Audio
-(https://github.com/seyedpouramir/alvana-audio): lobby = "Love Love Love", think = "50 Over The Speed Limit" (the
-Lightning Round). Effects from SFX Kit by Wyzowl (https://github.com/wyzowl/sfx-kit): open, lock, correct, wrong,
-timeup, pick (a token hops), dd (a Lightning Round begins), ding and strike (right and wrong in a Lightning Round),
-roundstart (the coin toss), fanfare (the winners), applause, join.
+(https://github.com/seyedpouramir/alvana-audio): lobby = "Love Love Love", think = "50 Over The Speed Limit" (under a
+charade). Effects from SFX Kit by Wyzowl (https://github.com/wyzowl/sfx-kit): open, lock, correct, wrong,
+timeup, pick (the trophy slides), dd (a challenge is thrown), ding (a trophy is won), strike (not used any more),
+roundstart (the game begins), fanfare (the winners), applause, join.

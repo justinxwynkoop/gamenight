@@ -62,12 +62,49 @@
     "phase": "lobby",
     "status": "lobby",
     "hosted": false,
-    "length": 20,
-    "step": 2,
-    "lightningAt": [
-      5,
-      10,
-      15
+    "pos": 0,
+    "green": 5,
+    "path": [
+      "facts",
+      "stuff",
+      "pics",
+      "lives",
+      "moves",
+      "any"
+    ],
+    "greenColor": "#3ddc84",
+    "first": "gals",
+    "decks": [
+      {
+        "id": "facts",
+        "name": "Our Facts",
+        "short": "Facts",
+        "color": "#9b5cff"
+      },
+      {
+        "id": "stuff",
+        "name": "Our Stuff",
+        "short": "Stuff",
+        "color": "#ffd23f"
+      },
+      {
+        "id": "pics",
+        "name": "Our Pics",
+        "short": "Pics",
+        "color": "#ff8a3d"
+      },
+      {
+        "id": "lives",
+        "name": "Our Lives",
+        "short": "Lives",
+        "color": "#2ec5ff"
+      },
+      {
+        "id": "moves",
+        "name": "Our Moves",
+        "short": "Moves",
+        "color": "#ff3b5c"
+      }
     ],
     "teams": [
       {
@@ -75,8 +112,8 @@
         "id": "t2",
         "name": "Guys",
         "color": "#3b8bff",
-        "pos": 0,
-        "used": [],
+        "trophies": 0,
+        "challenges": 3,
         "members": [
           {
             "id": "p3",
@@ -98,8 +135,8 @@
         "id": "t1",
         "name": "Gals",
         "color": "#ff4fa3",
-        "pos": 0,
-        "used": [],
+        "trophies": 0,
+        "challenges": 3,
         "members": [
           {
             "id": "p5",
@@ -118,13 +155,12 @@
       }
     ],
     "turn": null,
-    "order": [],
-    "lastChance": false,
+    "trophy": 1,
+    "target": 3,
     "settings": {
       "setId": "family",
-      "length": 20,
-      "answerSecs": 30,
-      "lightning": true
+      "target": 3,
+      "challenges": true
     },
     "line": {
       "text": "Pick your side!",
@@ -132,20 +168,6 @@
     },
     "timer": null,
     "reactions": [],
-    "lengths": [
-      {
-        "n": 15,
-        "label": "Quick"
-      },
-      {
-        "n": 20,
-        "label": "Standard"
-      },
-      {
-        "n": 30,
-        "label": "Long"
-      }
-    ],
     "reactionList": [
       "😂",
       "🔥",
@@ -153,6 +175,11 @@
       "👏",
       "🙄",
       "💪"
+    ],
+    "targets": [
+      1,
+      2,
+      3
     ],
     "log": [],
     "sets": [

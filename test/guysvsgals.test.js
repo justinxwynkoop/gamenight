@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { Room } from '../room.js';
 import { GAMES } from '../games/index.js';
-import { T, STEP, validateSet, SIDES, LIGHTNING_ITEMS } from '../games/guysvsgals/game.js';
+import { existsSync } from 'node:fs';
+import { T, validateSet, SIDES, GREEN, CHALLENGES, DECK_ORDER } from '../games/guysvsgals/game.js';
 
 const SETS = Object.fromEntries(readdirSync('data/guysvsgals').filter((f) => f.endsWith('.json'))
   .map((f) => [f.slice(0, -5), JSON.parse(readFileSync(`data/guysvsgals/${f}`, 'utf8'))]));
 
-/** A room with `guys` and `gals` players who have picked their sides. random() is fixed: the Guys win the toss. */
+/** A room with `guys` and `gals` players who have picked their sides. random() is fixed (the first card of a pile). */
 function setup({ guys = 2, gals = 2, hosts = 0, sets = SETS } = {}) {
   let t = 1000;
   const room = new Room({
@@ -30,35 +31,42 @@ function setup({ guys = 2, gals = 2, hosts = 0, sets = SETS } = {}) {
   const wait = (ms) => { t += ms; room.tick(); };
   const msg = (p, m) => room.playerMessage(p.id, m);
   const view = (p) => room.playerView(p.id).game;
-  const right = () => room.hostView().game.question.answer;
-  const wrong = () => (right() + 1) % g.question.choices.length;
-  /** Everyone on the team at play votes for `choice`. */
-  const answer = (choice) => { for (const p of g.turn === 'guys' ? G : W) msg(p, { t: 'vote', choice }); };
-  const begin = () => { msg(G[0], { t: 'start' }); wait(T.toss); };
-  return { room, g, G, W, wait, msg, view, right, wrong, answer, begin, now: () => t };
+  const begin = () => msg(G[0], { t: 'start' });
+  /** The player reading the card now. */
+  const reader = () => [...G, ...W].find((p) => p.id === g.card.reader);
+  /** The reader says right or wrong. */
+  const judge = (right) => msg(reader(), { t: 'judge', right });
+  /** Puts the trophy on a space (from the Gals' side: + toward the Gals) and deals a new card there. */
+  const at = (pos) => { g.pos = pos; room.act('newCard'); };
+  return { room, g, G, W, wait, msg, view, begin, reader, judge, at, now: () => t };
 }
 
-test('the Family set is valid, big, and has both halves', () => {
+test('the Family set is valid and has all five decks for both sides, with their pictures', () => {
   for (const set of Object.values(SETS)) assert.equal(validateSet(set), true);
   const fam = SETS.family;
-  assert.ok(fam.guyStuff.questions.length >= 100);
-  assert.ok(fam.galStuff.questions.length >= 100);
-  assert.ok(fam.guyStuff.lightning.length >= 40);
-  assert.ok(fam.galStuff.lightning.length >= 40);
   for (const half of [fam.guyStuff, fam.galStuff]) {
-    for (const q of half.questions) {
-      assert.ok(!q.wrong.includes(q.a), q.q);
-      assert.equal(new Set([q.a, ...q.wrong]).size, q.wrong.length + 1, q.q);
+    assert.ok(half.facts.length >= 80, 'facts');
+    assert.ok(half.stuff.length >= 40, 'stuff');
+    assert.ok(half.pics.length >= 25, 'pics');
+    assert.ok(half.lives.length >= 30, 'lives');
+    assert.ok(half.moves.length >= 40, 'moves');
+    for (const p of half.pics) {
+      assert.ok(existsSync(`public/games/guysvsgals/pics/${p.img}.png`), p.img);
+      assert.ok(existsSync(`tv-app/FamilyGameNight/Assets.xcassets/GvgPic-${p.img}.imageset/${p.img}.png`), p.img);
     }
+    for (const l of half.lives) assert.equal(new Set(l.choices).size, 3, l.q);
   }
 });
 
 test('validateSet explains what is missing', () => {
   assert.throws(() => validateSet({ title: 'x' }), /Guy stuff/);
-  const q = { q: 'Q?', a: 'A', wrong: ['B'] };
-  assert.equal(validateSet({ title: 'x', guyStuff: { questions: [q] }, galStuff: { questions: [q] } }), true);
-  assert.throws(() => validateSet({ title: 'x', guyStuff: { questions: [{ q: 'Q?', a: 'A', wrong: [] }] }, galStuff: { questions: [q] } }), /wrong answer/);
-  assert.throws(() => validateSet({ title: 'x', guyStuff: { questions: [q], lightning: [{ q: 'S', a: 'yes' }] }, galStuff: { questions: [q] } }), /true or false/);
+  const q = { q: 'Q?', a: 'A' };
+  assert.equal(validateSet({ title: 'x', guyStuff: { facts: [q] }, galStuff: { stuff: [q] } }), true);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { pics: [{ img: 'wrench', q: 'Q?', a: 'A' }] }, galStuff: { facts: [q] } }), /Our Facts or Our Stuff/);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [{ q: 'Q?' }] }, galStuff: { facts: [q] } }), /write the answer/);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [q], pics: [{ q: 'Q?', a: 'A' }] }, galStuff: { facts: [q] } }), /choose a picture/);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [q], lives: [{ q: 'Me?', choices: ['a', 'b'] }] }, galStuff: { facts: [q] } }), /A, B and C/);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [q], moves: [{ m: '' }] }, galStuff: { facts: [q] } }), /act out/);
 });
 
 test('always two teams, named and coloured for the sides, and given back when another game is chosen', () => {
@@ -84,156 +92,249 @@ test('players pick their side; a team with nobody on it cannot start', () => {
   assert.equal(room.inProgress(), false);
 });
 
-test('coin toss, then a question about the other side’s stuff; the TV never sees the answer early', () => {
-  const { room, g, G, W, msg, wait, view } = setup();
-  msg(G[0], { t: 'start' });
-  assert.equal(g.phase, 'toss');
+test('the Gals go first: a Guy reads them a guy-stuff card and judges it; the TV never sees the answer early', () => {
+  const { room, g, G, W, begin, view, judge, wait } = setup();
+  begin();
+  assert.equal(g.phase, 'card');
+  assert.equal(g.turn, 'gals');
+  assert.equal(g.pos, 0);
+  const tv = room.publicView().game;
+  assert.equal(tv.card.deck, 'facts');
+  assert.equal(tv.card.about, 'guys');
+  assert.equal(tv.card.answer, undefined);
+  assert.equal(tv.card.reader.id, G[0].id);
+  assert.equal(view(G[0]).me.reader, true);
+  assert.equal(view(G[0]).me.canJudge, true);
+  assert.ok(view(G[0]).me.answer);
+  assert.ok(view(G[1]).me.answer, 'the reader’s teammates can peek');
+  assert.equal(view(W[0]).me.answer, undefined);
+  assert.equal(view(W[0]).me.canChallenge, true);
+  assert.throws(() => room.playerMessage(W[0].id, { t: 'judge', right: true }), /Guys judge/);
+  // Right: one space toward the Gals, and they keep going.
+  judge(true);
+  assert.equal(g.phase, 'result');
+  assert.equal(g.pos, 1);
+  assert.ok(room.publicView().game.card.answer);
+  wait(T.result);
+  assert.equal(g.turn, 'gals');
+  assert.equal(g.card.deck, 'stuff', 'the next space draws from Our Stuff');
+  assert.equal(g.card.reader, G[1].id, 'readers take turns');
+});
+
+test('a wrong answer passes the turn and leaves the trophy; on the other side of START the spaces count the same', () => {
+  const { g, G, W, begin, judge, wait } = setup();
+  begin();
+  judge(true); wait(T.result);   // +1
+  judge(false); wait(T.result);
+  assert.equal(g.pos, 1);
   assert.equal(g.turn, 'guys');
-  wait(T.toss);
-  assert.equal(g.phase, 'question');
-  const pub = room.publicView().game;
-  assert.equal(pub.question.about, 'gals', 'the Guys answer gal stuff');
-  assert.equal(pub.question.answer, undefined);
-  assert.ok(pub.question.choices.length >= 2 && pub.question.choices.length <= 4);
-  assert.equal(view(G[0]).me.answer, undefined, 'the team answering does not see it');
-  assert.equal(typeof view(W[0]).me.answer, 'number', 'the other team does');
-  assert.equal(typeof room.hostView().game.question.answer, 'number');
-  assert.equal(pub.timer.kind, 'answer');
-  assert.throws(() => msg(W[0], { t: 'vote', choice: 0 }), /straight face/);
+  assert.equal(g.card.about, 'gals');
+  assert.equal(g.card.deck, 'stuff', 'one space from START, toward the Gals, is Our Stuff for the Guys too');
+  assert.ok([W[0].id, W[1].id].includes(g.card.reader));
+  judge(true); wait(T.result);
+  judge(true); wait(T.result);
+  assert.equal(g.pos, -1);
+  assert.equal(g.card.deck, 'stuff');
+  assert.ok(G.length);
 });
 
-test('the team votes; the most popular pick, ties going to the first, is locked in once everyone has voted', () => {
-  const { g, G, msg, wait, right, wrong, begin } = setup({ guys: 3 });
+test('a right answer on your own green space wins the trophy; a new one starts on START with the other team', () => {
+  const { room, g, begin, judge, wait, at } = setup();
   begin();
-  msg(G[0], { t: 'vote', choice: wrong() });
-  msg(G[1], { t: 'vote', choice: right() });
-  assert.equal(g.locked, false);
-  assert.equal(g.teamPick(), wrong(), 'a tie goes to the answer picked first');
-  msg(G[2], { t: 'vote', choice: right() });
-  assert.equal(g.locked, true);
-  assert.equal(g.pick, right());
-  wait(T.lockPause);
-  assert.equal(g.phase, 'reveal');
-  assert.equal(g.result.correct, true);
-  assert.equal(g.pos.guys, STEP);
+  at(GREEN);
+  judge(true);
+  assert.equal(g.result.trophy, 'gals');
+  assert.equal(g.pos, GREEN);
+  wait(T.result);
+  assert.equal(g.phase, 'trophy');
+  assert.equal(room.publicView().game.trophyWon, 'gals');
+  assert.equal(room.teams.find((t) => t.key === 'red').score, 1);
+  wait(T.trophy);
+  assert.equal(g.phase, 'card');
+  assert.equal(g.pos, 0);
+  assert.equal(g.turn, 'guys');
+  assert.equal(g.trophyN, 2);
 });
 
-test('a wrong answer stays put and passes the turn; running out of time counts as wrong', () => {
-  const { g, wait, answer, wrong, begin } = setup();
+test('first to three trophies wins (or one or two, if the host says so)', () => {
+  const { room, g, begin, judge, wait, at } = setup();
+  room.act('setTarget', { n: 2 });
   begin();
-  answer(wrong());
-  wait(T.lockPause);
-  assert.equal(g.result.correct, false);
-  assert.equal(g.pos.guys, 0);
-  wait(T.reveal);
-  assert.equal(g.turn, 'gals');
-  assert.equal(g.question.about, 'guys');
-  wait(30000);   // nobody votes
-  assert.equal(g.locked, true);
-  wait(500);
-  assert.equal(g.phase, 'reveal');
-  assert.equal(g.result.timeout, true);
-  assert.equal(g.pos.gals, 0);
-});
-
-test('reaching a lightning space plays a Lightning Round: true or false against the clock', () => {
-  const { room, g, G, W, msg, wait, answer, right, wrong, begin, view } = setup();
-  begin();
-  const turn = () => { answer(g.turn === 'guys' ? right() : wrong()); wait(T.lockPause); wait(T.reveal); };
-  turn(); turn();                 // guys 2, gals 0
-  turn(); turn();                 // guys 4
-  assert.equal(g.pos.guys, 4);
-  answer(right()); wait(T.lockPause);
-  assert.equal(g.pos.guys, 6);
-  wait(T.reveal);
-  assert.equal(g.phase, 'lightning-intro', 'passing space 5 starts a Lightning Round');
-  assert.equal(room.publicView().game.lightning.side, 'guys');
-  wait(T.lightningIntro);
-  assert.equal(g.phase, 'lightning');
-  const pub = room.publicView().game;
-  assert.equal(pub.lightning.total, LIGHTNING_ITEMS);
-  assert.ok(pub.lightning.current);
-  assert.equal(pub.timer.kind, 'lightning');
-  assert.equal(typeof view(W[0]).me.lightningAnswer, 'boolean', 'the other team knows');
-  assert.equal(view(G[0]).me.lightningAnswer, undefined);
-  assert.throws(() => msg(W[0], { t: 'lightning', said: true }), /Lightning Round/);
-  // Two right, then the clock runs out.
-  for (let k = 0; k < 2; k++) {
-    const truth = g.lightning.items[g.lightning.i].a;
-    msg(G[k % 2], { t: 'lightning', said: truth });
-    wait(T.lightningFlash);
-  }
-  assert.equal(g.lightning.rights, 2);
-  wait(T.lightning);
-  assert.equal(g.phase, 'lightning-done');
-  assert.equal(g.pos.guys, 8);
-  wait(T.lightningDone);
-  assert.equal(g.phase, 'question');
-  assert.equal(g.turn, 'gals');
-  assert.deepEqual(g.used.guys, [5]);
-});
-
-test('the first team home wins, but the other team gets a last chance and can tie', () => {
-  const { g, wait, answer, right, wrong, begin, room } = setup();
-  g.settings.lightning = false;
-  g.settings.length = 15;
-  begin();
-  // The Guys answer everything right, the Gals everything wrong, until the Guys are home.
-  let guard = 0;
-  while (g.phase !== 'gameover' && guard++ < 40) {
-    if (g.phase === 'question') { answer(g.turn === 'guys' ? right() : wrong()); wait(T.lockPause); }
-    wait(T.reveal);
+  for (let i = 0; i < 2; i++) {
+    if (g.turn !== 'gals') { judge(false); wait(T.result); }
+    at(GREEN);
+    judge(true); wait(T.result); wait(T.trophy);
   }
   assert.equal(g.phase, 'gameover');
-  assert.deepEqual(g.winners, ['guys']);
-  assert.equal(g.pos.guys, 15);
-  assert.equal(room.publicView().game.line.text, 'The Guys win!');
-
-  // A tie: the Gals catch up on their last chance.
-  const s = setup();
-  s.g.settings.lightning = false;
-  s.g.settings.length = 15;
-  s.begin();
-  s.g.pos.guys = 13;
-  s.g.pos.gals = 13;
-  while (s.g.phase !== 'gameover') {
-    if (s.g.phase === 'question') { s.answer(s.right()); s.wait(T.lockPause); }
-    s.wait(T.reveal);
-    if (s.g.lastChance) assert.equal(s.g.turn, 'gals');
-  }
-  assert.deepEqual(s.g.winners.sort(), ['gals', 'guys']);
-  assert.equal(s.room.publicView().game.line.text, 'It’s a tie!');
+  assert.deepEqual(g.winners, ['gals']);
+  assert.equal(room.publicView().game.line.text, 'The Gals win!');
 });
 
-test('the host can lock in now, throw out a question, nudge a token and end the game', () => {
-  const { room, g, G, begin, msg } = setup({ hosts: 1 });
+test('a challenge: the readers answer it themselves, judged by the team that challenged', () => {
+  const { room, g, G, W, begin, msg, view, wait } = setup();
+  begin();
+  msg(W[0], { t: 'challenge' });
+  assert.equal(g.tokens.gals, CHALLENGES - 1);
+  assert.equal(g.card.challenged, true);
+  assert.equal(view(W[1]).me.canJudge, true);
+  assert.ok(view(W[1]).me.answer);
+  assert.equal(view(G[1]).me.answer, undefined, 'the Guys answer it now, so they lose the peek');
+  assert.throws(() => msg(G[0], { t: 'judge', right: true }), /Gals judge/);
+  assert.throws(() => msg(W[0], { t: 'challenge' }), /already/);
+  // The Guys miss: the trophy comes to the Gals, who keep playing.
+  msg(W[1], { t: 'judge', right: false });
+  assert.equal(g.pos, 1);
+  wait(T.result);
+  assert.equal(g.turn, 'gals');
+  // The Guys get it: the trophy goes their way and it's their turn.
+  msg(W[0], { t: 'challenge' });
+  msg(W[0], { t: 'judge', right: true });
+  assert.equal(g.pos, 0);
+  wait(T.result);
+  assert.equal(g.turn, 'guys');
+  assert.equal(room.publicView().game.teams.find((t) => t.side === 'gals').challenges, CHALLENGES - 2);
+});
+
+test('challenge tokens run out, and can be turned off', () => {
+  const { room, g, W, begin, msg, judge, wait, at } = setup();
+  begin();
+  for (let i = 0; i < CHALLENGES; i++) { at(0); msg(W[0], { t: 'challenge' }); msg(W[0], { t: 'judge', right: false }); wait(T.result); }
+  assert.equal(g.tokens.gals, 0);
+  assert.throws(() => msg(W[0], { t: 'challenge' }), /No challenge tokens/);
+  judge(true);
+  room.act('endGame');
+  room.act('setChallenges', { on: false });
+  begin();
+  assert.throws(() => msg(W[0], { t: 'challenge' }), /turned off/);
+});
+
+test('Our Pics: a picture comes with the question', () => {
+  const { room, begin, at } = setup();
+  begin();
+  at(2);
+  const c = room.publicView().game.card;
+  assert.equal(c.deck, 'pics');
+  assert.ok(c.img);
+  assert.ok(c.text);
+});
+
+test('Our Lives: the reader picks in secret, the team guesses on their phones', () => {
+  const { room, g, G, W, begin, msg, view, reader, at, wait } = setup();
+  begin();
+  at(3);
+  assert.equal(g.card.deck, 'lives');
+  assert.equal(g.card.stage, 'secret');
+  assert.equal(view(reader()).me.canPick, true);
+  assert.throws(() => msg(W[0], { t: 'vote', choice: 0 }), /Nothing to guess/);
+  assert.throws(() => msg(G.find((p) => p !== reader()), { t: 'secret', choice: 0 }), /picks this one/);
+  msg(reader(), { t: 'secret', choice: 2 });
+  assert.equal(g.card.stage, 'guess');
+  assert.equal(room.publicView().game.card.secret, undefined, 'the TV doesn’t know');
+  assert.equal(view(W[0]).me.secret, undefined);
+  assert.equal(view(G[1]).me.secret, 2, 'the readers can peek');
+  msg(W[0], { t: 'vote', choice: 2 });
+  assert.equal(g.phase, 'card', 'waits for the whole team');
+  msg(W[1], { t: 'vote', choice: 1 });
+  // A tie goes to the first pick: 2, which is right.
+  assert.equal(g.phase, 'result');
+  assert.equal(g.result.right, true);
+  assert.equal(g.pos, 4);
+  wait(T.result);
+  assert.equal(g.card.deck, 'moves');
+});
+
+test('Our Lives challenge: the reader’s teammates guess instead', () => {
+  const { g, G, W, begin, msg, reader, at } = setup();
+  begin();
+  at(-3);   // three spaces toward the Guys: Our Lives for the Gals too
+  msg(reader(), { t: 'secret', choice: 0 });
+  assert.throws(() => msg(W[0], { t: 'secret', choice: 0 }), /Nothing to pick/);
+  msg(W[0], { t: 'challenge' });
+  const mate = G.find((p) => p !== reader());
+  assert.throws(() => msg(W[0], { t: 'vote', choice: 0 }), /Guys are guessing/);
+  assert.throws(() => msg(reader(), { t: 'vote', choice: 0 }), /Guys are guessing/);
+  msg(mate, { t: 'vote', choice: 1 });
+  assert.equal(g.result.right, false);
+  assert.equal(g.pos, -2, 'missed: the trophy comes to the Gals');
+});
+
+test('Our Moves: the reader picks an actor, both act it out, and whoever shouts it first pulls the trophy', () => {
+  const { room, g, G, W, begin, msg, view, reader, at, wait } = setup();
+  begin();
+  at(4);
+  assert.equal(g.card.deck, 'moves');
+  assert.equal(g.card.stage, 'pick');
+  assert.equal(view(W[0]).me.canChallenge, false);
+  assert.throws(() => msg(W[0], { t: 'challenge' }), /can’t be challenged/);
+  assert.throws(() => msg(W[0], { t: 'actor', pid: W[1].id }), /picks the actor/);
+  assert.deepEqual(view(reader()).me.actors.map((p) => p.id), [W[0].id, W[1].id]);
+  msg(reader(), { t: 'actor', pid: W[1].id });
+  assert.equal(g.card.stage, 'act');
+  assert.ok(view(reader()).me.move);
+  assert.equal(view(W[1]).me.move, view(reader()).me.move);
+  assert.equal(view(W[0]).me.move, undefined);
+  assert.equal(room.publicView().game.card.text, undefined, 'the TV doesn’t show it');
+  assert.equal(room.publicView().game.timer.kind, 'moves');
+  // The Guys shout it first: stolen.
+  msg(reader(), { t: 'moves', side: 'guys' });
+  assert.equal(g.pos, 3);
+  assert.equal(g.result.stolen, true);
+  wait(T.result);
+  assert.equal(g.turn, 'guys');
+  // Nobody gets it in time: the turn passes.
+  at(-4);
+  msg(reader(), { t: 'actor', pid: G[0].id });
+  wait(T.moves);
+  assert.equal(g.result.timeout, true);
+  assert.equal(g.pos, -4);
+  wait(T.result);
+  assert.equal(g.turn, 'gals');
+});
+
+test('one actor on the team: the charade starts straight away', () => {
+  const { g, begin, at } = setup({ gals: 1 });
+  begin();
+  at(4);
+  assert.equal(g.card.stage, 'act');
+});
+
+test('a set without the other decks plays Our Facts and Our Stuff everywhere', () => {
+  const q = (n) => ({ q: `Question ${n}?`, a: `Answer ${n}` });
+  const mini = { title: 'Mini', guyStuff: { facts: [q(1), q(2)] }, galStuff: { stuff: [q(3)] } };
+  const { g, begin, at } = setup({ sets: { family: mini } });
+  begin();
+  for (const pos of [0, 2, 3, 4, 5]) { at(pos); assert.equal(g.card.deck, 'facts'); }
+  for (const d of DECK_ORDER) assert.ok(g.deck.guyStuff[d]);
+});
+
+test('the host can judge, throw out a card, nudge the trophy and end the game', () => {
+  const { room, g, G, msg } = setup({ hosts: 1 });
   room.act('start');
-  room.act('advance');
-  assert.equal(g.phase, 'question');
-  const first = g.question.q;
-  room.act('newQuestion');
-  assert.notEqual(g.question.q, first);
-  room.act('nudge', { side: 'gals', delta: 1 });
-  assert.equal(g.pos.gals, 1);
+  const first = g.card.q;
+  const who = g.card.reader;
+  room.act('newCard');
+  assert.notEqual(g.card.q, first);
+  assert.equal(g.card.reader, who, 'the same reader');
+  assert.ok(room.hostView().game.card.answer);
+  room.act('judge', { right: true });
+  assert.equal(g.pos, 1);
   assert.throws(() => msg(G[0], { t: 'advance' }), /host/);
   room.act('advance');
-  assert.equal(g.locked, true);
+  assert.equal(g.phase, 'card');
+  room.act('nudge', { delta: -1 });
+  assert.equal(g.pos, 0);
   room.act('endGame');
   assert.equal(g.phase, 'lobby');
-  assert.equal(begin.length, 0);
 });
 
-test('settings: length, answer time and lightning, only in the lobby', () => {
+test('settings: trophies to win and challenges, only in the lobby', () => {
   const { room, g, begin } = setup();
-  room.act('setLength', { n: 30 });
-  room.act('setAnswerTime', { secs: 0 });
-  assert.equal(g.lightningSpaces().join(), '5,10,15,20,25');
-  room.act('setLightning', { on: false });
-  assert.deepEqual(g.lightningSpaces(), []);
-  assert.throws(() => room.act('setLength', { n: 7 }), /quick/);
+  room.act('setTarget', { n: 1 });
+  assert.equal(g.settings.target, 1);
+  assert.throws(() => room.act('setTarget', { n: 5 }), /1, 2 or 3/);
   begin();
-  assert.equal(g.timer, null, 'no clock');
-  assert.throws(() => room.act('setLength', { n: 15 }), /before the game/);
+  assert.throws(() => room.act('setTarget', { n: 3 }), /before the game/);
+  assert.equal(room.publicView().game.target, 1);
 });
 
 test('reactions float up on the TV for a few seconds', () => {
@@ -247,15 +348,17 @@ test('reactions float up on the TV for a few seconds', () => {
 });
 
 test('a saved game comes back where it was', () => {
-  const { room, g, begin, answer, right, wait } = setup();
+  const { room, g, begin, judge } = setup();
   begin();
-  answer(right());
-  wait(T.lockPause);
+  judge(true);
   const saved = JSON.parse(JSON.stringify(room.toJSON()));
   const again = new Room({ games: GAMES, now: () => 99999, loadContent: (gid, id) => SETS[id] ?? null, listContent: () => Object.entries(SETS).map(([id, s]) => ({ id, title: s.title })) });
   assert.equal(again.restore(saved), true);
-  assert.equal(again.game.phase, 'reveal');
-  assert.equal(again.game.pos.guys, STEP);
-  assert.equal(again.publicView().game.teams.find((t) => t.side === 'guys').pos, STEP);
-  assert.equal(g.questionN, again.game.questionN);
+  assert.equal(again.game.phase, 'result');
+  assert.equal(again.game.pos, 1);
+  assert.equal(again.publicView().game.pos, 1);
+  assert.equal(g.cardN, again.game.cardN);
+  again.game.advance();
+  assert.equal(again.game.phase, 'card');
+  assert.equal(again.game.turn, 'gals');
 });

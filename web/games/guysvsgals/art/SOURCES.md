@@ -12,3 +12,9 @@ Copyright (c) Microsoft Corporation. The Apple TV app has the same pictures in `
 | crown.png | Crown (3D) | none |
 
 The lettering is Bangers (SIL Open Font License, Google Fonts); the Apple TV app ships `GameNight/Fonts/Bangers-Regular.ttf`.
+
+## Our Pics pictures
+
+Everything in `../pics/` (and `Assets.xcassets/GvgPic-*` in the Apple TV app) is a Fluent Emoji 3D asset from the same
+project, MIT License, shrunk to 200 pixels. Each file is named after its Fluent asset (for example `wrench.png` is
+"Wrench", `high-heeled-shoe.png` is "High-heeled shoe", `nail-polish.png` is "Nail polish" in the default skin tone).

@@ -1,7 +1,7 @@
 // Plays a whole game of Guys vs Gals in a real browser (Chromium via Playwright): the website's TV page runs the game,
-// three phones join through a stand-in for Supabase Realtime and pick their sides, the coin toss picks who goes first,
-// the teams vote on their questions (the Guys always right, the Gals always wrong, with the answer peeked from the other
-// side's phone), play the Lightning Rounds they reach, and the Guys win.
+// three phones join through a stand-in for Supabase Realtime and pick their sides, and the trophy tug of war is played
+// out: the readers judge on their phones (the Guys always right, the Gals always wrong), Our Lives secrets are picked and
+// guessed, charades are called, the Gals throw one challenge, and the Guys pull three trophies home.
 //   node scripts/e2e-guysvsgals.mjs            (SHOT_DIR=<folder> saves screenshots of the TV and the phones)
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
@@ -88,73 +88,88 @@ try {
   if (await players[1].page.getByRole('button', { name: /start the battle/i }).count()) fail('a player who joined second can start');
   await players[0].page.getByRole('button', { name: /start the battle/i }).click();
 
-  await until(async () => /Coin toss/i.test(await tvText()), 'the coin toss');
-  await sleep(1600); await shot(tv, 'toss');
-  const team = (side) => players.filter((p) => p.side === side);
   const ann = players[0].page;
-  let questions = 0;
-  let lightnings = 0;
+  const bo = players[1].page;
+  const pages = players.map((p) => p.page);
+  const tvState = () => tv.locator('.gv-tv').evaluate((e) => {
+    const card = e.querySelector('.gv-card');
+    return {
+      phase: [...e.classList].find((c) => c.startsWith('phase-'))?.slice(6) ?? 'lobby',
+      turn: e.querySelector('.gv-team.turn')?.classList.contains('guys') ? 'guys' : e.querySelector('.gv-team.turn') ? 'gals' : null,
+      n: card?.dataset.n ?? null, deck: [...(card?.classList ?? [])].find((c) => c.startsWith('deck-'))?.slice(5) ?? null,
+      challenged: !!e.querySelector('.gv-stamp'), answer: !!e.querySelector('.gv-answer'), pic: !!e.querySelector('.gv-card .gv-pic'),
+      sig: `${[...e.classList].join(' ')}|${card?.dataset.n}|${card?.querySelector('.gv-foot')?.textContent ?? ''}|${!!e.querySelector('.gv-stamp')}`,
+    };
+  });
+  /** The first phone showing `sel`, or null. */
+  const phoneWith = async (sel) => { for (const pg of pages) if (await pg.locator(sel).count()) return pg; return null; };
+  await until(async () => (await tvState()).phase === 'card', 'the first card');
+  const decks = new Set();
+  let cards = 0;
+  let challenged = false;
+  let trophies = 0;
+  let last = null;
   const end = Date.now() + 6 * 60_000;
   while (Date.now() < end) {
-    const t = await tvText();
-    if (/WIN!|A TIE/.test(t) && (await tv.locator('.gv-win').count())) break;
-    const phase = await tv.locator('.gv-tv').evaluate((e) => [...e.classList].find((c) => c.startsWith('phase-'))?.slice(6) ?? 'lobby');
-    if (phase === 'question') {
-      // Whose turn: their phones have choice buttons; the other side's phones can peek at the answer.
-      const turnSide = (await players[0].page.locator('button.gv-pchoice').count()) ? 'guys' : 'gals';
-      const voters = team(turnSide);
-      const watcher = players.find((p) => p.side !== turnSide).page;
-      const peek = watcher.locator('button.gv-peek');
-      if (!(await peek.count())) { await sleep(100); continue; }
-      if ((await tv.locator('.gv-choices .right').count())) fail('the TV shows the answer before it is locked in');
-      if ((await voters[0].page.locator('.gv-pchoice.right').count())) fail('the answering team can see the answer');
-      await peek.click();
-      await until(async () => (await watcher.locator('.gv-pchoice.right').count()) === 1, 'the peeked answer');
-      const answer = await watcher.locator('.gv-pchoice').evaluateAll((els) => els.findIndex((e) => e.classList.contains('right')));
-      const choices = await voters[0].page.locator('button.gv-pchoice').count();
-      const pick = turnSide === 'guys' ? answer : (answer + 1) % choices;
-      if (!questions) { await shot(tv, 'question'); await shot(watcher, 'phone-peek'); }
-      for (const v of voters) await v.page.locator(`button.gv-pchoice[data-i="${pick}"]`).click().catch(() => {});
-      if (!questions) await shot(voters[0].page, 'phone-voted');
-      questions++;
-      await until(async () => /phase-reveal/.test(await tv.locator('.gv-tv').getAttribute('class')), 'the answer to be revealed', 10000);
-      const right = await tv.locator('.gv-choices .right').count();
-      if (!right) fail('the TV does not show the right answer once it is revealed');
-      if (questions === 1) await shot(tv, 'reveal');
-      // Speed things along: the first player moves on.
-      await sleep(400);
+    const st = await tvState();
+    const was = last; last = st.phase;
+    if (st.phase === 'gameover') break;
+    if (st.phase === 'trophy') { if (was !== 'trophy' && !trophies++) await shot(tv, 'trophy'); await sleep(150); continue; }
+    if (st.phase === 'result') {
+      if (cards === 1) await shot(tv, 'result');
       const move = ann.getByRole('button', { name: /^Move on$/ });
       if (await move.count()) { await ann.locator('details.gv-pcard summary', { hasText: 'gone quiet' }).click().catch(() => {}); await move.click().catch(() => {}); }
+      await sleep(150);
       continue;
     }
-    if (phase === 'lightning') {
-      // Anyone on the team taps; the other side's phones know the answer.
-      let side = null;
-      for (const p of players) if (await p.page.locator('.gv-ptf').count()) { side = p.side; break; }
-      if (!side) { await sleep(100); continue; }
-      const tapper = team(side)[0].page;
-      const knower = players.find((p) => p.side !== side).page;
-      const hint = await knower.locator('.gv').innerText();
-      const m = hint.match(/it’s (TRUE|FALSE)/);
-      if (!m) { await sleep(100); continue; }
-      if (!lightnings++) { await shot(tv, 'lightning'); await shot(tapper, 'phone-lightning'); }
-      const truth = m[1] === 'TRUE';
-      const say = side === 'guys' ? truth : !truth;
-      const before = await tapper.locator('.gv').innerText();
-      await tapper.getByRole('button', { name: say ? 'TRUE' : 'FALSE' }).click().catch(() => {});
-      // Wait for the next statement (or the end of the round, which may not change the phone at once).
-      for (let k = 0; k < 60 && (await tapper.locator('.gv').innerText()) === before; k++) await sleep(50);
-      continue;
+    if (st.phase !== 'card') { await sleep(150); continue; }
+    if (st.answer) fail('the TV shows the answer before the card is judged');
+    decks.add(st.deck);
+    if (st.deck === 'pics' && !st.pic) fail('an Our Pics card without its picture');
+    const guysTurn = st.turn === 'guys';
+    let acted = false;
+    // The Gals throw one challenge on a spoken card of theirs; the Guys then answer it themselves (and get it).
+    if (!guysTurn && !challenged && ['facts', 'stuff', 'pics'].includes(st.deck) && (await bo.locator('.gv-challenge').count())) {
+      await shot(bo, 'phone-challenge');
+      await bo.locator('.gv-challenge').click(); challenged = true; acted = true;
+    } else if (await phoneWith('.gv-judge:not(.three) button.yes')) {
+      const judge = await phoneWith('.gv-judge:not(.three) button.yes');
+      if (st.challenged) await shot(tv, 'challenge');
+      if (!cards) { await shot(tv, 'card'); await shot(judge, 'phone-reader'); }
+      if (st.deck === 'pics') { await shot(tv, 'pics'); }
+      // Normal: right for the Guys, wrong for the Gals. Challenged (the Guys answer): they got it.
+      await judge.locator(st.challenged || guysTurn ? 'button.yes' : 'button.no').click(); acted = true;
+    } else if (await phoneWith('button.gv-pchoice[data-i]')) {
+      const pg = await phoneWith('button.gv-pchoice[data-i]');
+      const text = await pg.locator('.gv').innerText();
+      if (/secretly tap/.test(text)) { await shot(tv, 'lives'); await pg.locator('button.gv-pchoice[data-i="0"]').click(); acted = true; }
+      else {
+        // Guessing: the reader picked A. The Guys guess right, the Gals wrong.
+        for (const p of players) if (await p.page.locator('button.gv-pchoice[data-i]').count()) await p.page.locator(`button.gv-pchoice[data-i="${p.side === 'guys' ? 0 : 1}"]`).click().catch(() => {});
+        acted = true;
+      }
+    } else if (await phoneWith('button.gv-pchoice[data-pid]')) {
+      await (await phoneWith('button.gv-pchoice[data-pid]')).locator('button.gv-pchoice[data-pid]').first().click(); acted = true;
+    } else if (await phoneWith('.gv-judge.three')) {
+      await shot(tv, 'moves');
+      const caller = await phoneWith('.gv-judge.three');
+      if (!(await phoneWith('.gv-move'))) fail('nobody’s phone shows the charade');
+      await caller.locator('.gv-judge.three button[data-side="guys"]').click(); acted = true;
     }
-    await sleep(150);
+    if (!acted) { await sleep(120); continue; }
+    if (['facts', 'stuff', 'pics'].includes(st.deck)) cards++;
+    await until(async () => (await tvState()).sig !== st.sig, 'the TV to move on', 10000);
   }
+  for (const d of ['facts', 'stuff', 'pics', 'lives', 'moves']) if (!decks.has(d)) fail(`never played an ${d} card`);
+  if (trophies !== 3) fail(`the Guys should win three trophies, saw ${trophies}`);
+  if (!challenged) fail('never challenged');
   await until(async () => (await tv.locator('.gv-win').count()) > 0, 'the winner screen', 20000);
   await shot(tv, 'win');
   const t = await tvText();
   if (!/THE GUYS WIN/.test(t)) fail(`the Guys should win: ${t.slice(0, 200)}`);
   await shot(ann, 'phone-gameover');
   if (!(await ann.locator('.gv').innerText()).includes('your team')) fail('the winner’s phone does not say they won');
-  console.log(`${questions} questions, ${lightnings} lightning statements`);
+  console.log(`decks played: ${[...decks].join(', ')}; ${trophies} trophies won`);
   await ann.getByRole('button', { name: /rematch/i }).click();
   await until(async () => (await tv.locator('.gv-lobby').count()) > 0, 'Rematch to return to the lobby');
   console.log('Guys vs Gals played through three phones and the TV page');

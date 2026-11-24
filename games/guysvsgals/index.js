@@ -3,7 +3,7 @@ import { GuysVsGalsGame, validateSet, NAME } from './game.js';
 export default {
   id: 'guysvsgals',
   name: NAME,
-  description: 'The battle of the sexes: the Guys answer questions about gal stuff, the Gals about guy stuff. Vote on your phones, race to the finish, and survive the Lightning Rounds.',
+  description: 'The battle of the sexes, tug-of-war style: the Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side through five decks (facts, stuff, pictures, guess-my-life and charades). First to three trophies wins.',
   // Always two teams: the Guys and the Gals.
   needs: { teams: 2 },
   validateContent: validateSet,

@@ -253,35 +253,52 @@ gal stuff, and the Gals answer questions about guy stuff. Who knows the other si
 **Sides.** Everyone picks **I'm a Guy** or **I'm a Gal** on their phone in the lobby (the host can move anyone). Both
 sides need at least one player. The first player to join (or the host) starts the battle.
 
-**The race.** Each side has a lane on the TV: start, a space for every step, and the finish (20 spaces in a Standard
-game; Quick is 15 and Long is 30). A **coin toss** picks who goes first, then the teams take turns.
+**The path.** A row of coloured spaces runs across the TV: the Guys' winner's circle and green space on the left,
+START in the middle, and the Gals' green space and winner's circle on the right. One trophy starts on START. Going out
+from START each way, the spaces are Our Facts (START itself), Our Stuff, Our Pics, Our Lives, Our Moves, and green.
+**The Gals go first.**
 
-**A turn.** The TV shows a multiple-choice question about the other side's stuff, with four answers. Everyone on the
-team votes on their phone, and can see how their teammates voted. The team's favourite answer is locked in once everyone
-has voted (a tie goes to the answer voted for first), or when the clock runs out. **Right** moves the team 2 spaces;
-**wrong** stays put. The other team's phones know the answer, behind a **Peek** button, so they can enjoy the show.
+**A turn.** A player on the *other* team reads a card from their own side's deck (the Guys read guy stuff to the
+Gals), and readers take turns. The space the trophy is on picks the deck:
 
-**Lightning Rounds.** Every fifth space is a lightning space. A team that reaches or passes one (for the first time)
-plays a Lightning Round: five true-or-false statements, as fast as they can, in 20 seconds. Anyone on the team can tap
-**True** or **False**. Every right answer is a space. A Lightning Round never starts another one.
+- **Our Facts** and **Our Stuff**: the reader's phone shows the question and the answer. The team says its answer out
+  loud and the reader taps **Right** or **Wrong**. Everyone on the reading team can peek at the answer.
+- **Our Pics**: the same, with a picture on the TV.
+- **Our Lives**: a question about the reader, with three answers. The reader secretly taps the one that's true for them,
+  then the team guesses on their phones (the team's favourite counts, a tie goes to the one picked first).
+- **Our Moves**: charades. The reader picks someone on the answering team, both see the same thing to act out, and both
+  act it at the same time while each team shouts at its own actor. The reader taps who said it first (one minute).
+- **Green**: any deck but Our Moves.
 
-**Winning.** The first side to the finish wins. If the side that went first gets there, the other side gets one last
-turn to tie.
+**Right** pulls the trophy one space toward the answering team, and they get another card. **Wrong** hands the turn to
+the other team, with the trophy where it is (the spaces count the same on either side of START). In a charade, if the
+reader's team shouts it first, the trophy moves their way and it is their turn.
+
+**Trophies.** A right answer while the trophy is on your own green space wins it: it goes into your winner's circle, a
+new trophy goes on START, and the other team plays first. **The first team to three trophies wins** (the host can
+make it one or two).
+
+**Challenges.** Each team has three challenge tokens. On your turn (not on an Our Moves card) tap **Challenge** to throw
+the card back: the other team has to answer it themselves, without the reader's help (on Our Lives, the reader's
+teammates guess), and your team judges. If they miss, the trophy comes your way and you keep playing; if they get it,
+the trophy goes their way and it is their turn.
 
 **Reactions.** Once the game is under way, the phones have a row of emoji. They float up the sender's side of the TV.
 
-**The host.** The host page shows every question with its answer, and can **Lock in now**, throw out a dud with **New
-question**, nudge a token a space either way, and end the game. Before the game: who is on which side, the question set,
-the game length, the time to answer (20, 30 or 45 seconds, or no clock) and whether to play Lightning Rounds.
+**The host.** The host page shows every card with its answer and can judge it (as well as the reader), pick the actor,
+call a charade, lock in Our Lives guesses, throw out a dud with **New card**, nudge the trophy a space either way, and
+end the game. Before the game: who is on which side, the question set, trophies to win (1, 2 or 3) and challenge tokens
+on or off.
 
-**Questions.** *Family Battle* ships with over 220 easy questions (guy stuff and gal stuff) and 100 true-or-false
-statements, all written for this game. Write your own in the **Questions** tab: each half has its questions (the right
-answer and up to three wrong ones; the game shuffles them) and its Lightning Round statements, or paste a list of
-`question | right | wrong | wrong | wrong` lines. A TV does not ask the same question twice until they run out.
+**Questions.** *Family Battle* has all five decks for both sides, all written for this game (none copied from the
+board game): over 160 Our Facts and Our Stuff questions per side, more than 25 Our Pics, 32 Our Lives and 44 Our Moves.
+Write your own in the **Questions** tab: each half has the five decks, or paste a list (`question | answer`,
+`picture | question | answer`, `question | A | B | C`, or one charade per line). Only Our Facts or Our Stuff is a must;
+an empty deck is played as Our Facts. A TV does not deal the same card twice until the deck runs out.
 
-**Sounds.** Guys vs Gals has its own recordings, all CC0 (credits beside them): lobby music, a coin toss, a question
-coming up, the answer locking in, right and wrong, a token moving, the Lightning Round's music and each true or false,
-and a fanfare for the winner. Files uploaded for Guys vs Gals take their place.
+**Sounds.** Guys vs Gals has its own recordings, all CC0 (credits beside them): lobby music, a card dealt, a challenge,
+the trophy sliding, right and wrong, music under a charade, a trophy won and a fanfare for the winners. Files uploaded
+for Guys vs Gals take their place.
 
 ## Players and teams
 
