@@ -30,8 +30,8 @@ const CARDS = {
   },
   guysvsgals: {
     title: 'Guys vs Gals', art: '/menu/guysvsgals.webp', accent: '#ff4fa3',
-    tags: [['⚔️', 'Guys against Gals'], ['🏆', 'Trophy tug of war']],
-    blurb: 'The Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side: first to three wins.',
+    tags: [['⚔️', 'Guys against Gals'], ['🏆', 'Tug of war or pawn race']],
+    blurb: 'The Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side, or race your pawns across.',
   },
 };
 

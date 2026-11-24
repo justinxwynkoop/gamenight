@@ -1,7 +1,8 @@
 // Plays a whole game of Guys vs Gals in a real browser (Chromium via Playwright): the website's TV page runs the game,
 // three phones join through a stand-in for Supabase Realtime and pick their sides, and the trophy tug of war is played
 // out: the readers judge on their phones (the Guys always right, the Gals always wrong), Our Lives secrets are picked and
-// guessed, charades are called, the Guys throw one challenge, and the Guys pull three trophies home.
+// guessed, charades are called, the Guys throw one challenge, and the Guys pull three trophies home. Then a pawn race,
+// picked on the first player's phone, which the Guys win.
 //   node scripts/e2e-guysvsgals.mjs            (SHOT_DIR=<folder> saves screenshots of the TV and the phones)
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
@@ -177,6 +178,44 @@ try {
   await ann.getByRole('button', { name: /rematch/i }).click();
   await until(async () => (await tv.locator('.gv-lobby').count()) > 0, 'Rematch to return to the lobby');
   console.log('Guys vs Gals played through three phones and the TV page');
+
+  // ---- The pawn race: Ann picks it in the lobby, the Guys get every question right and the Gals none. ----
+  if (await players[1].page.locator('button[data-mode="race"]').count()) fail('only the first player picks the game');
+  await ann.locator('button[data-mode="race"]').click();
+  await until(async () => /The race/.test(await tvText()), 'the TV lobby to show the race rules');
+  await shot(tv, 'race-lobby');
+  await ann.getByRole('button', { name: /start the battle/i }).click();
+  await until(async () => (await tv.locator('.gv-race').count()) > 0, 'the race track');
+  let wilds = 0;
+  let questions = 0;
+  let across = 0;
+  const raceEnd = Date.now() + 6 * 60_000;
+  while (Date.now() < raceEnd) {
+    if (await tv.locator('.gv-win').count()) break;
+    const st = await tvState();
+    if (st.phase === 'result') {
+      if (await tv.locator('.gv-wildcard').count()) { if (!wilds++) await shot(tv, 'race-wild'); }
+      if (/PAWN IS ACROSS/.test(await tv.locator('.gv-verdict').innerText().catch(() => ''))) across++;
+      const move = ann.getByRole('button', { name: /^Move on$/ });
+      if (await move.count()) { await ann.locator('details.gv-pcard summary', { hasText: 'gone quiet' }).click().catch(() => {}); await move.click().catch(() => {}); }
+      await until(async () => (await tvState()).sig !== st.sig, 'the race to move on', 10000);
+      continue;
+    }
+    if (st.phase !== 'card') { await sleep(120); continue; }
+    if (st.answer) fail('the TV shows the answer before the question is judged');
+    if (!(await tv.locator('.gv-qcount').count())) fail('the race card does not say which question it is');
+    const judge = await phoneWith('.gv-judge:not(.three) button.yes');
+    if (!judge) { await sleep(120); continue; }
+    if (!questions++) { await shot(tv, 'race-card'); await shot(judge, 'race-phone-reader'); }
+    if (await phoneWith('.gv-challenge')) fail('a challenge button in the race');
+    await judge.locator(st.turn === 'guys' ? 'button.yes' : 'button.no').click();
+    await until(async () => (await tvState()).sig !== st.sig, 'the TV to show the result', 10000);
+  }
+  await until(async () => (await tv.locator('.gv-win').count()) > 0, 'the race winner screen', 20000);
+  await shot(tv, 'race-win');
+  if (!/THE GUYS WIN/.test(await tvText())) fail('the Guys should win the race');
+  if (!wilds) fail('never drew a wild card in the race');
+  console.log(`race: ${questions} questions, ${wilds} wild cards, ${across} pawns across before the last`);
 } catch (e) { if (!problems.length) fail(e.message); }
 await browser.close(); sb.close(); site.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : '\nOK');

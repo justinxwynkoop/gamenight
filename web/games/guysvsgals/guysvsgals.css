@@ -317,3 +317,26 @@
 .gv-move { font-family: 'Bangers', sans-serif; font-size: 2.4rem; letter-spacing: .04em; line-height: 1.05; text-align: center; padding: 18px 10px; background: var(--gv-yellow); border: 3px solid var(--gv-ink); }
 .gv-pstat { display: flex; gap: 8px; align-items: center; margin-left: auto; margin-bottom: 8px; }
 .gv-pstat span { font-family: 'Bangers', sans-serif; font-size: 1.2rem; color: var(--gv-ink); background: var(--gv-yellow); border: 3px solid var(--gv-ink); padding: 0 8px; white-space: nowrap; }
+
+/* ---------- the pawn race ---------- */
+.gv-race .gv-space.wild { background: var(--d); color: #fff; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-race .gv-space.start { background: var(--d); }
+.gv-race .gv-space span { font-size: 2.4vmin; }
+.gv-pawn { position: absolute; top: 50%; transform: translate(-50%, -62%); z-index: 3; transition: left .3s; pointer-events: none; }
+.gv-pawn .gv-token { width: 10vmin; height: 10vmin; filter: drop-shadow(.5vmin .5vmin 0 var(--gv-ink)); animation: gv-bob 1.4s ease-in-out infinite; }
+.gv-pawn.twin.guys { margin-left: -2.2vmin; } .gv-pawn.twin.gals { margin-left: 2.2vmin; }
+.gv-bin { display: flex; gap: .4vmin; align-items: center; min-width: 11vmin; min-height: 7vmin; padding: .6vmin 1vmin; background: var(--c); border: .45vmin solid var(--gv-ink); border-radius: 50% / 40%; justify-content: center; }
+.gv-bin span { position: relative; display: grid; }
+.gv-bin .gv-token { width: 5.4vmin; height: 5.4vmin; }
+.gv-bin .wait { opacity: .55; }
+.gv-bin .jail b { position: absolute; right: -.6vmin; bottom: -.6vmin; font-size: 2.4vmin; }
+.gv-pawns { display: flex; gap: 1vmin; align-items: center; }
+.gv-pawns .gv-token { width: 6.4vmin; height: 6.4vmin; }
+.gv-pawns .off { opacity: .3; filter: grayscale(1); }
+.gv-wildcard { justify-self: center; max-width: 90%; text-align: center; font-size: calc(3.4vmin * var(--fit, 1)); font-weight: 900; padding: 1.4vmin 3vmin; color: #fff; background: var(--c);
+  border: .5vmin solid var(--gv-ink); box-shadow: .8vmin .8vmin 0 var(--gv-ink); transform: rotate(-1.5deg); animation: gv-slam .5s cubic-bezier(.2, 1.6, .4, 1) both; -webkit-text-stroke: .15vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-wildcard small { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2.6vmin; letter-spacing: .12em; }
+.gv-qcount { font-family: 'Bangers', sans-serif; font-size: 3.2vmin; letter-spacing: .06em; }
+.gv-path.compact.gv-race .gv-pawn .gv-token { width: 30px; height: 30px; }
+.gv-path.compact .gv-bin { min-width: 0; min-height: 0; padding: 2px 4px; border-width: 2px; }
+.gv-path.compact .gv-bin .gv-token { width: 18px; height: 18px; }

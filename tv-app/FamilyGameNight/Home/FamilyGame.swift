@@ -75,7 +75,7 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         case .feud: return "Two teams guess the top survey answers. Face-off, strikes, steals and Fast Money."
         case .spynight: return "Most of you are the Resistance. A few are Spies. Your phone tells you which."
         case .piechase: return "Roll, move round the wheel and answer to win a wedge in all six categories. Then race back to the hub."
-        case .guysvsgals: return "The Guys answer about gal stuff, the Gals about guy stuff. Pull the trophy to your side: first to three trophies wins."
+        case .guysvsgals: return "The Guys answer about gal stuff, the Gals about guy stuff. Pull the trophy to your side, or race your pawns across."
         }
     }
 

@@ -284,6 +284,16 @@ teammates guess), and the reader still judges. Nobody on their team has seen the
 phone shows it. If they miss, the trophy comes your way and you keep playing; if they get it,
 the trophy goes their way and it is their turn.
 
+**The race.** Pick **Race** instead of **Tug of war** in the lobby (on the first player's phone, or the host page) for
+the classic pawn race. A coin toss says who goes first. Each team has two pawns (one in a quick race, set on the host
+page): one starts on its own START, the other waits. A reader from the other team reads a card of three questions, and
+every right answer moves the team's pawn one space and brings the next question; a miss, or all three right, ends the
+turn. Land on your own side's wild space and you draw a wild card at once; end your turn on the other side's wild space
+and you draw one of theirs (wild cards help the side they belong to: move ahead, send the other team back, make them
+sit out a turn). Once a game, a team that ends its turn on the other team's pawn takes it prisoner, while the other
+team still has a pawn waiting; the prisoner is freed back to START when their other pawn gets across. The first team
+with every pawn across wins. There are no challenges in the race.
+
 **Reactions.** Once the game is under way, the phones have a row of emoji. They float up the sender's side of the TV.
 
 **The host.** The host page shows every card with its answer and can judge it (as well as the reader), pick the actor,

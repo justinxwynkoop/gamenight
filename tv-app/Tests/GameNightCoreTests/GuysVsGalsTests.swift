@@ -107,6 +107,50 @@ final class GuysVsGalsTests: XCTestCase {
         XCTAssertEqual(game.name(game.winners?.first), "Gals")
     }
 
+    func testTheTrophyGameSaysSo() throws {
+        let game = try gvg("card")
+        XCTAssertEqual(game.mode, "trophy")
+        XCTAssertFalse(game.isRace)
+        XCTAssertNil(game.race)
+    }
+
+    func testThePawnRace() throws {
+        let card = try gvg("race-card")
+        XCTAssertTrue(card.isRace)
+        XCTAssertEqual(DisplayScreen.screen(for: try Fixture.state("gvg-race-card")), .guysVsGals)
+        let race = try XCTUnwrap(card.race)
+        XCTAssertEqual(race.toss, "gals", "the coin toss")
+        XCTAssertEqual(card.turn, "gals")
+        XCTAssertEqual(race.len, 12)
+        XCTAssertEqual(race.pawns("gals").map(\.state), ["board", "wait"])
+        XCTAssertEqual(race.pawns("gals").first?.x, 13, "the Gals start on the right")
+        XCTAssertEqual(race.wildSide(3), "guys")
+        XCTAssertEqual(race.wildSide(5), "gals")
+        XCTAssertNil(race.wildSide(1))
+        XCTAssertEqual(card.card?.q, 1)
+        XCTAssertEqual(card.card?.of, 3)
+        XCTAssertNil(card.card?.answer)
+        let right = try gvg("race-result-right")
+        XCTAssertEqual(right.result?.more, true, "the next question on the same card")
+        XCTAssertEqual(right.race?.pawns("gals").first?.at, 1)
+        let wild = try gvg("race-wild")
+        XCTAssertEqual(wild.result?.wild?.owner, "guys")
+        XCTAssertFalse(wild.result?.wild?.text.contains("{") ?? true)
+        let capture = try gvg("race-capture")
+        XCTAssertEqual(capture.result?.captured, "guys")
+        XCTAssertEqual(capture.race?.pawns("guys").map(\.state), ["jail", "board"])
+        let across = try gvg("race-across")
+        XCTAssertEqual(across.result?.crossed, "guys")
+        XCTAssertEqual(across.race?.across("guys"), 1)
+        XCTAssertEqual(across.race?.pawns("guys").map(\.state), ["board", "home"], "the prisoner is freed back to START")
+        let won = try gvg("race-won")
+        XCTAssertEqual(won.result?.won, "gals")
+        let over = try gvg("race-gameover")
+        XCTAssertEqual(over.phase, .gameover)
+        XCTAssertEqual(over.winners, ["gals"])
+        XCTAssertEqual(over.race?.across("gals"), 2)
+    }
+
     func testAnUnknownPhaseDoesNotBlankTheScreen() throws {
         var text = try String(decoding: Fixture.data("gvg-card"), as: UTF8.self)
         text = text.replacingOccurrences(of: #""phase": "card""#, with: #""phase": "something-new""#)
@@ -137,6 +181,14 @@ final class GuysVsGalsSoundTests: XCTestCase {
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").playMusic, true)
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").cues, [.lock])
         XCTAssertEqual(try plan("gvg-moves-act", "gvg-moves-stolen").playMusic, false)
+    }
+
+    func testTheRaceHasSoundsForItsMoments() throws {
+        XCTAssertEqual(try plan("gvg-race-card", "gvg-race-result-right").cues, [.pick, .correct])
+        XCTAssertTrue(try plan("gvg-race-card", "gvg-race-wild").cues.contains(.dd), "a wild card")
+        XCTAssertTrue(try plan("gvg-race-card", "gvg-race-capture").cues.contains(.lock), "a prisoner")
+        XCTAssertTrue(try plan("gvg-race-card", "gvg-race-across").cues.contains(.ding), "a pawn across")
+        XCTAssertTrue(try plan("gvg-race-won", "gvg-race-gameover").cues.contains(.fanfare))
     }
 
     func testGuysVsGalsHasItsOwnSounds() {

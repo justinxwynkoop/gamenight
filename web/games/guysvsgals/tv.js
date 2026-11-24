@@ -3,7 +3,7 @@
 // along the foot with the trophy on it. A trophy won and the winners take over the whole screen. The answer only reaches
 // the TV once the card has been judged.
 import { h } from '../../common.js';
-import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide } from './shared.js';
+import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b', '#ffa7d8'];
 const HOP_MS = 320;
@@ -61,7 +61,13 @@ export function lobby(v, ctx) {
           : ctx.info?.joinUrl ? h('div', { class: 'gv-dim' }, `or open ${ctx.info.joinUrl.replace(/^https?:\/\//, '')}`) : null,
         h('div', { class: 'gv-dim' }, ready ? (g.hosted ? 'The host starts the battle.' : 'The first player to join starts the battle on their phone.') : 'Both sides need at least one player.')),
       roster('gals')),
-    h('div', { class: 'gv-rules' },
+    g.settings.mode === 'race' ? h('div', { class: 'gv-rules' },
+      h('span', {}, token('guys', '', 30), ` The race: get ${g.settings.pawns === 1 ? 'your pawn' : 'both pawns'} across first`),
+      h('span', {}, '🪙 A coin toss says who goes first'),
+      h('span', {}, '❓ Three questions a card'),
+      h('span', {}, '🃏 Wild cards'),
+      g.settings.pawns > 1 ? h('span', {}, '🔒 Take one prisoner') : null,
+      h('span', {}, `📚 ${g.setTitle || 'All question sets'}`)) : h('div', { class: 'gv-rules' },
       h('span', {}, trophy(26), ` Pull the trophy to your side. First to ${g.target} ${g.target === 1 ? 'trophy' : 'trophies'}`),
       h('span', {}, `💖 The ${nameOf(g, g.first)} go first`),
       (g.decks ?? []).map((d) => h('span', { class: 'gv-deckpill', style: { '--d': d.color } }, d.name)),
@@ -92,7 +98,10 @@ function teamPanel(g, side) {
     turn ? h('div', { class: 'gv-clock-badge' }, 'YOUR TURN!') : reading ? h('div', { class: 'gv-clock-badge reading' }, 'READING!') : null,
     h('div', { class: 'gv-team-hero' }, token(side, t?.color ?? '#888', 256)),
     h('div', { class: 'gv-members' }, (t?.members ?? []).map((m) => h('span', { class: `gv-member ${m.connected ? '' : 'off'} ${voters.has(m.id) ? 'voted' : ''}` }, m.name, tag(m)))),
-    h('div', { class: 'gv-pos' },
+    isRace(g) ? h('div', { class: 'gv-pos' },
+      h('div', { class: 'gv-pawns', title: acrossText(g, side) }, g.race.pawns[side].map((p) => h('span', { class: p.state === 'home' ? '' : 'off' }, token(side, '', 64)))),
+      h('b', {}, acrossText(g, side).toUpperCase()),
+      g.race.skip?.[side] ? h('i', {}, '💤') : null) : h('div', { class: 'gv-pos' },
       h('div', { class: 'gv-cups' }, Array.from({ length: g.target }, (_, i) => trophy(64, i < (t?.trophies ?? 0) ? 'won' : 'empty'))),
       g.settings.challenges ? h('div', { class: 'gv-tokens', title: 'Challenge tokens' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < (t?.challenges ?? 0) ? 'on' : '' }, '✋'))) : null));
 }
@@ -119,6 +128,10 @@ function ring(timer) {
 function pow(g) {
   const r = g.result;
   if (!r) return null;
+  if (isRace(g)) {
+    const word = r.won ? 'WINNERS!' : r.captured ? 'GOTCHA!' : r.wild ? 'WILD!' : r.crossed ? 'ACROSS!' : r.right ? 'POW!' : 'OOF!';
+    return h('div', { class: `gv-pow ${r.right || r.won ? 'yes' : 'no'}` }, h('span', {}, word));
+  }
   const good = r.trophy || r.moved;
   const word = r.trophy ? 'TROPHY!' : g.card?.deck === 'moves' ? (r.moved ? (r.stolen ? 'STOLEN!' : 'GOT IT!') : r.timeout ? 'TIME!' : 'NOPE!') : r.challenged ? (r.right ? 'BLOCKED!' : 'GOTCHA!') : r.right ? 'POW!' : 'OOF!';
   return h('div', { class: `gv-pow ${good ? 'yes' : 'no'}` }, h('span', {}, word));
@@ -126,6 +139,11 @@ function pow(g) {
 
 function verdict(g) {
   const r = g.result;
+  if (isRace(g)) {
+    const text = r.won ? `THE ${nameOf(g, r.won).toUpperCase()} WIN THE RACE!` : r.captured ? `A ${nameOf(g, r.captured).toUpperCase()} PAWN IS TAKEN PRISONER!`
+      : r.crossed ? `A ${nameOf(g, r.crossed).toUpperCase()} PAWN IS ACROSS!` : r.more ? `${nameOf(g, g.turn).toUpperCase()}: NEXT QUESTION` : `OVER TO THE ${nameOf(g, r.next).toUpperCase()}`;
+    return h('div', { class: `gv-verdict ${r.right || r.won ? 'yes' : 'no'}` }, text);
+  }
   const moved = r.moved ? `TROPHY ${r.moved === 'guys' ? '◀' : '▶'} ${nameOf(g, r.moved).toUpperCase()}` : `OVER TO THE ${nameOf(g, r.next).toUpperCase()}`;
   return h('div', { class: `gv-verdict ${r.moved ? 'yes' : 'no'}` }, r.trophy ? `THE ${nameOf(g, r.trophy).toUpperCase()} WIN THE TROPHY!` : moved);
 }
@@ -138,7 +156,8 @@ function deckCard(g) {
   const chips = h('div', { style: { display: 'flex', gap: '1.2vmin', flexWrap: 'wrap', alignItems: 'center' } },
     h('span', { class: 'gv-chip deck', style: { '--d': d.color } }, d.name),
     h('span', { class: `gv-chip ${c.about}` }, aboutText(c.about)),
-    c.cat ? h('span', { class: 'gv-chip ghost' }, c.cat) : null);
+    c.cat ? h('span', { class: 'gv-chip ghost' }, c.cat) : null,
+    c.of ? h('span', { class: 'gv-chip gv-qcount' }, `QUESTION ${c.q} OF ${c.of}`) : null);
   const top = h('div', { class: 'gv-card-top' }, chips, c.deck === 'moves' && !result ? ring(g.timer) : null);
   const stamp = c.challenged && !result ? h('div', { class: 'gv-stamp' }, 'CHALLENGE!') : null;
   let middle;
@@ -170,13 +189,15 @@ function deckCard(g) {
         return h('div', { class: `gv-choice ${cls}`, style: { '--l': LETTER_COLORS[i] } }, h('span', { class: 'gv-letter' }, LETTERS[i]), h('span', { class: 'txt' }, x), mark);
       })));
     } else if (result) parts.push(h('div', { class: 'gv-answer' }, h('small', {}, 'ANSWER'), r.answer));
+    if (result && r.wild) parts.push(h('div', { class: 'gv-wildcard', style: { '--c': teamOf(g, r.wild.owner)?.color } }, h('small', {}, `${nameOf(g, r.wild.owner).toUpperCase()} WILD CARD`), r.wild.text));
     middle = h('div', { class: `gv-body ${c.img ? 'with-pic' : ''}` }, parts);
     if (!result) {
       if (c.deck === 'lives') {
         foot = c.stage === 'secret' ? `🤫 ${reader} is secretly picking the true one…`
           : c.challenged ? `The ${nameOf(g, c.about)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`
             : `The ${nameOf(g, g.turn)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`;
-      } else foot = c.challenged ? `Challenge! The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}. ${reader} judges.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
+      } else if (isRace(g)) foot = `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud. Every right answer moves their pawn one space.`;
+      else foot = c.challenged ? `Challenge! The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}. ${reader} judges.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
     }
   }
   return h('div', { class: `gv-card deck-${c.deck}`, 'data-n': c.n, style: { '--a': d.color } }, top, stamp, result ? pow(g) : null, middle,
@@ -207,15 +228,17 @@ function winScreen(g) {
     h('div', {},
       h('div', { class: 'gv-win-hero' }, art('crown', 256, 'gv-crown'), token(side, '', 256)),
       letters(`THE ${(t?.name ?? '').toUpperCase()} WIN!`, 'gv-big now'),
-      h('div', { class: 'gv-sub' }, `${g.teams.map((x) => `${x.name} ${x.trophies} ${x.trophies === 1 ? 'trophy' : 'trophies'}`).join('  ·  ')}  ·  ${g.hosted ? 'The host can start a rematch.' : 'The first player can start a rematch.'}`)));
+      h('div', { class: 'gv-sub' }, `${isRace(g) ? g.teams.map((x) => `${x.name} ${acrossText(g, x.side)}`).join('  ·  ') : g.teams.map((x) => `${x.name} ${x.trophies} ${x.trophies === 1 ? 'trophy' : 'trophies'}`).join('  ·  ')}  ·  ${g.hosted ? 'The host can start a rematch.' : 'The first player can start a rematch.'}`)));
 }
 
 export function render(v) {
   loadStyles();
   const g = v.game;
-  const strip = h('div', { class: 'gv-tracks' }, path(g));
+  const race = isRace(g);
+  const strip = h('div', { class: 'gv-tracks' }, race ? raceTrack(g) : path(g));
   const key = g.lastMove ? String(g.lastMove.n) : null;
-  if (key && key !== seenMove) {
+  if (race) seenMove = key;
+  else if (key && key !== seenMove) {
     seenMove = key;
     requestAnimationFrame(() => slide(strip, g));
   }
@@ -279,7 +302,13 @@ export function onChange(prev, view, sound) {
   if (g.phase === p.phase) return;
   switch (g.phase) {
     case 'card': if (p.phase === 'lobby') sound.play('roundstart'); break;
-    case 'result': sound.play(g.result?.timeout ? 'timeup' : g.result?.moved ? 'correct' : 'wrong'); break;
+    case 'result':
+      sound.play(g.result?.timeout ? 'timeup' : g.result?.moved ? 'correct' : 'wrong');
+      // The race: a wild card, a prisoner, a pawn across.
+      if (g.result?.wild) setTimeout(() => sound.play('dd'), 700);
+      else if (g.result?.captured) setTimeout(() => sound.play('lock'), 700);
+      else if (g.result?.crossed && !g.result?.won) setTimeout(() => sound.play('ding'), 700);
+      break;
     case 'trophy': sound.play('ding'); setTimeout(() => sound.play('applause'), 900); break;
     case 'gameover': sound.play('fanfare'); setTimeout(() => sound.play('applause'), 2600); break;
     default: break;

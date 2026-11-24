@@ -31,5 +31,6 @@ guysvsgals__*.m4a are Guys vs Gals' own sounds, all CC0, from other people (the 
 public/builtin-sounds/guysvsgals/, whose CREDITS.txt lists every file). Music by HoliznaCC0 via Alvana Audio
 (https://github.com/seyedpouramir/alvana-audio): lobby = "Love Love Love", think = "50 Over The Speed Limit" (under a
 charade). Effects from SFX Kit by Wyzowl (https://github.com/wyzowl/sfx-kit): open, lock, correct, wrong,
-timeup, pick (the trophy slides), dd (a challenge is thrown), ding (a trophy is won), strike (not used any more),
+timeup, pick (the trophy or a pawn moves), dd (a challenge is thrown, or a wild card in the race), ding (a trophy is won, or
+a pawn gets across), lock (also a pawn taken prisoner), strike (not used any more),
 roundstart (the game begins), fanfare (the winners), applause, join.

@@ -3,7 +3,7 @@
 // trophy and move things along; in the lobby, who is on which side, the question set and the rules.
 import { h } from '../../common.js';
 import { button, seg, toggle, card, eyebrow } from '../../ui.js';
-import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, LETTERS } from './shared.js';
+import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, LETTERS, isRace, raceTrack, acrossText } from './shared.js';
 
 const SUB = { lobby: 'Setting up', card: 'A card', result: 'The answer', trophy: 'A trophy is won', gameover: 'Game over' };
 
@@ -17,7 +17,11 @@ export function render(raw, ctx) {
 
   if (lobby) {
     const players = raw.room.players ?? [];
-    body.push(card(eyebrow('How it works'),
+    if (g.settings.mode === 'race') body.push(card(eyebrow('How the race works'),
+      h('p', { class: 'dim' }, 'A coin toss says who goes first. A player on the other team reads a card of three questions and judges each answer on their phone (you can judge here too).'),
+      h('p', { class: 'dim' }, 'Every right answer moves the team’s pawn one space; a miss or three right ends the turn. Your own wild space draws a wild card at once, the other team’s only if you stop on it.'),
+      h('p', { class: 'dim' }, g.settings.pawns === 1 ? 'One pawn each: first across wins.' : 'Two pawns each: the second starts when the first gets across. Once a game, stopping on the other team’s pawn takes it prisoner. Both across wins.')));
+    else body.push(card(eyebrow('How it works'),
       h('p', { class: 'dim' }, `The trophy starts on START and the ${nameOf(g, g.first)} go first. A player on the other team reads a card from their own side’s deck and judges the answer on their phone (you can judge here too). Readers take turns.`),
       h('p', { class: 'dim' }, `Right pulls the trophy one space toward the answering team, who keep going; wrong passes the turn. A right answer on your own green space wins the trophy. First to ${g.target} ${g.target === 1 ? 'trophy' : 'trophies'} wins.`),
       h('p', { class: 'dim' }, 'The space picks the deck: Our Facts, Our Stuff, Our Pics, Our Lives (the reader secretly picks A, B or C) and Our Moves (charades, both teams at once).')));
@@ -36,7 +40,8 @@ export function render(raw, ctx) {
       const kids = [
         h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
           h('span', { class: 'gv-pchip', style: { '--d': d.color } }, d.name), h('span', { class: `gv-pchip ${c.about}` }, aboutText(c.about)),
-          c.challenged ? h('span', { class: 'gv-pchip', style: { '--d': '#ff4d4d' } }, 'Challenged') : null),
+          c.challenged ? h('span', { class: 'gv-pchip', style: { '--d': '#ff4d4d' } }, 'Challenged') : null,
+          c.of ? h('span', { class: 'gv-pchip', style: { '--d': '#fff' } }, `Question ${c.q} of ${c.of}`) : null),
         h('div', { class: 'dim' }, `${nameOf(g, g.turn)} answering · ${c.reader?.name ?? ''} reads${c.actor ? ` · ${c.actor.name} acts` : ''}`),
         c.img ? pic(c.img) : null,
         c.text ? h('div', { class: 'gv-pq' }, c.text) : null,
@@ -49,6 +54,7 @@ export function render(raw, ctx) {
       }
       const ans = result ? g.result?.answer : c.answer ?? c.move;
       if (ans && !c.choices) kids.push(h('div', { class: 'gv-pans' }, h('small', {}, c.deck === 'moves' ? 'THE MOVE' : 'THE ANSWER'), ans));
+      if (result && g.result?.wild) kids.push(h('div', { class: 'gv-pans' }, h('small', {}, `${nameOf(g, g.result.wild.owner).toUpperCase()} WILD CARD`), g.result.wild.text));
       body.push(h('div', { class: 'gv' }, h('div', { class: 'gv-pcard accent' }, kids)));
       if (g.phase === 'card') {
         if (c.stage === 'read') {
@@ -69,7 +75,13 @@ export function render(raw, ctx) {
     }
     if (g.phase === 'trophy') dock.push(button({ label: 'Carry on', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
     if (g.phase === 'gameover') dock.push(button({ label: 'Rematch', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('playAgain') }));
-    body.push(card(eyebrow(`Trophy ${g.trophy}`), h('div', { class: 'gv' }, h('div', { class: 'gv-pcard gv-ppath' }, path(g, { compact: true }))),
+    if (isRace(g)) body.push(card(eyebrow('The race'), h('div', { class: 'gv' }, h('div', { class: 'gv-pcard gv-ppath' }, raceTrack(g, { compact: true }))),
+      h('div', { class: 'list' }, g.teams.map((t) => h('div', { class: 'rowi' }, token(t.side, t.color, 30),
+        h('div', { class: 'grow t' }, t.name, g.turn === t.side ? ' ◀' : ''),
+        h('span', { class: 'tag' }, `🏁 ${acrossText(g, t.side)}`),
+        g.phase !== 'gameover' ? button({ label: '◀', size: 'sm', onclick: () => act('nudge', { side: t.side, delta: -1 }) }) : null,
+        g.phase !== 'gameover' ? button({ label: '▶', size: 'sm', onclick: () => act('nudge', { side: t.side, delta: 1 }) }) : null)))));
+    else body.push(card(eyebrow(`Trophy ${g.trophy}`), h('div', { class: 'gv' }, h('div', { class: 'gv-pcard gv-ppath' }, path(g, { compact: true }))),
       h('div', { class: 'list' }, g.teams.map((t) => h('div', { class: 'rowi' }, token(t.side, t.color, 30),
         h('div', { class: 'grow t' }, t.name, g.turn === t.side ? ' ◀' : ''),
         h('span', { class: 'tag' }, `🏆 ${t.trophies}/${g.target}`), g.settings.challenges ? h('span', { class: 'tag' }, `✋ ${t.challenges}`) : null))),
@@ -85,7 +97,11 @@ export function render(raw, ctx) {
         (g.sets ?? []).map((x) => h('option', { value: x.id, selected: g.settings.setId === x.id }, x.title)))
         : h('p', {}, g.settings.setId === 'all' ? 'All question sets (mixed)' : g.settings.setId),
       h('p', { class: 'dim' }, 'Cards a TV has dealt are not dealt again until the deck runs out. Write your own in the Questions tab.')),
-    card(eyebrow('Rules'),
+    card(eyebrow('Which game'),
+      seg([{ value: 'trophy', label: 'Tug of war', sub: 'Trophies', disabled: !lobby }, { value: 'race', label: 'Race', sub: 'Pawns', disabled: !lobby }], g.settings.mode ?? 'trophy', (mode) => act('setRules', { mode })),
+      g.settings.mode === 'race' ? [h('div', { class: 't' }, 'Pawns each'),
+        seg([{ value: 2, label: '2', sub: 'The classic', disabled: !lobby }, { value: 1, label: '1', sub: 'Quick race', disabled: !lobby }], g.settings.pawns ?? 2, (n) => act('setPawns', { n }))] : null),
+    g.settings.mode === 'race' ? null : card(eyebrow('Rules'),
       h('div', { class: 't' }, 'Trophies to win'),
       seg((g.targets ?? [1, 2, 3]).map((n) => ({ value: n, label: String(n), sub: n === 3 ? 'The classic' : n === 1 ? 'Quick' : '', disabled: !lobby })), g.settings.target, (n) => act('setTarget', { n })),
       toggle({ label: 'Challenge tokens', sub: 'Three each: throw a card back at the other team', checked: g.settings.challenges, onchange: (on) => (lobby ? act('setChallenges', { on }) : null) })),

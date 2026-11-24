@@ -23,6 +23,18 @@
 //    playing; if they get it, the trophy goes their way and it is their turn.
 //  - No dice and no clock, except one minute for a charade.
 //
+// Or the classic pawn race (settings.mode 'race'), picked in the lobby:
+//  - A coin toss says who goes first. Each team has two pawns (one in a quick race): one starts on its START, the
+//    other waits off the board. The Guys run left to right, the Gals right to left, along the same RACE_LEN spaces.
+//  - A turn: a reader from the other team reads a card of three questions (Our Facts, Stuff and Pics). Every right
+//    answer moves the team's pawn one space and the next question is asked; a miss, or three right, ends the turn.
+//  - Wild spaces: land on your own side's wild space and you draw one of your wild cards at once; end your turn on
+//    the other side's wild space and you draw one of theirs. Wild cards help the side they belong to.
+//  - Prisoners: once a game, a team that ends its turn on the other team's pawn takes it prisoner (only while the
+//    other team still has a pawn waiting). Their waiting pawn starts instead, and the prisoner is freed back to START
+//    when that pawn gets across.
+//  - A pawn that reaches the far START is across, and the team's next pawn starts. Both across wins.
+//
 // No sockets, files or real timers: everything runs from tick() and room.now().
 import { GameError, fail, int } from '../../lib.js';
 
@@ -57,8 +69,39 @@ export const TARGETS = [1, 2, 3];          // trophies to win
 export const DEFAULT_TARGET = 3;
 export const CHALLENGES = 3;               // challenge tokens per team
 
+/** The pawn race: the play modes, the track, and where the wild spaces are (counted from the Guys' START). */
+export const MODES = ['trophy', 'race'];
+export const RACE_LEN = 12;                // spaces between the two STARTs
+export const RACE_WILD = { guys: [3, 8], gals: [5, 10] };
+export const RACE_QUESTIONS = 3;           // questions on a card
+export const PAWN_COUNTS = [1, 2];         // a quick race, or the standard two pawns each
+/** Wild cards, original to this game. Each helps the side it belongs to ({O}) or holds up the other ({X}). */
+export const WILD_CARDS = {
+  guys: [
+    { kind: 'ahead', n: 2, text: 'Tailgate party! The {O} move ahead 2 spaces.' },
+    { kind: 'ahead', n: 1, text: 'Found the remote! The {O} move ahead 1 space.' },
+    { kind: 'ahead', n: 1, text: 'Fixed it with duct tape. The {O} move ahead 1 space.' },
+    { kind: 'ahead', n: 2, text: 'Grill master! The {O} move ahead 2 spaces.' },
+    { kind: 'back', n: 2, text: 'The {X} stopped to take a photo of their lunch. Back 2 spaces.' },
+    { kind: 'back', n: 1, text: 'The {X} are still deciding where to eat. Back 1 space.' },
+    { kind: 'back', n: 3, text: 'Wrong turn at the mall! The {X} go back 3 spaces.' },
+    { kind: 'skip', text: 'Game day! The {X} sit out their next turn.' },
+  ],
+  gals: [
+    { kind: 'ahead', n: 2, text: 'Girls’ night out! The {O} move ahead 2 spaces.' },
+    { kind: 'ahead', n: 1, text: 'Found the perfect outfit. The {O} move ahead 1 space.' },
+    { kind: 'ahead', n: 1, text: 'Remembered everyone’s birthday. The {O} move ahead 1 space.' },
+    { kind: 'ahead', n: 2, text: 'Spa day! The {O} move ahead 2 spaces.' },
+    { kind: 'back', n: 2, text: 'The {X} won’t ask for directions. Back 2 spaces.' },
+    { kind: 'back', n: 1, text: 'The {X} can’t find the ketchup in the fridge. Back 1 space.' },
+    { kind: 'back', n: 3, text: 'Man cold! The {X} go back 3 spaces.' },
+    { kind: 'skip', text: 'The {X} are watching the game. They sit out their next turn.' },
+  ],
+};
+
 export const T = {
   result: 4200,        // right or wrong (and the answer), before the next card
+  wild: 6500,          // the same, with a wild card or a prisoner to read
   trophy: 5200,        // a trophy is won, before the next one goes on START
   moves: 60000,        // the clock on a charade
 };
@@ -107,7 +150,7 @@ const cardKey = (deck, x) => `${deck}:${keyOf(x.q ?? x.m ?? '')}`;
 export class GuysVsGalsGame {
   constructor(room) {
     this.room = room;
-    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true };
+    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true, mode: 'trophy', pawns: 2 };
     this.picked = {};   // player id -> true once they chose their side (kept across games)
     this.reactions = [];
     this.reactionN = 0;
@@ -132,7 +175,9 @@ export class GuysVsGalsGame {
     this.cardN = 0;
     this.trophyN = 1;       // which trophy is in play
     this.log = [];
+    this.race = null;       // the pawn race, see #newRace()
   }
+  #isRace() { return this.settings.mode === 'race'; }
   #changed() { this.room.changed(); }
   #now() { return this.room.now(); }
   #setTimer(ms, fire, kind = null) { this.timer = { at: this.#now() + ms, fire, kind, totalMs: ms }; }
@@ -281,8 +326,15 @@ export class GuysVsGalsGame {
     this.settings = keep;
     this.deck = deck;
     this.room.resetScores();
-    this.turn = FIRST;
-    this.#note(`The ${this.#name(FIRST)} go first`);
+    if (this.#isRace()) {
+      this.#newRace();
+      this.turn = this.room.rng() < 0.5 ? 'gals' : 'guys';
+      this.race.toss = this.turn;
+      this.#note(`Coin toss: the ${this.#name(this.turn)} go first`);
+    } else {
+      this.turn = FIRST;
+      this.#note(`The ${this.#name(FIRST)} go first`);
+    }
     this.#deal();
   }
 
@@ -297,6 +349,7 @@ export class GuysVsGalsGame {
     return p.id;
   }
   #deal() {
+    if (this.#isRace()) { this.#dealRace(); return; }
     const side = this.turn;
     const reading = SIDES[side].other;
     const d = this.#deckFor(side, this.spaceFor(side));
@@ -425,6 +478,7 @@ export class GuysVsGalsGame {
     const c = this.card;
     const side = this.#sideOf(player);
     if (this.phase !== 'card' || !c) fail('No card to challenge');
+    if (this.#isRace()) fail('There are no challenges in the race');
     if (!this.settings.challenges) fail('Challenges are turned off');
     if (side !== this.turn) fail('Only the team at play can challenge');
     if (c.challenged) fail('This card is already challenged');
@@ -440,6 +494,7 @@ export class GuysVsGalsGame {
   }
   /** A spoken answer or a guess was right or wrong: who it counts for depends on a challenge. */
   #answered(right) {
+    if (this.#isRace()) { this.#raceAnswered(right); return; }
     const c = this.card;
     const at = this.turn;
     if (!c.challenged) {
@@ -506,6 +561,155 @@ export class GuysVsGalsGame {
     this.#changed();
   }
 
+  // ---------- the pawn race ----------
+  #newRace() {
+    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, state: i ? 'wait' : 'board' }));
+    this.race = { len: RACE_LEN, pawns: { guys: pawns(), gals: pawns() }, captured: { guys: false, gals: false }, skip: { guys: false, gals: false }, toss: null };
+  }
+  /** Where a side's pawn is on the track, counted from the Guys' START (0) to the Gals' (RACE_LEN + 1). */
+  raceX(side, at) { return side === 'guys' ? at : RACE_LEN + 1 - at; }
+  #pawn(side) { return this.race.pawns[side].find((p) => p.state === 'board') ?? null; }
+  /** Three questions from the decks the answering side plays (Our Facts, Stuff and Pics), read by the other team. */
+  #dealRace() {
+    const side = this.turn;
+    const reading = SIDES[side].other;
+    const piles = this.deck[SIDES[side].asks];
+    const decks = ['facts', 'stuff', 'pics'].filter((d) => piles[d].length);
+    const qs = [];
+    for (let i = 0; i < RACE_QUESTIONS; i++) {
+      const d = decks[Math.floor(this.room.rng() * decks.length)] ?? 'facts';
+      const item = this.#draw(d, piles[d]);
+      if (item) qs.push({ deck: d, ...item });
+    }
+    this.cardN += 1;
+    this.card = { n: this.cardN, about: reading, reader: this.#nextReader(reading), stage: 'read', challenged: false, votes: {}, voteOrder: [], secret: null, pick: null, actor: null, qs, i: 0, right: 0 };
+    this.#raceQuestion();
+    this.result = null;
+    this.timer = null;
+    this.phase = 'card';
+    this.#changed();
+  }
+  /** Puts the card's current question up (each one counts as a new card for the screens). */
+  #raceQuestion() {
+    const c = this.card;
+    const q = c.qs[c.i];
+    for (const k of ['q', 'a', 'cat', 'img']) delete c[k];
+    Object.assign(c, { deck: q.deck, q: q.q, a: q.a, stage: 'read' });
+    if (q.cat) c.cat = q.cat;
+    if (q.img) c.img = q.img;
+  }
+  /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
+  #movePawn(side, n) {
+    const p = this.#pawn(side);
+    if (!p) return false;
+    const from = p.at;
+    p.at = Math.max(0, Math.min(RACE_LEN + 1, p.at + n));
+    if (p.at !== from) this.lastMove = { from: this.raceX(side, from), to: this.raceX(side, p.at), n: (this.lastMove?.n ?? 0) + 1, side, trophy: false };
+    if (p.at < RACE_LEN + 1) return false;
+    p.state = 'home';
+    // The next pawn starts: a prisoner is freed back to START first, or the one waiting comes on.
+    const next = this.race.pawns[side].find((x) => x.state === 'jail') ?? this.race.pawns[side].find((x) => x.state === 'wait');
+    if (next) { next.state = 'board'; next.at = 0; }
+    return true;
+  }
+  #raceWon(side) { return this.race.pawns[side].every((p) => p.state === 'home'); }
+  /** A wild card from `owner`'s pile, used at once. */
+  #wild(owner) {
+    const cards = WILD_CARDS[owner];
+    const card = cards[Math.floor(this.room.rng() * cards.length)];
+    const other = SIDES[owner].other;
+    const text = card.text.replaceAll('{O}', this.#name(owner)).replaceAll('{X}', this.#name(other));
+    let crossed = null;
+    if (card.kind === 'ahead' && this.#movePawn(owner, card.n)) crossed = owner;
+    if (card.kind === 'back') this.#movePawn(other, -card.n);
+    if (card.kind === 'skip') this.race.skip[other] = true;
+    this.#note(text);
+    return { owner, kind: card.kind, n: card.n ?? 0, text, crossed };
+  }
+  /** Ending a turn on the other team's pawn takes it prisoner, once a game, while they still have a pawn waiting. */
+  #capture(side) {
+    const other = SIDES[side].other;
+    const mine = this.#pawn(side);
+    const theirs = this.#pawn(other);
+    if (!mine || !theirs || this.race.captured[side] || mine.at === 0 || theirs.at === 0) return null;
+    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at)) return null;
+    const waiting = this.race.pawns[other].find((p) => p.state === 'wait');
+    if (!waiting) return null;
+    theirs.state = 'jail';
+    theirs.at = 0;
+    waiting.state = 'board';
+    waiting.at = 0;
+    this.race.captured[side] = true;
+    this.#note(`The ${this.#name(side)} take a ${this.#name(other)} pawn prisoner!`);
+    return other;
+  }
+  #raceAnswered(right) {
+    const c = this.card;
+    const side = this.turn;
+    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
+    let crossed = null;
+    if (right) {
+      c.right += 1;
+      r.moved = side;
+      if (this.#movePawn(side, 1)) crossed = side;
+      else {
+        // Your own side's wild space: draw at once, and keep answering.
+        const p = this.#pawn(side);
+        if (p && RACE_WILD[side].includes(this.raceX(side, p.at))) r.wild = this.#wild(side);
+      }
+      this.#note(`The ${this.#name(side)} got it right`);
+    } else this.#note(`The ${this.#name(side)} missed`);
+    crossed = crossed ?? r.wild?.crossed ?? null;
+    r.more = right && !crossed && c.i + 1 < c.qs.length && !SIDE_ORDER.some((s) => this.#raceWon(s));
+    if (!r.more && !SIDE_ORDER.some((s) => this.#raceWon(s))) {
+      // The turn is over: the other side's wild space, then a prisoner.
+      const p = this.#pawn(side);
+      const other = SIDES[side].other;
+      if (!r.wild && p && p.at > 0 && RACE_WILD[other].includes(this.raceX(side, p.at))) {
+        r.wild = this.#wild(other);
+        crossed = crossed ?? r.wild.crossed;
+      }
+      if (!SIDE_ORDER.some((s) => this.#raceWon(s))) r.captured = this.#capture(side);
+      let next = other;
+      if (this.race.skip[next]) { this.race.skip[next] = false; next = side; this.#note(`The ${this.#name(other)} sit this one out`); }
+      r.next = next;
+    }
+    if (crossed) r.crossed = crossed;
+    if (!r.captured) delete r.captured;
+    if (!r.wild) delete r.wild;
+    const won = SIDE_ORDER.find((s) => this.#raceWon(s));
+    if (won) { this.winners = [won]; r.won = won; }
+    this.result = r;
+    c.stage = 'done';
+    this.phase = 'result';
+    this.#setTimer(r.wild || r.captured ? T.wild : T.result, () => this.#raceAfter());
+    this.#changed();
+  }
+  #raceAfter() {
+    const r = this.result;
+    if (this.winners.length) { this.#end(); return; }
+    if (r?.more) {
+      const c = this.card;
+      c.i += 1;
+      this.cardN += 1;
+      c.n = this.cardN;
+      this.#raceQuestion();
+      this.result = null;
+      this.phase = 'card';
+      this.#changed();
+      return;
+    }
+    this.#next(r?.next ?? SIDES[this.turn].other);
+  }
+  #raceView() {
+    const r = this.race;
+    return {
+      len: r.len, wild: { guys: RACE_WILD.guys.slice(), gals: RACE_WILD.gals.slice() }, toss: r.toss,
+      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), state: p.state }))])),
+      captured: { ...r.captured }, skip: { ...r.skip },
+    };
+  }
+
   // ---------- the host and the TV ----------
   /** Moves things along: locks in the guesses now, or skips the wait after a result or a trophy. */
   advance() {
@@ -515,14 +719,35 @@ export class GuysVsGalsGame {
   /** The host throws out a card (a dud, or one nobody could know) and deals the same team another. */
   newCard() {
     if (this.phase !== 'card') fail('There is no card to change');
+    if (this.#isRace()) {
+      // A dud question: another from the same pile in its place.
+      const c = this.card;
+      const piles = this.deck[SIDES[this.turn].asks];
+      const item = this.#draw(c.deck, piles[c.deck]);
+      if (item) c.qs[c.i] = { deck: c.deck, ...item };
+      this.cardN += 1;
+      c.n = this.cardN;
+      this.#raceQuestion();
+      this.#changed();
+      return;
+    }
     if (this.card?.challenged) this.tokens[this.turn] = Math.min(CHALLENGES, this.tokens[this.turn] + 1);
     const reading = SIDES[this.turn].other;
     this.readerN[reading] = Math.max(0, this.readerN[reading] - 1);   // the same reader again
     this.#deal();
   }
   /** The host nudges the trophy one space (a judgement call, a mistake). */
-  nudge(delta) {
+  nudge(delta, side) {
     if (this.phase === 'lobby' || this.phase === 'gameover') fail('Only during a game');
+    if (this.#isRace()) {
+      const s = SIDES[side] ? side : this.turn;
+      const d = int(delta);
+      if (![-1, 1].includes(d)) fail('Move one space at a time');
+      this.#movePawn(s, d);
+      if (this.#raceWon(s)) { this.winners = [s]; this.#end(); return; }
+      this.#changed();
+      return;
+    }
     const d = int(delta);
     if (![-1, 1].includes(d)) fail('Move one space at a time');
     const from = this.pos;
@@ -555,6 +780,20 @@ export class GuysVsGalsGame {
     this.#changed();
   }
   setChallenges(on) { this.#lobby(); this.settings.challenges = !!on; this.#changed(); }
+  /** The tug of war for trophies, or the pawn race. */
+  setMode(mode) {
+    this.#lobby();
+    if (!MODES.includes(mode)) fail('Pick the tug of war or the race');
+    this.settings.mode = mode;
+    this.#changed();
+  }
+  setPawns(n) {
+    this.#lobby();
+    const v = int(n);
+    if (!PAWN_COUNTS.includes(v)) fail('One or two pawns each');
+    this.settings.pawns = v;
+    this.#changed();
+  }
   /** A player picks their side (in the lobby; the host can also move people between teams). */
   setSide(player, side) {
     if (!SIDES[side]) fail('Pick the Guys or the Gals');
@@ -586,11 +825,13 @@ export class GuysVsGalsGame {
       case 'judge': return this.judge('host', a.right === true);
       case 'moves': return this.movesWinner('host', a.side ? String(a.side) : null);
       case 'actor': return this.pickActor('host', a.pid);
-      case 'nudge': return this.nudge(a.delta);
+      case 'nudge': return this.nudge(a.delta, a.side ? String(a.side) : null);
       case 'endGame': case 'playAgain': return this.endGame();
       case 'setSet': return this.setSet(a.id);
       case 'setTarget': return this.setTarget(a.n);
       case 'setChallenges': return this.setChallenges(a.on);
+      case 'setRules': return this.setMode(String(a.mode ?? ''));
+      case 'setPawns': return this.setPawns(a.n);
       case 'setSide': return this.setSide(this.room.player(String(a.pid ?? '')), String(a.side ?? ''));
       case 'kick':
         if (this.phase !== 'lobby') fail('Players can only be removed before the game starts');
@@ -606,6 +847,10 @@ export class GuysVsGalsGame {
         this.act({ start: 'start', advance: 'advance', 'play-again': 'playAgain' }[msg.t]);
         return undefined;
       case 'side': this.setSide(player, String(msg.side ?? '')); return undefined;
+      case 'mode':
+        if (!this.#starter(player.id)) fail('Only the host can do that');
+        this.setMode(String(msg.mode ?? ''));
+        return undefined;
       case 'judge': this.judge(player, msg.right === true); return undefined;
       case 'secret': this.secretPick(player, msg.choice); return undefined;
       case 'vote': this.vote(player, msg.choice); return { t: 'ack', what: 'vote' };
@@ -630,6 +875,7 @@ export class GuysVsGalsGame {
     switch (this.phase) {
       case 'lobby': return { text: 'Pick your side!', next: 'Guys on one team, Gals on the other' };
       case 'card': {
+        if (this.#isRace()) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === 'moves') {
           if (c.stage === 'pick') return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${this.#name(this.turn)} to act with` };
           return { text: 'Act it out!', next: `${reader} and ${this.#pname(c.actor)} act out the same thing. Shout it first!` };
@@ -645,6 +891,14 @@ export class GuysVsGalsGame {
       }
       case 'result': {
         const r = this.result;
+        if (this.#isRace()) {
+          if (r.won) return { text: `The ${this.#name(r.won)} win the race!`, next: '' };
+          if (r.captured) return { text: 'Prisoner!', next: `A ${this.#name(r.captured)} pawn is taken prisoner` };
+          if (r.wild) return { text: 'Wild card!', next: r.wild.text };
+          if (r.crossed) return { text: 'Across!', next: `A ${this.#name(r.crossed)} pawn made it to the other side` };
+          if (r.right) return { text: 'Right!', next: r.more ? `${who} keep going` : `Over to the ${this.#name(r.next)}` };
+          return { text: 'Wrong!', next: `Over to the ${this.#name(r.next)}` };
+        }
         if (r.trophy) return { text: 'Trophy!', next: `The ${this.#name(r.trophy)} pull it into their winner’s circle` };
         if (c?.deck === 'moves') {
           return r.moved
@@ -687,6 +941,7 @@ export class GuysVsGalsGame {
       v.voters = Object.keys(c.votes);
     }
     if (this.phase === 'result' && this.result) v.answer = this.result.answer;
+    if (c.qs) { v.q = c.i + 1; v.of = c.qs.length; }
     return v;
   }
   publicView() {
@@ -696,7 +951,7 @@ export class GuysVsGalsGame {
       pos: this.pos, green: GREEN, path: PATH.slice(), greenColor: GREEN_COLOR, first: FIRST,
       decks: DECK_ORDER.map((id) => ({ id, ...DECKS[id] })),
       teams: this.#teamsView(), turn: this.turn, trophy: this.trophyN, target: this.settings.target,
-      settings: { ...this.settings },
+      settings: { ...this.settings }, mode: this.settings.mode,
       line: this.#line(),
       timer: this.#timerView(),
       reactions: this.reactions.map(({ id, e, side, name }) => ({ id, e, side, name })),
@@ -705,6 +960,7 @@ export class GuysVsGalsGame {
       log: this.log.slice(),
     };
     if (this.lastMove) v.lastMove = { ...this.lastMove };
+    if (this.race && this.phase !== 'lobby') v.race = this.#raceView();
     if (this.phase === 'lobby') {
       v.sets = this.room.listContent(GAME).map((s) => ({ id: s.id, title: s.title })).slice(0, 40);
       v.setTitle = this.settings.setId === ALL_SETS ? 'All question sets' : (this.room.listContent(GAME).find((s) => s.id === this.settings.setId)?.title ?? '');
@@ -744,7 +1000,7 @@ export class GuysVsGalsGame {
         me.canCall = side === reading;
         if (me.reader || me.actor) me.move = c.m;
       }
-      me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== 'moves'
+      me.canChallenge = !!(!this.#isRace() && this.settings.challenges && side === this.turn && !c.challenged && c.deck !== 'moves'
         && (c.stage === 'read' || c.stage === 'guess') && this.tokens[side] > 0
         && this.#members(reading).some((p) => p.id !== c.reader));
     }
@@ -768,13 +1024,15 @@ export class GuysVsGalsGame {
     return {
       settings: this.settings, picked: this.picked, phase: this.phase, turn: this.turn, pos: this.pos, trophies: this.trophies,
       tokens: this.tokens, readerN: this.readerN, card: this.card, result: this.result, trophyWon: this.trophyWon,
-      lastMove: this.lastMove, winners: this.winners, cardN: this.cardN, trophyN: this.trophyN, log: this.log,
+      lastMove: this.lastMove, winners: this.winners, cardN: this.cardN, trophyN: this.trophyN, log: this.log, race: this.race,
     };
   }
   restore(d) {
     this.#reset();
-    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true, ...(d.settings ?? {}) };
+    this.settings = { setId: DEFAULT_SET, target: DEFAULT_TARGET, challenges: true, mode: 'trophy', pawns: 2, ...(d.settings ?? {}) };
     if (!TARGETS.includes(this.settings.target)) this.settings.target = DEFAULT_TARGET;
+    if (!MODES.includes(this.settings.mode)) this.settings.mode = 'trophy';
+    if (!PAWN_COUNTS.includes(this.settings.pawns)) this.settings.pawns = 2;
     this.picked = d.picked ?? {};
     const valid = ['lobby', 'card', 'result', 'trophy', 'gameover'];
     this.phase = valid.includes(d.phase) ? d.phase : 'lobby';
@@ -783,12 +1041,14 @@ export class GuysVsGalsGame {
       trophies: { guys: 0, gals: 0, ...(d.trophies ?? {}) }, tokens: { guys: CHALLENGES, gals: CHALLENGES, ...(d.tokens ?? {}) },
       readerN: { guys: 0, gals: 0, ...(d.readerN ?? {}) }, card: d.card ?? null, result: d.result ?? null,
       trophyWon: d.trophyWon ?? null, lastMove: d.lastMove ?? null, winners: d.winners ?? [], cardN: d.cardN ?? 0,
-      trophyN: d.trophyN ?? 1, log: d.log ?? [],
+      trophyN: d.trophyN ?? 1, log: d.log ?? [], race: d.race ?? null,
     });
+    if (this.#isRace() && this.phase !== 'lobby' && !this.race?.pawns) { this.phase = 'lobby'; return; }
     if (this.phase === 'lobby' || this.phase === 'gameover') return;
     if (!this.turn) { this.phase = 'lobby'; return; }
     this.#buildDeck();
     // Timers do not survive a restart: pick up where things were, as near as we can.
+    if (this.#isRace() && this.phase === 'result') { this.#setTimer(T.result, () => this.#raceAfter()); return; }
     if (this.phase === 'card') {
       if (!this.card || !DECKS[this.card.deck]) this.#deal();
       else if (this.card.stage === 'act') this.#setTimer(T.moves, () => this.#movesDone(null, true), 'moves');

@@ -160,8 +160,11 @@
     "settings": {
       "setId": "family",
       "target": 3,
-      "challenges": true
+      "challenges": true,
+      "mode": "trophy",
+      "pawns": 2
     },
+    "mode": "trophy",
     "line": {
       "text": "The Gals win a trophy!",
       "next": "A new trophy goes on START"

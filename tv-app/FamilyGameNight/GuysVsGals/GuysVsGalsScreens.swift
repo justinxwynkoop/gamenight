@@ -69,7 +69,7 @@ struct GuysVsGalsScreen: View {
                     GvgTeamPanel(game: game, side: "gals").rotationEffect(.degrees(1.2))
                 }
                 .frame(maxHeight: .infinity)
-                GvgPath(game: game)
+                if game.isRace { GvgRaceTrack(game: game) } else { GvgPath(game: game) }
             }
             .padding(.horizontal, 60)
             .padding(.top, 40)
@@ -326,6 +326,82 @@ private struct GvgPath: View {
     }
 }
 
+// MARK: - The pawn race
+
+/// The race track: the Guys' START on the left, the spaces with each side's wild spaces in its colour, and the Gals'
+/// START on the right. Pawns on the board stand on their spaces; waiting pawns, pawns across and prisoners sit in the
+/// bins at each end. Follows raceTrack() in public/games/guysvsgals/shared.js.
+private struct GvgRaceTrack: View {
+    let game: GuysVsGalsState
+
+    var body: some View {
+        if let race = game.race {
+            HStack(spacing: 18) {
+                bin(race, "guys")
+                GeometryReader { proxy in
+                    let n = race.len + 2
+                    let w = proxy.size.width / CGFloat(n)
+                    ZStack(alignment: .leading) {
+                        HStack(spacing: 0) {
+                            ForEach(0..<n, id: \.self) { x in
+                                space(race, x).padding(.horizontal, 4).frame(width: w, height: proxy.size.height)
+                            }
+                        }
+                        ForEach(["guys", "gals"], id: \.self) { side in
+                            ForEach(Array(race.pawns(side).enumerated()), id: \.offset) { _, p in
+                                if p.state == "board" {
+                                    let twin = race.pawns(side == "guys" ? "gals" : "guys").contains { $0.state == "board" && $0.x == p.x }
+                                    GvgToken(side: side, size: proxy.size.height * 1.15)
+                                        .position(x: (CGFloat(p.x) + 0.5) * w + (twin ? (side == "guys" ? -18 : 18) : 0), y: proxy.size.height * 0.2)
+                                        .animation(.spring(response: 0.6, dampingFraction: 0.65), value: p.x)
+                                }
+                            }
+                        }
+                    }
+                }
+                .frame(height: 84)
+                bin(race, "gals")
+            }
+            .padding(.horizontal, 22).padding(.vertical, 18)
+            .comicPanel(.white)
+        }
+    }
+
+    private func space(_ race: GvgRace, _ x: Int) -> some View {
+        let start: String? = x == 0 ? "guys" : x == race.len + 1 ? "gals" : nil
+        let wild = race.wildSide(x)
+        let fill: Color = start.map { GV.color(game, $0) } ?? wild.map { GV.color(game, $0) } ?? .white
+        let label = start != nil ? "START" : wild != nil ? "WILD" : "\(x)"
+        return ZStack {
+            Rectangle().fill(fill)
+            Rectangle().strokeBorder(GV.ink, lineWidth: 5)
+            Text(label).font(GV.bangers(24)).foregroundStyle(start != nil || wild != nil ? .white : GV.ink)
+                .shadow(color: start != nil || wild != nil ? GV.ink : .clear, radius: 0, x: 2, y: 2)
+                .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 4)
+        }
+        .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.14, d: 1, tx: 6, ty: 0))
+    }
+
+    /// By a team's START: its pawns still waiting, the other team's pawns that made it across, and any prisoner taken.
+    private func bin(_ race: GvgRace, _ side: String) -> some View {
+        let other = side == "guys" ? "gals" : "guys"
+        let waiting = race.pawns(side).filter { $0.state == "wait" }.count
+        let home = race.pawns(other).filter { $0.state == "home" }.count
+        let jailed = race.pawns(other).filter { $0.state == "jail" }.count
+        return HStack(spacing: 6) {
+            ForEach(0..<waiting, id: \.self) { _ in GvgToken(side: side, size: 50, outline: false).opacity(0.55) }
+            ForEach(0..<home, id: \.self) { _ in GvgToken(side: other, size: 50, outline: false) }
+            ForEach(0..<jailed, id: \.self) { _ in
+                GvgToken(side: other, size: 50, outline: false).overlay(alignment: .bottomTrailing) { Text("🔒").font(.system(size: 24)) }
+            }
+            if waiting + home + jailed == 0 { Color.clear.frame(width: 50, height: 50) }
+        }
+        .padding(.horizontal, 18).padding(.vertical, 10)
+        .background(Capsule().fill(GV.color(game, side)))
+        .overlay(Capsule().strokeBorder(GV.ink, lineWidth: 5))
+    }
+}
+
 // MARK: - The teams
 
 private struct GvgTeamPanel: View {
@@ -362,22 +438,37 @@ private struct GvgTeamPanel: View {
                     .opacity(m.connected ? 1 : 0.5)
                 }
             }
-            HStack(spacing: 8) {
-                ForEach(0..<max(1, game.target), id: \.self) { i in
-                    Image("GvgTrophy").resizable().scaledToFit().frame(width: 64, height: 64)
-                        .saturation(i < (team?.trophies ?? 0) ? 1 : 0).opacity(i < (team?.trophies ?? 0) ? 1 : 0.4)
+            if let race = game.race, game.isRace {
+                HStack(spacing: 8) {
+                    ForEach(Array(race.pawns(side).enumerated()), id: \.offset) { _, p in
+                        GvgToken(side: side, size: 64).saturation(p.state == "home" ? 1 : 0).opacity(p.state == "home" ? 1 : 0.4)
+                    }
+                    Spacer(minLength: 4)
+                    Text("\(race.across(side)) OF \(race.pawns(side).count) ACROSS").font(GV.bangers(34)).foregroundStyle(GV.ink)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                    if race.skip?[side] == true { Text("💤").font(.system(size: 34)) }
                 }
-                Spacer(minLength: 4)
-                ForEach(0..<3, id: \.self) { i in
-                    Text("✋").font(.system(size: 30)).frame(width: 50, height: 50)
-                        .background(Circle().fill(.white)).overlay(Circle().strokeBorder(GV.ink, lineWidth: 3))
-                        .saturation(i < (team?.challenges ?? 0) ? 1 : 0).opacity(i < (team?.challenges ?? 0) ? 1 : 0.35)
+                .padding(.horizontal, 18).padding(.vertical, 8)
+                .background(Rectangle().fill(GV.yellow))
+                .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 5))
+            } else {
+                HStack(spacing: 8) {
+                    ForEach(0..<max(1, game.target), id: \.self) { i in
+                        Image("GvgTrophy").resizable().scaledToFit().frame(width: 64, height: 64)
+                            .saturation(i < (team?.trophies ?? 0) ? 1 : 0).opacity(i < (team?.trophies ?? 0) ? 1 : 0.4)
+                    }
+                    Spacer(minLength: 4)
+                    ForEach(0..<3, id: \.self) { i in
+                        Text("✋").font(.system(size: 30)).frame(width: 50, height: 50)
+                            .background(Circle().fill(.white)).overlay(Circle().strokeBorder(GV.ink, lineWidth: 3))
+                            .saturation(i < (team?.challenges ?? 0) ? 1 : 0).opacity(i < (team?.challenges ?? 0) ? 1 : 0.35)
+                    }
                 }
+                .padding(.horizontal, 18).padding(.vertical, 8)
+                .background(Rectangle().fill(GV.yellow))
+                .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 5))
+                .animation(.default, value: team?.trophies)
             }
-            .padding(.horizontal, 18).padding(.vertical, 8)
-            .background(Rectangle().fill(GV.yellow))
-            .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 5))
-            .animation(.default, value: team?.trophies)
         }
         .padding(22)
         .frame(width: 450)
@@ -442,6 +533,7 @@ private struct GvgDeckCard: View {
                 Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 38)
                 Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: GV.color(game, c.about), ink: .white, size: 38)
                 if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 38).lineLimit(1).minimumScaleFactor(0.5) }
+                if let q = c.q, let of = c.of { Sticker(text: "\(q) OF \(of)", fill: .white, size: 38) }
                 Spacer(minLength: 120)
             }
             middle(c, result: result)
@@ -473,6 +565,9 @@ private struct GvgDeckCard: View {
     }
 
     private func powWord(_ c: GvgCard, _ r: GvgResult) -> String {
+        if game.isRace {
+            return r.won != nil ? "WINNERS!" : r.captured != nil ? "GOTCHA!" : r.wild != nil ? "WILD!" : r.crossed != nil ? "ACROSS!" : r.right ? "POW!" : "OOF!"
+        }
         if r.trophy != nil { return "TROPHY!" }
         if c.deck == "moves" { return r.moved != nil ? (r.stolen == true ? "STOLEN!" : "GOT IT!") : r.timeout == true ? "TIME!" : "NOPE!" }
         if r.challenged == true { return r.right ? "BLOCKED!" : "GOTCHA!" }
@@ -527,6 +622,18 @@ private struct GvgDeckCard: View {
                         .rotationEffect(.degrees(-1))
                         .transition(.scale(scale: 2).combined(with: .opacity))
                     }
+                    if result, let wild = game.result?.wild {
+                        VStack(spacing: 2) {
+                            Text("\(game.name(wild.owner).uppercased()) WILD CARD").font(GV.bangers(26)).tracking(3)
+                            Text(wild.text).font(GV.body(32, .black)).multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.5)
+                        }
+                        .foregroundStyle(.white)
+                        .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+                        .padding(.horizontal, 26).padding(.vertical, 10)
+                        .comicPanel(GV.color(game, wild.owner), line: 5, drop: 8)
+                        .rotationEffect(.degrees(-1.5))
+                        .transition(.scale(scale: 2).combined(with: .opacity))
+                    }
                 }
             }
         }
@@ -562,7 +669,17 @@ private struct GvgDeckCard: View {
 
     @ViewBuilder
     private func footer(_ c: GvgCard, result: Bool) -> some View {
-        if result, let r = game.result {
+        if result, let r = game.result, game.isRace {
+            let text = r.won != nil ? "THE \(game.name(r.won).uppercased()) WIN THE RACE!"
+                : r.captured != nil ? "A \(game.name(r.captured).uppercased()) PAWN IS TAKEN PRISONER!"
+                : r.crossed != nil ? "A \(game.name(r.crossed).uppercased()) PAWN IS ACROSS!"
+                : r.more == true ? "\(game.name(game.turn).uppercased()): NEXT QUESTION" : "OVER TO THE \(game.name(r.next).uppercased())"
+            let good = r.right || r.won != nil
+            Sticker(text: text, fill: good ? GV.green : GV.red, ink: good ? GV.ink : .white, size: 46)
+                .lineLimit(1).minimumScaleFactor(0.5)
+                .background(Rectangle().fill(GV.ink).offset(x: 7, y: 7))
+                .transition(.scale(scale: 2.2).combined(with: .opacity))
+        } else if result, let r = game.result {
             let text = r.trophy != nil ? "THE \(game.name(r.trophy).uppercased()) WIN THE TROPHY!"
                 : r.moved != nil ? "TROPHY \(r.moved == "guys" ? "◀" : "▶") \(game.name(r.moved).uppercased())"
                 : "OVER TO THE \(game.name(r.next).uppercased())"
@@ -587,6 +704,7 @@ private struct GvgDeckCard: View {
             let who = c.challenged ? game.name(c.about) : turn
             return "The \(who) guess what \(reader) picked, on their phones (\(c.voters?.count ?? 0) of \(c.guessers?.count ?? 0))"
         default:
+            if game.isRace { return "📖 \(reader) reads · the \(turn) say the answer out loud. Every right answer moves their pawn one space." }
             return c.challenged ? "Challenge! The \(game.name(c.about)) answer it themselves, no help from \(reader). \(reader) judges."
                 : "📖 \(reader) reads · the \(turn) say the answer out loud"
         }
@@ -710,7 +828,10 @@ private struct GvgWinScreen: View {
                         .shadow(color: GV.ink, radius: 0, x: 7, y: 7).rotationEffect(.degrees(-8))
                 }
                 Lettering(text: "THE \(game.name(first).uppercased()) WIN!", size: 140)
-                Sticker(text: game.teams.map { "\($0.name.uppercased()) \($0.trophies) \($0.trophies == 1 ? "TROPHY" : "TROPHIES")" }.joined(separator: "  ·  "), fill: .white, size: 44)
+                Sticker(text: game.teams.map { (t: GvgTeam) -> String in
+                    if let race = game.race, game.isRace { return "\(t.name.uppercased()) \(race.across(t.side)) OF \(race.pawns(t.side).count) ACROSS" }
+                    return "\(t.name.uppercased()) \(t.trophies) \(t.trophies == 1 ? "TROPHY" : "TROPHIES")"
+                }.joined(separator: "  ·  "), fill: .white, size: 44)
             }
             .scaleEffect(shown ? 1 : 0.6)
             .opacity(shown ? 1 : 0)
