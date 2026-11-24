@@ -484,8 +484,9 @@ private struct GvgDeckCard: View {
             .font(font ?? GV.body(size, .black))
             .foregroundStyle(GV.ink)
             .multilineTextAlignment(.center)
-            .lineLimit(4)
-            .minimumScaleFactor(0.5)
+            .lineLimit(7)
+            .minimumScaleFactor(0.4)
+            .allowsTightening(true)
             .padding(.horizontal, 60).padding(.vertical, 34)
             .frame(maxWidth: .infinity)
             .background(Balloon().fill(.white))
@@ -508,7 +509,7 @@ private struct GvgDeckCard: View {
             }
         } else {
             HStack(spacing: 30) {
-                if let img = c.img { GvgPic(img: img, size: 300) }
+                if let img = c.img { GvgPic(img: img, size: result || c.choices != nil ? 240 : 300) }
                 VStack(spacing: 18) {
                     balloon(c.text ?? "", size: c.img == nil ? 52 : 46)
                     if let choices = c.choices {
@@ -518,7 +519,7 @@ private struct GvgDeckCard: View {
                     } else if result, let answer = game.result?.answer ?? c.answer {
                         VStack(spacing: 2) {
                             Text("ANSWER").font(GV.bangers(26)).tracking(3)
-                            Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.5)
+                            Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.4)
                         }
                         .foregroundStyle(GV.ink)
                         .padding(.horizontal, 30).padding(.vertical, 12)
@@ -549,7 +550,7 @@ private struct GvgDeckCard: View {
                 .frame(width: 62, height: 62)
                 .background(Rectangle().fill(right ? .white : GV.yellow))
                 .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 4))
-            Text(text).font(GV.body(34, .black)).foregroundStyle(wrong ? .white : GV.ink).lineLimit(2).minimumScaleFactor(0.6)
+            Text(text).font(GV.body(34, .black)).foregroundStyle(wrong ? .white : GV.ink).lineLimit(3).minimumScaleFactor(0.5)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -570,6 +571,7 @@ private struct GvgDeckCard: View {
                 .transition(.scale(scale: 2.2).combined(with: .opacity))
         } else {
             Text(footText(c)).font(GV.body(26, .black)).foregroundStyle(GV.ink).multilineTextAlignment(.center)
+                .lineLimit(3).minimumScaleFactor(0.6)
         }
     }
 
@@ -585,7 +587,7 @@ private struct GvgDeckCard: View {
             let who = c.challenged ? game.name(c.about) : turn
             return "The \(who) guess what \(reader) picked, on their phones (\(c.voters?.count ?? 0) of \(c.guessers?.count ?? 0))"
         default:
-            return c.challenged ? "The \(game.name(c.about)) answer it themselves, no help from \(reader)! The \(turn) judge."
+            return c.challenged ? "Challenge! The \(game.name(c.about)) answer it themselves, no help from \(reader). \(reader) judges."
                 : "📖 \(reader) reads · the \(turn) say the answer out loud"
         }
     }

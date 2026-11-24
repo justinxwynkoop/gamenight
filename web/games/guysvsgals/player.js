@@ -104,8 +104,8 @@ export function mount(container, { send }) {
         h('div', { class: 'gv-pcard accent' }, face,
           h('div', { class: 'gv-pans' }, h('small', {}, 'THE ANSWER'), me.answer ?? ''),
           h('p', { class: 'dim' }, c.challenged
-            ? `Challenge! The ${nameOf(g, c.about)} must answer it themselves. Were they right?`
-            : me.reader ? `You’re the reader: read it out loud to the ${nameOf(g, g.turn)}, then tap what they said.` : `${reader} is reading. Anyone on your team can judge.`)),
+            ? (me.reader ? `Challenge! Your own team has to answer it now. No hints! Were they right?` : `Challenge! The ${nameOf(g, c.about)} must answer it themselves. Were they right?`)
+            : me.reader ? `You’re the reader. Only you can see this, so keep it hidden! Read it out loud to the ${nameOf(g, g.turn)}, then tap what they said.` : `${reader} wandered off, so you judge this one.`)),
         h('div', { class: 'gv-judge' },
           h('button', { type: 'button', class: 'yes', onclick: () => send({ t: 'judge', right: true }) }, 'RIGHT'),
           h('button', { type: 'button', class: 'no', onclick: () => send({ t: 'judge', right: false }) }, 'WRONG')),

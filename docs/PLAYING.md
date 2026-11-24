@@ -262,7 +262,7 @@ from START each way, the spaces are Our Facts (START itself), Our Stuff, Our Pic
 Gals), and readers take turns. The space the trophy is on picks the deck:
 
 - **Our Facts** and **Our Stuff**: the reader's phone shows the question and the answer. The team says its answer out
-  loud and the reader taps **Right** or **Wrong**. Everyone on the reading team can peek at the answer.
+  loud and the reader taps **Right** or **Wrong**. Only the reader's phone shows the answer, like holding the card.
 - **Our Pics**: the same, with a picture on the TV.
 - **Our Lives**: a question about the reader, with three answers. The reader secretly taps the one that's true for them,
   then the team guesses on their phones (the team's favourite counts, a tie goes to the one picked first).
@@ -280,7 +280,8 @@ make it one or two).
 
 **Challenges.** Each team has three challenge tokens. On your turn (not on an Our Moves card) tap **Challenge** to throw
 the card back: the other team has to answer it themselves, without the reader's help (on Our Lives, the reader's
-teammates guess), and your team judges. If they miss, the trophy comes your way and you keep playing; if they get it,
+teammates guess), and the reader still judges. Nobody on their team has seen the answer, because only the reader's
+phone shows it. If they miss, the trophy comes your way and you keep playing; if they get it,
 the trophy goes their way and it is their turn.
 
 **Reactions.** Once the game is under way, the phones have a row of emoji. They float up the sender's side of the TV.

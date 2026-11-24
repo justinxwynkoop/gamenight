@@ -4931,7 +4931,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, guessers_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5019,7 +5019,7 @@
     judge(by, right) {
       const c = this.card;
       if (this.phase !== "card" || !c || c.stage !== "read") fail("Nothing to judge right now");
-      if (!__privateMethod(this, _GuysVsGalsGame_instances, mayJudge_fn).call(this, by)) fail(`The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, __privateMethod(this, _GuysVsGalsGame_instances, judgeSide_fn).call(this))} judge this one`);
+      if (!__privateMethod(this, _GuysVsGalsGame_instances, mayJudge_fn).call(this, by)) fail(this.room.connected.has(c.reader) ? "The reader judges this one" : `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, __privateMethod(this, _GuysVsGalsGame_instances, judgeSide_fn).call(this))} judge this one`);
       __privateMethod(this, _GuysVsGalsGame_instances, answered_fn).call(this, !!right);
     }
     /** The reader secretly picks the true answer about themselves on an Our Lives card. */
@@ -5088,7 +5088,7 @@
       if (c.deck === "moves") fail("Our Moves cards can\u2019t be challenged");
       if (c.stage !== "read" && c.stage !== "guess") fail("Wait for the reader to pick first");
       if (this.tokens[side] <= 0) fail("No challenge tokens left");
-      if (c.deck === "lives" && !__privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, c.about).some((p) => p.id !== c.reader)) fail(`The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, c.about)} need someone besides the reader to guess`);
+      if (!__privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, c.about).some((p) => p.id !== c.reader)) fail(`The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, c.about)} need someone besides the reader to answer it`);
       this.tokens[side] -= 1;
       c.challenged = true;
       c.votes = {};
@@ -5295,14 +5295,14 @@
         me.reader = c.reader === player.id;
         me.actor = c.actor === player.id;
         if (c.stage === "read") {
-          me.canJudge = side === __privateMethod(this, _GuysVsGalsGame_instances, judgeSide_fn).call(this);
+          me.canJudge = __privateMethod(this, _GuysVsGalsGame_instances, judges_fn).call(this).includes(player.id);
           if (me.canJudge) me.answer = c.a;
         }
         if (c.stage === "secret") me.canPick = me.reader || !this.room.connected.has(c.reader) && side === reading;
         if (c.stage === "guess") {
           me.canGuess = __privateMethod(this, _GuysVsGalsGame_instances, guessers_fn).call(this).includes(player.id);
           if (player.id in c.votes) me.vote = c.votes[player.id];
-          if (me.reader || !c.challenged && side === reading || c.challenged && side === this.turn) me.secret = c.secret;
+          if (me.reader || side === reading && !this.room.connected.has(c.reader) && !c.challenged) me.secret = c.secret;
         }
         if (c.stage === "pick") {
           me.canPickActor = side === reading;
@@ -5312,7 +5312,7 @@
           me.canCall = side === reading;
           if (me.reader || me.actor) me.move = c.m;
         }
-        me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== "moves" && (c.stage === "read" || c.stage === "guess") && this.tokens[side] > 0 && (c.deck !== "lives" || __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, reading).some((p) => p.id !== c.reader)));
+        me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== "moves" && (c.stage === "read" || c.stage === "guess") && this.tokens[side] > 0 && __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, reading).some((p) => p.id !== c.reader));
       }
       v.me = me;
       return v;
@@ -5587,12 +5587,20 @@
     if (!c.challenged) return __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, this.turn).map((p) => p.id);
     return __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, c.about).map((p) => p.id).filter((id) => id !== c.reader);
   };
-  /** The side whose phones judge a spoken answer: the reader's team, or on a challenge the team that challenged. */
+  /** Who holds the card and judges a spoken answer: only the reader, as with the real card, so nobody else on the
+   *  readers' team knows the answer before a challenge throws it back at them. If the reader has wandered off, the
+   *  rest of the readers' team can judge, or on a challenge the team that challenged. */
+  judges_fn = function() {
+    const c = this.card;
+    if (!c) return [];
+    if (c.reader && this.room.connected.has(c.reader)) return [c.reader];
+    return __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, c.challenged ? this.turn : c.about).map((p) => p.id);
+  };
   judgeSide_fn = function() {
-    return this.card?.challenged ? this.turn : this.card?.about;
+    return this.card?.challenged && !this.room.connected.has(this.card.reader) ? this.turn : this.card?.about;
   };
   mayJudge_fn = function(by) {
-    return by === "host" || !!by && __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, by) === __privateMethod(this, _GuysVsGalsGame_instances, judgeSide_fn).call(this);
+    return by === "host" || !!by?.id && __privateMethod(this, _GuysVsGalsGame_instances, judges_fn).call(this).includes(by.id);
   };
   lockGuess_fn = function() {
     const c = this.card;

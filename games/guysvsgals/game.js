@@ -335,15 +335,23 @@ export class GuysVsGalsGame {
     if (!c.challenged) return this.#members(this.turn).map((p) => p.id);
     return this.#members(c.about).map((p) => p.id).filter((id) => id !== c.reader);
   }
-  /** The side whose phones judge a spoken answer: the reader's team, or on a challenge the team that challenged. */
-  #judgeSide() { return this.card?.challenged ? this.turn : this.card?.about; }
-  #mayJudge(by) { return by === 'host' || (!!by && this.#sideOf(by) === this.#judgeSide()); }
+  /** Who holds the card and judges a spoken answer: only the reader, as with the real card, so nobody else on the
+   *  readers' team knows the answer before a challenge throws it back at them. If the reader has wandered off, the
+   *  rest of the readers' team can judge, or on a challenge the team that challenged. */
+  #judges() {
+    const c = this.card;
+    if (!c) return [];
+    if (c.reader && this.room.connected.has(c.reader)) return [c.reader];
+    return this.#members(c.challenged ? this.turn : c.about).map((p) => p.id);
+  }
+  #judgeSide() { return this.card?.challenged && !this.room.connected.has(this.card.reader) ? this.turn : this.card?.about; }
+  #mayJudge(by) { return by === 'host' || (!!by?.id && this.#judges().includes(by.id)); }
 
   /** Right or wrong, for an Our Facts, Stuff or Pics card (the reader's phone, or the host). */
   judge(by, right) {
     const c = this.card;
     if (this.phase !== 'card' || !c || c.stage !== 'read') fail('Nothing to judge right now');
-    if (!this.#mayJudge(by)) fail(`The ${this.#name(this.#judgeSide())} judge this one`);
+    if (!this.#mayJudge(by)) fail(this.room.connected.has(c.reader) ? 'The reader judges this one' : `The ${this.#name(this.#judgeSide())} judge this one`);
     this.#answered(!!right);
   }
   /** The reader secretly picks the true answer about themselves on an Our Lives card. */
@@ -423,7 +431,7 @@ export class GuysVsGalsGame {
     if (c.deck === 'moves') fail('Our Moves cards can’t be challenged');
     if (c.stage !== 'read' && c.stage !== 'guess') fail('Wait for the reader to pick first');
     if (this.tokens[side] <= 0) fail('No challenge tokens left');
-    if (c.deck === 'lives' && !this.#members(c.about).some((p) => p.id !== c.reader)) fail(`The ${this.#name(c.about)} need someone besides the reader to guess`);
+    if (!this.#members(c.about).some((p) => p.id !== c.reader)) fail(`The ${this.#name(c.about)} need someone besides the reader to answer it`);
     this.tokens[side] -= 1;
     c.challenged = true;
     c.votes = {}; c.voteOrder = [];
@@ -718,15 +726,15 @@ export class GuysVsGalsGame {
       me.reader = c.reader === player.id;
       me.actor = c.actor === player.id;
       if (c.stage === 'read') {
-        me.canJudge = side === this.#judgeSide();
+        me.canJudge = this.#judges().includes(player.id);
         if (me.canJudge) me.answer = c.a;
       }
       if (c.stage === 'secret') me.canPick = me.reader || (!this.room.connected.has(c.reader) && side === reading);
       if (c.stage === 'guess') {
         me.canGuess = this.#guessers().includes(player.id);
         if (player.id in c.votes) me.vote = c.votes[player.id];
-        // The reader knows, and so do the people judging a challenge: they can peek (and keep a straight face).
-        if (me.reader || (!c.challenged && side === reading) || (c.challenged && side === this.turn)) me.secret = c.secret;
+        // Only the reader knows what they picked, so a challenge can throw it back at their own team.
+        if (me.reader || (side === reading && !this.room.connected.has(c.reader) && !c.challenged)) me.secret = c.secret;
       }
       if (c.stage === 'pick') {
         me.canPickActor = side === reading;
@@ -738,7 +746,7 @@ export class GuysVsGalsGame {
       }
       me.canChallenge = !!(this.settings.challenges && side === this.turn && !c.challenged && c.deck !== 'moves'
         && (c.stage === 'read' || c.stage === 'guess') && this.tokens[side] > 0
-        && (c.deck !== 'lives' || this.#members(reading).some((p) => p.id !== c.reader)));
+        && this.#members(reading).some((p) => p.id !== c.reader));
     }
     v.me = me;
     return v;
