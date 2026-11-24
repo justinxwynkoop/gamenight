@@ -1,8 +1,8 @@
-// Guys vs Gals on the browser TV (the Apple TV app draws its own, from the same view). The title bar, both teams' race
-// lanes, and the stage: the Guys' panel, the question with its answers, the Gals' panel. The coin toss, the Lightning
+// Guys vs Gals on the browser TV (the Apple TV app draws its own, from the same view), drawn as a comic book page: the
+// Guys' panel with their superhero, the question in a speech balloon, the Gals' panel, and the race strip along the foot. The coin toss, the Lightning
 // Rounds and the winner take over the whole screen. The right answer only reaches the TV once it is locked in.
 import { h } from '../../common.js';
-import { loadStyles, token, bolt, lane, laneLeft, teamOf, nameOf, aboutText, LETTERS, lengthText, otherSide } from './shared.js';
+import { loadStyles, token, bolt, art, lane, laneLeft, teamOf, nameOf, aboutText, LETTERS, lengthText, otherSide } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b', '#ffa7d8'];
 const HOP_MS = 260;
@@ -11,10 +11,13 @@ const seenAt = new Map();   // reaction id -> when this TV first showed it (so a
 
 function bg() { return h('div', { class: 'gv-bg' }); }
 
+/** Comic lettering: white with a thick ink outline. */
+const letters = (text, cls = '') => h('div', { class: `gv-letters ${cls}` }, text);
+
 function head(g) {
   const tag = (side) => {
     const t = teamOf(g, side);
-    return h('div', { class: `gv-teamtag ${side}` }, h('div', { class: `gv-word ${side}` }, (t?.name ?? side).toUpperCase()));
+    return h('div', { class: `gv-teamtag ${side}` }, letters((t?.name ?? side).toUpperCase(), `gv-word ${side}`));
   };
   return h('div', { class: 'gv-head' }, tag('guys'), h('div', { class: 'gv-vs' }, 'VS'), tag('gals'));
 }
@@ -72,32 +75,28 @@ function teamPanel(g, side) {
   const voters = new Set(g.question?.voters ?? []);
   const asking = g.phase === 'question' && g.turn === side;
   return h('div', { class: `gv-team ${side} ${turn ? 'turn' : ''}`, style: { '--c': t?.color } },
-    h('div', { class: 'gv-team-top' }, token(side, t?.color ?? '#888', 70),
-      h('div', {}, h('div', { class: 'gv-team-name' }, t?.name ?? side), h('div', { class: 'gv-team-sub' }, `answer ${aboutText(otherSide(side)).toLowerCase()}`))),
-    turn ? h('div', { class: 'gv-clock-badge' }, g.lastChance ? 'LAST CHANCE' : 'ON THE CLOCK') : null,
-    h('div', { class: 'gv-members' }, (t?.members ?? []).map((m) => h('div', { class: `gv-member ${m.connected ? '' : 'off'} ${asking && voters.has(m.id) ? 'voted' : ''}` },
-      h('span', {}, m.name), asking ? h('span', { class: 'chk' }, '✓') : null))),
-    h('div', { class: 'gv-pos' }, h('b', {}, String(t?.pos ?? 0)), h('span', {}, `of ${g.length} spaces`)));
+    h('div', { class: 'gv-rays' }),
+    letters((t?.name ?? side).toUpperCase(), 'gv-team-name'),
+    turn ? h('div', { class: 'gv-clock-badge' }, g.lastChance ? 'LAST CHANCE!' : 'ON THE CLOCK!') : null,
+    h('div', { class: 'gv-team-hero' }, token(side, t?.color ?? '#888', 256)),
+    h('div', { class: 'gv-members' }, (t?.members ?? []).map((m) => h('span', { class: `gv-member ${m.connected ? '' : 'off'} ${asking && voters.has(m.id) ? 'voted' : ''}` },
+      m.name, asking ? h('i', { class: 'chk' }, voters.has(m.id) ? '✓' : '…') : null))),
+    h('div', { class: 'gv-pos' },
+      h('span', {}, `Answers ${aboutText(otherSide(side)).toLowerCase()}`),
+      h('b', {}, String(t?.pos ?? 0), h('small', {}, `/${g.length}`))));
 }
 
-/** A countdown ring that keeps draining between views. */
+/** The clock: a starburst with the seconds left, counting down on its own between views. */
 function ring(timer) {
-  if (!timer) return h('div', { class: 'gv-ring' });
-  const frac = Math.max(0, Math.min(1, timer.leftMs / timer.totalMs));
+  if (!timer) return null;
   const secs = Math.ceil(timer.leftMs / 1000);
-  const fg = h('div', {});
-  fg.innerHTML = '<svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.4"/><circle class="fg" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.4" pathLength="100" stroke-dasharray="100"/></svg>';
-  const circle = fg.querySelector('.fg');
-  circle.style.strokeDashoffset = String(100 - frac * 100);
-  circle.style.animationDuration = `${timer.leftMs}ms`;
   const label = h('b', {}, String(secs));
-  const el = h('div', { class: `gv-ring ${secs <= 5 ? 'low' : ''}` }, fg.firstChild, label);
-  // The number counts down on its own between views.
+  const el = h('div', { class: `gv-ring ${secs <= 5 ? 'low' : ''}` }, h('i', {}), h('span', {}), label);
   const end = performance.now() + timer.leftMs;
   const tickNum = () => {
     if (!el.isConnected) return;
     const s = Math.max(0, Math.ceil((end - performance.now()) / 1000));
-    label.textContent = String(s);
+    if (label.textContent !== String(s)) { label.textContent = String(s); el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
     el.classList.toggle('low', s <= 5);
     if (s > 0) setTimeout(tickNum, 200);
   };
@@ -114,10 +113,11 @@ function questionCard(g) {
   return h('div', { class: 'gv-card', style: { '--a': aboutTeam?.color ?? '#888' } },
     h('div', { class: 'gv-card-top' },
       h('div', { style: { display: 'flex', gap: '1.2vmin', flexWrap: 'wrap' } },
-        h('span', { class: 'gv-chip' }, aboutText(q.about)),
+        h('span', { class: `gv-chip ${q.about}` }, aboutText(q.about)),
         q.cat ? h('span', { class: 'gv-chip ghost' }, q.cat) : null),
       reveal || q.locked ? null : ring(g.timer)),
     h('div', { class: 'gv-q' }, q.text),
+    reveal ? h('div', { class: `gv-pow ${res.correct ? 'yes' : 'no'}` }, h('span', {}, res.correct ? 'POW!' : res.timeout ? 'TOO SLOW!' : 'OOF!')) : null,
     h('div', { class: 'gv-choices' }, q.choices.map((c, i) => {
       let cls = '';
       let mark = null;
@@ -137,9 +137,9 @@ function tossScreen(g) {
   const first = g.turn;
   return h('div', { class: 'gv-over gv-toss' }, h('div', {},
     h('div', { class: 'gv-coin', style: { '--end': first === 'guys' ? '1800deg' : '1980deg' } },
-      h('div', { class: 'face-guys' }, token('guys', teamOf(g, 'guys')?.color ?? '#3b8bff', 200)),
-      h('div', { class: 'face-gals' }, token('gals', teamOf(g, 'gals')?.color ?? '#ff4fa3', 200))),
-    h('div', { class: 'gv-big' }, `THE ${nameOf(g, first).toUpperCase()} GO FIRST!`),
+      h('div', { class: 'face-guys' }, token('guys', '', 256)),
+      h('div', { class: 'face-gals' }, token('gals', '', 256))),
+    letters(`THE ${nameOf(g, first).toUpperCase()} GO FIRST!`, 'gv-big'),
     h('div', { class: 'gv-sub' }, 'Coin toss! Then the teams take turns.')));
 }
 
@@ -154,7 +154,7 @@ function lightningScreen(g) {
   }));
   let middle;
   if (intro) {
-    middle = [h('div', { class: 'gv-big now' }, `${(t?.name ?? '').toUpperCase()}, GET READY!`),
+    middle = [letters(`${(t?.name ?? '').toUpperCase()}, GET READY!`, 'gv-big now'),
       h('div', { class: 'gv-sub' }, `${L.total} true-or-false statements about ${aboutText(otherSide(L.side)).toLowerCase()}. Anyone on the team can answer. Fast!`)];
   } else if (done) {
     middle = [h('div', { class: 'gv-l-score' }, `+${L.rights}`), h('div', { class: 'gv-sub' }, `${L.rights} of ${L.total} right: the ${t?.name ?? ''} move ${L.rights} ${L.rights === 1 ? 'space' : 'spaces'}!`)];
@@ -170,8 +170,8 @@ function lightningScreen(g) {
     ];
   }
   return h('div', { class: 'gv-over gv-lightning' }, h('div', { class: 'gv-l-wrap' },
-    h('div', { class: 'gv-l-title' }, bolt(80), 'LIGHTNING ROUND', bolt(80)),
-    h('div', { class: 'gv-l-team' }, token(L.side, t?.color ?? '#888', 54), `The ${t?.name ?? ''}`),
+    h('div', { class: 'gv-l-title' }, bolt(110), letters('LIGHTNING ROUND!'), bolt(110)),
+    h('div', { class: 'gv-l-team' }, token(L.side, '', 90), `The ${t?.name ?? ''}`),
     middle, pips));
 }
 
@@ -188,8 +188,9 @@ function winScreen(g) {
   const t = teamOf(g, ws[0]);
   return h('div', { class: 'gv-over gv-win', style: { '--c': tie ? '#ffe14d' : t?.color ?? '#888' } }, confetti(),
     h('div', {},
-      tie ? h('div', { class: 'tie' }, ws.map((s) => token(s, teamOf(g, s)?.color ?? '#888', 260))) : token(ws[0], t?.color ?? '#888', 340),
-      h('div', { class: 'gv-big now' }, tie ? 'IT’S A TIE!' : `THE ${(t?.name ?? '').toUpperCase()} WIN!`),
+      h('div', { class: 'gv-win-hero' }, art('crown', 256, 'gv-crown'),
+        tie ? h('div', { class: 'tie' }, ws.map((s) => token(s, '', 256))) : token(ws[0], '', 256)),
+      letters(tie ? 'IT’S A TIE!' : `THE ${(t?.name ?? '').toUpperCase()} WIN!`, 'gv-big now'),
       h('div', { class: 'gv-sub' }, tie ? 'Both sides made it home. Rematch?' : `${g.teams.map((x) => `${x.name} ${x.pos}`).join(' · ')}  ·  ${g.hosted ? 'The host can start a rematch.' : 'The first player can start a rematch.'}`)));
 }
 
@@ -204,14 +205,14 @@ export function render(v) {
   }
   let center = null;
   if ((g.phase === 'question' || g.phase === 'reveal') && g.question) center = questionCard(g);
-  else center = h('div', { class: 'gv-card', style: { '--a': '#ffe14d' } }, h('div', { class: 'gv-q' }, g.line.text), g.line.next ? h('div', { class: 'gv-foot' }, g.line.next) : null);
+  else center = h('div', { class: 'gv-card', style: { '--a': '#ffd23f' } }, h('div', { class: 'gv-q' }, g.line.text), g.line.next ? h('div', { class: 'gv-foot' }, g.line.next) : null);
   let over = null;
   if (g.phase === 'toss') over = tossScreen(g);
   else if (g.phase.startsWith('lightning') && g.lightning) over = lightningScreen(g);
   else if (g.phase === 'gameover') over = winScreen(g);
   return h('div', { class: `gv-tv phase-${g.phase}` }, bg(),
-    head(g), tracks,
     h('div', { class: 'gv-stage' }, teamPanel(g, 'guys'), h('div', { class: 'gv-center' }, center), teamPanel(g, 'gals')),
+    tracks,
     over, floats(g));
 }
 
