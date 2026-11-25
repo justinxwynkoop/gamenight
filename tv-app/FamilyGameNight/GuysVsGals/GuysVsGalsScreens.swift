@@ -382,6 +382,12 @@ private extension View {
 
 // MARK: - The race board
 
+/// The colours and pictures on the race board's plain spaces (same lists as raceBoard() in tv.js).
+private enum GvgBoardArt {
+    static let fills: [UInt32] = [0xFF8A8A, 0xFFD76A, 0x8BE08B, 0xFFB26B, 0xFF9CCF, 0x8FC8FF, 0xC7A6FF, 0x7FE0D4]
+    static let icons = ["⚽", "🍕", "🔧", "💄", "🚗", "🎸", "👠", "🏈", "🛒", "🎣", "🧁", "📺", "🛠️", "👗", "🎮", "🍳", "🏀", "💅", "🔨", "🎤", "🏌️", "🧶", "🍔", "🛋️"]
+}
+
 /// The pawn race board, like the classic one: a deep blue field with a yellow and red rim, each team's START rail
 /// down its outer edge, two halves of round spaces in staggered columns, each team's wild columns in its colour, and
 /// the two decks in the middle where the card being read sits. Follows raceBoard() in public/games/guysvsgals/tv.js.
@@ -390,8 +396,6 @@ private struct GvgRaceBoard<Center: View>: View {
     @ViewBuilder let center: () -> Center
 
     static var rows: Int { 6 }
-    static let fills: [UInt32] = [0xFF8A8A, 0xFFD76A, 0x8BE08B, 0xFFB26B, 0xFF9CCF, 0x8FC8FF, 0xC7A6FF, 0x7FE0D4]
-    static let icons = ["⚽", "🍕", "🔧", "💄", "🚗", "🎸", "👠", "🏈", "🛒", "🎣", "🧁", "📺", "🛠️", "👗", "🎮", "🍳", "🏀", "💅", "🔨", "🎤", "🏌️", "🧶", "🍔", "🛋️"]
 
     var body: some View {
         if let race = game.race {
@@ -461,7 +465,7 @@ private struct GvgRaceBoard<Center: View>: View {
     private func dot(_ race: GvgRace, _ x: Int, _ row: Int, size: CGFloat) -> some View {
         let wild = race.wildSide(x)
         let seed = x * 7 + row * 3
-        let fill: Color = wild.map { GV.color(game, $0) } ?? Color(hex: Self.fills[seed % Self.fills.count])
+        let fill: Color = wild.map { GV.color(game, $0) } ?? Color(hex: GvgBoardArt.fills[seed % GvgBoardArt.fills.count])
         var here: [String] = []
         for side in ["guys", "gals"] {
             for (i, p) in race.pawns(side).enumerated() where p.state == "board" && p.x == x && pawnRow(race, side, i) == row { here.append(side) }
@@ -475,7 +479,7 @@ private struct GvgRaceBoard<Center: View>: View {
                     .shadow(color: GV.ink, radius: 0, x: 2, y: 2).rotationEffect(.degrees(-12))
                     .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 6)
             } else {
-                Text(Self.icons[seed % Self.icons.count]).font(.system(size: size * 0.46)).opacity(0.9)
+                Text(GvgBoardArt.icons[seed % GvgBoardArt.icons.count]).font(.system(size: size * 0.46)).opacity(0.9)
             }
             ForEach(Array(here.enumerated()), id: \.offset) { k, side in
                 GvgToken(side: side, size: size * 1.4).offset(x: CGFloat(k) * size * 0.3, y: -size * 0.15)
