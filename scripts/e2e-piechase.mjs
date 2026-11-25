@@ -146,7 +146,11 @@ try {
     await until(async () => (await reader.locator('.pc-qcard .a').count()) > 0 && /Read this to/.test(await reader.locator('.pc').innerText()), 'the answer on the reader’s phone');
     const answer = (await reader.locator('.pc-qcard .a').innerText()).replace(/^Answer\s*/i, '').trim();
     if ((await me.locator('.pc-qcard .a').count())) fail('the answering player can see the answer');
-    if ((await tvText()).includes(answer) && answer.length > 3) fail(`the TV shows the answer before it is judged: ${answer}`);
+    // The question's own words may hold the answer ("In Green Eggs and Ham, what colour are the eggs?"),
+    // so look everywhere on the TV but the question, and for the answer line itself.
+    if (await tv.locator('.pc-ans').count()) fail('the TV shows the answer line before it is judged');
+    const aroundQuestion = (await tvText()).replace(await tv.locator('.pc-q').innerText(), '');
+    if (aroundQuestion.includes(answer) && answer.length > 3) fail(`the TV shows the answer before it is judged: ${answer}`);
     if (!/Read this to/.test(await reader.locator('.pc').innerText())) fail('the next player is not asked to read');
     if (!checkedSecret) { await shot(tv, 'question'); await shot(reader, 'phone-reader'); await shot(me, 'phone-answering'); checkedSecret = true; }
     const right = i === champion;
