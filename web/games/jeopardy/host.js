@@ -9,7 +9,12 @@ import { loadStyles, lobbyControls, judgeControl, answerTimeControl, finalContro
 let v = null;          // the game's view (with the host's secrets)
 let C = null;          // helpers from the page: act, openSheet, confirm, go, ...
 let act = () => {};
-let lastAct = { key: '', at: 0 };
+let lastAct = { key: '', action: '', at: 0 };
+// The action bar's buttons change with each step, and a second tap meant for the old button lands on the new one in
+// its place: Open buzzers tapped twice would hit "Nobody. Show the answer", Wrong twice "Skip this clue", Place this bet
+// twice "Correct". So for a moment after each of these, the button that takes its place does nothing.
+const FOLLOWS = { openNow: ['skip'], judge: ['skip', 'override', 'judge'], ddWager: ['judge', 'skip'] };
+const SETTLE = 1000;
 
 const nameOf = (id) => v.players.find((p) => p.id === id)?.name ?? '?';
 const dockRow = (...kids) => h('div', { class: 'dock-row' }, kids.flat().filter(Boolean));
@@ -36,8 +41,10 @@ export function render(raw, ctx) {
   // A double tap on the action bar must not do the same thing twice (and skip the next clue with it).
   act = (action, args = {}) => {
     const key = `${action}:${JSON.stringify(args)}:${v.phase}`;
-    if (key === lastAct.key && performance.now() - lastAct.at < 900) return;
-    lastAct = { key, at: performance.now() };
+    const now = performance.now();
+    if (key === lastAct.key && now - lastAct.at < 900) return;
+    if (FOLLOWS[lastAct.action]?.includes(action) && now - lastAct.at < SETTLE) return;
+    lastAct = { key, action, at: now };
     ctx.act(action, args);
   };
   const screen = { lobby: lobbyView, 'round-intro': introView, board: boardView, reading: clueView, open: clueView, answering: clueView, ruling: clueView, 'dd-wager': clueView, 'dd-answer': clueView, reveal: clueView, 'round-end': roundEndView, 'final-wager': finalView, 'final-answer': finalView, 'final-reveal': finalView, gameover: doneView }[v.phase];
@@ -123,7 +130,10 @@ function boardView() {
       h('p', { class: 'dim' }, ddLeft ? `White ring: Daily Double (${ddLeft} left, only you see it).` : 'They say a category and a value out loud.'),
       picker()),
   ];
-  const dock = [dockRow(button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }),
+  // A right answer goes straight back to the board, so a ruling tapped by mistake is put right from here.
+  const r = v.lastResult;
+  const dock = [dockRow(r && button({ label: `Flip ${nameOf(r.pid)}’s ruling (${r.correct ? 'right' : 'wrong'})`, size: 'sm', onclick: () => act('override') }),
+    button({ label: 'End the round now', size: 'sm', onclick: () => C.confirm({ title: 'End this round?', message: 'Remaining clues are skipped.', confirmLabel: 'End round', onConfirm: () => act('endRound') }) }),
     button({ label: 'End the game', size: 'sm', onclick: confirmEndGame }))];
   return { body, dock };
 }
@@ -143,11 +153,13 @@ const secs = (ms) => `${(Math.round(ms) / 1000).toFixed(3)}s`;
 
 /** Who buzzed in first, large, then everyone's time in order (the host opened the buzzers and wants to see it at a glance). */
 function buzzCard(c) {
-  const list = c?.buzzes ?? [];
-  const winner = c?.buzzedId ? list.filter((b) => b.pid === c.buzzedId).pop() ?? list[0] : list[0];
+  const all = c?.buzzes ?? [];
+  const winner = c?.buzzedId ? all.filter((b) => b.pid === c.buzzedId).pop() ?? all[0] : all[0];
   if (!winner) return null;
+  // One opening's presses: after a miss the buzzers open again, and those times start again from that opening.
+  const list = all.filter((b) => (b.open ?? 1) === (winner.open ?? 1));
   const color = v.players.find((p) => p.id === winner.pid)?.color ?? '#ffd23f';
-  const best = list[0].ms;
+  const best = Math.min(...list.map((b) => b.ms));
   return card(
     h('div', { class: 'jp-first', style: { '--c': color } }, h('small', {}, 'Buzzed in first'), h('b', {}, nameOf(winner.pid)), h('span', {}, secs(winner.ms))),
     list.length > 1 && h('div', { class: 'list' }, list.map((b, i) => h('div', { class: 'rowi' },
@@ -179,7 +191,7 @@ function clueView() {
   } else if (ph === 'ruling') {
     const r = v.lastResult;
     body.unshift(buzzCard(c));
-    body.push(card(eyebrow('Ruling'), h('div', { class: 'card-title' }, r ? `${nameOf(r.pid)} said “${r.answer || '…'}”` : '…'),
+    body.push(card(eyebrow('Ruling'), h('div', { class: 'card-title' }, !r ? '…' : r.answer == null && !r.timedOut ? `${nameOf(r.pid)} answered out loud` : r.timedOut ? `${nameOf(r.pid)} ran out of time` : `${nameOf(r.pid)} said “${r.answer || '…'}”`),
       r && pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), h('p', { class: 'dim' }, 'Shown on the TV for a moment. Flip it if the game got it wrong.')));
     dock.push(dockRow(button({ label: 'Flip the ruling', size: 'sm', onclick: () => act('override') }), button({ label: 'Skip this clue', size: 'sm', onclick: () => act('skip') })));
   } else if (ph === 'dd-wager') {

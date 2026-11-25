@@ -355,13 +355,31 @@ test('with a host the buzzers never open by themselves, and there is no clock wh
   g.ddWager(g.controllerId, 0); g.act('judge', { correct: false }); rule(clock);
   if (g.phase === 'reveal') clock.advance(T.reveal + 10);
   assert.equal(g.phase, 'board');
-  // The host leaves while reading the next clue: the buzzers open by themselves again, so the game never stalls.
+  // The host's phone goes to sleep while the next clue is read: it is still a spoken-answer game (nobody gets an answer
+  // box or buzzers that open by themselves), and the captain's phone stands in as the host until the page is back.
   g.pick(1, g.board()[1].clues.findIndex((c) => !c.dd));
   assert.equal(g.phase, 'reading');
   room.hosts = 0;
   clock.advance(10);
   clock.advance(waitFor(g, g.clue.q) + 50);
+  assert.equal(g.phase, 'reading', 'the buzzers still wait for a host');
+  const v = g.playerView(ps[0]);
+  assert.equal(v.hostJudges, true);
+  assert.equal(v.me.isCaptain, true, 'the captain stands in');
+  assert.throws(() => g.onPlayer(ps[1], { t: 'cap', action: 'openNow' }), GameError);
+  g.onPlayer(ps[0], { t: 'cap', action: 'openNow' });
   assert.equal(g.phase, 'open');
+  g.buzz(ps[1].id);
+  assert.equal(g.phase, 'answering');
+  g.onPlayer(ps[0], { t: 'cap', action: 'judge', args: { correct: true } });
+  rule(clock);
+  assert.equal(g.phase, 'board');
+  // The host page comes back: it runs the game again, and there is no captain.
+  room.hosts = 1; clock.advance(10);
+  assert.equal(g.publicView().captainId, null);
+  // A new game in the same room with no host page is a typed-answer game again.
+  g.endGame(); room.hosts = 0;
+  assert.equal(g.hostJudges(), false);
 });
 
 test('host mode answer clock runs out, then the host still has a few seconds to rule', () => {
@@ -769,17 +787,47 @@ test('removing a player during Final Jeopardy does not leave the game waiting fo
 });
 
 test('Final Jeopardy waits for the host even when the wager clock runs out: whoever has not bet bets nothing', () => {
-  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  const { room, g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
   begin(g);
   playRound(g, ps, clock); g.advance(); g.advance();
-  playRound(g, ps, clock); g.advance();
+  playRound(g, ps, clock);
+  room.hosts = 1;                                          // a host page is connected
+  g.advance();
   assert.equal(g.phase, 'final-wager');
   g.finalWager(ps[0].id, 5);
+  g.finalWager(ps[1].id, 0);
+  clock.advance(10000);
+  assert.equal(g.phase, 'final-wager', 'everyone has bet, and the host shows the clue');
+  delete g.final.wagers[ps[1].id];
   clock.advance(T.finalWager + 10);
   assert.equal(g.phase, 'final-wager', 'the clock only locks the wagers');
   assert.equal(g.final.wagers[ps[1].id], 0);
   assert.equal(g.final.wagers[ps[0].id], 5);
   g.advance();
+  assert.equal(g.phase, 'final-answer');
+});
+
+test('with nobody hosting, Final Jeopardy\'s clue comes up by itself once everyone here has bet (or the wager clock runs out)', () => {
+  const { room, g, ps, clock } = setup({ players: ['Ann', 'Bo', 'Cy'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  assert.equal(g.phase, 'final-wager');
+  g.finalWager(ps[0].id, 5);
+  room.setConnected(ps[2].id, false);           // Cy's phone went to sleep: nobody waits for Cy
+  g.finalWager(ps[1].id, 0);
+  clock.advance(1000);
+  assert.equal(g.phase, 'final-wager', 'a moment to see the wager locked in');
+  clock.advance(2000);
+  assert.equal(g.phase, 'final-answer');
+  assert.equal(g.final.wagers[ps[2].id], 0);
+  // And when the wager clock runs out with someone still deciding.
+  g.endGame(); room.setConnected(ps[2].id, true);
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  g.finalWager(ps[0].id, 5);
+  clock.advance(T.finalWager + 10);
   assert.equal(g.phase, 'final-answer');
 });
 
@@ -1303,4 +1351,73 @@ test('Sights & Sounds is on beside the real show, and every round gets one pictu
   assert.equal(media(g.rounds[0]).length, 1);
   assert.equal(media(g.rounds[1]).length, 1);
   assert.ok(g.rounds.flat().every((c) => c.clues.every((cl) => cl.media?.kind !== 'video')), 'the shipped set has no video clues');
+});
+
+test('a Daily Double picked while the player in control is away goes to someone who is here', () => {
+  const { room, g, ps } = setup();
+  begin(g);
+  const dd = g.board().flatMap((c, ci) => c.clues.map((cl, ri) => ({ ci, ri, cl }))).find((x) => x.cl.dd);
+  const away = g.controllerId;
+  room.setConnected(away, false);
+  g.pick(dd.ci, dd.ri);
+  assert.equal(g.phase, 'dd-wager');
+  assert.notEqual(g.controllerId, away);
+  assert.ok(room.connected.has(g.controllerId));
+  assert.equal(g.controllerId, g.captain() === away ? ps.find((p) => p.id !== away).id : g.captain());
+});
+
+test('a TV that restarts mid-clue reads the clue again, keeps a Daily Double going, and gives Final Jeopardy its clock back', () => {
+  const restart = (room, at) => {
+    const saved = JSON.parse(JSON.stringify(room));
+    const again = new Room({ games: GAMES, now: () => at, random: () => 0.42, loadContent: (x, id) => sets[id] ?? null, listContent: () => Object.entries(sets).map(([id, s]) => ({ id, title: s.title })) });
+    assert.ok(again.restore(saved));
+    for (const p of again.players) again.setConnected(p.id, true);
+    return again;
+  };
+  // A clue being read.
+  const { room, g, ps, clock } = setup();
+  begin(g);
+  const b = g.board();
+  const ri = b[0].clues.findIndex((c) => !c.dd);
+  g.pick(0, ri);
+  let r2 = restart(room, clock.now());
+  assert.equal(r2.game.phase, 'reading');
+  assert.equal(r2.game.clue.q, b[0].clues[ri].q);
+  assert.equal(r2.game.publicView().timer.kind, 'reading', 'the buzzers open by themselves again');
+  // A Daily Double, bet placed.
+  clock.advance(waitFor(g, g.clue.q) + 10);
+  g.buzz(ps[0].id); g.answer(ps[0].id, g.clue.a); rule(clock);
+  const dd = g.board().flatMap((c, ci) => c.clues.map((cl, x) => ({ ci, x, cl }))).find((y) => y.cl.dd && !y.cl.used);
+  g.pick(dd.ci, dd.x);
+  g.ddWager(g.controllerId, 300);
+  r2 = restart(room, clock.now());
+  assert.equal(r2.game.phase, 'dd-answer');
+  assert.equal(r2.game.clue.wager, 300);
+  const who = r2.game.controllerId;
+  const before = r2.players.find((p) => p.id === who).score;
+  r2.game.answer(who, dd.cl.a);
+  assert.equal(r2.players.find((p) => p.id === who).score, before + 300);
+  // Final Jeopardy, one answer in.
+  g.endGame(); begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  for (const p of ps) g.finalWager(p.id, 0);
+  clock.advance(3000);
+  assert.equal(g.phase, 'final-answer');
+  g.finalAnswer(ps[0].id, 'mine');
+  r2 = restart(room, clock.now());
+  assert.equal(r2.game.phase, 'final-answer', 'still answering, not cut off');
+  assert.equal(r2.game.final.answers[ps[0].id], 'mine');
+  assert.equal(r2.game.publicView().timer.kind, 'final');
+});
+
+test('a spoken answer the host rules on has no typed words, and is not a time-out', () => {
+  const { room, g, ps, clock } = setup();
+  room.hosts = 1;
+  begin(g);
+  g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd));
+  g.openNow(); g.buzz(ps[1].id); g.act('judge', { correct: false });
+  assert.equal(g.lastResult.answer, null);
+  assert.equal(g.lastResult.timedOut, false);
+  clock.advance(10);
 });

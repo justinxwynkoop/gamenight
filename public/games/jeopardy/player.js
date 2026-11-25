@@ -421,10 +421,13 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     const mine = r && r.pid === me().id;
     const p = player(r?.pid);
     const blank = !r || !r.answer || r.timedOut;
+    // Said out loud and ruled by the host: no typed words to show, just the ruling.
+    const spoken = !!r && r.answer == null && !r.timedOut;
     return { key: `rule-${c.ci}-${c.ri}-${c.tried.length}-${r?.correct}`, nodes: [meta(c.cat, money(c.value)), center(
-      h('div', { class: 'jp-msg' }, mine ? 'You said' : [named(p), ' said']),
-      h('div', { class: 'jp-logo' }, blank ? (r?.timedOut ? 'Time’s up' : '(nothing)') : `“${r.answer}”`),
-      h('div', { class: `jp-stamp ${r?.correct ? 'good' : 'bad'}` }, r?.correct ? `RIGHT · ${signed(Math.abs(r.delta))}` : `NOT QUITE · −${money(Math.abs(r?.delta ?? 0))}`),
+      spoken ? h('div', { class: 'jp-msg' }, mine ? 'You answered. The host says…' : [named(p), ' answered. The host says…'])
+        : h('div', { class: 'jp-msg' }, mine ? 'You said' : [named(p), ' said']),
+      spoken ? null : h('div', { class: 'jp-logo' }, blank ? (r?.timedOut ? 'Time’s up' : '(nothing)') : `“${r.answer}”`),
+      h('div', { class: `jp-stamp ${r?.correct ? 'good' : 'bad'}` }, r?.correct ? `RIGHT · ${signed(Math.abs(r.delta))}` : `${spoken ? 'WRONG' : 'NOT QUITE'} · −${money(Math.abs(r?.delta ?? 0))}`),
       !r?.correct && !c.dd && !c.tried.includes(me().id) && h('div', { class: 'jp-muted' }, 'Get ready: you can buzz in again in a moment.'))] };
   }
 
@@ -475,8 +478,8 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
 
   function finalWagerScreen() {
     const f = v.final;
-    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-logo' }, 'FINAL JEOPARDY'), h('div', { class: 'jp-msg' }, 'Only players with money play Final Jeopardy tonight.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
-    if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-lock' }, '🔒'), h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, v.final && v.final.wagered.length >= v.final.eligible.length ? 'Everyone is locked in. Waiting for the host to show the clue…' : 'Nobody sees it until the reveal. Waiting for everyone else…')) };
+    if (!f.eligible.includes(me().id)) return { key: 'fw-out', nodes: center(h('div', { class: 'jp-logo' }, 'FINAL JEOPARDY'), h('div', { class: 'jp-msg' }, v.finalForAll ? 'You joined after Final Jeopardy began, so you sit this one out.' : 'Only players with money play Final Jeopardy tonight.'), h('div', { class: 'jp-muted' }, 'Sit back and cheer!')) };
+    if (me().finalWager !== undefined) return { key: 'fw-done', nodes: center(h('div', { class: 'jp-lock' }, '🔒'), h('div', { class: 'jp-msg' }, `Wager locked: ${money(me().finalWager)}`), h('div', { class: 'jp-muted' }, v.final && v.final.wagered.length >= v.final.eligible.length ? (v.hostJudges ? 'Everyone is locked in. Waiting for the host to show the clue…' : 'Everyone is locked in. Here comes the clue…') : 'Nobody sees it until the reveal. Waiting for everyone else…')) };
     return { key: `fw-${typing}`, nodes: wagerForm('final-wager', 0, me().maxFinal ?? me().score,
       [h('div', { class: 'jp-logo' }, 'FINAL JEOPARDY'), h('div', { class: 'jp-meta center' }, f.category)]) };
   }
@@ -575,7 +578,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     if (ph === 'lobby') items.push(['Start game', () => cap('start'), '']);
     if (ph === 'round-intro') items.push(['Skip intro', () => cap('advance'), 'ghost']);
     if (['reading', 'open', 'answering', 'dd-wager', 'dd-answer'].includes(ph)) items.push(['Skip clue', () => { if (confirm('Skip this clue? Nobody wins or loses money on it.')) cap('skip'); }, 'ghost']);
-    if (v.lastResult && ['reveal', 'board'].includes(ph) && !v.hostJudges) items.push(['Flip last ruling', () => cap('override'), 'ghost']);
+    if (v.lastResult && ['ruling', 'reveal', 'board'].includes(ph)) items.push(['Flip last ruling', () => cap('override'), 'ghost']);
     if (['reveal', 'round-end', 'final-reveal'].includes(ph)) items.push(['Continue', () => cap('advance'), '']);
     if (['final-wager', 'final-answer'].includes(ph)) items.push(['Continue', carryOn, 'ghost']);
     if (ph === 'board') items.push(['End round early', () => { if (confirm('End this round now?')) cap('endRound'); }, 'ghost']);
