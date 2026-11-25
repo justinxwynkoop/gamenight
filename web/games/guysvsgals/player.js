@@ -8,7 +8,7 @@
 // Only the reader's phone shows the answer, like holding the card. In the pawn race the reader reads three questions a
 // card and there are no challenges. Emoji at the bottom float up on the TV.
 import { h, setKids } from '../../common.js';
-import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, otherSide, LETTERS, isRace, raceTrack, acrossText } from './shared.js';
+import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, otherSide, LETTERS, isRace, miniBoard, stepLabel, acrossText } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b'];
 
@@ -80,9 +80,9 @@ export function mount(container, { send }) {
       const two = g.settings.pawns !== 1;
       return h('details', { class: 'gv-pcard' }, h('summary', {}, 'How to play the race'),
         h('p', {}, 'A coin toss says who goes first. A player on the other team reads you a card with three questions, and judges your answers on their phone.'),
-        h('p', {}, 'Every right answer moves your pawn one space and you get the next question. A miss, or all three right, ends your turn.'),
+        h('p', {}, 'Every right answer moves your pawn one space: your team picks which space to step onto (the lit ones on the TV), then you get the next question. A miss, or all three right, ends your turn.'),
         h('p', {}, 'Land on your own wild space and you draw a wild card at once. End your turn on the other team’s wild space and you draw one of theirs. Wild cards help the team they belong to.'),
-        two ? h('p', {}, 'Each team has two pawns: the second starts when the first gets across. Once a game, end your turn on the other team’s pawn to take it prisoner. It is freed when their other pawn gets across.') : null,
+        two ? h('p', {}, 'Each team has two pawns: the second starts when the first gets across. Once a game, end your turn on the very space the other team’s pawn stands on to take it prisoner. It is freed when their other pawn gets across.') : null,
         h('p', {}, two ? 'Get both pawns across first to win.' : 'Get your pawn across first to win.'));
     }
     return h('details', { class: 'gv-pcard' }, h('summary', {}, 'How to play'),
@@ -112,6 +112,25 @@ export function mount(container, { send }) {
     if (peekKey !== key) { peek = false; peekKey = key; }
     return h('button', { type: 'button', class: `gv-peek ${peek ? 'open' : ''}`, onclick: () => { peek = !peek; refresh(); } },
       peek ? `🤫 ${reveal} Keep a straight face. (Tap to hide)` : label);
+  }
+
+  /** The race, after a right answer: the team at play picks the space its pawn steps onto. */
+  function pickSpace(g) {
+    const c = g.card;
+    const steps = c.moves ?? [];
+    const mine = !!g.me?.canMove;
+    const pick = (k) => send({ t: 'space', k });
+    return [
+      h('div', { class: 'gv-pcard accent' }, chips(g, c), h('h2', {}, 'Right!'),
+        h('div', { class: 'gv-pans' }, h('small', {}, 'THE ANSWER'), c.answer ?? ''),
+        h('p', { class: mine ? '' : 'dim' }, mine ? 'Where does your pawn go? Tap a lit space. Anyone on your team can pick.' : `The ${nameOf(g, g.turn)} are picking a space for their pawn.`)),
+      h('div', { class: 'gv-pcard gv-ppath' }, miniBoard(g, mine ? pick : null)),
+      mine ? h('div', { class: `gv-steps ${steps.length > 2 ? 'many' : ''}` }, steps.map((s) => {
+        const l = stepLabel(g, steps, s);
+        return h('button', { type: 'button', class: `gv-step ${s.pawn ? 'pawn' : ''}`, 'data-k': s.k, onclick: () => pick(s.k) },
+          h('span', { class: 'gv-letter' }, s.k), h('span', {}, l.where, l.what ? h('small', {}, l.what) : null));
+      })) : null,
+    ];
   }
 
   /** An Our Facts, Stuff or Pics card: spoken answers, judged by the reader (or, on a challenge, by the challengers). */
@@ -273,10 +292,11 @@ export function mount(container, { send }) {
     if (!g.me?.canStart || ['lobby', 'gameover'].includes(g.phase)) return null;
     const guessing = g.phase === 'card' && g.card?.stage === 'guess';
     const starting = g.phase === 'card' && g.card?.stage === 'ready';
-    if (g.phase === 'card' && !guessing && !starting) return null;
+    const stepping = g.phase === 'card' && g.card?.stage === 'move';
+    if (g.phase === 'card' && !guessing && !starting && !stepping) return null;
     return h('details', { class: 'gv-pcard' }, h('summary', {}, 'Someone gone quiet?'),
       h('p', { class: 'dim' }, 'You started the game, so you can keep it moving.'),
-      btn(guessing ? 'Lock in their guesses now' : starting ? 'Start the clock now' : 'Move on', '', () => send({ t: 'advance' })));
+      btn(guessing ? 'Lock in their guesses now' : starting ? 'Start the clock now' : stepping ? 'Move the pawn for them' : 'Move on', '', () => send({ t: 'advance' })));
   }
 
   function refresh() {
@@ -284,13 +304,14 @@ export function mount(container, { send }) {
     if (!g || !view.room?.me) return;
     let body;
     if (g.phase === 'lobby') body = lobby(g);
+    else if (g.phase === 'card' && g.card?.stage === 'move') body = pickSpace(g);
     else if (g.phase === 'card' && g.card) body = g.card.deck === 'lives' ? lives(g) : g.card.deck === 'moves' ? moves(g) : spoken(g);
     else if (g.phase === 'result' && g.card && g.result) body = result(g);
     else if (g.phase === 'trophy') body = trophyWon(g);
     else if (g.phase === 'gameover') body = gameover(g);
     else body = waiting(g);
     setKids(container, h('div', { class: 'gv', style: g.card && (g.phase === 'card' || g.phase === 'result') ? { '--a': deckOf(g, g.card.deck).color, '--back': teamOf(g, g.card.about)?.color } : {} }, header(g), body,
-      g.phase !== 'lobby' ? h('div', { class: 'gv-pcard gv-ppath' }, isRace(g) ? raceTrack(g, { compact: true }) : path(g, { compact: true })) : null,
+      g.phase === 'lobby' || (g.phase === 'card' && g.card?.stage === 'move') ? null : h('div', { class: 'gv-pcard gv-ppath' }, isRace(g) ? miniBoard(g) : path(g, { compact: true })),
       helper(g), g.phase !== 'lobby' ? rules(g) : null, reacts(g)));
   }
 

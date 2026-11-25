@@ -211,11 +211,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           },
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "wait"
           }
         ],
@@ -223,15 +225,19 @@
           {
             "at": 1,
             "x": 12,
+            "row": 2,
             "state": "board"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "wait"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": false
@@ -252,9 +258,9 @@
         "id": "p3",
         "name": "Dad"
       },
-      "text": "What do hockey players hit instead of a ball?",
+      "text": "What is the maximum score in a single game of ten-pin bowling?",
       "cat": "Sports",
-      "answer": "A puck",
+      "answer": "300",
       "q": 1,
       "of": 3
     },
@@ -266,7 +272,7 @@
       "timeout": false,
       "stolen": false,
       "challenged": false,
-      "answer": "A puck",
+      "answer": "300",
       "secret": null,
       "pick": null,
       "more": true,

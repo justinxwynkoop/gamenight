@@ -4922,6 +4922,7 @@
   var RACE_LEN = 12;
   var RACE_WILD = { guys: [3], gals: [RACE_LEN - 2] };
   var RACE_QUESTIONS = 3;
+  var RACE_ROWS = 6;
   var PAWN_COUNTS = [1, 2];
   var WILD_CARDS = {
     guys: [
@@ -4954,8 +4955,10 @@
     // the same, with a wild card or a prisoner to read
     trophy: 5200,
     // a trophy is won, before the next one goes on START
-    moves: 6e4
+    moves: 6e4,
     // the clock on a charade
+    move: 2e4
+    // the race: picking the space to step onto, before the pawn steps by itself
   };
   var MAX_SEEN3 = 4e3;
   var REACTIONS2 = ["\u{1F602}", "\u{1F525}", "\u{1F631}", "\u{1F44F}", "\u{1F644}", "\u{1F4AA}"];
@@ -4993,7 +4996,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5182,6 +5185,14 @@
     raceX(side, at) {
       return side === "guys" ? at : RACE_LEN + 1 - at;
     }
+    /** The team at play (or the host) picks which space its pawn steps onto after a right answer. */
+    pickSpace(by, k) {
+      const c = this.card;
+      if (this.phase !== "card" || !__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this) || c?.stage !== "move") fail("There is no space to pick right now");
+      if (by !== "host" && __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, by) !== this.turn) fail(`The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} pick the space`);
+      const step = (c.moves ?? []).find((s) => s.k === String(k ?? "").toUpperCase()) ?? fail("Pick one of the lit spaces");
+      __privateMethod(this, _GuysVsGalsGame_instances, raceResolve_fn).call(this, true, step.row);
+    }
     // ---------- the host and the TV ----------
     /** Moves things along: locks in the guesses now, or skips the wait after a result or a trophy. */
     advance() {
@@ -5191,6 +5202,12 @@
       }
       if (this.phase === "card" && this.card?.stage === "ready") {
         this.movesReady("host");
+        return;
+      }
+      if (this.phase === "card" && this.card?.stage === "move") {
+        const t = this.timer;
+        this.timer = null;
+        t?.fire();
         return;
       }
       if (this.phase === "result" || this.phase === "trophy") {
@@ -5204,6 +5221,7 @@
       if (this.phase !== "card") fail("There is no card to change");
       if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) {
         const c = this.card;
+        if (c.stage === "move") fail("That one is answered: pick a space first");
         const piles = this.deck[SIDES[this.turn].asks];
         const item = __privateMethod(this, _GuysVsGalsGame_instances, draw_fn2).call(this, c.deck, piles[c.deck]);
         if (item) c.qs[c.i] = { deck: c.deck, ...item };
@@ -5321,6 +5339,8 @@
           return this.pickActor("host", a.pid);
         case "movesReady":
           return this.movesReady("host");
+        case "space":
+          return this.pickSpace("host", a.k);
         case "nudge":
           return this.nudge(a.delta, a.side ? String(a.side) : null);
         case "endGame":
@@ -5374,6 +5394,9 @@
           return void 0;
         case "ready":
           this.movesReady(player);
+          return void 0;
+        case "space":
+          this.pickSpace(player, msg.k);
           return void 0;
         case "moves":
           this.movesWinner(player, msg.side ? String(msg.side) : null);
@@ -5456,6 +5479,7 @@
           me.canReady = true;
           me.ready = !!c.ready?.[player.id];
         }
+        if (c.stage === "move") me.canMove = side === this.turn;
         if (c.stage === "act") {
           me.canCall = side === reading;
           if (me.reader || me.actor) me.move = c.m;
@@ -5540,6 +5564,12 @@
       if (this.phase === "card") {
         if (!this.card || !DECKS[this.card.deck]) __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
         else if (this.card.stage === "act") __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.moves, () => __privateMethod(this, _GuysVsGalsGame_instances, movesDone_fn).call(this, null, true), "moves");
+        else if (this.card.stage === "move") {
+          const steps = this.card.moves?.length ? this.card.moves : __privateMethod(this, _GuysVsGalsGame_instances, steps_fn).call(this, this.turn);
+          this.card.moves = steps;
+          if (steps.length) __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.move, () => __privateMethod(this, _GuysVsGalsGame_instances, raceResolve_fn).call(this, true, __privateMethod(this, _GuysVsGalsGame_instances, defaultStep_fn).call(this, steps).row), "move");
+          else __privateMethod(this, _GuysVsGalsGame_instances, raceResolve_fn).call(this, true, null);
+        }
       } else if (this.phase === "result") {
         const r = this.result;
         if (!r || !this.card) __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
@@ -5873,11 +5903,37 @@
   };
   // ---------- the pawn race ----------
   newRace_fn = function() {
-    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, state: i ? "wait" : "board" }));
+    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, row: null, state: i ? "wait" : "board" }));
     this.race = { len: RACE_LEN, pawns: { guys: pawns(), gals: pawns() }, captured: { guys: false, gals: false }, skip: { guys: false, gals: false }, toss: null };
   };
   pawn_fn = function(side) {
     return this.race.pawns[side].find((p) => p.state === "board") ?? null;
+  };
+  /**
+   * The spaces a side's pawn can step onto next: the columns are staggered (odd ones, counted from the Guys' START, sit
+   * half a space higher), so a space touches two in the next column, the one up and the one down. From START it is any
+   * space in the first column. Empty when the next step is across. The TVs draw the same stagger: keep them in step.
+   */
+  steps_fn = function(side) {
+    const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
+    if (!p || p.at >= RACE_LEN) return [];
+    const x = this.raceX(side, p.at + 1);
+    const all = Array.from({ length: RACE_ROWS }, (_, i) => i);
+    const rows = p.at === 0 || !Number.isInteger(p.row) ? all : (x % 2 ? [p.row, p.row + 1] : [p.row - 1, p.row]).filter((r) => r >= 0 && r < RACE_ROWS);
+    const other = SIDES[side].other;
+    const theirs = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, other);
+    const wild = SIDE_ORDER.find((s) => RACE_WILD[s].includes(x));
+    return rows.map((row, i) => {
+      const step = { k: "ABCDEF"[i], x, row };
+      if (wild) step.wild = wild;
+      if (theirs && theirs.at > 0 && this.raceX(other, theirs.at) === x && theirs.row === row) step.pawn = true;
+      return step;
+    });
+  };
+  /** The step taken when nobody picks in time: toward the middle of the board. */
+  defaultStep_fn = function(steps) {
+    const mid = (RACE_ROWS - 1) / 2;
+    return steps.reduce((best, s) => Math.abs(s.row - mid) < Math.abs(best.row - mid) ? s : best, steps[0]);
   };
   /** Three questions from the decks the answering side plays (Our Facts, Stuff and Pics), read by the other team. */
   dealRace_fn = function() {
@@ -5909,11 +5965,14 @@
     if (q.img) c.img = q.img;
   };
   /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
-  movePawn_fn = function(side, n) {
+  movePawn_fn = function(side, n, row = null) {
     const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
     if (!p) return false;
     const from = p.at;
     p.at = Math.max(0, Math.min(RACE_LEN + 1, p.at + n));
+    if (p.at === 0 || p.at > RACE_LEN) p.row = null;
+    else if (Number.isInteger(row)) p.row = row;
+    else if (!Number.isInteger(p.row)) p.row = side === "guys" ? 2 : 3;
     if (p.at !== from) this.lastMove = { from: this.raceX(side, from), to: this.raceX(side, p.at), n: (this.lastMove?.n ?? 0) + 1, side, trophy: false };
     if (p.at < RACE_LEN + 1) return false;
     p.state = "home";
@@ -5921,6 +5980,7 @@
     if (next) {
       next.state = "board";
       next.at = 0;
+      next.row = null;
     }
     return true;
   };
@@ -5940,37 +6000,54 @@
     __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, text2);
     return { owner, kind: card.kind, n: card.n ?? 0, text: text2, crossed };
   };
-  /** Ending a turn on the other team's pawn takes it prisoner, once a game, while they still have a pawn waiting. */
+  /** Ending a turn on the very space the other team's pawn stands on takes it prisoner, once a game, while they still have a pawn waiting. */
   capture_fn = function(side) {
     const other = SIDES[side].other;
     const mine = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
     const theirs = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, other);
     if (!mine || !theirs || this.race.captured[side] || mine.at === 0 || theirs.at === 0) return null;
-    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at)) return null;
+    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at) || mine.row !== theirs.row) return null;
     const waiting = this.race.pawns[other].find((p) => p.state === "wait");
     if (!waiting) return null;
     theirs.state = "jail";
     theirs.at = 0;
+    theirs.row = null;
     waiting.state = "board";
     waiting.at = 0;
+    waiting.row = null;
     this.race.captured[side] = true;
     __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} take a ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, other)} pawn prisoner!`);
     return other;
   };
   raceAnswered_fn = function(right) {
     const c = this.card;
+    const steps = right ? __privateMethod(this, _GuysVsGalsGame_instances, steps_fn).call(this, this.turn) : [];
+    if (steps.length > 1) {
+      c.stage = "move";
+      c.moves = steps;
+      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} got it right`);
+      __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.move, () => __privateMethod(this, _GuysVsGalsGame_instances, raceResolve_fn).call(this, true, __privateMethod(this, _GuysVsGalsGame_instances, defaultStep_fn).call(this, steps).row), "move");
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
+      return;
+    }
+    if (right) __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} got it right`);
+    __privateMethod(this, _GuysVsGalsGame_instances, raceResolve_fn).call(this, right, steps[0]?.row ?? null);
+  };
+  /** A judged question plays out: the pawn steps onto `row` of the next column, then wild cards, prisoners, the turn. */
+  raceResolve_fn = function(right, row) {
+    const c = this.card;
     const side = this.turn;
+    delete c.moves;
     const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
     let crossed = null;
     if (right) {
       c.right += 1;
       r.moved = side;
-      if (__privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, side, 1)) crossed = side;
+      if (__privateMethod(this, _GuysVsGalsGame_instances, movePawn_fn).call(this, side, 1, row)) crossed = side;
       else {
         const p = __privateMethod(this, _GuysVsGalsGame_instances, pawn_fn).call(this, side);
         if (p && RACE_WILD[side].includes(this.raceX(side, p.at))) r.wild = __privateMethod(this, _GuysVsGalsGame_instances, wild_fn).call(this, side);
       }
-      __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} got it right`);
     } else __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, side)} missed`);
     crossed = crossed ?? r.wild?.crossed ?? null;
     r.more = right && !crossed && c.i + 1 < c.qs.length && !SIDE_ORDER.some((s) => __privateMethod(this, _GuysVsGalsGame_instances, raceWon_fn).call(this, s));
@@ -6029,7 +6106,10 @@
       len: r.len,
       wild: { guys: RACE_WILD.guys.slice(), gals: RACE_WILD.gals.slice() },
       toss: r.toss,
-      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), state: p.state }))])),
+      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), row: Number.isInteger(p.row) ? p.row : null, state: p.state }))])),
+      rows: RACE_ROWS,
+      // Where the team at play can step if it gets this question right (lettered once it is picking).
+      steps: this.phase === "card" && this.turn ? __privateMethod(this, _GuysVsGalsGame_instances, steps_fn).call(this, this.turn) : [],
       captured: { ...r.captured },
       skip: { ...r.skip }
     };
@@ -6055,6 +6135,7 @@
       case "lobby":
         return { text: "Pick your side!", next: "Guys on one team, Gals on the other" };
       case "card": {
+        if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this) && c.stage === "move") return { text: "Right!", next: `${who} pick a space to step onto, on their phones` };
         if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === "moves") {
           if (c.stage === "pick") return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} to act with` };
@@ -6121,6 +6202,10 @@
     };
     if (c.actor) v.actor = { id: c.actor, name: __privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.actor) };
     if (c.stage === "ready") v.ready = Object.keys(c.ready ?? {});
+    if (c.stage === "move") {
+      v.moves = (c.moves ?? []).map((s) => ({ ...s }));
+      v.answer = c.a;
+    }
     if (c.deck !== "moves") v.text = c.q;
     if (c.cat) v.cat = c.cat;
     if (c.img) v.img = c.img;

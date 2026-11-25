@@ -396,7 +396,6 @@ private struct GvgRaceBoard<Center: View>: View {
     let game: GuysVsGalsState
     @ViewBuilder let center: () -> Center
 
-    static var rows: Int { 6 }
 
     var body: some View {
         if let race = game.race {
@@ -439,29 +438,33 @@ private struct GvgRaceBoard<Center: View>: View {
         .overlay(Capsule().strokeBorder(GV.ink, lineWidth: 5))
     }
 
-    /// Which row a pawn walks along: the Guys' pawns on the upper middle rows, the Gals' on the lower ones.
+    /// Which space of its column a pawn stands on (0 is the top). Games saved before rows: a middle one.
     private func pawnRow(_ race: GvgRace, _ side: String, _ i: Int) -> Int {
+        if let row = race.pawns(side)[i].row { return row }
         let n = race.pawns(side).count
         return side == "guys" ? (n == 1 ? 2 : 1 + i) : (n == 1 ? 3 : 3 + i)
     }
 
-    /// The space a right answer moves the team at play onto: in front of its pawn, along its own row.
-    private func isNext(_ race: GvgRace, _ x: Int, _ row: Int) -> Bool {
-        guard game.phase == .card, let side = game.turn,
-              let i = race.pawns(side).firstIndex(where: { $0.state == "board" }) else { return false }
-        let nx = race.pawns(side)[i].x + (side == "guys" ? 1 : -1)
-        return nx >= 1 && nx <= race.len && nx == x && pawnRow(race, side, i) == row
+    /// A space the team at play can step onto with a right answer: lit while the question is read, and lettered
+    /// once the team is picking one on their phones. Follows raceSteps() in public/games/guysvsgals/shared.js.
+    private func step(_ race: GvgRace, _ x: Int, _ row: Int) -> GvgStep? {
+        guard game.phase == .card else { return nil }
+        if game.card?.stage == "move" { return game.card?.moves?.first { $0.x == x && $0.row == row } }
+        guard var s = race.steps?.first(where: { $0.x == x && $0.row == row }) else { return nil }
+        s.k = nil
+        return s
     }
 
     private func half(_ race: GvgRace, _ xs: ClosedRange<Int>) -> some View {
         GeometryReader { proxy in
             let w = proxy.size.width / CGFloat(xs.count)
-            let h = proxy.size.height / CGFloat(Self.rows)
+            let rows = race.rows ?? 6
+            let h = proxy.size.height / CGFloat(rows)
             let d = min(h * 0.72, sqrt(w * w + h * h / 4) - 8)
             HStack(spacing: 0) {
                 ForEach(Array(xs), id: \.self) { x in
                     VStack(spacing: 0) {
-                        ForEach(0..<Self.rows, id: \.self) { row in
+                        ForEach(0..<rows, id: \.self) { row in
                             dot(race, x, row, size: d).frame(width: w, height: h)
                         }
                     }
@@ -475,6 +478,7 @@ private struct GvgRaceBoard<Center: View>: View {
         let wild = race.wildSide(x)
         let seed = x * 7 + row * 3
         let fill: Color = wild.map { GV.color(game, $0) } ?? Color(hex: GvgBoardArt.fills[seed % GvgBoardArt.fills.count])
+        let next = step(race, x, row)
         var here: [String] = []
         for side in ["guys", "gals"] {
             for (i, p) in race.pawns(side).enumerated() where p.state == "board" && p.x == x && pawnRow(race, side, i) == row { here.append(side) }
@@ -504,8 +508,8 @@ private struct GvgRaceBoard<Center: View>: View {
         .frame(width: size, height: size)
         .shadow(color: .black.opacity(0.35), radius: 0, x: 3, y: 4)
         .overlay(Circle().strokeBorder(here.isEmpty ? .clear : .white, lineWidth: 6).padding(-8))
-        .overlay { if isNext(race, x, row) { GvgNextRing(color: GV.color(game, game.turn ?? "guys"), size: size) } }
-        .zIndex(here.isEmpty ? (isNext(race, x, row) ? 0.5 : 0) : 1)
+        .overlay { if let next { GvgNextRing(color: GV.color(game, game.turn ?? "guys"), size: size, letter: next.k) } }
+        .zIndex(here.isEmpty ? (next != nil ? 0.5 : 0) : 1)
         .animation(.spring(response: 0.6, dampingFraction: 0.65), value: here)
     }
 
@@ -868,7 +872,7 @@ private struct GvgDeckCard: View {
                         VStack(spacing: 14) {
                             ForEach(Array(choices.enumerated()), id: \.offset) { i, text in choice(i, text, result: result) }
                         }
-                    } else if result, let answer = game.result?.answer ?? c.answer {
+                    } else if result || c.stage == "move", let answer = game.result?.answer ?? c.answer {
                         HStack(alignment: .firstTextBaseline, spacing: 14) {
                             Text("A:").font(GV.bangers(48))
                             Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.leading).lineLimit(3).minimumScaleFactor(0.4)
@@ -962,7 +966,11 @@ private struct GvgDeckCard: View {
             let who = c.challenged ? game.name(c.about) : turn
             return "The \(who) guess what \(reader) picked, on their phones (\(c.voters?.count ?? 0) of \(c.guessers?.count ?? 0))"
         default:
-            if game.isRace { return "📖 \(reader) reads · the \(turn) say the answer out loud. Every right answer moves their pawn one space." }
+            if c.stage == "move" {
+                let letters = (c.moves ?? []).compactMap(\.k).joined(separator: ", ")
+                return "✅ Right! \(turn): pick a lit space on your phones (\(letters))"
+            }
+            if game.isRace { return "📖 \(reader) reads · the \(turn) say the answer out loud. A right answer moves their pawn onto a lit space of their choice." }
             return c.challenged ? "Challenge! The \(game.name(c.about)) answer it themselves, no help from \(reader). \(reader) judges."
                 : "📖 \(reader) reads · the \(turn) say the answer out loud"
         }
@@ -1166,10 +1174,12 @@ private struct GvgFloat: View {
     }
 }
 
-/// A pulsing ring in the team's colour, with an arrow over it: where a right answer takes the pawn.
+/// A pulsing ring in the team's colour: where a right answer can take the pawn. An arrow over it while the question
+/// is read, and the space's letter once the team is picking.
 private struct GvgNextRing: View {
     let color: Color
     let size: CGFloat
+    var letter: String? = nil
     @State private var on = false
 
     var body: some View {
@@ -1177,9 +1187,17 @@ private struct GvgNextRing: View {
             Circle().strokeBorder(.white, lineWidth: 6).padding(-8)
             Circle().strokeBorder(color, lineWidth: on ? 14 : 8).padding(on ? -22 : -14)
                 .shadow(color: color, radius: on ? 22 : 10)
-            Text("▼").font(.system(size: size * 0.3, weight: .black)).foregroundStyle(.white)
-                .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
-                .offset(y: -size * 0.72 - (on ? 6 : 0))
+            if let letter {
+                Text(letter).font(GV.bangers(size * 0.4)).foregroundStyle(GV.ink)
+                    .frame(width: size * 0.54, height: size * 0.54)
+                    .background(Circle().fill(.white))
+                    .overlay(Circle().strokeBorder(GV.ink, lineWidth: 4))
+                    .offset(y: -size * 0.7 - (on ? 6 : 0))
+            } else {
+                Text("▼").font(.system(size: size * 0.3, weight: .black)).foregroundStyle(.white)
+                    .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+                    .offset(y: -size * 0.72 - (on ? 6 : 0))
+            }
         }
         .allowsHitTesting(false)
         .onAppear { withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) { on = true } }

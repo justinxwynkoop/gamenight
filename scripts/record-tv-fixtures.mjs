@@ -165,20 +165,28 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
   msg(guys[0], { t: 'start' });
   const next = () => tickBy(gg.result.wild || gg.result.captured ? GT.wild : GT.result);
   const pawn = (side) => gg.race.pawns[side].find((p) => p.state === 'board');
+  /** Someone on the team at play picks the space to step onto (after a right answer with a choice). */
+  const pick = (k) => { if (gg.phase === 'card' && gg.card.stage === 'move') msg((gg.turn === 'guys' ? guys : gals)[0], { t: 'space', k }); };
   saveG('race-card');
-  judge(true);
+  judge(true); pick('C');
   saveG('race-result-right');           // one space, and the next question on the card
+  next();
+  saveG('race-second');                 // the second question on the card: the two spaces a right answer can reach are lit
+  judge(true);
+  saveG('race-move');                   // right again: the Gals are picking the space up or the space down
+  pick('B');
+  saveG('race-moved');
   next();
   judge(false);
   next();                    // the Guys' turn
-  pawn('guys').at = 2;
-  judge(true);                          // onto their own wild space: a wild card at once
+  Object.assign(pawn('guys'), { at: 2, row: 2 });
+  judge(true); pick('A');               // onto their own wild space: a wild card at once
   saveG('race-wild');
   next();
   judge(false); next();      // the Gals' turn
-  pawn('guys').at = 4;
-  pawn('gals').at = 8;                  // x 5: one more right lands on the Guys' pawn at x 4
-  judge(true); next();
+  Object.assign(pawn('guys'), { at: 4, row: 2 });
+  Object.assign(pawn('gals'), { at: 8, row: 2 });   // x 5: one more right can land on the Guys' pawn at x 4
+  judge(true); pick('B'); next();
   judge(false);
   saveG('race-capture');
   next();

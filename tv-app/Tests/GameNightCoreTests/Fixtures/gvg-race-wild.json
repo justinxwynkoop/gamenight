@@ -187,14 +187,15 @@
     "log": [
       "Coin toss: the Gals go first",
       "The Gals got it right",
+      "The Gals got it right",
       "The Gals missed",
-      "Tailgate party! The Guys move ahead 2 spaces.",
-      "The Guys got it right"
+      "The Guys got it right",
+      "Tailgate party! The Guys move ahead 2 spaces."
     ],
     "lastMove": {
       "from": 3,
       "to": 5,
-      "n": 3,
+      "n": 4,
       "side": "guys",
       "trophy": false
     },
@@ -214,27 +215,33 @@
           {
             "at": 5,
             "x": 5,
+            "row": 2,
             "state": "board"
           },
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "wait"
           }
         ],
         "gals": [
           {
-            "at": 1,
-            "x": 12,
+            "at": 2,
+            "x": 11,
+            "row": 3,
             "state": "board"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "wait"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": false
@@ -245,7 +252,7 @@
       }
     },
     "card": {
-      "n": 3,
+      "n": 4,
       "deck": "facts",
       "deckName": "Our Facts",
       "about": "gals",
@@ -255,9 +262,9 @@
         "id": "p5",
         "name": "Mom"
       },
-      "text": "What does Cinderella lose at the ball?",
+      "text": "In The Devil Wears Prada, what is the name of the scary magazine editor?",
       "cat": "Movies & TV",
-      "answer": "A glass slipper",
+      "answer": "Miranda Priestly",
       "q": 1,
       "of": 3
     },
@@ -269,7 +276,7 @@
       "timeout": false,
       "stolen": false,
       "challenged": false,
-      "answer": "A glass slipper",
+      "answer": "Miranda Priestly",
       "secret": null,
       "pick": null,
       "more": true,
