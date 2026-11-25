@@ -72,7 +72,9 @@ export const CHALLENGES = 3;               // challenge tokens per team
 /** The pawn race: the play modes, the track, and where the wild spaces are (counted from the Guys' START). */
 export const MODES = ['trophy', 'race'];
 export const RACE_LEN = 12;                // spaces between the two STARTs
-export const RACE_WILD = { guys: [3, 8], gals: [5, 10] };
+// One wild column each, like the classic board: the Guys' in their own half (three in from their START), the Gals' the
+// same distance in from theirs.
+export const RACE_WILD = { guys: [3], gals: [RACE_LEN - 2] };
 export const RACE_QUESTIONS = 3;           // questions on a card
 export const PAWN_COUNTS = [1, 2];         // a quick race, or the standard two pawns each
 /** Wild cards, original to this game. Each helps the side it belongs to ({O}) or holds up the other ({X}). */
@@ -574,7 +576,8 @@ export class GuysVsGalsGame {
     const side = this.turn;
     const reading = SIDES[side].other;
     const piles = this.deck[SIDES[side].asks];
-    const decks = ['facts', 'stuff', 'pics'].filter((d) => piles[d].length);
+    // The classic race cards are plain question cards: three questions and answers, no pictures.
+    const decks = ['facts', 'stuff'].filter((d) => piles[d].length);
     const qs = [];
     for (let i = 0; i < RACE_QUESTIONS; i++) {
       const d = decks[Math.floor(this.room.rng() * decks.length)] ?? 'facts';

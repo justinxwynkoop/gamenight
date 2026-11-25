@@ -96,9 +96,9 @@ export function mount(container, { send }) {
   function chips(g, c) {
     const d = deckOf(g, c.deck);
     return h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-      h('span', { class: 'gv-pchip', style: { '--d': d.color } }, d.name),
+      isRace(g) ? null : h('span', { class: 'gv-pchip', style: { '--d': d.color } }, d.name),
       h('span', { class: `gv-pchip ${c.about}` }, aboutText(c.about)),
-      c.cat ? h('span', { class: 'gv-pchip', style: { '--d': '#fff' } }, c.cat) : null);
+      c.cat && !isRace(g) ? h('span', { class: 'gv-pchip', style: { '--d': '#fff' } }, c.cat) : null);
   }
 
   function challengeBtn(g) {

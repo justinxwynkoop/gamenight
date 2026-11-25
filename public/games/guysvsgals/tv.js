@@ -153,10 +153,11 @@ function deckCard(g) {
   const d = deckOf(g, c.deck);
   const result = g.phase === 'result';
   const r = g.result;
+  const race = isRace(g);
   const chips = h('div', { style: { display: 'flex', gap: '1.2vmin', flexWrap: 'wrap', alignItems: 'center' } },
-    h('span', { class: 'gv-chip deck', style: { '--d': d.color } }, d.name),
+    race ? null : h('span', { class: 'gv-chip deck', style: { '--d': d.color } }, d.name),
     h('span', { class: `gv-chip ${c.about}` }, aboutText(c.about)),
-    c.cat ? h('span', { class: 'gv-chip ghost' }, c.cat) : null,
+    c.cat && !race ? h('span', { class: 'gv-chip ghost' }, c.cat) : null,
     c.of ? h('span', { class: 'gv-chip gv-qcount' }, `QUESTION ${c.q} OF ${c.of}`) : null);
   const top = h('div', { class: 'gv-card-top' }, chips, c.deck === 'moves' && !result ? ring(g.timer) : null);
   const stamp = c.challenged && !result ? h('div', { class: 'gv-stamp' }, 'CHALLENGE!') : null;
@@ -241,7 +242,8 @@ function winScreen(g) {
 
 const BOARD_ROWS = 6;
 const DOT_FILLS = ['#ff8a8a', '#ffd76a', '#8be08b', '#ffb26b', '#ff9ccf', '#8fc8ff', '#c7a6ff', '#7fe0d4'];
-const DOT_ICONS = ['⚽', '🍕', '🔧', '💄', '🚗', '🎸', '👠', '🏈', '🛒', '🎣', '🧁', '📺', '🛠️', '👗', '🎮', '🍳', '🏀', '💅', '🔨', '🎤', '🏌️', '🧶', '🍔', '🛋️'];
+// Pictures on the plain spaces: Microsoft's 3D emoji that come with the game (pics/, MIT, art/SOURCES.md).
+const DOT_PICS = ['american-football', 'cupcake', 'wrench', 'lipstick', 'racing-car', 'high-heeled-shoe', 'video-game', 'handbag', 'hammer', 'nail-polish', 'baseball', 'bouquet', 'toolbox', 'dress', 'fishing-pole', 'ring', 'bowling', 'shopping-bags', 'pickup-truck', 'yarn', 'pool-8-ball', 'teapot', 'motorcycle', 'gem-stone'];
 
 /** Which row a pawn walks along: the Guys' pawns on the upper middle rows, the Gals' on the lower ones. */
 export function pawnRow(g, side, i) {
@@ -259,7 +261,7 @@ function boardDot(g, x, row) {
       if (p.state === 'board' && p.x === x && pawnRow(g, side, i) === row) kids.push(token(side, '', 128, 'gv-dot-pawn'));
     });
   }
-  const label = wild ? h('b', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase()) : h('i', {}, DOT_ICONS[seed % DOT_ICONS.length]);
+  const label = wild ? h('b', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase()) : pic(DOT_PICS[seed % DOT_PICS.length], 'gv-dot-pic');
   return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''}`, 'data-x': x, 'data-row': row,
     style: { '--d': wild ? teamOf(g, wild)?.color : DOT_FILLS[seed % DOT_FILLS.length] } }, label, kids);
 }

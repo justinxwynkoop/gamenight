@@ -4889,7 +4889,7 @@
   var CHALLENGES = 3;
   var MODES = ["trophy", "race"];
   var RACE_LEN = 12;
-  var RACE_WILD = { guys: [3, 8], gals: [5, 10] };
+  var RACE_WILD = { guys: [3], gals: [RACE_LEN - 2] };
   var RACE_QUESTIONS = 3;
   var PAWN_COUNTS = [1, 2];
   var WILD_CARDS = {
@@ -5814,7 +5814,7 @@
     const side = this.turn;
     const reading = SIDES[side].other;
     const piles = this.deck[SIDES[side].asks];
-    const decks = ["facts", "stuff", "pics"].filter((d) => piles[d].length);
+    const decks = ["facts", "stuff"].filter((d) => piles[d].length);
     const qs = [];
     for (let i = 0; i < RACE_QUESTIONS; i++) {
       const d = decks[Math.floor(this.room.rng() * decks.length)] ?? "facts";
