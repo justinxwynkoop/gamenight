@@ -927,11 +927,6 @@
    },
    {
     "cat": "Guy Code",
-    "q": "At a row of empty urinals, which one does guy code say you never pick?",
-    "a": "The one right next to another guy"
-   },
-   {
-    "cat": "Guy Code",
     "q": "What is 'calling shotgun'?",
     "a": "Claiming the front passenger seat"
    },
@@ -969,11 +964,6 @@
     "cat": "Guy Code",
     "q": "What is a guy's 'spank bank'?",
     "a": "The mental pictures he saves for private time"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "What is a 'boys' trip' most likely to be planned around?",
-    "a": "Golf, a game, fishing or Vegas"
    },
    {
     "cat": "Outdoors",
@@ -1204,56 +1194,6 @@
     "cat": "General Guy Culture",
     "q": "What is a 'side quest' in everyday slang?",
     "a": "An unexpected extra task or detour unrelated to the main objective"
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "Why can a man hear a tiny noise from the garage but not someone calling him from the next room?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "How many trips should it take to carry every grocery bag inside?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What does 'I know a shortcut' usually add to a road trip?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "How long can a man stare at an open hood before deciding what is wrong?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the difference between a project car and a car that is broken?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What does 'one more episode' mean when the game is on?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "Why does every garage contain at least one mystery box of screws?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the correct response to 'watch this' when a guy is holding a power tool?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "How many black T-shirts does one man need before they become a collection?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the real purpose of buying a truck with a towing package?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
    },
    {
     "cat": "Sports & Cars",
@@ -1504,6 +1444,101 @@
     "cat": "Sports & Cars",
     "q": "Why do performance cars often have drilled or slotted brake rotors?",
     "a": "To dissipate intense heat, vent gases, and clear water from the brake pad surface during aggressive braking"
+   },
+   {
+    "cat": "Grill & Smoker",
+    "q": "What is the pink layer just under the bark of smoked meat called?",
+    "a": "The smoke ring"
+   },
+   {
+    "cat": "Poker Night",
+    "q": "In poker, what does it mean to hold 'the nuts'?",
+    "a": "The best possible hand at that moment"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "On a buck, what does a hunter mean by the 'rack'?",
+    "a": "The antlers"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is a 'golden sombrero'?",
+    "a": "Striking out four times in one game"
+   },
+   {
+    "cat": "Men's Grooming & Style",
+    "q": "What is 'manscaping'?",
+    "a": "Trimming or shaving a man's body hair"
+   },
+   {
+    "cat": "Guy Code",
+    "q": "What does 'GOAT' stand for in a sports argument?",
+    "a": "Greatest of all time"
+   },
+   {
+    "cat": "Booze & Bars",
+    "q": "Behind a bar, what is a 'jigger'?",
+    "a": "The small metal cup used to measure a shot"
+   },
+   {
+    "cat": "Booze & Bars",
+    "q": "What plant gives beer its bitter flavor?",
+    "a": "Hops"
+   },
+   {
+    "cat": "Sports",
+    "q": "In football, what is a 'Hail Mary'?",
+    "a": "A long, desperate pass at the end of a half or game"
+   },
+   {
+    "cat": "Sports",
+    "q": "In football, what is it called when the quarterback is tackled behind the line with the ball?",
+    "a": "A sack"
+   },
+   {
+    "cat": "Sports",
+    "q": "In hockey, what machine resurfaces the ice between periods?",
+    "a": "A Zamboni"
+   },
+   {
+    "cat": "Sports",
+    "q": "In hockey, what is a 'power play'?",
+    "a": "Playing with more skaters because the other team has a player in the penalty box"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is a 'walk-off' home run?",
+    "a": "A home run that ends the game for the home team"
+   },
+   {
+    "cat": "Sports",
+    "q": "In golf, what is a 'bogey'?",
+    "a": "One stroke over par on a hole"
+   },
+   {
+    "cat": "Grill & Smoker",
+    "q": "What is the fat running through a good steak called?",
+    "a": "Marbling"
+   },
+   {
+    "cat": "Garage & Tools",
+    "q": "What L-shaped tool with six sides is also called a hex key?",
+    "a": "An Allen wrench"
+   },
+   {
+    "cat": "Garage & Tools",
+    "q": "What do you squeeze from a gun to seal the gap around a bathtub?",
+    "a": "Caulk"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What part of the exhaust keeps a car from being deafening?",
+    "a": "The muffler"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "In duck hunting, what is a 'decoy'?",
+    "a": "A fake duck that lures real ones in"
    }
   ],
   "pics": [
@@ -2937,11 +2972,6 @@
    },
    {
     "cat": "Under It All",
-    "q": "What does a 'strapless' dress usually force a woman to do all night?",
-    "a": "Keep pulling it up"
-   },
-   {
-    "cat": "Under It All",
     "q": "What is a 'thong' designed to hide?",
     "a": "Panty lines"
    },
@@ -2949,11 +2979,6 @@
     "cat": "Under It All",
     "q": "What are 'chicken cutlets' when a woman is getting dressed?",
     "a": "Silicone pads that go inside a bra"
-   },
-   {
-    "cat": "Under It All",
-    "q": "What is the first thing most women take off the second they get home?",
-    "a": "Their bra"
    },
    {
     "cat": "Body & Health",
@@ -2999,26 +3024,6 @@
     "cat": "Girl Code",
     "q": "What is the number one rule of girl code about a friend's ex?",
     "a": "You do not date him"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "Why do women go to the bathroom in groups?",
-    "a": "To talk about everyone at the table"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "What does it mean when she sends a screenshot of your text to the group chat?",
-    "a": "Her friends are helping her write the reply"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "What is a 'girls' trip' most likely to involve?",
-    "a": "Wine, a pool or a spa, and lots of photos"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "What does 'I'm fine' usually mean?",
-    "a": "She is not fine"
    },
    {
     "cat": "Girl Code",
@@ -3276,56 +3281,6 @@
     "a": "A curated list of gifts the person or couple would like to receive"
    },
    {
-    "cat": "Funny Debate",
-    "q": "What is the one-word review of a haircut that took three hours?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What does 'I'm ready in five minutes' most likely mean in a sitcom version of reality?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "Which is more dangerous: 'Do whatever you want' or 'It's fine'? Explain your survival strategy.",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the correct response when someone says, 'I have nothing to wear' in front of a full closet?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the difference between 'I don't care where we eat' and actually not caring?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "If a friend says 'be honest,' how honest is too honest?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the most suspicious phrase to hear while someone is holding your phone?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the socially acceptable number of photos to take before choosing one?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What does 'we need to talk' do to a person's heart rate?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
-    "cat": "Funny Debate",
-    "q": "What is the fastest way to turn a quick Target run into a full afternoon?",
-    "a": "No right answer. Reader: count it as right if it made you laugh."
-   },
-   {
     "cat": "Everyday Life",
     "q": "Why does placing a wooden spoon across a pot of boiling water temporarily prevent boil-overs, and when does it fail?",
     "a": "The dry, cooler wood pops surface foam bubbles on contact; once the wood heats up and becomes saturated, bubbles spill over anyway"
@@ -3477,11 +3432,6 @@
    },
    {
     "cat": "Everyday Life",
-    "q": "What is 'micellar water' used for in skincare?",
-    "a": "A gentle cleanser containing tiny oil molecules suspended in soft water that attract and lift makeup, dirt, and oil without harsh rubbing"
-   },
-   {
-    "cat": "Everyday Life",
     "q": "Why should you never store batteries loose in a junk drawer where they can touch keys or coins?",
     "a": "Metal objects can bridge the positive and negative terminals, causing a short circuit, overheating, or fire"
    },
@@ -3574,6 +3524,91 @@
     "cat": "Everyday Life",
     "q": "Why do you put a wooden toothpick into the center of a cake before taking it out of the oven?",
     "a": "If it comes out clean or with a few moist crumbs (no wet batter), the center is fully baked"
+   },
+   {
+    "cat": "Under It All",
+    "q": "What is a 'bralette'?",
+    "a": "A soft bra with no underwire"
+   },
+   {
+    "cat": "Under It All",
+    "q": "What does 'VPL' stand for?",
+    "a": "Visible panty line"
+   },
+   {
+    "cat": "Weddings",
+    "q": "What is a maid of honor called if she is married?",
+    "a": "A matron of honor"
+   },
+   {
+    "cat": "Wine & Cocktails",
+    "q": "What does 'brut' mean on a bottle of bubbly?",
+    "a": "Dry, with very little sugar"
+   },
+   {
+    "cat": "Hair & Nails",
+    "q": "What are 'acrylics' at a nail salon?",
+    "a": "Fake nails built from liquid and powder"
+   },
+   {
+    "cat": "Body & Health",
+    "q": "What does PMS stand for?",
+    "a": "Premenstrual syndrome"
+   },
+   {
+    "cat": "Weddings",
+    "q": "At a wedding, what does the groom traditionally take off the bride's leg?",
+    "a": "The garter"
+   },
+   {
+    "cat": "Wine & Cocktails",
+    "q": "What is a wine expert at a restaurant called?",
+    "a": "A sommelier"
+   },
+   {
+    "cat": "Wine & Cocktails",
+    "q": "What in red wine gives that dry, puckering feeling in your mouth?",
+    "a": "Tannins"
+   },
+   {
+    "cat": "Beauty & Skincare",
+    "q": "What goes on under makeup to help it go on smooth and stay put?",
+    "a": "Primer"
+   },
+   {
+    "cat": "Hair & Nails",
+    "q": "What are 'curtain bangs'?",
+    "a": "Bangs parted in the middle and swept to each side"
+   },
+   {
+    "cat": "Fashion & Style",
+    "q": "What is a 'romper'?",
+    "a": "A one-piece outfit with a top and shorts joined together"
+   },
+   {
+    "cat": "Fashion & Style",
+    "q": "What is a 'kitten heel'?",
+    "a": "A short, thin heel, about two inches or less"
+   },
+   {
+    "cat": "Body & Health",
+    "q": "What is a 'doula'?",
+    "a": "A trained helper who supports a mother through labor and birth"
+   },
+   {
+    "cat": "Body & Health",
+    "q": "What is ovulation?",
+    "a": "When an ovary releases an egg"
+   },
+   {
+    "cat": "Girl Code",
+    "q": "In a couple, what is a 'hall pass'?",
+    "a": "Permission to sleep with one named person, usually a celebrity"
+   },
+   {
+    "cat": "Hair & Nails",
+    "q": "What is a 'top knot'?",
+    "a": "Hair pulled up into a bun on top of the head"
    }
   ],
   "pics": [

@@ -690,6 +690,14 @@ test('the Grown-Ups set is valid, is where new games start, and the first player
       }
     }
   }
+  // Jason: "It's trivia". Every question has one right answer: no debate or opinion prompts in any set.
+  for (const set of Object.values(SETS)) {
+    for (const half of [set.guyStuff, set.galStuff]) {
+      for (const q of [...half.facts, ...half.stuff, ...half.pics]) {
+        assert.ok(q.a && !/no right answer/i.test(q.a) && q.cat !== 'Funny Debate', `no right answer: ${q.q}`);
+      }
+    }
+  }
   const { room, g, G, W, msg } = setup();
   assert.equal(g.settings.setId, 'grownups');
   assert.equal(room.publicView().game.setTitle, 'Grown-Ups Night');
