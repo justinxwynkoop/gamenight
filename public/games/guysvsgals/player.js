@@ -49,6 +49,7 @@ export function mount(container, { send }) {
         h('p', { class: 'dim' }, 'The Guys answer questions about gal stuff. The Gals answer questions about guy stuff. Who knows the other side better?'),
         sidePicker(g)),
       modePicker(g),
+      setPicker(g),
       g.me?.canStart
         ? [btn(ready ? 'Start the battle!' : 'Both sides need a player', 'go huge', () => send({ t: 'start' }), { disabled: !ready }),
           h('p', { class: 'dim' }, 'You joined first, so you start the game when everyone is in.')]
@@ -56,6 +57,15 @@ export function mount(container, { send }) {
       anotherPlayer(),
       rules(g),
     ];
+  }
+
+  /** Which questions: the first player picks the set (the host page has the same list); everyone else sees which. */
+  function setPicker(g) {
+    const sets = g.sets ?? [];
+    if (!g.me?.canStart || sets.length < 2) return h('p', { class: 'dim' }, `📚 Questions: ${g.setTitle || 'All question sets'}`);
+    return card(h('h2', {}, 'Which questions?'),
+      h('div', { class: 'gv-sides gv-modes gv-sets' }, sets.map((x) => h('button', { type: 'button', class: `gv-side ${g.settings.setId === x.id ? 'on' : ''}`, 'data-set': x.id,
+        onclick: () => send({ t: 'set', id: x.id }) }, `📚 ${x.title}`))));
   }
 
   /** Tug of war or race: the first player (or the host) picks; everyone else sees which. */
