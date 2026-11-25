@@ -38,11 +38,14 @@
 
 /* the tug-of-war path along the foot: winner's circle, green, the coloured spaces, START, and back out the other side */
 .gv-tracks { padding: 1.6vmin 2vmin; background: #fff; }
+/* the board: a deep blue field of round spaces with a yellow and red rim, split down the middle into the two teams' halves */
+.gv-tracks, .gv-ppath { background: radial-gradient(circle at 30% 20%, #3f74ea, #1a3fae 70%) !important; box-shadow: inset 0 0 0 .7vmin var(--gv-yellow), inset 0 0 0 1.2vmin #e8323c, var(--gv-drop) var(--gv-drop) 0 var(--gv-ink); }
 .gv-path { display: grid; grid-template-columns: auto 1fr auto; gap: 1.6vmin; align-items: center; }
 .gv-spaces { position: relative; display: grid; height: 9vmin; }
-.gv-space { position: relative; display: grid; place-items: center; margin: 0 .35vmin; background: var(--d); border: .45vmin solid var(--gv-ink); font-family: 'Bangers', sans-serif;
-  font-size: 2.4vmin; letter-spacing: .04em; color: var(--gv-ink); transform: skewX(-8deg); }
-.gv-space span { transform: skewX(8deg); }
+.gv-space { position: relative; display: grid; place-items: center; justify-self: center; align-self: center; width: min(100% - .5vmin, 9vmin); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--d) 70%, #fff), var(--d) 65%); border: .45vmin solid var(--gv-ink); box-shadow: inset 0 -.6vmin 0 rgb(0 0 0 / .18);
+  font-family: 'Bangers', sans-serif; font-size: 2vmin; letter-spacing: .03em; color: var(--gv-ink); }
+.gv-spaces::after { content: ''; position: absolute; left: 50%; top: -.6vmin; bottom: -.6vmin; border-left: .4vmin dashed rgb(255 255 255 / .55); pointer-events: none; }
 .gv-space.start { background: #9b5cff; color: #fff; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
 .gv-space.green { background: #3ddc84; }
 .gv-space.here { box-shadow: 0 0 0 .5vmin #fff, 0 0 0 1vmin var(--gv-ink); z-index: 1; }
@@ -89,7 +92,8 @@
 .gv-member .role { font-style: normal; }
 .gv-clock-badge.reading { background: var(--gv-cyan); }
 
-/* the question: a game card. A thick frame in the deck's colour, rounded corners, the deck's name on a banner across the top. */
+/* the question: a printed question card. White, a dark stripe down the left with the game's name, Q: and A: lines,
+   and the card's back (blue for guy stuff, pink for gal stuff) peeking out from the pile underneath. */
 .gv-center { position: relative; display: grid; place-items: center; min-height: 0; }
 .gv-card { position: relative; width: 100%; max-height: 100%; box-sizing: border-box; background: #fff; padding: 2.6vmin 3vmin 3vmin; transform: rotate(.4deg);
   display: grid; gap: calc(2vmin * var(--fit, 1)); animation: gv-card-in .45s cubic-bezier(.2, .9, .3, 1.2) both; }
@@ -207,11 +211,16 @@
 /* the five decks */
 .gv-chip.deck { background: var(--d); color: var(--gv-ink); }
 .gv-deckpill { background: var(--d) !important; font-family: 'Bangers', sans-serif; letter-spacing: .05em; font-size: 2.6vmin; }
-.gv-card { border: 1.5vmin solid var(--a); outline: var(--gv-line) solid var(--gv-ink); border-radius: 3vmin; padding-top: 0; }
-.gv-card-top { height: auto; min-height: 7vmin; align-items: center; margin: 0 -3vmin; padding: .8vmin 3vmin 1.6vmin; background: var(--a); border-radius: 1.4vmin 1.4vmin 0 0; }
-.gv-card-top .gv-chip.deck { background: none; border: 0; padding: 0; font-size: 6vmin; line-height: 1; letter-spacing: .05em; color: #fff; -webkit-text-stroke: .35vmin var(--gv-ink); paint-order: stroke fill; text-shadow: .5vmin .5vmin 0 var(--gv-ink); }
-.gv-card-top .gv-chip:not(.deck) { box-shadow: .4vmin .4vmin 0 var(--gv-ink); }
+.gv-card { border-radius: 1.4vmin; padding-left: 11vmin; margin: 0 2vmin 2vmin 0;
+  box-shadow: 1.8vmin 1.8vmin 0 0 var(--back, var(--gv-blue)), 1.8vmin 1.8vmin 0 var(--gv-line) var(--gv-ink); }
+.gv-stripe { position: absolute; left: 1.4vmin; top: 1.4vmin; bottom: 1.4vmin; width: 7vmin; background: var(--gv-ink); border-radius: 1vmin; display: grid; place-items: center; overflow: hidden; }
+.gv-stripe::before { content: ''; position: absolute; inset: .7vmin; border: .3vmin solid #fff; border-radius: 3.5vmin; }
+.gv-stripe span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Bangers', sans-serif; font-size: 4.4vmin; letter-spacing: .12em; color: #fff; white-space: nowrap; }
+.gv-stripe span b { color: var(--gv-yellow); font-weight: 400; font-size: .7em; margin: 1vmin 0; }
+.gv-card-top { height: auto; min-height: 5vmin; align-items: center; }
 .gv-card .gv-foot { border-top: .4vmin dashed color-mix(in srgb, var(--gv-ink) 45%, transparent); padding-top: 1.4vmin; }
+.gv-card .gv-q:not(.big) { text-align: left; text-wrap: pretty; padding-left: 0; }
+.gv-qa { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: .04em; margin-right: .5em; color: var(--back, var(--gv-blue)); -webkit-text-stroke: .25vmin var(--gv-ink); paint-order: stroke fill; }
 .gv-body { display: grid; gap: calc(2vmin * var(--fit, 1)); min-width: 0; }
 .gv-body > * { min-width: 0; }
 .gv-body.with-pic { grid-template-columns: auto 1fr; align-items: center; }
@@ -219,7 +228,7 @@
 .gv-body.with-pic .gv-pic { grid-row: span 2; }
 .gv-pic { width: calc(30vmin * var(--fit, 1)); height: calc(30vmin * var(--fit, 1)); object-fit: contain; padding: 2vmin; background: var(--gv-paper); border: .5vmin solid var(--gv-ink); box-shadow: .8vmin .8vmin 0 var(--gv-ink); transform: rotate(-2deg); }
 .gv-choices.three { grid-template-columns: 1fr; gap: 1.6vmin; }
-.gv-answer { justify-self: center; text-align: center; font-size: calc(4.4vmin * var(--fit, 1)); overflow-wrap: anywhere; font-weight: 900; padding: 1.2vmin 3vmin; background: var(--gv-green); border: .5vmin solid var(--gv-ink); box-shadow: .7vmin .7vmin 0 var(--gv-ink);
+.gv-answer { justify-self: start; text-align: left; font-size: calc(4.4vmin * var(--fit, 1)); overflow-wrap: anywhere; font-weight: 900; padding: 1.2vmin 3vmin; background: var(--gv-green); border: .5vmin solid var(--gv-ink); box-shadow: .7vmin .7vmin 0 var(--gv-ink);
   animation: gv-slam .5s cubic-bezier(.2, 1.6, .4, 1) both; transform: rotate(-1deg); }
 .gv-answer small { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2.4vmin; letter-spacing: .1em; }
 .gv-moves { display: grid; gap: 2.6vmin; justify-items: center; }
@@ -238,7 +247,8 @@
 .gv p { margin: .25em 0; }
 .gv .dim { color: var(--gv-dim); }
 .gv-pcard { background: #fff; border: 3px solid var(--gv-ink); box-shadow: 5px 5px 0 var(--gv-ink); padding: 16px; display: grid; gap: 10px; }
-.gv-pcard.accent { background: #fff; border: 6px solid var(--a, var(--gv-ink)); outline: 3px solid var(--gv-ink); border-radius: 16px; }
+.gv-pcard.accent { background: #fff; border-left: 16px solid var(--gv-ink); border-radius: 10px; margin: 0 8px 8px 0; box-shadow: 8px 8px 0 0 var(--back, var(--gv-blue)), 8px 8px 0 3px var(--gv-ink); }
+.gv-pcard .gv-qa { font-size: 1.1em; }
 .gv-phead { position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 8px 14px 0; background: var(--c); border: 3px solid var(--gv-ink); box-shadow: 5px 5px 0 var(--gv-ink); color: #fff; }
 .gv-phead::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,.3) 1.5px, transparent 2px) 0 0 / 9px 9px; }
 .gv-phead > * { position: relative; }
@@ -295,7 +305,7 @@
 .gv-ppath { padding: 12px 10px 10px; }
 .gv-path.compact { gap: 6px; }
 .gv-path.compact .gv-spaces { height: 26px; }
-.gv-path.compact .gv-space { margin: 0 1px; border-width: 2px; }
+.gv-path.compact .gv-space { width: min(100% - 1px, 26px); border-width: 2px; font-size: 0; }
 .gv-path.compact .gv-space.here { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gv-ink); }
 .gv-path.compact .gv-cup .gv-trophy { width: 34px; height: 34px; margin-top: -12px; }
 .gv-path.compact .gv-circle { gap: 2px; padding: 3px 5px; border-width: 2px; min-height: 0; }
