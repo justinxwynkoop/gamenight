@@ -1,0 +1,296 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3"
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff"
+      }
+    ],
+    "units": [
+      {
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Mom",
+          "Maya"
+        ]
+      },
+      {
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Dad",
+          "Leo"
+        ]
+      }
+    ],
+    "gameId": "guysvsgals",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "guysvsgals",
+    "scoreFormat": "none",
+    "lobbyTitle": "Guys vs Gals",
+    "phase": "card",
+    "status": "card",
+    "hosted": false,
+    "pos": 0,
+    "green": 5,
+    "path": [
+      "facts",
+      "stuff",
+      "pics",
+      "lives",
+      "moves",
+      "any"
+    ],
+    "greenColor": "#3ddc84",
+    "first": "gals",
+    "decks": [
+      {
+        "id": "facts",
+        "name": "Our Facts",
+        "short": "Facts",
+        "color": "#9b5cff"
+      },
+      {
+        "id": "stuff",
+        "name": "Our Stuff",
+        "short": "Stuff",
+        "color": "#ffd23f"
+      },
+      {
+        "id": "pics",
+        "name": "Our Pics",
+        "short": "Pics",
+        "color": "#ff8a3d"
+      },
+      {
+        "id": "lives",
+        "name": "Our Lives",
+        "short": "Lives",
+        "color": "#2ec5ff"
+      },
+      {
+        "id": "moves",
+        "name": "Our Moves",
+        "short": "Moves",
+        "color": "#ff3b5c"
+      }
+    ],
+    "teams": [
+      {
+        "side": "guys",
+        "id": "t2",
+        "name": "Guys",
+        "color": "#3b8bff",
+        "trophies": 0,
+        "challenges": 3,
+        "members": [
+          {
+            "id": "p3",
+            "name": "Dad",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p4",
+            "name": "Leo",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      },
+      {
+        "side": "gals",
+        "id": "t1",
+        "name": "Gals",
+        "color": "#ff4fa3",
+        "trophies": 0,
+        "challenges": 3,
+        "members": [
+          {
+            "id": "p5",
+            "name": "Mom",
+            "connected": true,
+            "picked": true
+          },
+          {
+            "id": "p6",
+            "name": "Maya",
+            "connected": true,
+            "picked": true
+          }
+        ],
+        "connected": true
+      }
+    ],
+    "turn": "gals",
+    "trophy": 1,
+    "target": 2,
+    "settings": {
+      "setId": "family",
+      "target": 2,
+      "challenges": true,
+      "mode": "race",
+      "pawns": 2
+    },
+    "mode": "race",
+    "line": {
+      "text": "Right!",
+      "next": "The Gals pick a space to step onto, on their phones"
+    },
+    "timer": {
+      "kind": "move",
+      "totalMs": 20000,
+      "leftMs": 20000
+    },
+    "reactions": [],
+    "reactionList": [
+      "😂",
+      "🔥",
+      "😱",
+      "👏",
+      "🙄",
+      "💪"
+    ],
+    "targets": [
+      1,
+      2,
+      3
+    ],
+    "log": [
+      "Coin toss: the Gals go first",
+      "The Gals got it right",
+      "The Gals got it right"
+    ],
+    "lastMove": {
+      "from": 13,
+      "to": 12,
+      "n": 1,
+      "side": "gals",
+      "trophy": false
+    },
+    "race": {
+      "len": 12,
+      "wild": {
+        "guys": [
+          3
+        ],
+        "gals": [
+          10
+        ]
+      },
+      "toss": "gals",
+      "pawns": {
+        "guys": [
+          {
+            "at": 0,
+            "x": 0,
+            "row": null,
+            "state": "board"
+          },
+          {
+            "at": 0,
+            "x": 0,
+            "row": null,
+            "state": "wait"
+          }
+        ],
+        "gals": [
+          {
+            "at": 1,
+            "x": 12,
+            "row": 2,
+            "state": "board"
+          },
+          {
+            "at": 0,
+            "x": 13,
+            "row": null,
+            "state": "wait"
+          }
+        ]
+      },
+      "rows": 6,
+      "steps": [
+        {
+          "k": "A",
+          "x": 11,
+          "row": 2
+        },
+        {
+          "k": "B",
+          "x": 11,
+          "row": 3
+        }
+      ],
+      "captured": {
+        "guys": false,
+        "gals": false
+      },
+      "skip": {
+        "guys": false,
+        "gals": false
+      }
+    },
+    "card": {
+      "n": 2,
+      "deck": "facts",
+      "deckName": "Our Facts",
+      "about": "guys",
+      "stage": "move",
+      "challenged": false,
+      "reader": {
+        "id": "p3",
+        "name": "Dad"
+      },
+      "moves": [
+        {
+          "k": "A",
+          "x": 11,
+          "row": 2
+        },
+        {
+          "k": "B",
+          "x": 11,
+          "row": 3
+        }
+      ],
+      "answer": "2",
+      "text": "How many points is a safety worth in American football?",
+      "cat": "Sports",
+      "q": 2,
+      "of": 3
+    }
+  }
+}

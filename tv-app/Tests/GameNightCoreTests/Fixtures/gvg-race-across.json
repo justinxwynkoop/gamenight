@@ -185,7 +185,7 @@
       3
     ],
     "log": [
-      "The Guys got it right",
+      "Tailgate party! The Guys move ahead 2 spaces.",
       "The Guys missed",
       "The Gals got it right",
       "The Gals missed",
@@ -195,7 +195,7 @@
     "lastMove": {
       "from": 12,
       "to": 13,
-      "n": 5,
+      "n": 6,
       "side": "guys",
       "trophy": false
     },
@@ -215,11 +215,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           },
           {
             "at": 13,
             "x": 13,
+            "row": null,
             "state": "home"
           }
         ],
@@ -227,15 +229,19 @@
           {
             "at": 9,
             "x": 4,
+            "row": 2,
             "state": "board"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "wait"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": true
@@ -246,7 +252,7 @@
       }
     },
     "card": {
-      "n": 7,
+      "n": 8,
       "deck": "facts",
       "deckName": "Our Facts",
       "about": "gals",
@@ -256,9 +262,9 @@
         "id": "p6",
         "name": "Maya"
       },
-      "text": "In Mean Girls, what color do they wear on Wednesdays?",
+      "text": "In The Princess Diaries, what country does Mia find out she is the princess of?",
       "cat": "Movies & TV",
-      "answer": "Pink",
+      "answer": "Genovia",
       "q": 1,
       "of": 3
     },
@@ -270,7 +276,7 @@
       "timeout": false,
       "stolen": false,
       "challenged": false,
-      "answer": "Pink",
+      "answer": "Genovia",
       "secret": null,
       "pick": null,
       "more": false,

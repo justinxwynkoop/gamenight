@@ -195,7 +195,7 @@
     "lastMove": {
       "from": 1,
       "to": 0,
-      "n": 6,
+      "n": 7,
       "side": "gals",
       "trophy": false
     },
@@ -215,11 +215,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           },
           {
             "at": 13,
             "x": 13,
+            "row": null,
             "state": "home"
           }
         ],
@@ -227,15 +229,19 @@
           {
             "at": 13,
             "x": 0,
+            "row": null,
             "state": "home"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "home"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": true

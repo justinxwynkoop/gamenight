@@ -185,8 +185,8 @@
       3
     ],
     "log": [
-      "Tailgate party! The Guys move ahead 2 spaces.",
       "The Guys got it right",
+      "Tailgate party! The Guys move ahead 2 spaces.",
       "The Guys missed",
       "The Gals got it right",
       "The Gals missed",
@@ -195,7 +195,7 @@
     "lastMove": {
       "from": 5,
       "to": 4,
-      "n": 4,
+      "n": 5,
       "side": "gals",
       "trophy": false
     },
@@ -215,11 +215,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "jail"
           },
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           }
         ],
@@ -227,15 +229,19 @@
           {
             "at": 9,
             "x": 4,
+            "row": 2,
             "state": "board"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "wait"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": true
@@ -246,7 +252,7 @@
       }
     },
     "card": {
-      "n": 6,
+      "n": 7,
       "deck": "facts",
       "deckName": "Our Facts",
       "about": "guys",
@@ -256,9 +262,9 @@
         "id": "p4",
         "name": "Leo"
       },
-      "text": "In bowling, what is it called when you knock down all ten pins with your first ball?",
+      "text": "Which baseball stadium is famous for ivy on its outfield walls?",
       "cat": "Sports",
-      "answer": "A strike",
+      "answer": "Wrigley Field (Chicago Cubs)",
       "q": 2,
       "of": 3
     },
@@ -270,7 +276,7 @@
       "timeout": false,
       "stolen": false,
       "challenged": false,
-      "answer": "A strike",
+      "answer": "Wrigley Field (Chicago Cubs)",
       "secret": null,
       "pick": null,
       "more": false,

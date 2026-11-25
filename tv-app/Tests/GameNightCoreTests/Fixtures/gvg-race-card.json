@@ -203,11 +203,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           },
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "wait"
           }
         ],
@@ -215,15 +217,50 @@
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "board"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "wait"
           }
         ]
       },
+      "rows": 6,
+      "steps": [
+        {
+          "k": "A",
+          "x": 12,
+          "row": 0
+        },
+        {
+          "k": "B",
+          "x": 12,
+          "row": 1
+        },
+        {
+          "k": "C",
+          "x": 12,
+          "row": 2
+        },
+        {
+          "k": "D",
+          "x": 12,
+          "row": 3
+        },
+        {
+          "k": "E",
+          "x": 12,
+          "row": 4
+        },
+        {
+          "k": "F",
+          "x": 12,
+          "row": 5
+        }
+      ],
       "captured": {
         "guys": false,
         "gals": false
@@ -244,7 +281,7 @@
         "id": "p3",
         "name": "Dad"
       },
-      "text": "What do hockey players hit instead of a ball?",
+      "text": "What is the maximum score in a single game of ten-pin bowling?",
       "cat": "Sports",
       "q": 1,
       "of": 3

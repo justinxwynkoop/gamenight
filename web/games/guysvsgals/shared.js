@@ -134,5 +134,59 @@ export function raceTrack(g, { compact = false } = {}) {
     pawnBin(g, 'gals', compact));
 }
 
+/** Which space of its column a pawn stands on (0 is the top). Old saved games have no rows: a middle one. */
+export function pawnRow(g, side, i) {
+  const p = g.race.pawns[side][i];
+  if (Number.isInteger(p?.row)) return p.row;
+  const n = g.race.pawns[side].length;
+  return side === 'guys' ? (n === 1 ? 2 : 1 + i) : (n === 1 ? 3 : 3 + i);
+}
+
+/**
+ * The spaces the team at play can step onto with a right answer: lit while the question is read, and lettered (k) once
+ * it is right and the team is picking one.
+ */
+export function raceSteps(g) {
+  if (g.phase !== 'card' || !g.race) return [];
+  return g.card?.stage === 'move' ? (g.card.moves ?? []) : (g.race.steps ?? []).map(({ k, ...s }) => s);
+}
+
+/** What stepping onto a space means, for a button: the way there and what is on it. */
+export function stepLabel(g, steps, s) {
+  const where = steps.length === 2 ? (s === steps[0] ? '⬆ Up' : '⬇ Down') : ['Top', '2nd', '3rd', '4th', '5th', 'Bottom'][s.row] ?? '';
+  const what = s.pawn ? `on the ${nameOf(g, otherSide(g.turn))}’ pawn!` : s.wild ? `${nameOf(g, s.wild)} wild space` : '';
+  return { where, what };
+}
+
+/**
+ * The race board, small, for a phone: the same staggered columns of spaces as the TV, with the pawns on their spaces.
+ * While a team is picking, its lit spaces can be tapped (onPick gets the space's letter).
+ */
+export function miniBoard(g, onPick = null) {
+  const r = g.race;
+  const rows = r.rows ?? 6;
+  const steps = raceSteps(g);
+  const cols = [];
+  for (let x = 1; x <= r.len; x++) {
+    const wild = r.wild.guys.includes(x) ? 'guys' : r.wild.gals.includes(x) ? 'gals' : null;
+    cols.push(h('div', { class: `gv-mcol ${x % 2 ? 'odd' : 'even'}` }, Array.from({ length: rows }, (_, row) => {
+      const kids = [];
+      for (const side of ['guys', 'gals']) {
+        r.pawns[side].forEach((p, i) => { if (p.state === 'board' && p.x === x && pawnRow(g, side, i) === row) kids.push(token(side, '', 30)); });
+      }
+      const step = steps.find((s) => s.x === x && s.row === row);
+      const cls = `gv-mdot ${wild ? 'wild' : ''} ${step ? 'next' : ''} ${kids.length ? 'has-pawn' : ''}`;
+      const style = { '--d': wild ? teamOf(g, wild)?.color : null, '--n': step ? teamOf(g, g.turn)?.color : null };
+      const letter = step?.k ? h('b', {}, step.k) : null;
+      return step?.k && onPick
+        ? h('button', { type: 'button', class: cls, style, 'data-k': step.k, 'aria-label': `Space ${step.k}`, onclick: () => onPick(step.k) }, kids, letter)
+        : h('div', { class: cls, style }, kids, letter);
+    })));
+  }
+  const rail = (side) => h('div', { class: `gv-mrail ${side}`, style: { '--c': teamOf(g, side)?.color ?? '#888' } },
+    r.pawns[side].filter((p) => p.state === 'board' && p.at === 0).map(() => token(side, '', 30)), pawnBin(g, side, true));
+  return h('div', { class: 'gv-mini' }, rail('guys'), h('div', { class: 'gv-mgrid', style: { gridTemplateColumns: `repeat(${r.len}, 1fr)` } }, cols), rail('gals'));
+}
+
 /** "1 of 2 across" */
 export const acrossText = (g, side) => `${g.race.pawns[side].filter((p) => p.state === 'home').length} of ${g.race.pawns[side].length} across`;

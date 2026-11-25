@@ -3,7 +3,7 @@
 // along the foot with the trophy on it. A trophy won and the winners take over the whole screen. The answer only reaches
 // the TV once the card has been judged.
 import { h } from '../../common.js';
-import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText, pawnBin } from './shared.js';
+import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText, pawnBin, pawnRow, raceSteps } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b', '#ffa7d8'];
 const HOP_MS = 320;
@@ -191,6 +191,7 @@ function deckCard(g) {
         return h('div', { class: `gv-choice ${cls}`, style: { '--l': LETTER_COLORS[i] } }, h('span', { class: 'gv-letter' }, LETTERS[i]), h('span', { class: 'txt' }, x), mark);
       })));
     } else if (result) parts.push(h('div', { class: 'gv-answer' }, h('span', { class: 'gv-qa' }, 'A:'), r.answer));
+    else if (c.stage === 'move') parts.push(h('div', { class: 'gv-answer' }, h('span', { class: 'gv-qa' }, 'A:'), c.answer));
     if (result && r.wild) parts.push(h('div', { class: 'gv-wildcard', style: { '--c': teamOf(g, r.wild.owner)?.color } }, h('small', {}, `${nameOf(g, r.wild.owner).toUpperCase()} WILD CARD`), r.wild.text));
     middle = h('div', { class: `gv-body ${c.img ? 'with-pic' : ''}` }, parts);
     if (!result) {
@@ -198,7 +199,8 @@ function deckCard(g) {
         foot = c.stage === 'secret' ? `🤫 ${reader} is secretly picking the true one…`
           : c.challenged ? `The ${nameOf(g, c.about)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`
             : `The ${nameOf(g, g.turn)} guess what ${reader} picked, on their phones (${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0})`;
-      } else if (isRace(g)) foot = `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud. Every right answer moves their pawn one space.`;
+      } else if (c.stage === 'move') foot = `✅ Right! ${nameOf(g, g.turn)}: pick a lit space on your phones (${(c.moves ?? []).map((m) => m.k).join(', ')})`;
+      else if (isRace(g)) foot = `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud. A right answer moves their pawn onto a lit space of their choice.`;
       else foot = c.challenged ? `Challenge! The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}. ${reader} judges.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
     }
   }
@@ -241,16 +243,9 @@ function winScreen(g) {
 // START rail down its outer edge, two halves of round spaces in staggered columns, each team's wild columns in its
 // colour, and the two decks of cards in the middle, where the card being read sits. Our own art throughout.
 
-const BOARD_ROWS = 6;
 const DOT_FILLS = ['#ff8a8a', '#ffd76a', '#8be08b', '#ffb26b', '#ff9ccf', '#8fc8ff', '#c7a6ff', '#7fe0d4'];
 // Pictures on the plain spaces: Microsoft's 3D emoji that come with the game (pics/, MIT, art/SOURCES.md).
 const DOT_PICS = ['american-football', 'cupcake', 'wrench', 'lipstick', 'racing-car', 'high-heeled-shoe', 'video-game', 'handbag', 'hammer', 'nail-polish', 'baseball', 'bouquet', 'toolbox', 'dress', 'fishing-pole', 'ring', 'bowling', 'shopping-bags', 'pickup-truck', 'yarn', 'pool-8-ball', 'teapot', 'motorcycle', 'gem-stone'];
-
-/** Which row a pawn walks along: the Guys' pawns on the upper middle rows, the Gals' on the lower ones. */
-export function pawnRow(g, side, i) {
-  const n = g.race.pawns[side].length;
-  return side === 'guys' ? (n === 1 ? 2 : 1 + i) : (n === 1 ? 3 : 3 + i);
-}
 
 function boardDot(g, x, row) {
   const r = g.race;
@@ -264,27 +259,16 @@ function boardDot(g, x, row) {
   }
   // A wild space says so, in its team's colour, with the team's name under it.
   const label = wild ? h('b', {}, 'WILD', h('small', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase())) : pic(DOT_PICS[seed % DOT_PICS.length], 'gv-dot-pic');
-  const next = nextSpace(g);
-  const isNext = next && next.x === x && next.row === row;
-  return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''} ${isNext ? 'next' : ''}`, 'data-x': x, 'data-row': row,
+  const next = raceSteps(g).find((s) => s.x === x && s.row === row);
+  const isNext = !!next;
+  return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''} ${isNext ? 'next' : ''}`, 'data-x': x, 'data-row': row, 'data-k': next?.k ?? null,
     style: { '--d': wild ? teamOf(g, wild)?.color : DOT_FILLS[seed % DOT_FILLS.length], '--n': isNext ? teamOf(g, g.turn)?.color : null } }, label, kids);
-}
-
-/** Where a right answer takes the team at play: the space in front of its pawn, along its own row (or its START). */
-export function nextSpace(g) {
-  if (g.phase !== 'card' || !g.turn || !g.race) return null;
-  const pawns = g.race.pawns[g.turn];
-  const i = pawns.findIndex((p) => p.state === 'board');
-  if (i < 0) return null;
-  const x = pawns[i].x + (g.turn === 'guys' ? 1 : -1);
-  if (x < 1 || x > g.race.len) return null;   // the next step is across, onto the far START
-  return { x, row: pawnRow(g, g.turn, i) };
 }
 
 function boardHalf(g, from, to) {
   const cols = [];
   for (let x = from; x <= to; x++) {
-    cols.push(h('div', { class: `gv-col ${x % 2 ? 'odd' : 'even'}` }, Array.from({ length: BOARD_ROWS }, (_, row) => boardDot(g, x, row))));
+    cols.push(h('div', { class: `gv-col ${x % 2 ? 'odd' : 'even'}` }, Array.from({ length: g.race.rows ?? 6 }, (_, row) => boardDot(g, x, row))));
   }
   return h('div', { class: 'gv-half' }, cols);
 }
@@ -401,12 +385,14 @@ export function onChange(prev, view, sound) {
     }
     else if (g.card.challenged && !p.card?.challenged) sound.play('dd');
     else if (g.card.stage !== p.card?.stage && ['guess', 'act'].includes(g.card.stage)) sound.play('lock');
+    else if (g.card.stage === 'move' && p.card?.stage !== 'move') sound.play('correct');   // right: now pick a space
   }
   if (g.phase === p.phase) return;
   switch (g.phase) {
     case 'card': if (p.phase === 'lobby') sound.play('roundstart'); break;
     case 'result':
-      sound.play(g.result?.timeout ? 'timeup' : g.result?.moved ? 'correct' : 'wrong');
+      // (A right answer in the race already rang when the team started picking its space.)
+      if (p.card?.stage !== 'move') sound.play(g.result?.timeout ? 'timeup' : g.result?.moved ? 'correct' : 'wrong');
       // The race: a wild card, a prisoner, a pawn across.
       if (g.result?.wild) setTimeout(() => sound.play('dd'), 700);
       else if (g.result?.captured) setTimeout(() => sound.play('lock'), 700);
