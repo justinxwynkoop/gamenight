@@ -94,7 +94,7 @@ export const isRace = (g) => g?.mode === 'race' && !!g.race;
 export const raceLeft = (g, x) => `${((x + 0.5) / (g.race.len + 2)) * 100}%`;
 
 /** A team's pawns off the board: waiting to start, made it across, or a prisoner held at the other team's START. */
-function pawnBin(g, side, compact) {
+export function pawnBin(g, side, compact) {
   const r = g.race;
   const mine = r.pawns[side];
   const size = compact ? 18 : 44;

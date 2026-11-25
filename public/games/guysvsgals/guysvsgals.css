@@ -351,3 +351,62 @@
 .gv-path.compact.gv-race .gv-pawn .gv-token { width: 30px; height: 30px; }
 .gv-path.compact .gv-bin { min-width: 0; min-height: 0; padding: 2px 4px; border-width: 2px; }
 .gv-path.compact .gv-bin .gv-token { width: 18px; height: 18px; }
+
+/* ---------- the race board: the whole TV is the board ---------- */
+.gv-tv.gv-tv-board { display: block; padding: 0; background: #0f2a7a; }
+.gv-tv.gv-tv-board > .gv-board { position: absolute !important; }
+.gv-board { position: absolute; inset: 2.2vmin; display: grid; grid-template-columns: 5.4vw minmax(0, 1fr) 31vw minmax(0, 1fr) 5.4vw; grid-template-rows: minmax(0, 1fr); gap: .9vw; padding: 5.4vmin 1.4vw 3vmin; box-sizing: border-box;
+  background: radial-gradient(ellipse at 30% 25%, #3f74ea, #1d47c2 55%, #14318f); border-radius: 1.6vmin;
+  box-shadow: 0 0 0 1vmin var(--gv-yellow), 0 0 0 1.6vmin #e8323c, 0 0 0 2vmin var(--gv-ink); }
+.gv-board::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: .35;
+  background: radial-gradient(circle, rgba(255,255,255,.22) .15vmin, transparent .2vmin) 0 0 / 1.2vmin 1.2vmin; }
+.gv-banner { position: absolute; top: -.6vmin; z-index: 2; font-family: 'Bangers', sans-serif; font-size: 3.6vmin; letter-spacing: .06em; color: #fff; background: #e8323c;
+  padding: .2vmin 3vmin; border: .45vmin solid var(--gv-ink); border-radius: 3vmin; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-banner small { font-size: .7em; color: var(--gv-yellow); }
+.gv-banner.l { left: 9vw; } .gv-banner.r { right: 9vw; }
+.gv-half { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); min-width: 0; gap: .3vw; min-height: 0; }
+.gv-col { display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); min-width: 0; align-items: center; justify-items: center; min-height: 0; }
+.gv-col.odd { transform: translateY(-3.4vmin); } .gv-col.even { transform: translateY(3.4vmin); }
+.gv-dot { position: relative; width: min(9.6vmin, 5.4vw); flex: none; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--d) 55%, #fff), var(--d) 70%); border: .5vmin solid var(--gv-ink);
+  box-shadow: inset 0 -.8vmin 0 rgb(0 0 0 / .16), .4vmin .5vmin 0 rgb(0 0 0 / .35); }
+.gv-dot i { font-style: normal; font-size: 4.8vmin; line-height: 1; filter: saturate(.85); opacity: .9; }
+.gv-dot.wild b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2.6vmin; letter-spacing: .03em; color: #fff; transform: rotate(-12deg);
+  -webkit-text-stroke: .22vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-dot.has-pawn { box-shadow: 0 0 0 .5vmin #fff, 0 0 0 1vmin var(--gv-ink); z-index: 2; }
+.gv-dot .gv-dot-pawn { position: absolute; width: 140%; height: 140%; left: -20%; bottom: 8%; object-fit: contain; filter: drop-shadow(.5vmin .5vmin 0 var(--gv-ink)); animation: gv-bob 1.4s ease-in-out infinite; }
+.gv-dot .gv-dot-pawn + .gv-dot-pawn { left: 10%; }
+.gv-rail { display: flex; flex-direction: column; align-items: center; gap: 1.2vmin; padding: 1.6vmin .6vmin; background: var(--c); border: .5vmin solid var(--gv-ink); border-radius: 3vmin;
+  box-shadow: inset 0 0 0 .5vmin rgb(255 255 255 / .35); min-height: 0; }
+.gv-rail-name { font-family: 'Bangers', sans-serif; font-size: 3.6vmin; letter-spacing: .08em; color: #fff; writing-mode: vertical-rl; transform: rotate(180deg); -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-rail.gals .gv-rail-name { transform: none; }
+.gv-rail .gv-bin:empty { display: none; }
+.gv-rail .gv-bin { flex-direction: column; background: rgb(255 255 255 / .25); border-radius: 2vmin; min-width: 0; padding: 1vmin .4vmin; }
+.gv-rail .gv-bin .gv-token { width: 7vmin; height: 7vmin; }
+.gv-mid { display: grid; grid-template-rows: auto 1fr auto; gap: 1.6vmin; min-height: 0; }
+.gv-bteams { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2vw; }
+.gv-bteam { display: flex; align-items: center; gap: 1vmin; padding: .8vmin 1.2vmin; background: var(--c); color: #fff; border: .45vmin solid var(--gv-ink); border-radius: 1.6vmin;
+  box-shadow: .6vmin .6vmin 0 var(--gv-ink); min-width: 0; transition: transform .3s; }
+.gv-bteam.turn { transform: scale(1.05); box-shadow: 0 0 0 .5vmin #fff, .6vmin .6vmin 0 .5vmin var(--gv-ink); }
+.gv-bteam > div { min-width: 0; }
+.gv-bteam-hero { width: 6vmin; height: 6vmin; flex: none; }
+.gv-bteam-name { font-family: 'Bangers', sans-serif; font-size: 3.6vmin; letter-spacing: .05em; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; display: flex; gap: 1vmin; align-items: center; flex-wrap: wrap; }
+.gv-bteam-name .gv-clock-badge { font-size: 2vmin; position: static; transform: none; padding: .1vmin 1vmin; -webkit-text-stroke: 0; color: var(--gv-ink); }
+.gv-bteam-who { font-size: 1.9vmin; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gv-bteam-who span + span::before { content: ' · '; }
+.gv-bteam-who .off { opacity: .55; }
+.gv-bteam-across { font-family: 'Bangers', sans-serif; font-size: 2.2vmin; letter-spacing: .05em; color: var(--gv-yellow); -webkit-text-stroke: .15vmin var(--gv-ink); paint-order: stroke fill; }
+.gv-board .gv-center { min-height: 0; }
+.gv-board .gv-card { transform: rotate(-.6deg); padding-left: 8.4vmin; padding-right: 2.2vmin; }
+.gv-board .gv-stripe { left: 1vmin; top: 1vmin; bottom: 1vmin; width: 5.6vmin; }
+.gv-board .gv-stripe span { font-size: 3.4vmin; }
+.gv-board .gv-chip { font-size: 2.8vmin; }
+.gv-board .gv-q { font-size: calc(4.6vmin * var(--fit, 1)); }
+.gv-decks { display: flex; justify-content: center; gap: 3vw; }
+.gv-deck { position: relative; width: 15vw; height: 8vmin; }
+.gv-deck::before, .gv-deck::after { content: ''; position: absolute; inset: 0; background: var(--c); border: .4vmin solid var(--gv-ink); border-radius: 1vmin; }
+.gv-deck::before { transform: translate(.9vmin, .9vmin); } .gv-deck::after { transform: translate(.45vmin, .45vmin); }
+.gv-deck-top { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; background: var(--c); border: .4vmin solid var(--gv-ink); border-radius: 1vmin;
+  box-shadow: inset 0 0 0 .8vmin rgb(255 255 255 / .9), inset 0 0 0 1.2vmin var(--gv-ink); }
+.gv-deck-top span { font-family: 'Bangers', sans-serif; font-size: 2.6vmin; letter-spacing: .06em; color: #fff; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
+@media (max-aspect-ratio: 3/2) { .gv-board { grid-template-columns: 5vw minmax(0, 1fr) 37vw minmax(0, 1fr) 5vw; } }
