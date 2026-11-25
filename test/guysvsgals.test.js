@@ -444,13 +444,17 @@ test('a saved game comes back where it was', () => {
 });
 
 // ---------- the pawn race ----------
-import { RACE_LEN, RACE_WILD, RACE_QUESTIONS, WILD_CARDS } from '../games/guysvsgals/game.js';
+import { RACE_LEN, RACE_WILD, RACE_QUESTIONS, RACE_ROWS, WILD_CARDS } from '../games/guysvsgals/game.js';
 
 function race(opts = {}) {
   const s = setup(opts);
   s.room.act('setRules', { mode: 'race' });
   if (opts.pawns) s.room.act('setPawns', { n: opts.pawns });
-  return s;
+  /** Someone on the team at play picks the space to step onto. */
+  const pick = (k = 'A') => s.msg((s.g.turn === 'guys' ? s.G : s.W)[0], { t: 'space', k });
+  /** The reader judges; after a right answer the team steps onto space `k` (when there is a choice). */
+  const judge = (right, k = 'A') => { s.judge(right); if (k && s.g.phase === 'card' && s.g.card.stage === 'move') pick(k); };
+  return { ...s, judge, pick };
 }
 const pawn = (g, side) => g.race.pawns[side].find((p) => p.state === 'board');
 
@@ -535,12 +539,16 @@ test('the race: a pawn across brings on the next; both across wins', () => {
 });
 
 test('the race: ending a turn on the other team’s pawn takes it prisoner, once, and it is freed when the next one crosses', () => {
-  const { g, begin, judge, wait } = race();
+  const { room, g, begin, judge, pick, wait } = race();
   begin();
   // The Gals stop on the Guys' pawn.
-  pawn(g, 'guys').at = 4;              // x 4
-  pawn(g, 'gals').at = RACE_LEN - 4;   // x 5: one more right lands on x 4
-  judge(true); wait(g.result.wild ? T.wild : T.result);
+  Object.assign(pawn(g, 'guys'), { at: 4, row: 2 });              // x 4
+  Object.assign(pawn(g, 'gals'), { at: RACE_LEN - 4, row: 2 });   // x 5: one more right can land on x 4
+  judge(true, null);
+  const onPawn = room.publicView().game.card.moves.find((m) => m.pawn);
+  assert.deepEqual(onPawn, { k: 'B', x: 4, row: 2, pawn: true }, 'the TV and the phones say which space the Guys’ pawn is on');
+  pick(onPawn.k);
+  wait(g.result.wild ? T.wild : T.result);
   judge(false);
   assert.equal(g.result.captured, 'guys');
   assert.deepEqual(g.race.pawns.guys.map((p) => p.state), ['jail', 'board']);
@@ -553,13 +561,87 @@ test('the race: ending a turn on the other team’s pawn takes it prisoner, once
   assert.equal(pawn(g, 'guys').at, 0);
 });
 
+test('the race: after a right answer the team picks the space to step onto', () => {
+  const { room, g, G, W, begin, judge, pick, msg, view, wait } = race();
+  begin();
+  // From START: any space in the first column.
+  let tv = room.publicView().game;
+  assert.equal(tv.race.rows, RACE_ROWS);
+  assert.equal(tv.race.steps.length, RACE_ROWS, 'the TV can light the spaces before the answer');
+  judge(true, null);
+  assert.equal(g.phase, 'card');
+  tv = room.publicView().game;
+  assert.equal(tv.card.stage, 'move');
+  assert.equal(tv.card.answer, g.card.a, 'it is judged, so the answer shows');
+  assert.deepEqual(tv.card.moves.map((m) => m.k), ['A', 'B', 'C', 'D', 'E', 'F']);
+  assert.ok(tv.card.moves.every((m) => m.x === RACE_LEN));
+  assert.equal(tv.line.text, 'Right!');
+  assert.equal(tv.timer.kind, 'move');
+  assert.equal(view(W[0]).me.canMove, true);
+  assert.equal(view(G[0]).me.canMove, false);
+  assert.throws(() => msg(G[0], { t: 'space', k: 'A' }), /pick the space/);
+  assert.throws(() => msg(W[0], { t: 'space', k: 'Z' }), /lit spaces/);
+  assert.throws(() => judge(true), /Nothing to judge/);
+  assert.throws(() => room.act('newCard'), /pick a space/);
+  assert.equal(pawn(g, 'gals').at, 0, 'the pawn waits for the pick');
+  msg(W[1], { t: 'space', k: 'c' });
+  assert.equal(pawn(g, 'gals').at, 1);
+  assert.equal(pawn(g, 'gals').row, 2);
+  assert.equal(room.publicView().game.race.pawns.gals[0].row, 2);
+  assert.equal(g.phase, 'result');
+  wait(T.right);
+  // On the board: the space up or the space down. x 12 is an even column, x 11 an odd one (half a space higher).
+  judge(true, null);
+  assert.deepEqual(room.publicView().game.card.moves, [{ k: 'A', x: RACE_LEN - 1, row: 2 }, { k: 'B', x: RACE_LEN - 1, row: 3 }]);
+  room.act('space', { k: 'B' });
+  assert.equal(pawn(g, 'gals').row, 3, 'the host can pick too');
+  wait(T.right);
+  // x 10 is the Gals' wild column: both spaces say so.
+  judge(true, null);
+  assert.deepEqual(room.publicView().game.card.moves, [{ k: 'A', x: RACE_LEN - 2, row: 2, wild: 'gals' }, { k: 'B', x: RACE_LEN - 2, row: 3, wild: 'gals' }]);
+  pick('A');
+  assert.ok(g.result.wild);
+});
+
+test('the race: nobody picking is no hold-up, and at the edge of the board there is only one way', () => {
+  const { room, g, begin, judge, wait } = race();
+  begin();
+  judge(true, null);
+  wait(T.move);
+  assert.equal(g.phase, 'result', 'the pawn stepped by itself');
+  assert.equal(pawn(g, 'gals').at, 1);
+  assert.ok([2, 3].includes(pawn(g, 'gals').row), 'toward the middle');
+  wait(T.right);
+  judge(true, null);
+  room.act('advance');
+  assert.equal(pawn(g, 'gals').at, 2, 'the host can move things along');
+  wait(T.right);
+  // Top row of an odd column, stepping into an even one: only the space down touches it.
+  Object.assign(pawn(g, 'gals'), { at: 2, row: 0 });   // x 11
+  judge(true, null);
+  assert.equal(g.phase, 'result', 'no choice to make');
+  assert.equal(pawn(g, 'gals').row, 0);
+});
+
+test('the race: passing in another row is not a capture', () => {
+  const { g, begin, judge, wait } = race();
+  begin();
+  Object.assign(pawn(g, 'guys'), { at: 4, row: 2 });
+  Object.assign(pawn(g, 'gals'), { at: RACE_LEN - 4, row: 2 });
+  judge(true, 'A');   // x 4, row 1: beside the Guys' pawn, not on it
+  wait(g.result.wild ? T.wild : T.result);
+  judge(false);
+  assert.equal(g.result.captured, undefined);
+  assert.deepEqual(g.race.pawns.guys.map((p) => p.state), ['board', 'wait']);
+});
+
 test('the race: one pawn each in a quick race, and no prisoners', () => {
   const { g, begin, judge, wait } = race({ pawns: 1 });
   begin();
   assert.equal(g.race.pawns.gals.length, 1);
-  pawn(g, 'guys').at = 4;
-  pawn(g, 'gals').at = RACE_LEN - 4;
-  judge(true); wait(g.result.wild ? T.wild : T.result);
+  Object.assign(pawn(g, 'guys'), { at: 4, row: 2 });
+  Object.assign(pawn(g, 'gals'), { at: RACE_LEN - 4, row: 2 });
+  judge(true, 'B'); wait(g.result.wild ? T.wild : T.result);
   judge(false);
   assert.equal(g.result.captured, undefined);
   wait(T.wild);
@@ -578,4 +660,17 @@ test('the race survives a restart', () => {
   assert.equal(room2.game.settings.mode, 'race');
   assert.equal(room2.publicView().game.race.pawns.gals[0].at, 1);
   assert.ok(room.publicView().game.race);
+});
+
+test('the race survives a restart while a team is picking its space', () => {
+  const { g, begin, judge } = race();
+  begin();
+  judge(true, null);
+  const saved = JSON.parse(JSON.stringify(g.toJSON()));
+  const s2 = race();
+  s2.g.restore(saved);
+  assert.equal(s2.room.publicView().game.card.stage, 'move');
+  s2.wait(T.move);
+  assert.equal(s2.g.phase, 'result');
+  assert.equal(pawn(s2.g, 'gals').at, 1);
 });

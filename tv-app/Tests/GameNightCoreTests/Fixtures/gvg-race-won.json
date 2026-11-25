@@ -195,7 +195,7 @@
     "lastMove": {
       "from": 1,
       "to": 0,
-      "n": 6,
+      "n": 7,
       "side": "gals",
       "trophy": false
     },
@@ -215,11 +215,13 @@
           {
             "at": 0,
             "x": 0,
+            "row": null,
             "state": "board"
           },
           {
             "at": 13,
             "x": 13,
+            "row": null,
             "state": "home"
           }
         ],
@@ -227,15 +229,19 @@
           {
             "at": 13,
             "x": 0,
+            "row": null,
             "state": "home"
           },
           {
             "at": 0,
             "x": 13,
+            "row": null,
             "state": "home"
           }
         ]
       },
+      "rows": 6,
+      "steps": [],
       "captured": {
         "guys": false,
         "gals": true
@@ -246,7 +252,7 @@
       }
     },
     "card": {
-      "n": 8,
+      "n": 9,
       "deck": "facts",
       "deckName": "Our Facts",
       "about": "guys",
@@ -256,9 +262,9 @@
         "id": "p3",
         "name": "Dad"
       },
-      "text": "Which sport is played at Wimbledon?",
+      "text": "How far is a free throw line from the backboard, in feet?",
       "cat": "Sports",
-      "answer": "Tennis",
+      "answer": "15 feet (from the backboard)",
       "q": 1,
       "of": 3
     },
@@ -270,7 +276,7 @@
       "timeout": false,
       "stolen": false,
       "challenged": false,
-      "answer": "Tennis",
+      "answer": "15 feet (from the backboard)",
       "secret": null,
       "pick": null,
       "more": false,

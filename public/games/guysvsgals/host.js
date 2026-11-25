@@ -3,7 +3,7 @@
 // trophy and move things along; in the lobby, who is on which side, the question set and the rules.
 import { h } from '../../common.js';
 import { button, seg, toggle, card, eyebrow } from '../../ui.js';
-import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, LETTERS, isRace, raceTrack, acrossText } from './shared.js';
+import { loadStyles, token, path, deckOf, pic, teamOf, nameOf, aboutText, LETTERS, isRace, miniBoard, stepLabel, acrossText } from './shared.js';
 
 const SUB = { lobby: 'Setting up', card: 'A card', result: 'The answer', trophy: 'A trophy is won', gameover: 'Game over' };
 
@@ -19,8 +19,8 @@ export function render(raw, ctx) {
     const players = raw.room.players ?? [];
     if (g.settings.mode === 'race') body.push(card(eyebrow('How the race works'),
       h('p', { class: 'dim' }, 'A coin toss says who goes first. A player on the other team reads a card of three questions and judges each answer on their phone (you can judge here too).'),
-      h('p', { class: 'dim' }, 'Every right answer moves the team’s pawn one space; a miss or three right ends the turn. Your own wild space draws a wild card at once, the other team’s only if you stop on it.'),
-      h('p', { class: 'dim' }, g.settings.pawns === 1 ? 'One pawn each: first across wins.' : 'Two pawns each: the second starts when the first gets across. Once a game, stopping on the other team’s pawn takes it prisoner. Both across wins.')));
+      h('p', { class: 'dim' }, 'Every right answer moves the team’s pawn one space, onto a space the team picks on their phones; a miss or three right ends the turn. Your own wild space draws a wild card at once, the other team’s only if you stop on it.'),
+      h('p', { class: 'dim' }, g.settings.pawns === 1 ? 'One pawn each: first across wins.' : 'Two pawns each: the second starts when the first gets across. Once a game, stopping on the very space the other team’s pawn stands on takes it prisoner. Both across wins.')));
     else body.push(card(eyebrow('How it works'),
       h('p', { class: 'dim' }, `The trophy starts on START and the ${nameOf(g, g.first)} go first. A player on the other team reads a card from their own side’s deck and judges the answer on their phone (you can judge here too). Readers take turns.`),
       h('p', { class: 'dim' }, `Right pulls the trophy one space toward the answering team, who keep going; wrong passes the turn. A right answer on your own green space wins the trophy. First to ${g.target} ${g.target === 1 ? 'trophy' : 'trophies'} wins.`),
@@ -66,17 +66,23 @@ export function render(raw, ctx) {
           body.push(card(eyebrow(`Who acts for the ${nameOf(g, g.turn)}?`), h('div', { class: 'list' }, (c.actors ?? []).map((p) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, p.name),
             button({ label: 'Acts', size: 'sm', onclick: () => act('actor', { pid: p.id }) }))))));
         }
+        if (c.stage === 'move') {
+          for (const s of c.moves ?? []) {
+            const l = stepLabel(g, c.moves, s);
+            dock.push(button({ label: `Space ${s.k}: ${l.where}${l.what ? ` (${l.what})` : ''}`, size: 'lg', block: true, onclick: () => act('space', { k: s.k }) }));
+          }
+        }
         if (c.stage === 'ready') dock.push(button({ label: 'Start the clock', icon: 'check', kind: 'primary', size: 'lg', block: true, onclick: () => act('movesReady') }));
         if (c.stage === 'act') {
           for (const s of ['guys', 'gals']) dock.push(button({ label: `${nameOf(g, s)} got it`, size: 'lg', block: true, kind: s === g.turn ? 'primary' : undefined, onclick: () => act('moves', { side: s }) }));
           dock.push(button({ label: 'Nobody', size: 'lg', block: true, onclick: () => act('moves', { side: null }) }));
         }
-        dock.push(button({ label: 'New card', icon: 'refresh', size: 'lg', block: true, onclick: () => act('newCard') }));
+        if (c.stage !== 'move') dock.push(button({ label: 'New card', icon: 'refresh', size: 'lg', block: true, onclick: () => act('newCard') }));
       } else dock.push(button({ label: 'Carry on', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
     }
     if (g.phase === 'trophy') dock.push(button({ label: 'Carry on', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
     if (g.phase === 'gameover') dock.push(button({ label: 'Rematch', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('playAgain') }));
-    if (isRace(g)) body.push(card(eyebrow('The race'), h('div', { class: 'gv' }, h('div', { class: 'gv-pcard gv-ppath' }, raceTrack(g, { compact: true }))),
+    if (isRace(g)) body.push(card(eyebrow('The race'), h('div', { class: 'gv' }, h('div', { class: 'gv-pcard gv-ppath' }, miniBoard(g, (k) => act('space', { k })))),
       h('div', { class: 'list' }, g.teams.map((t) => h('div', { class: 'rowi' }, token(t.side, t.color, 30),
         h('div', { class: 'grow t' }, t.name, g.turn === t.side ? ' ◀' : ''),
         h('span', { class: 'tag' }, `🏁 ${acrossText(g, t.side)}`),

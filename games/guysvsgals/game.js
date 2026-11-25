@@ -27,11 +27,13 @@
 //  - A coin toss says who goes first. Each team has two pawns (one in a quick race): one starts on its START, the
 //    other waits off the board. The Guys run left to right, the Gals right to left, along the same RACE_LEN spaces.
 //  - A turn: a reader from the other team reads a card of three questions (Our Facts, Stuff and Pics). Every right
-//    answer moves the team's pawn one space and the next question is asked; a miss, or three right, ends the turn.
+//    answer lets the team step its pawn onto a space of its choosing in the next column, picked on their phones (the
+//    columns are staggered, so that is the space up or the space down; any space from START), and the next question
+//    is asked; a miss, or three right, ends the turn.
 //  - Wild spaces: land on your own side's wild space and you draw one of your wild cards at once; end your turn on
 //    the other side's wild space and you draw one of theirs. Wild cards help the side they belong to.
-//  - Prisoners: once a game, a team that ends its turn on the other team's pawn takes it prisoner (only while the
-//    other team still has a pawn waiting). Their waiting pawn starts instead, and the prisoner is freed back to START
+//  - Prisoners: once a game, a team that ends its turn on the very space the other team's pawn stands on takes it
+//    prisoner (only while the other team still has a pawn waiting). Their waiting pawn starts instead, and the prisoner is freed back to START
 //    when that pawn gets across.
 //  - A pawn that reaches the far START is across, and the team's next pawn starts. Both across wins.
 //
@@ -76,6 +78,7 @@ export const RACE_LEN = 12;                // spaces between the two STARTs
 // same distance in from theirs.
 export const RACE_WILD = { guys: [3], gals: [RACE_LEN - 2] };
 export const RACE_QUESTIONS = 3;           // questions on a card
+export const RACE_ROWS = 6;                // spaces in each column of the board
 export const PAWN_COUNTS = [1, 2];         // a quick race, or the standard two pawns each
 /** Wild cards, original to this game. Each helps the side it belongs to ({O}) or holds up the other ({X}). */
 export const WILD_CARDS = {
@@ -107,6 +110,7 @@ export const T = {
   wild: 6500,          // the same, with a wild card or a prisoner to read
   trophy: 5200,        // a trophy is won, before the next one goes on START
   moves: 60000,        // the clock on a charade
+  move: 20000,         // the race: picking the space to step onto, before the pawn steps by itself
 };
 
 const MAX_SEEN = 4000;
@@ -588,12 +592,46 @@ export class GuysVsGalsGame {
 
   // ---------- the pawn race ----------
   #newRace() {
-    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, state: i ? 'wait' : 'board' }));
+    const pawns = () => Array.from({ length: this.settings.pawns }, (_, i) => ({ at: 0, row: null, state: i ? 'wait' : 'board' }));
     this.race = { len: RACE_LEN, pawns: { guys: pawns(), gals: pawns() }, captured: { guys: false, gals: false }, skip: { guys: false, gals: false }, toss: null };
   }
   /** Where a side's pawn is on the track, counted from the Guys' START (0) to the Gals' (RACE_LEN + 1). */
   raceX(side, at) { return side === 'guys' ? at : RACE_LEN + 1 - at; }
   #pawn(side) { return this.race.pawns[side].find((p) => p.state === 'board') ?? null; }
+  /**
+   * The spaces a side's pawn can step onto next: the columns are staggered (odd ones, counted from the Guys' START, sit
+   * half a space higher), so a space touches two in the next column, the one up and the one down. From START it is any
+   * space in the first column. Empty when the next step is across. The TVs draw the same stagger: keep them in step.
+   */
+  #steps(side) {
+    const p = this.#pawn(side);
+    if (!p || p.at >= RACE_LEN) return [];
+    const x = this.raceX(side, p.at + 1);
+    const all = Array.from({ length: RACE_ROWS }, (_, i) => i);
+    const rows = p.at === 0 || !Number.isInteger(p.row) ? all : (x % 2 ? [p.row, p.row + 1] : [p.row - 1, p.row]).filter((r) => r >= 0 && r < RACE_ROWS);
+    const other = SIDES[side].other;
+    const theirs = this.#pawn(other);
+    const wild = SIDE_ORDER.find((s) => RACE_WILD[s].includes(x));
+    return rows.map((row, i) => {
+      const step = { k: 'ABCDEF'[i], x, row };
+      if (wild) step.wild = wild;
+      if (theirs && theirs.at > 0 && this.raceX(other, theirs.at) === x && theirs.row === row) step.pawn = true;
+      return step;
+    });
+  }
+  /** The step taken when nobody picks in time: toward the middle of the board. */
+  #defaultStep(steps) {
+    const mid = (RACE_ROWS - 1) / 2;
+    return steps.reduce((best, s) => (Math.abs(s.row - mid) < Math.abs(best.row - mid) ? s : best), steps[0]);
+  }
+  /** The team at play (or the host) picks which space its pawn steps onto after a right answer. */
+  pickSpace(by, k) {
+    const c = this.card;
+    if (this.phase !== 'card' || !this.#isRace() || c?.stage !== 'move') fail('There is no space to pick right now');
+    if (by !== 'host' && this.#sideOf(by) !== this.turn) fail(`The ${this.#name(this.turn)} pick the space`);
+    const step = (c.moves ?? []).find((s) => s.k === String(k ?? '').toUpperCase()) ?? fail('Pick one of the lit spaces');
+    this.#raceResolve(true, step.row);
+  }
   /** Three questions from the decks the answering side plays (Our Facts, Stuff and Pics), read by the other team. */
   #dealRace() {
     const side = this.turn;
@@ -625,17 +663,21 @@ export class GuysVsGalsGame {
     if (q.img) c.img = q.img;
   }
   /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
-  #movePawn(side, n) {
+  #movePawn(side, n, row = null) {
     const p = this.#pawn(side);
     if (!p) return false;
     const from = p.at;
     p.at = Math.max(0, Math.min(RACE_LEN + 1, p.at + n));
+    // Its space in the column: the one picked, else the row it was on (a wild card off START: a middle row).
+    if (p.at === 0 || p.at > RACE_LEN) p.row = null;
+    else if (Number.isInteger(row)) p.row = row;
+    else if (!Number.isInteger(p.row)) p.row = side === 'guys' ? 2 : 3;
     if (p.at !== from) this.lastMove = { from: this.raceX(side, from), to: this.raceX(side, p.at), n: (this.lastMove?.n ?? 0) + 1, side, trophy: false };
     if (p.at < RACE_LEN + 1) return false;
     p.state = 'home';
     // The next pawn starts: a prisoner is freed back to START first, or the one waiting comes on.
     const next = this.race.pawns[side].find((x) => x.state === 'jail') ?? this.race.pawns[side].find((x) => x.state === 'wait');
-    if (next) { next.state = 'board'; next.at = 0; }
+    if (next) { next.state = 'board'; next.at = 0; next.row = null; }
     return true;
   }
   #raceWon(side) { return this.race.pawns[side].every((p) => p.state === 'home'); }
@@ -652,38 +694,56 @@ export class GuysVsGalsGame {
     this.#note(text);
     return { owner, kind: card.kind, n: card.n ?? 0, text, crossed };
   }
-  /** Ending a turn on the other team's pawn takes it prisoner, once a game, while they still have a pawn waiting. */
+  /** Ending a turn on the very space the other team's pawn stands on takes it prisoner, once a game, while they still have a pawn waiting. */
   #capture(side) {
     const other = SIDES[side].other;
     const mine = this.#pawn(side);
     const theirs = this.#pawn(other);
     if (!mine || !theirs || this.race.captured[side] || mine.at === 0 || theirs.at === 0) return null;
-    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at)) return null;
+    if (this.raceX(side, mine.at) !== this.raceX(other, theirs.at) || mine.row !== theirs.row) return null;
     const waiting = this.race.pawns[other].find((p) => p.state === 'wait');
     if (!waiting) return null;
     theirs.state = 'jail';
     theirs.at = 0;
+    theirs.row = null;
     waiting.state = 'board';
     waiting.at = 0;
+    waiting.row = null;
     this.race.captured[side] = true;
     this.#note(`The ${this.#name(side)} take a ${this.#name(other)} pawn prisoner!`);
     return other;
   }
   #raceAnswered(right) {
     const c = this.card;
+    const steps = right ? this.#steps(this.turn) : [];
+    if (steps.length > 1) {
+      // Right: the team picks where to step, on their phones (the lit spaces on the TV). Nobody picking is no hold-up.
+      c.stage = 'move';
+      c.moves = steps;
+      this.#note(`The ${this.#name(this.turn)} got it right`);
+      this.#setTimer(T.move, () => this.#raceResolve(true, this.#defaultStep(steps).row), 'move');
+      this.#changed();
+      return;
+    }
+    if (right) this.#note(`The ${this.#name(this.turn)} got it right`);
+    this.#raceResolve(right, steps[0]?.row ?? null);
+  }
+  /** A judged question plays out: the pawn steps onto `row` of the next column, then wild cards, prisoners, the turn. */
+  #raceResolve(right, row) {
+    const c = this.card;
     const side = this.turn;
+    delete c.moves;
     const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
     let crossed = null;
     if (right) {
       c.right += 1;
       r.moved = side;
-      if (this.#movePawn(side, 1)) crossed = side;
+      if (this.#movePawn(side, 1, row)) crossed = side;
       else {
         // Your own side's wild space: draw at once, and keep answering.
         const p = this.#pawn(side);
         if (p && RACE_WILD[side].includes(this.raceX(side, p.at))) r.wild = this.#wild(side);
       }
-      this.#note(`The ${this.#name(side)} got it right`);
     } else this.#note(`The ${this.#name(side)} missed`);
     crossed = crossed ?? r.wild?.crossed ?? null;
     r.more = right && !crossed && c.i + 1 < c.qs.length && !SIDE_ORDER.some((s) => this.#raceWon(s));
@@ -732,7 +792,10 @@ export class GuysVsGalsGame {
     const r = this.race;
     return {
       len: r.len, wild: { guys: RACE_WILD.guys.slice(), gals: RACE_WILD.gals.slice() }, toss: r.toss,
-      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), state: p.state }))])),
+      pawns: Object.fromEntries(SIDE_ORDER.map((s) => [s, r.pawns[s].map((p) => ({ at: p.at, x: this.raceX(s, p.at), row: Number.isInteger(p.row) ? p.row : null, state: p.state }))])),
+      rows: RACE_ROWS,
+      // Where the team at play can step if it gets this question right (lettered once it is picking).
+      steps: this.phase === 'card' && this.turn ? this.#steps(this.turn) : [],
       captured: { ...r.captured }, skip: { ...r.skip },
     };
   }
@@ -742,6 +805,7 @@ export class GuysVsGalsGame {
   advance() {
     if (this.phase === 'card' && this.card?.stage === 'guess') { this.#lockGuess(); return; }
     if (this.phase === 'card' && this.card?.stage === 'ready') { this.movesReady('host'); return; }
+    if (this.phase === 'card' && this.card?.stage === 'move') { const t = this.timer; this.timer = null; t?.fire(); return; }
     if (this.phase === 'result' || this.phase === 'trophy') { const t = this.timer; this.timer = null; t?.fire(); }
   }
   /** The host throws out a card (a dud, or one nobody could know) and deals the same team another. */
@@ -750,6 +814,7 @@ export class GuysVsGalsGame {
     if (this.#isRace()) {
       // A dud question: another from the same pile in its place.
       const c = this.card;
+      if (c.stage === 'move') fail('That one is answered: pick a space first');
       const piles = this.deck[SIDES[this.turn].asks];
       const item = this.#draw(c.deck, piles[c.deck]);
       if (item) c.qs[c.i] = { deck: c.deck, ...item };
@@ -854,6 +919,7 @@ export class GuysVsGalsGame {
       case 'moves': return this.movesWinner('host', a.side ? String(a.side) : null);
       case 'actor': return this.pickActor('host', a.pid);
       case 'movesReady': return this.movesReady('host');
+      case 'space': return this.pickSpace('host', a.k);
       case 'nudge': return this.nudge(a.delta, a.side ? String(a.side) : null);
       case 'endGame': case 'playAgain': return this.endGame();
       case 'setSet': return this.setSet(a.id);
@@ -885,6 +951,7 @@ export class GuysVsGalsGame {
       case 'vote': this.vote(player, msg.choice); return { t: 'ack', what: 'vote' };
       case 'actor': this.pickActor(player, msg.pid); return undefined;
       case 'ready': this.movesReady(player); return undefined;
+      case 'space': this.pickSpace(player, msg.k); return undefined;
       case 'moves': this.movesWinner(player, msg.side ? String(msg.side) : null); return undefined;
       case 'challenge': this.challenge(player); return undefined;
       case 'react': this.react(player, msg.e); return undefined;
@@ -905,6 +972,7 @@ export class GuysVsGalsGame {
     switch (this.phase) {
       case 'lobby': return { text: 'Pick your side!', next: 'Guys on one team, Gals on the other' };
       case 'card': {
+        if (this.#isRace() && c.stage === 'move') return { text: 'Right!', next: `${who} pick a space to step onto, on their phones` };
         if (this.#isRace()) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === 'moves') {
           if (c.stage === 'pick') return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${this.#name(this.turn)} to act with` };
@@ -964,6 +1032,7 @@ export class GuysVsGalsGame {
     };
     if (c.actor) v.actor = { id: c.actor, name: this.#pname(c.actor) };
     if (c.stage === 'ready') v.ready = Object.keys(c.ready ?? {});
+    if (c.stage === 'move') { v.moves = (c.moves ?? []).map((s) => ({ ...s })); v.answer = c.a; }
     if (c.deck !== 'moves') v.text = c.q;
     if (c.cat) v.cat = c.cat;
     if (c.img) v.img = c.img;
@@ -1033,6 +1102,7 @@ export class GuysVsGalsGame {
         me.canReady = true;
         me.ready = !!c.ready?.[player.id];
       }
+      if (c.stage === 'move') me.canMove = side === this.turn;
       if (c.stage === 'act') {
         me.canCall = side === reading;
         if (me.reader || me.actor) me.move = c.m;
@@ -1089,6 +1159,12 @@ export class GuysVsGalsGame {
     if (this.phase === 'card') {
       if (!this.card || !DECKS[this.card.deck]) this.#deal();
       else if (this.card.stage === 'act') this.#setTimer(T.moves, () => this.#movesDone(null, true), 'moves');
+      else if (this.card.stage === 'move') {
+        const steps = this.card.moves?.length ? this.card.moves : this.#steps(this.turn);
+        this.card.moves = steps;
+        if (steps.length) this.#setTimer(T.move, () => this.#raceResolve(true, this.#defaultStep(steps).row), 'move');
+        else this.#raceResolve(true, null);
+      }
     } else if (this.phase === 'result') {
       const r = this.result;
       if (!r || !this.card) this.#deal();

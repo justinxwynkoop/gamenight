@@ -52,7 +52,7 @@ const watch = (page, who) => {
 };
 const until = async (fn, what, ms = 15000) => { const end = Date.now() + ms; while (Date.now() < end) { if (await fn()) return; await new Promise((r) => setTimeout(r, 50)); } fail(`timed out: ${what}`); throw new Error(what); };
 const shots = new Set();
-const shot = async (page, name) => { if (!process.env.SHOT_DIR || shots.has(name)) return; shots.add(name); await page.waitForTimeout(1200); await page.screenshot({ path: `${process.env.SHOT_DIR}/guysvsgals-${name}.png` }); };
+const shot = async (page, name) => { if (!process.env.SHOT_DIR || shots.has(name)) return; shots.add(name); await page.waitForTimeout(1200); await page.screenshot({ path: `${process.env.SHOT_DIR}/guysvsgals-${name}.png`, fullPage: /phone/.test(name) }); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Ann is a Guy; Bo and Cy are Gals.
@@ -208,6 +208,7 @@ try {
   let wilds = 0;
   let questions = 0;
   let across = 0;
+  let picks = 0;
   const raceEnd = Date.now() + 6 * 60_000;
   while (Date.now() < raceEnd) {
     if (await tv.locator('.gv-win').count()) break;
@@ -221,6 +222,27 @@ try {
       continue;
     }
     if (st.phase !== 'card') { await sleep(120); continue; }
+    // Right: the team at play picks the space its pawn steps onto, from the lettered lit spaces on the TV.
+    const lit = await tv.locator('.gv-dot.next[data-k]').evaluateAll((els) => els.map((e) => ({ k: e.dataset.k, x: e.dataset.x, row: e.dataset.row, wild: e.classList.contains('wild') })));
+    if (lit.length) {
+      const picker = await phoneWith('.gv-step');
+      if (!picker) { await sleep(120); continue; }
+      const side = players.find((p) => p.page === picker).side;
+      if (side !== st.turn) fail(`a ${side} phone can pick the ${st.turn}' space`);
+      for (const p of players) if (p.side !== st.turn && (await p.page.locator('.gv-step, button.gv-mdot').count())) fail(`${p.name} is not on the team at play but can pick a space`);
+      const keys = await picker.locator('.gv-step').evaluateAll((els) => els.map((e) => e.dataset.k));
+      if (keys.join() !== lit.map((l) => l.k).join()) fail(`the phone offers spaces ${keys} but the TV lights ${lit.map((l) => l.k)}`);
+      if ((await picker.locator('button.gv-mdot').count()) !== lit.length) fail('the little board on the phone does not light the same spaces');
+      if (lit.length !== 2 && lit.length !== 6) fail(`expected two spaces to pick from (six from START), saw ${lit.length}`);
+      if (!picks) { await shot(tv, 'race-pick'); await shot(picker, 'race-phone-pick'); }
+      // Take the last one; every other time, by tapping the space on the phone's little board instead of its button.
+      const want = lit[lit.length - 1];
+      await (picks++ % 2 ? picker.locator(`button.gv-mdot[data-k="${want.k}"]`) : picker.locator(`.gv-step[data-k="${want.k}"]`)).click();
+      await until(async () => (await tvState()).phase !== 'card' || !(await tv.locator('.gv-dot.next[data-k]').count()), 'the pawn to step', 10000);
+      // (A wild space draws a wild card, which can move the pawn on at once: only a plain space is checked.)
+      if (!want.wild && !(await tv.locator(`.gv-dot[data-x="${want.x}"][data-row="${want.row}"] .gv-dot-pawn`).count())) fail(`the pawn did not step onto the space that was picked (${want.k})`);
+      continue;
+    }
     if (st.answer) fail('the TV shows the answer before the question is judged');
     if (!(await tv.locator('.gv-qcount').count())) fail('the race card does not say which question it is');
     const judge = await phoneWith('.gv-judge:not(.three) button.yes');
@@ -234,6 +256,7 @@ try {
   await shot(tv, 'race-win');
   if (!/THE GUYS WIN/.test(await tvText())) fail('the Guys should win the race');
   if (!wilds) fail('never drew a wild card in the race');
+  if (picks < 6) fail(`the Guys should have picked their space after each right answer, saw ${picks} picks`);
   console.log(`race: ${questions} questions, ${wilds} wild cards, ${across} pawns across before the last`);
 
   // The second tab sat out the whole game. When the first tab closes it takes over, in the same room.

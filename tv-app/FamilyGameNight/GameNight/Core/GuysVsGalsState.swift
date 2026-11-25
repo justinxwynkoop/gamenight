@@ -81,7 +81,7 @@ struct GvgCard: Decodable, Equatable {
     var deckName: String
     /// Whose stuff it is (the reading team): "guys" (answered by the Gals) or "gals".
     var about: String
-    /// read | secret | guess | pick | ready | act | done
+    /// read | secret | guess | pick | ready | act | move | done
     var stage: String
     var challenged: Bool
     var reader: GvgPerson
@@ -109,12 +109,27 @@ struct GvgCard: Decodable, Equatable {
     /// The pawn race: which of the card's questions this is ("2 of 3").
     var q: Int?
     var of: Int?
+    /// The pawn race, after a right answer ("move"): the lettered spaces the team at play is picking from.
+    var moves: [GvgStep]?
+}
+
+/// The pawn race: a space the team at play can step its pawn onto. `k` is its letter once the team is picking.
+struct GvgStep: Decodable, Equatable {
+    var k: String?
+    var x: Int
+    var row: Int
+    /// Whose wild column it is in, if any.
+    var wild: String?
+    /// The other team's pawn stands on it.
+    var pawn: Bool?
 }
 
 /// The pawn race: one of a team's pawns. `x` counts from the Guys' START (0) to the Gals' START (len + 1).
 struct GvgPawn: Decodable, Equatable {
     var at: Int
     var x: Int
+    /// Which space of its column it stands on, from the top (nil on a START, and in games saved before rows).
+    var row: Int?
     /// board | wait | home | jail
     var state: String
 }
@@ -127,6 +142,10 @@ struct GvgRace: Decodable, Equatable {
     var pawns: [String: [GvgPawn]]
     var captured: [String: Bool]?
     var skip: [String: Bool]?
+    /// Spaces in each column of the board.
+    var rows: Int?
+    /// While a question is read: where a right answer lets the team at play step.
+    var steps: [GvgStep]?
 
     func pawns(_ side: String) -> [GvgPawn] { pawns[side] ?? [] }
     func across(_ side: String) -> Int { pawns(side).filter { $0.state == "home" }.count }
@@ -253,14 +272,19 @@ extension SoundPlanner {
             }
             else if c.challenged, before.card?.challenged != true { plan.cues.append(.dd) }
             else if c.stage != before.card?.stage, c.stage == "guess" || c.stage == "act" { plan.cues.append(.lock) }
+            // The race: right, and now the team picks its space.
+            else if c.stage == "move", before.card?.stage != "move" { plan.cues.append(.correct) }
         }
         guard after.phase != before.phase else { return }
         switch after.phase {
         case .card:
             if before.phase == .lobby { plan.cues.append(.roundstart) }
         case .result:
-            if after.result?.timeout == true { plan.cues.append(.timeup) }
-            else { plan.cues.append(after.result?.moved != nil ? .correct : .wrong) }
+            // (A right answer in the race already rang when the team started picking its space.)
+            if before.card?.stage != "move" {
+                if after.result?.timeout == true { plan.cues.append(.timeup) }
+                else { plan.cues.append(after.result?.moved != nil ? .correct : .wrong) }
+            }
             // The pawn race: a wild card, a prisoner, a pawn across.
             if let r = after.result {
                 if r.wild != nil { plan.cues.append(.dd) }

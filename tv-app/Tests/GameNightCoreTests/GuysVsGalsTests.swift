@@ -134,6 +134,18 @@ final class GuysVsGalsTests: XCTestCase {
         let right = try gvg("race-result-right")
         XCTAssertEqual(right.result?.more, true, "the next question on the same card")
         XCTAssertEqual(right.race?.pawns("gals").first?.at, 1)
+        // The team picks the space its pawn steps onto: the space up or the space down in the next column.
+        let second = try gvg("race-second")
+        XCTAssertEqual(second.race?.rows, 6)
+        XCTAssertEqual(second.race?.pawns("gals").first?.row, 2, "it stepped onto space C from START")
+        XCTAssertEqual(second.race?.steps?.map(\.row), [2, 3], "lit while the question is read")
+        let move = try gvg("race-move")
+        XCTAssertEqual(move.card?.stage, "move")
+        XCTAssertEqual(move.card?.moves?.map(\.k), ["A", "B"])
+        XCTAssertEqual(move.card?.moves?.map(\.x), [11, 11])
+        XCTAssertNotNil(move.card?.answer, "it is judged, so the answer shows")
+        let moved = try gvg("race-moved")
+        XCTAssertEqual(moved.race?.pawns("gals").first?.row, 3, "space B: the one down")
         let wild = try gvg("race-wild")
         XCTAssertEqual(wild.result?.wild?.owner, "guys")
         XCTAssertFalse(wild.result?.wild?.text.contains("{") ?? true)
@@ -200,6 +212,11 @@ final class GuysVsGalsSoundTests: XCTestCase {
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").playMusic, true)
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").cues, [.lock])
         XCTAssertEqual(try plan("gvg-moves-act", "gvg-moves-stolen").playMusic, false)
+    }
+
+    func testARightAnswerInTheRaceRingsOnceThenThePawnSteps() throws {
+        XCTAssertEqual(try plan("gvg-race-second", "gvg-race-move").cues, [.correct], "right: now pick a space")
+        XCTAssertEqual(try plan("gvg-race-move", "gvg-race-moved").cues, [.pick], "the pawn steps; it does not ring twice")
     }
 
     func testTheRaceHasSoundsForItsMoments() throws {
