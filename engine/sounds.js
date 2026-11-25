@@ -21,7 +21,7 @@ export const SOUND_GAMES = [
 export const SOUND_NAMES = [
   { name: 'lobby', label: 'Lobby music (loops while players join)', games: ['shared', 'jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'] },
   { name: 'think', label: 'Final Jeopardy thinking music', games: ['shared', 'jeopardy', 'spynight', 'guysvsgals'], labels: { guysvsgals: 'Music under a charade (Our Moves)', spynight: 'Music under the game (loops from the deal to the end)' } },
-  { name: 'open', label: 'Buzzers open', games: ['shared', 'jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'A card is dealt', piechase: 'A question comes up', spynight: 'The vote begins' } },
+  { name: 'open', label: 'Buzzers open', games: ['shared', 'jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'A card is dealt to the same team', piechase: 'A question comes up', spynight: 'The vote begins' } },
   { name: 'buzz', label: 'Someone buzzes in', games: ['shared', 'jeopardy'] },
   { name: 'correct', label: 'Right answer', games: ['shared', 'jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'The trophy moves toward a team', piechase: 'A right answer', spynight: 'A team is approved' } },
   { name: 'wrong', label: 'Wrong answer', games: ['shared', 'jeopardy', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'A miss: over to the other team', piechase: 'A wrong answer', spynight: 'A team is rejected' } },
@@ -37,7 +37,7 @@ export const SOUND_NAMES = [
   { name: 'bet', label: 'A Daily Double wager is placed', games: ['jeopardy', 'piechase'], labels: { piechase: 'Landing on Roll Again' } },
   { name: 'join', label: 'A player joins', games: ['jeopardy', 'spynight', 'piechase', 'guysvsgals'] },
   { name: 'applause', label: 'End of a round, and the winner', games: ['jeopardy', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'A trophy is won, and the winners', piechase: 'Game over' } },
-  { name: 'roundstart', label: 'A new round begins', games: ['jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'The game begins', piechase: 'The game begins', spynight: 'The roles are dealt' } },
+  { name: 'roundstart', label: 'A new round begins', games: ['jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'], labels: { guysvsgals: 'The game begins, or it is the other team’s turn', piechase: 'The game begins', spynight: 'The roles are dealt' } },
   { name: 'ding', label: 'A survey answer flips over', games: ['feud', 'spynight', 'guysvsgals'], labels: { guysvsgals: 'A trophy is won, or a pawn gets across', spynight: 'A mission succeeds' } },
   { name: 'strike', label: 'A strike (the big X)', games: ['feud', 'spynight'], labels: { spynight: 'A mission fails' } },
   { name: 'strikeout', label: 'The third strike', games: ['feud'] },

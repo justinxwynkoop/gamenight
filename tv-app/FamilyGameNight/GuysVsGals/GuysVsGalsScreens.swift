@@ -445,6 +445,14 @@ private struct GvgRaceBoard<Center: View>: View {
         return side == "guys" ? (n == 1 ? 2 : 1 + i) : (n == 1 ? 3 : 3 + i)
     }
 
+    /// The space a right answer moves the team at play onto: in front of its pawn, along its own row.
+    private func isNext(_ race: GvgRace, _ x: Int, _ row: Int) -> Bool {
+        guard game.phase == .card, let side = game.turn,
+              let i = race.pawns(side).firstIndex(where: { $0.state == "board" }) else { return false }
+        let nx = race.pawns(side)[i].x + (side == "guys" ? 1 : -1)
+        return nx >= 1 && nx <= race.len && nx == x && pawnRow(race, side, i) == row
+    }
+
     private func half(_ race: GvgRace, _ xs: ClosedRange<Int>) -> some View {
         GeometryReader { proxy in
             let w = proxy.size.width / CGFloat(xs.count)
@@ -476,9 +484,14 @@ private struct GvgRaceBoard<Center: View>: View {
                 .background(Circle().fill(.white))
             Circle().strokeBorder(GV.ink, lineWidth: 5)
             if let wild {
-                Text(game.name(wild).uppercased()).font(GV.bangers(size * 0.3)).foregroundStyle(.white)
-                    .shadow(color: GV.ink, radius: 0, x: 2, y: 2).rotationEffect(.degrees(-12))
-                    .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 6)
+                // A wild space says so, in its team's colour, with the team's name under it.
+                VStack(spacing: -2) {
+                    Text("WILD").font(GV.bangers(size * 0.32))
+                    Text(game.name(wild).uppercased()).font(GV.bangers(size * 0.16)).tracking(1)
+                }
+                .foregroundStyle(.white)
+                .shadow(color: GV.ink, radius: 0, x: 2, y: 2).rotationEffect(.degrees(-12))
+                .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 6)
             } else {
                 Image("GvgPic-\(GvgBoardArt.pics[seed % GvgBoardArt.pics.count])").resizable().interpolation(.high).scaledToFit()
                     .frame(width: size * 0.64, height: size * 0.64)
@@ -491,7 +504,8 @@ private struct GvgRaceBoard<Center: View>: View {
         .frame(width: size, height: size)
         .shadow(color: .black.opacity(0.35), radius: 0, x: 3, y: 4)
         .overlay(Circle().strokeBorder(here.isEmpty ? .clear : .white, lineWidth: 6).padding(-8))
-        .zIndex(here.isEmpty ? 0 : 1)
+        .overlay { if isNext(race, x, row) { GvgNextRing(color: GV.color(game, game.turn ?? "guys"), size: size) } }
+        .zIndex(here.isEmpty ? (isNext(race, x, row) ? 0.5 : 0) : 1)
         .animation(.spring(response: 0.6, dampingFraction: 0.65), value: here)
     }
 
@@ -1148,5 +1162,25 @@ private struct GvgFloat: View {
         .position(x: x, y: up ? height * 0.25 : height + 80)
         .opacity(up ? 0 : 1)
         .onAppear { withAnimation(.easeOut(duration: 3.2)) { up = true } }
+    }
+}
+
+/// A pulsing ring in the team's colour, with an arrow over it: where a right answer takes the pawn.
+private struct GvgNextRing: View {
+    let color: Color
+    let size: CGFloat
+    @State private var on = false
+
+    var body: some View {
+        ZStack {
+            Circle().strokeBorder(.white, lineWidth: 6).padding(-8)
+            Circle().strokeBorder(color, lineWidth: on ? 14 : 8).padding(on ? -22 : -14)
+                .shadow(color: color, radius: on ? 22 : 10)
+            Text("▼").font(.system(size: size * 0.3, weight: .black)).foregroundStyle(.white)
+                .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+                .offset(y: -size * 0.72 - (on ? 6 : 0))
+        }
+        .allowsHitTesting(false)
+        .onAppear { withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) { on = true } }
     }
 }

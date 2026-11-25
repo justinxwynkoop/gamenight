@@ -261,9 +261,23 @@ function boardDot(g, x, row) {
       if (p.state === 'board' && p.x === x && pawnRow(g, side, i) === row) kids.push(token(side, '', 128, 'gv-dot-pawn'));
     });
   }
-  const label = wild ? h('b', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase()) : pic(DOT_PICS[seed % DOT_PICS.length], 'gv-dot-pic');
-  return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''}`, 'data-x': x, 'data-row': row,
-    style: { '--d': wild ? teamOf(g, wild)?.color : DOT_FILLS[seed % DOT_FILLS.length] } }, label, kids);
+  // A wild space says so, in its team's colour, with the team's name under it.
+  const label = wild ? h('b', {}, 'WILD', h('small', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase())) : pic(DOT_PICS[seed % DOT_PICS.length], 'gv-dot-pic');
+  const next = nextSpace(g);
+  const isNext = next && next.x === x && next.row === row;
+  return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''} ${isNext ? 'next' : ''}`, 'data-x': x, 'data-row': row,
+    style: { '--d': wild ? teamOf(g, wild)?.color : DOT_FILLS[seed % DOT_FILLS.length], '--n': isNext ? teamOf(g, g.turn)?.color : null } }, label, kids);
+}
+
+/** Where a right answer takes the team at play: the space in front of its pawn, along its own row (or its START). */
+export function nextSpace(g) {
+  if (g.phase !== 'card' || !g.turn || !g.race) return null;
+  const pawns = g.race.pawns[g.turn];
+  const i = pawns.findIndex((p) => p.state === 'board');
+  if (i < 0) return null;
+  const x = pawns[i].x + (g.turn === 'guys' ? 1 : -1);
+  if (x < 1 || x > g.race.len) return null;   // the next step is across, onto the far START
+  return { x, row: pawnRow(g, g.turn, i) };
 }
 
 function boardHalf(g, from, to) {
@@ -378,7 +392,12 @@ export function onChange(prev, view, sound) {
   if (g.phase === 'lobby' && p.phase === 'lobby' && joined(g) > joined(p)) sound.play('join');
   if (g.lastMove && g.lastMove.n !== p.lastMove?.n && !g.lastMove.trophy) setTimeout(() => sound.play('pick'), 250);   // the trophy moves
   if (g.phase === 'card' && g.card) {
-    if (g.card.n !== p.card?.n) sound.play('open');
+    if (g.card.n !== p.card?.n) {
+      // Over to the other team: a sting. The same team's next card: a deal. The next question on a race card: nothing,
+      // the reader just carries on.
+      if (p.phase !== 'lobby' && p.turn && g.turn !== p.turn) sound.play('roundstart');
+      else if (!((g.card.q ?? 1) > 1)) sound.play('open');
+    }
     else if (g.card.challenged && !p.card?.challenged) sound.play('dd');
     else if (g.card.stage !== p.card?.stage && ['guess', 'act'].includes(g.card.stage)) sound.play('lock');
   }

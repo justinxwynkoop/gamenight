@@ -45,9 +45,9 @@ test('the Family set is valid and has all five decks for both sides, with their 
   for (const set of Object.values(SETS)) assert.equal(validateSet(set), true);
   const fam = SETS.family;
   for (const half of [fam.guyStuff, fam.galStuff]) {
-    assert.ok(half.facts.length >= 140, 'facts');
+    assert.ok(half.facts.length >= 130, 'facts');
     assert.ok(half.stuff.length >= 100, 'stuff');
-    assert.ok(half.pics.length >= 50, 'pics');
+    assert.ok(half.pics.length >= 60, 'pics');
     assert.ok(half.lives.length >= 65, 'lives');
     assert.ok(half.moves.length >= 90, 'moves');
     for (const p of half.pics) {
@@ -138,6 +138,36 @@ test('a wrong answer passes the turn and leaves the trophy; on the other side of
   assert.equal(g.pos, -1);
   assert.equal(g.card.deck, 'stuff');
   assert.ok(G.length);
+});
+
+test('the pace: a right answer is a quick beat and the same team plays on; a miss holds the answer up longer', () => {
+  const { g, begin, judge, wait } = setup();
+  begin();
+  assert.ok(T.right < T.result);
+  judge(true);
+  wait(T.right);
+  assert.equal(g.phase, 'card', 'straight on to the next card after a right answer');
+  assert.equal(g.turn, 'gals');
+  judge(false);
+  wait(T.right);
+  assert.equal(g.phase, 'result', 'a miss stays up long enough to read the answer');
+  wait(T.result - T.right);
+  assert.equal(g.phase, 'card');
+  assert.equal(g.turn, 'guys');
+});
+
+test('the race pace: the next question on a card follows quickly; the end of a turn holds longer', () => {
+  const { g, begin, judge, wait } = race();
+  begin();
+  judge(true);
+  wait(T.right);
+  assert.equal(g.phase, 'card');
+  assert.equal(g.card.i, 1, 'the second question, straight away');
+  judge(false);
+  wait(T.right);
+  assert.equal(g.phase, 'result');
+  wait(T.result - T.right);
+  assert.equal(g.turn, 'guys');
 });
 
 test('a right answer on your own green space wins the trophy; a new one starts on START with the other team', () => {

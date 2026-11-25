@@ -102,7 +102,8 @@ export const WILD_CARDS = {
 };
 
 export const T = {
-  result: 4200,        // right or wrong (and the answer), before the next card
+  result: 4200,        // a miss (and the answer), before the other team's card
+  right: 2200,         // a right answer on a spoken card: a quick beat, then the same team plays on
   wild: 6500,          // the same, with a wild card or a prisoner to read
   trophy: 5200,        // a trophy is won, before the next one goes on START
   moves: 60000,        // the clock on a charade
@@ -526,7 +527,10 @@ export class GuysVsGalsGame {
     if (c.deck === 'moves') this.#note(moveSide ? `The ${this.#name(moveSide)} got the charade` : 'Nobody got the charade');
     else if (c.challenged) this.#note(right ? `The ${this.#name(c.about)} beat the challenge` : `The ${this.#name(c.about)} missed the challenge`);
     else this.#note(right ? `The ${this.#name(at)} got it right` : `The ${this.#name(at)} missed`);
-    this.#setTimer(T.result, () => (trophy ? this.#winTrophy(trophy) : this.#next(next)));
+    // A right answer on a spoken card keeps the same team going, so it gets a quick beat (everyone just heard it was
+    // right); a miss, a challenge, a charade, a secret or a trophy holds long enough to read the answer.
+    const quick = right && !trophy && !c.challenged && ['facts', 'stuff', 'pics'].includes(c.deck);
+    this.#setTimer(quick ? T.right : T.result, () => (trophy ? this.#winTrophy(trophy) : this.#next(next)));
     this.#changed();
   }
   #next(side) {
@@ -685,7 +689,8 @@ export class GuysVsGalsGame {
     this.result = r;
     c.stage = 'done';
     this.phase = 'result';
-    this.#setTimer(r.wild || r.captured ? T.wild : T.result, () => this.#raceAfter());
+    // The next question on the same card follows quickly; a wild card or a prisoner needs reading time.
+    this.#setTimer(r.wild || r.captured ? T.wild : r.more ? T.right : T.result, () => this.#raceAfter());
     this.#changed();
   }
   #raceAfter() {
