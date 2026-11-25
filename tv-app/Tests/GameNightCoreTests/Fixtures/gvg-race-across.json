@@ -185,8 +185,8 @@
       3
     ],
     "log": [
+      "The Guys got it right",
       "The Guys missed",
-      "Girls’ night out! The Gals move ahead 2 spaces.",
       "The Gals got it right",
       "The Gals missed",
       "The Gals take a Guys pawn prisoner!",
@@ -195,7 +195,7 @@
     "lastMove": {
       "from": 12,
       "to": 13,
-      "n": 6,
+      "n": 5,
       "side": "guys",
       "trophy": false
     },
@@ -203,11 +203,9 @@
       "len": 12,
       "wild": {
         "guys": [
-          3,
-          8
+          3
         ],
         "gals": [
-          5,
           10
         ]
       },

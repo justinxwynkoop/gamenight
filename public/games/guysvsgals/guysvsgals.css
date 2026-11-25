@@ -370,7 +370,7 @@
 .gv-dot { position: relative; width: min(9.6vmin, 5.4vw); flex: none; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--d) 55%, #fff), var(--d) 70%); border: .5vmin solid var(--gv-ink);
   box-shadow: inset 0 -.8vmin 0 rgb(0 0 0 / .16), .4vmin .5vmin 0 rgb(0 0 0 / .35); }
-.gv-dot i { font-style: normal; font-size: 4.8vmin; line-height: 1; filter: saturate(.85); opacity: .9; }
+.gv-dot .gv-dot-pic { width: 66%; height: 66%; object-fit: contain; padding: 0; background: none; border: 0; box-shadow: none; transform: none; filter: drop-shadow(.25vmin .35vmin 0 rgb(0 0 0 / .3)); }
 .gv-dot.wild b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 2.6vmin; letter-spacing: .03em; color: #fff; transform: rotate(-12deg);
   -webkit-text-stroke: .22vmin var(--gv-ink); paint-order: stroke fill; }
 .gv-dot.has-pawn { box-shadow: 0 0 0 .5vmin #fff, 0 0 0 1vmin var(--gv-ink); z-index: 2; }

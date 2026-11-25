@@ -385,7 +385,8 @@ private extension View {
 /// The colours and pictures on the race board's plain spaces (same lists as raceBoard() in tv.js).
 private enum GvgBoardArt {
     static let fills: [UInt32] = [0xFF8A8A, 0xFFD76A, 0x8BE08B, 0xFFB26B, 0xFF9CCF, 0x8FC8FF, 0xC7A6FF, 0x7FE0D4]
-    static let icons = ["⚽", "🍕", "🔧", "💄", "🚗", "🎸", "👠", "🏈", "🛒", "🎣", "🧁", "📺", "🛠️", "👗", "🎮", "🍳", "🏀", "💅", "🔨", "🎤", "🏌️", "🧶", "🍔", "🛋️"]
+    /// Pictures on the plain spaces: the 3D emoji that come with the game (Assets GvgPic-*, MIT, art/SOURCES.md).
+    static let pics = ["american-football", "cupcake", "wrench", "lipstick", "racing-car", "high-heeled-shoe", "video-game", "handbag", "hammer", "nail-polish", "baseball", "bouquet", "toolbox", "dress", "fishing-pole", "ring", "bowling", "shopping-bags", "pickup-truck", "yarn", "pool-8-ball", "teapot", "motorcycle", "gem-stone"]
 }
 
 /// The pawn race board, like the classic one: a deep blue field with a yellow and red rim, each team's START rail
@@ -479,7 +480,9 @@ private struct GvgRaceBoard<Center: View>: View {
                     .shadow(color: GV.ink, radius: 0, x: 2, y: 2).rotationEffect(.degrees(-12))
                     .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 6)
             } else {
-                Text(GvgBoardArt.icons[seed % GvgBoardArt.icons.count]).font(.system(size: size * 0.46)).opacity(0.9)
+                Image("GvgPic-\(GvgBoardArt.pics[seed % GvgBoardArt.pics.count])").resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size * 0.64, height: size * 0.64)
+                    .shadow(color: .black.opacity(0.3), radius: 0, x: 2, y: 3)
             }
             ForEach(Array(here.enumerated()), id: \.offset) { k, side in
                 GvgToken(side: side, size: size * 1.4).offset(x: CGFloat(k) * size * 0.3, y: -size * 0.15)
@@ -764,9 +767,9 @@ private struct GvgDeckCard: View {
         let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
         VStack(alignment: .leading, spacing: 22) {
                 HStack(spacing: 12) {
-                    Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 34)
+                    if !game.isRace { Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 34) }
                     Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: back, ink: .white, size: 34)
-                    if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 34).lineLimit(1).minimumScaleFactor(0.5) }
+                    if !game.isRace, let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 34).lineLimit(1).minimumScaleFactor(0.5) }
                     if let q = c.q, let of = c.of { Sticker(text: "QUESTION \(q) OF \(of)", fill: .white, size: 34) }
                     Spacer(minLength: 120)
                 }

@@ -439,18 +439,18 @@ test('the race: your own wild space draws a card at once; the other side’s onl
   begin();
   // The Gals' own wild space is RACE_WILD.gals: x 10 is two spaces in from their START.
   const gx = (at) => RACE_LEN + 1 - at;
-  pawn(g, 'gals').at = gx(RACE_WILD.gals[1]) - 1;
+  pawn(g, 'gals').at = gx(RACE_WILD.gals[0]) - 1;
   judge(true);
   assert.ok(g.result.wild, 'landed on their own wild space');
   assert.equal(g.result.wild.owner, 'gals');
   assert.ok(WILD_CARDS.gals.some((c) => c.kind === g.result.wild.kind));
   assert.ok(!g.result.wild.text.includes('{'));
   // random() is 0: the first card, ahead 2. Keep going: same card, next question.
-  assert.equal(pawn(g, 'gals').at, gx(RACE_WILD.gals[1]) + 2);
+  assert.equal(pawn(g, 'gals').at, gx(RACE_WILD.gals[0]) + 2);
   assert.equal(g.result.more, true);
   wait(T.wild);
   // Land on the Guys' wild space mid-turn: nothing yet.
-  pawn(g, 'gals').at = gx(RACE_WILD.guys[1]) - 1;
+  pawn(g, 'gals').at = gx(RACE_WILD.guys[0]) - 1;
   judge(true);
   assert.equal(g.result.wild, undefined, 'only if the turn ends there');
   wait(T.result);
