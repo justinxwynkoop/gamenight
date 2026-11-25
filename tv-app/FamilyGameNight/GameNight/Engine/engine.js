@@ -4996,7 +4996,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, hasLives_fn, path_fn, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5425,10 +5425,10 @@
         hosted: this.room.hosts > 0,
         pos: this.pos,
         green: GREEN,
-        path: PATH.slice(),
+        path: __privateMethod(this, _GuysVsGalsGame_instances, path_fn).call(this),
         greenColor: GREEN_COLOR,
         first: FIRST,
-        decks: DECK_ORDER.map((id) => ({ id, ...DECKS[id] })),
+        decks: DECK_ORDER.filter((id) => id !== "lives" || __privateMethod(this, _GuysVsGalsGame_instances, hasLives_fn).call(this)).map((id) => ({ id, ...DECKS[id] })),
         teams: __privateMethod(this, _GuysVsGalsGame_instances, teamsView_fn).call(this),
         turn: this.turn,
         trophy: this.trophyN,
@@ -5705,10 +5705,19 @@
     this.room.memory.save(GAME6, { ...memory, seen: [...seen, cardKey(deckName, pick)].slice(-MAX_SEEN3) });
     return pick;
   };
+  /** Our Lives is not trivia (Jason: "It's trivia"), so the shipped sets carry none; a family's own set still can.
+   *  With no Our Lives cards in play its space on the path is a second Our Facts space, and the deck is not listed. */
+  hasLives_fn = function() {
+    if (this.deck) return ["guyStuff", "galStuff"].some((part) => this.deck[part].lives.length > 0);
+    return __privateMethod(this, _GuysVsGalsGame_instances, sets_fn2).call(this).some((set) => ["guyStuff", "galStuff"].some((part) => (set?.[part]?.lives ?? []).length > 0));
+  };
+  path_fn = function() {
+    return __privateMethod(this, _GuysVsGalsGame_instances, hasLives_fn).call(this) ? PATH.slice() : PATH.map((d) => d === "lives" ? "facts" : d);
+  };
   /** The deck a space draws from, for the side answering: a missing deck falls back to Facts, then Stuff. */
   deckFor_fn = function(side, space2) {
     const piles = this.deck[SIDES[side].asks];
-    let want = PATH[Math.min(GREEN, Math.abs(space2))];
+    let want = __privateMethod(this, _GuysVsGalsGame_instances, path_fn).call(this)[Math.min(GREEN, Math.abs(space2))];
     if (want === "any") {
       const options = ["facts", "stuff", "pics", "lives"].filter((d) => piles[d].length);
       want = options[Math.floor(this.room.rng() * options.length)] ?? "facts";
@@ -6230,7 +6239,7 @@
   var guysvsgals_default = {
     id: "guysvsgals",
     name: NAME2,
-    description: "The battle of the sexes, tug-of-war style: the Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side through five decks (facts, stuff, pictures, guess-my-life and charades). First to three trophies wins. Or play the classic pawn race, with wild cards and prisoners.",
+    description: "The battle of the sexes, tug-of-war style: the Guys answer gal stuff, the Gals answer guy stuff. Pull the trophy to your side with trivia, picture questions and charades. First to three trophies wins. Or play the classic pawn race, with wild cards and prisoners.",
     // Always two teams: the Guys and the Gals.
     needs: { teams: 2 },
     validateContent: validateSet4,

@@ -99,7 +99,7 @@ export function mount(container, { send }) {
       h('p', {}, `The trophy starts on START. The ${nameOf(g, g.first)} go first. A player on the other team reads you a card from their deck, and judges your answer on their phone.`),
       h('p', {}, 'Right: the trophy moves one space toward your end and you get another card. Wrong: the other team’s turn.'),
       h('p', {}, `Get it right while the trophy is on your green space and it’s yours. First to ${g.target} ${g.target === 1 ? 'trophy' : 'trophies'} wins.`),
-      h('p', {}, 'The space picks the deck: Our Facts, Our Stuff, Our Pics (a picture on the TV), Our Lives (guess what the reader secretly picked) and Our Moves (charades: both teams act at once, shout first to win).'),
+      h('p', {}, `The space picks the deck: Our Facts, Our Stuff, Our Pics (a picture on the TV)${(g.decks ?? []).some((d) => d.id === 'lives') ? ', Our Lives (guess what the reader secretly picked)' : ''} and Our Moves (charades: both teams act at once, shout first to win).`),
       g.settings.challenges ? h('p', {}, '✋ Each team has 3 challenges: throw a card back and make the other team answer it themselves. If they miss, the trophy comes your way.') : null);
   }
 
