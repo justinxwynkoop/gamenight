@@ -674,3 +674,27 @@ test('the race survives a restart while a team is picking its space', () => {
   assert.equal(s2.g.phase, 'result');
   assert.equal(pawn(s2.g, 'gals').at, 1);
 });
+
+// ---------- the grown-up set ----------
+test('the Grown-Ups set is valid, is where new games start, and the first player can switch sets from a phone', () => {
+  assert.equal(validateSet(SETS.grownups), true);
+  // Jason: "make sure none of the questions repeat". Nothing is asked twice anywhere in the set, in either half.
+  const seen = new Set();
+  for (const half of [SETS.grownups.guyStuff, SETS.grownups.galStuff]) {
+    assert.ok(half.facts.length >= 140 && half.stuff.length >= 130 && half.lives.length >= 30 && half.moves.length >= 36 && half.pics.length >= 14);
+    for (const deck of ['facts', 'stuff', 'pics', 'lives', 'moves']) {
+      for (const q of half[deck]) {
+        const key = (q.q || q.m).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        assert.ok(!seen.has(key), `asked twice: ${q.q || q.m}`);
+        seen.add(key);
+      }
+    }
+  }
+  const { room, g, G, W, msg } = setup();
+  assert.equal(g.settings.setId, 'grownups');
+  assert.equal(room.publicView().game.setTitle, 'Grown-Ups Night');
+  assert.throws(() => msg(W[0], { t: 'set', id: 'family' }), /Only the host/);
+  msg(G[0], { t: 'set', id: 'family' });
+  assert.equal(room.publicView().game.setTitle, 'Family Battle');
+  assert.throws(() => msg(G[0], { t: 'set', id: 'nope' }), /No such question set/);
+});

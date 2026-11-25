@@ -198,6 +198,16 @@ try {
   await until(async () => (await tv.locator('.gv-lobby').count()) > 0, 'Rematch to return to the lobby');
   console.log('Guys vs Gals played through three phones and the TV page');
 
+  // ---- Which questions: new games start on the grown-up set, and the first player can switch sets from a phone. ----
+  const other = players[1].page;
+  await until(async () => /Questions: Grown-Ups Night/.test(await other.locator('.gv').innerText()), 'the other phones to say which questions are in play');
+  if (await other.locator('button[data-set]').count()) fail('only the first player picks the questions');
+  await ann.locator('button[data-set="family"]').click();
+  await until(async () => !/Grown-Ups/.test(await other.locator('.gv').innerText()) && /Questions: /.test(await other.locator('.gv').innerText()), 'the Family set to be picked from a phone');
+  await ann.locator('button[data-set="grownups"]').click();
+  await until(async () => /Questions: Grown-Ups Night/.test(await other.locator('.gv').innerText()), 'the grown-up set to be picked again');
+  await shot(ann, 'lobby-sets');
+
   // ---- The pawn race: Ann picks it in the lobby, the Guys get every question right and the Gals none. ----
   if (await players[1].page.locator('button[data-mode="race"]').count()) fail('only the first player picks the game');
   await ann.locator('button[data-mode="race"]').click();

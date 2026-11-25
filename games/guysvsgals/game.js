@@ -43,7 +43,8 @@ import { GameError, fail, int } from '../../lib.js';
 const GAME = 'guysvsgals';
 export const NAME = 'Guys vs Gals';
 export const ALL_SETS = 'all';
-export const DEFAULT_SET = 'family';
+// New games start on the grown-up set (Jason's pick); Family is in the lobby's list for when the kids play.
+export const DEFAULT_SET = 'grownups';
 
 /** The two sides. `key` is the room's team that plays the side; `asks` is the half of a question set it answers;
  *  `dir` is the way a right answer pulls the trophy (the Guys' end of the path is on the left). */
@@ -945,6 +946,10 @@ export class GuysVsGalsGame {
       case 'mode':
         if (!this.#starter(player.id)) fail('Only the host can do that');
         this.setMode(String(msg.mode ?? ''));
+        return undefined;
+      case 'set':
+        if (!this.#starter(player.id)) fail('Only the host can do that');
+        this.setSet(msg.id);
         return undefined;
       case 'judge': this.judge(player, msg.right === true); return undefined;
       case 'secret': this.secretPick(player, msg.choice); return undefined;

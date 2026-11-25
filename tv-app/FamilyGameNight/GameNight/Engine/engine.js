@@ -4897,7 +4897,7 @@
   var GAME6 = "guysvsgals";
   var NAME2 = "Guys vs Gals";
   var ALL_SETS2 = "all";
-  var DEFAULT_SET2 = "family";
+  var DEFAULT_SET2 = "grownups";
   var SIDES = {
     guys: { key: "blue", name: "Guys", color: "#3b8bff", asks: "galStuff", other: "gals", dir: -1 },
     gals: { key: "red", name: "Gals", color: "#ff4fa3", asks: "guyStuff", other: "guys", dir: 1 }
@@ -5379,6 +5379,10 @@
         case "mode":
           if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id)) fail("Only the host can do that");
           this.setMode(String(msg.mode ?? ""));
+          return void 0;
+        case "set":
+          if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id)) fail("Only the host can do that");
+          this.setSet(msg.id);
           return void 0;
         case "judge":
           this.judge(player, msg.right === true);
