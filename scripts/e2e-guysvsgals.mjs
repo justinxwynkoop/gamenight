@@ -58,11 +58,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Ann is a Guy; Bo and Cy are Gals.
 const players = [{ name: 'Ann', side: 'guys' }, { name: 'Bo', side: 'gals' }, { name: 'Cy', side: 'gals' }];
 try {
-  const tv = await browser.newPage({ viewport: { width: 1280, height: 720 } }); watch(tv, 'tv');
+  const tvTabs = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const tv = await tvTabs.newPage(); watch(tv, 'tv');
   await tv.goto(`${base}/tv?game=guysvsgals`);
   await until(async () => (await tv.locator('.gv-lobby .roomcode').count()) > 0, 'the TV lobby with a room code');
   const code = (await tv.locator('.roomcode').innerText()).trim();
   const tvText = async () => (await tv.locator('.gv-tv').evaluate((e) => e.textContent));
+  // A second TV tab in the same browser shares the room. It must not run a second copy of the game (the phones would
+  // flip between the two copies' questions): it waits, and stays out of the room.
+  const tv2 = await tvTabs.newPage(); watch(tv2, 'second tv');
+  await tv2.goto(`${base}/tv?game=guysvsgals`);
+  await until(async () => (await tv2.locator('.tv-second').count()) > 0, 'the second TV tab to say the game is open elsewhere');
   for (const p of players) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); watch(page, p.name);
     await page.goto(`${base}/?r=${code}`);
@@ -216,6 +222,13 @@ try {
   if (!/THE GUYS WIN/.test(await tvText())) fail('the Guys should win the race');
   if (!wilds) fail('never drew a wild card in the race');
   console.log(`race: ${questions} questions, ${wilds} wild cards, ${across} pawns across before the last`);
+
+  // The second tab sat out the whole game. When the first tab closes it takes over, in the same room.
+  if (!(await tv2.locator('.tv-second').count())) fail('the second TV tab joined in while the first was open');
+  await tv.close();
+  await until(async () => (await tv2.locator('.gv-tv').count()) > 0, 'the second TV tab to take over');
+  const menuText = await tv2.locator('.tvmenu-panel').evaluate((e) => e.textContent);
+  if (!menuText.includes(code)) fail(`the tab that took over is not in room ${code}`);
 } catch (e) { if (!problems.length) fail(e.message); }
 await browser.close(); sb.close(); site.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : '\nOK');

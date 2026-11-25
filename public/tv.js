@@ -68,6 +68,10 @@ async function startOnline() {
       game: ['jeopardy', 'feud', 'spynight', 'piechase', 'guysvsgals'].includes(want) ? want : null,
       onState,
       onStatus: (up) => conn.classList.toggle('down', !up),
+      onWaiting: () => app.replaceChildren(h('div', { class: 'lobby tv-second' },
+        h('h1', {}, 'Game Night is already open in another tab'),
+        h('p', {}, 'Two tabs would run two copies of the game, and the phones would flip between them.'),
+        h('p', {}, 'Use the other tab, or close it and this one takes over.'))),
     });
   } catch (e) {
     console.error(e);
