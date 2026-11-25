@@ -229,6 +229,10 @@ export class JeopardyGame {
     this.collecting = null;
     this.hallSig = null;            // the finished game already on the scoreboard (its players and scores)
     this.hallBefore = null;         // the scoreboard before it went in
+    // A host page ran this game at some point. It stays a spoken-answer game to the end, even while the host's phone
+    // sleeps or drops off the Wi-Fi for a while: the captain's phone stands in as the host until the page is back, so
+    // nobody suddenly gets an answer box, a picker or buzzers that open by themselves.
+    this.hostedRun = false;
   }
   #changed() {
     if (this.phase === 'gameover') this.#recordGame();
@@ -269,6 +273,7 @@ export class JeopardyGame {
 
   tick() {
     const now = this.#now();
+    if (this.phase !== 'lobby' && this.hosted()) this.hostedRun = true;
     // The wait for a slower phone's press is over: the earliest press wins.
     if (this.collecting && now >= this.collecting.until) this.#settle();
     const t = this.timer;
@@ -286,7 +291,7 @@ export class JeopardyGame {
       }
     } else this.captainGoneAt = null;
     // Someone who had not wagered or answered went away: carry on with everyone who is here.
-    if (this.phase === 'final-answer' && this.timer?.kind !== 'final-wait') this.#checkFinalReady();
+    if ((this.phase === 'final-answer' && this.timer?.kind !== 'final-wait') || (this.phase === 'final-wager' && this.timer?.kind !== 'final-go')) this.#checkFinalReady();
     if (this.recentBuzzes && now >= this.recentBuzzes.until) { this.recentBuzzes = null; this.#changed(); }
     // Old reactions fade out of the view.
     if (this.reactions.length && now - this.reactions[0].at > REACT_LIFE) {
@@ -707,6 +712,7 @@ export class JeopardyGame {
     const from = here.length ? here : order;
     this.controllerId = from[Math.floor(this.#rng() * from.length)];
     this.captainId ??= order[0];
+    this.hostedRun = this.hosted();
     this.#roundIntro();
   }
   /** The round's title and its categories on the TV, then the first pick. */
@@ -745,7 +751,7 @@ export class JeopardyGame {
    * Answers are said out loud and a host rules on them: when switched on (the captain hosts from a phone), and always
    * while a host page is connected. Final Jeopardy is typed either way.
    */
-  hostJudges() { return !!this.settings.hostJudges || this.hosted(); }
+  hostJudges() { return !!this.settings.hostJudges || this.hosted() || (this.hostedRun && this.phase !== 'lobby'); }
 
   // ---------- the clue ----------
   board() { return this.round >= 1 && this.round <= this.rounds.length ? this.rounds[this.round - 1] : null; }
@@ -767,6 +773,12 @@ export class JeopardyGame {
     const b = this.board();
     const cl = b?.[ci]?.clues[ri];
     if (!cl || cl.used) return;
+    // Only the player in control plays a Daily Double: if they are away, someone who is here takes control first.
+    if (cl.dd && !this.#connected(this.controllerId)) {
+      const cap = this.captain();
+      const here = cap && this.#connected(cap) ? cap : this.#order().find((id) => this.#connected(id));
+      if (here) this.controllerId = here;
+    }
     cl.used = true;
     this.#markSeen(cl.q);
     this.lastResult = null;
@@ -1050,8 +1062,13 @@ export class JeopardyGame {
     w = clamp(w, 0, max);   // from $0 up to the most they can bet
     this.clue.wager = w;
     this.phase = 'dd-answer';
-    this.#setTimer(T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');
+    this.#startDDClock(pid);
     this.#changed();
+  }
+  /** The Daily Double's answer clock. A host who chose "no clock" gets none here either. */
+  #startDDClock(pid) {
+    if (this.hostJudges() && !this.settings.answerTime) { this.#clearTimer(); return; }
+    this.#setTimer(T.ddSplash + readingTime(this.clue.q) + mediaTime(this.clue.media) + (this.hostJudges() ? T.hostAnswer : T.ddAnswer), () => this.#timeUp(pid), 'answer');
   }
   /** Up to your score; with everyone playing, a player with little or no money may still bet up to $1,000. */
   maxFinalWager(pid) {
@@ -1168,10 +1185,11 @@ export class JeopardyGame {
     this.#setTimer(T.finalWager, () => this.#lockFinalWagers(), 'wager');
     this.#changed();
   }
-  /** The wager clock ran out: whoever has not bet bets $0, and the game waits for the host to show the clue. */
+  /** The wager clock ran out: whoever has not bet bets $0. A host shows the clue; with no host it comes up by itself. */
   #lockFinalWagers() {
     if (this.phase !== 'final-wager') return;
     for (const id of this.final.eligible) if (!(id in this.final.wagers)) this.final.wagers[id] = 0;
+    if (!this.hostJudges()) { this.#beginFinalClue(); return; }
     this.#changed();
   }
   finalWager(pid, amount) {
@@ -1184,12 +1202,16 @@ export class JeopardyGame {
     this.#changed();
     this.#checkFinalReady();
   }
-  /** Everyone who is here has answered: go on to the reveal without waiting for the clock. (Wagers never start the clue by
-   *  themselves: the host shows it when they have all locked in.) */
+  /** Everyone who is here has answered: go on to the reveal without waiting for the clock. Wagers start the clue by
+   *  themselves only with nobody hosting: a host (the host page, or the captain judging out loud) shows it. */
   #checkFinalReady() {
     const f = this.final;
     if (!f) return;
     const here = f.eligible.filter((id) => this.#connected(id));
+    if (this.phase === 'final-wager' && !this.hostJudges() && here.length && here.every((id) => id in f.wagers) && this.timer?.kind !== 'final-go') {
+      // A moment so the last player sees their wager locked in, then the clue.
+      this.#setTimer(2500, () => this.#beginFinalClue(), 'final-go');
+    }
     if (this.phase === 'final-answer' && here.length && here.every((id) => id in f.answers) && this.timer?.kind !== 'final-wait') {
       // A short pause so the last player sees "locked in" before the reveal.
       this.#setTimer(1500, () => this.#beginFinalReveal(), 'final-wait');
@@ -1496,12 +1518,13 @@ export class JeopardyGame {
         return { pid: c?.buzzedId ?? null, text: `${name(c?.buzzedId)} buzzed in first`, next: host ? `${name(c?.buzzedId)}, say your answer. ${judge === 'the host' ? 'The host' : judge} rules Correct or Wrong` : `${name(c?.buzzedId)} is typing an answer on their phone` };
       case 'ruling':
         if (!r) return null;
-        if (r.correct) return { pid: r.pid, text: `${name(r.pid)} is right! ${signed(r.delta)}`, next: r.dd ? 'Here’s the answer' : `${name(r.pid)} picks next` };
+        // A right answer goes straight back to the board (a Daily Double too): no answer screen after it.
+        if (r.correct) return { pid: r.pid, text: `${name(r.pid)} is right! ${signed(r.delta)}`, next: `${name(r.pid)} picks next` };
         return { pid: r.pid, text: `${name(r.pid)} ${r.timedOut ? 'ran out of time' : 'is wrong'}. ${signed(-r.delta)}`, next: r.dd ? 'Here’s the answer' : 'Everyone else can buzz in again' };
       case 'reveal':
         return { pid: ctrl, text: r?.correct ? `${name(r.pid)} got it! ${signed(r.delta)}` : 'Nobody got that one', next: `${name(ctrl)} picks next. The board is back in a moment` };
       case 'dd-wager':
-        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: host ? `${name(ctrl)} bets on their phone` : `${name(ctrl)} is placing a bet on their phone` };
+        return { pid: ctrl, text: `Daily Double! Only ${name(ctrl)} plays this one`, next: hosted ? `${name(ctrl)} says a bet out loud. The host types it in` : `${name(ctrl)} is placing a bet on their phone` };
       case 'dd-answer':
         return { pid: ctrl, text: `${name(ctrl)} bet $${(c?.wager ?? 0).toLocaleString('en-US')}`, next: host ? `${name(ctrl)}, say your answer. ${judge === 'the host' ? 'The host' : judge} rules Correct or Wrong` : `Only ${name(ctrl)} answers, on their phone` };
       case 'round-end':
@@ -1670,7 +1693,7 @@ export class JeopardyGame {
       settings: this.settings, era: this.era, selected: [...this.selected], played: [...this.played],
       phase: this.phase, round: this.round, rounds: this.rounds, controllerId: this.controllerId, captainId: this.captainId,
       finalClue: this.finalClue, final: this.final, lastResult: this.lastResult, clue: this.clue,
-      hallSig: this.hallSig, hallBefore: this.hallBefore,
+      hallSig: this.hallSig, hallBefore: this.hallBefore, hostedRun: this.hostedRun,
       stats: [...this.stats.entries()],
     };
   }
@@ -1683,6 +1706,7 @@ export class JeopardyGame {
     this.round = data.round ?? 0;
     this.hallSig = data.hallSig ?? null;
     this.hallBefore = data.hallBefore ?? null;
+    this.hostedRun = data.hostedRun === true;
     this.rounds = data.rounds ?? [];
     this.controllerId = data.controllerId ?? null;
     this.captainId = data.captainId ?? null;
@@ -1695,12 +1719,17 @@ export class JeopardyGame {
     this.#refreshPacks();
     for (const id of this.selected) if (!this.packs.some((p) => p.id === id)) this.selected.delete(id);
     if (!this.selected.size && this.packs.length) this.selected.add((this.ownPacks[0] ?? this.packs[0]).id);
-    // A clue that was under way is settled, and the answer shown.
-    if (this.clue && ['reading', 'open', 'answering', 'ruling', 'dd-wager', 'dd-answer'].includes(this.phase)) { this.phase = 'reveal'; this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal'); }
+    // A clue still being read (or open for buzzing) is read again, a Daily Double carries on where it was, and a clue
+    // someone was answering is settled with the answer shown (nobody wins or loses money on it).
+    if (this.clue && ['reading', 'open'].includes(this.phase)) { this.phase = 'reading'; this.clue.buzzedId = null; this.#startReading(this.clue); }
+    else if (this.clue && this.phase === 'dd-wager') this.#startWager();
+    else if (this.clue && this.phase === 'dd-answer') this.#startDDClock(this.controllerId);
+    else if (this.clue && ['answering', 'ruling'].includes(this.phase)) { this.phase = 'reveal'; this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal'); }
     else if (this.phase === 'reveal') this.#setTimer(T.reveal, () => this.#afterReveal(), 'reveal');
     else if (this.phase === 'round-intro') this.phase = 'board';
     else if (this.phase === 'final-wager') this.#setTimer(T.finalWager, () => this.#lockFinalWagers(), 'wager');
-    else if (this.phase === 'final-answer') this.#beginFinalReveal();
+    // Answers already locked in are kept; everyone else gets the whole clock again.
+    else if (this.phase === 'final-answer') this.#setTimer(T.finalAnswer, () => this.#beginFinalReveal(), 'final');
     else if (this.phase === 'final-reveal') this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
     if (this.phase === 'lobby' && !this.archivePacks.length) this.#requestArchive(this.era);
   }

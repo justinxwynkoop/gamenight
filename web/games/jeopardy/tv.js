@@ -740,6 +740,8 @@ function ruling(c) {
   const r = g.lastResult;
   const p = player(r?.pid);
   const blank = !r || r.answer == null || r.answer === '' || r.timedOut;
+  // Said out loud and ruled by the host: there is no typed answer to show, and nobody ran out of time.
+  const spoken = !!r && r.answer == null && !r.timedOut;
   const others = g.players.filter((x) => x.connected && !(c.tried ?? []).includes(x.id) && x.id !== r?.pid).length > 0;
   const next = !r ? '' : r.correct ? `${p?.name ?? 'They'} ${c.dd ? 'keeps' : 'takes'} control of the board.`
     : c.dd ? 'Here’s the answer.' : others ? 'Everyone else can buzz in again in a moment.' : 'Here’s the answer.';
@@ -748,9 +750,9 @@ function ruling(c) {
     q: h('div', { class: 'q faint' }, c.q ?? ''),
     band: [
       h('div', { class: 'ruling' },
-        h('div', { class: 'says' }, av(p), named(p), blank ? (r?.timedOut ? ' ran out of time' : ' did not answer') : ' says'),
+        h('div', { class: 'says' }, av(p), named(p), spoken ? ' answered' : blank ? (r?.timedOut ? ' ran out of time' : ' did not answer') : ' says'),
         blank ? null : h('div', { class: 'theirs' }, `“${r.answer}”`),
-        stamp(!!r?.correct, r?.correct ? `RIGHT · ${signed(delta)}` : `${blank ? 'TIME’S UP' : 'NOT QUITE'} · −${money(delta)}`)),
+        stamp(!!r?.correct, r?.correct ? `RIGHT · ${signed(delta)}` : `${spoken ? 'WRONG' : blank ? 'TIME’S UP' : 'NOT QUITE'} · −${money(delta)}`)),
       h('div', { class: 'foot' }, next),
     ],
     foot: buzzFoot(c),
@@ -766,7 +768,7 @@ function reveal(c) {
     line = h('div', { class: 'result good' }, av(p, 48), h('span', {}, named(p), ' got it', r.answer ? [' with “', r.answer, '”'] : ''),
       h('b', {}, signed(Math.abs(r.delta ?? 0))), r.overridden ? h('small', {}, 'ruling flipped') : null);
   } else {
-    line = h('div', { class: 'result bad' }, av(p, 48), h('span', {}, named(p), r.timedOut || !r.answer ? ' ran out of time' : [' said “', r.answer, '”']),
+    line = h('div', { class: 'result bad' }, av(p, 48), h('span', {}, named(p), r.timedOut ? ' ran out of time' : !r.answer ? ' missed it' : [' said “', r.answer, '”']),
       h('b', {}, `−${money(Math.abs(r.delta ?? 0))}`), r.overridden ? h('small', {}, 'ruling flipped') : null);
   }
   const streak = r && r.correct && hot(r.streak ?? 0) ? h('div', { class: 'hot' }, `🔥 ${nameOf(r.pid)} is on fire! ${r.streak} in a row`) : null;
