@@ -185,7 +185,7 @@ final class GuysVsGalsSoundTests: XCTestCase {
     }
 
     func testACharadeWaitsForBothActorsToPressStart() throws {
-        let ready = try gvg("moves-ready")
+        let ready = try XCTUnwrap(try Fixture.state("gvg-moves-ready").guysVsGals)
         XCTAssertEqual(ready.card?.stage, "ready")
         XCTAssertEqual(ready.card?.ready, [try XCTUnwrap(ready.card?.actor?.id)], "Leo has pressed Start, Maya has not")
         XCTAssertNil(ready.timer, "no clock until both are ready")
