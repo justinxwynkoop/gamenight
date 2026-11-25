@@ -353,7 +353,8 @@ private struct ArtFrame: View {
                 .frame(width: artSize, height: artSize)
                 .clipShape(RoundedRectangle(cornerRadius: artCorner, style: .continuous))
                 .opacity(showArt ? 1 : 0)
-                .animation(.easeIn(duration: 1.5), value: showArt)
+                // Fades in with the hint, but is gone at once when the next song starts (see HintLine).
+                .animation(showArt ? .easeIn(duration: 1.5) : nil, value: showArt)
         }
         .frame(width: size, height: size)
     }
@@ -416,7 +417,9 @@ private struct HintLine<Content: View>: View {
             content
         }
         .opacity(visible ? 1 : 0)
-        .animation(.easeIn(duration: 1.2), value: visible)
+        // Fade in as the hint arrives, but disappear at once. When the next song starts the previous song's hints go
+        // away, and a slow fade-out would show the NEW song's genre, year and artist for a moment before its music starts.
+        .animation(visible ? .easeIn(duration: 1.2) : nil, value: visible)
     }
 }
 
