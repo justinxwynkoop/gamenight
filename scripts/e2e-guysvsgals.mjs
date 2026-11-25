@@ -223,7 +223,7 @@ try {
     }
     if (st.phase !== 'card') { await sleep(120); continue; }
     // Right: the team at play picks the space its pawn steps onto, from the lettered lit spaces on the TV.
-    const lit = await tv.locator('.gv-dot.next[data-k]').evaluateAll((els) => els.map((e) => ({ k: e.dataset.k, x: e.dataset.x, row: e.dataset.row })));
+    const lit = await tv.locator('.gv-dot.next[data-k]').evaluateAll((els) => els.map((e) => ({ k: e.dataset.k, x: e.dataset.x, row: e.dataset.row, wild: e.classList.contains('wild') })));
     if (lit.length) {
       const picker = await phoneWith('.gv-step');
       if (!picker) { await sleep(120); continue; }
@@ -239,7 +239,8 @@ try {
       const want = lit[lit.length - 1];
       await (picks++ % 2 ? picker.locator(`button.gv-mdot[data-k="${want.k}"]`) : picker.locator(`.gv-step[data-k="${want.k}"]`)).click();
       await until(async () => (await tvState()).phase !== 'card' || !(await tv.locator('.gv-dot.next[data-k]').count()), 'the pawn to step', 10000);
-      if (!(await tv.locator(`.gv-dot[data-x="${want.x}"][data-row="${want.row}"] .gv-dot-pawn`).count())) fail(`the pawn did not step onto the space that was picked (${want.k})`);
+      // (A wild space draws a wild card, which can move the pawn on at once: only a plain space is checked.)
+      if (!want.wild && !(await tv.locator(`.gv-dot[data-x="${want.x}"][data-row="${want.row}"] .gv-dot-pawn`).count())) fail(`the pawn did not step onto the space that was picked (${want.k})`);
       continue;
     }
     if (st.answer) fail('the TV shows the answer before the question is judged');
