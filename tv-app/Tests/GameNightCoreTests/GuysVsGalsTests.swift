@@ -178,6 +178,12 @@ final class GuysVsGalsSoundTests: XCTestCase {
         XCTAssertTrue(end.contains(.fanfare) && end.contains(.applause))
     }
 
+    func testOverToTheOtherTeamHasItsOwnSting() throws {
+        let cues = try plan("gvg-result-wrong", "gvg-card-challenged").cues   // the Gals missed: the Guys' card
+        XCTAssertTrue(cues.contains(.roundstart), "the turn passes")
+        XCTAssertFalse(cues.contains(.open), "not the same-team deal")
+    }
+
     func testACharadeHasMusic() throws {
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").playMusic, true)
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").cues, [.lock])

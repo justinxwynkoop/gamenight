@@ -4916,7 +4916,9 @@
   };
   var T4 = {
     result: 4200,
-    // right or wrong (and the answer), before the next card
+    // a miss (and the answer), before the other team's card
+    right: 2200,
+    // a right answer on a spoken card: a quick beat, then the same team plays on
     wild: 6500,
     // the same, with a wild card or a prisoner to read
     trophy: 5200,
@@ -5765,7 +5767,8 @@
     if (c.deck === "moves") __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, moveSide ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, moveSide)} got the charade` : "Nobody got the charade");
     else if (c.challenged) __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, right ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, c.about)} beat the challenge` : `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, c.about)} missed the challenge`);
     else __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, right ? `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, at)} got it right` : `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, at)} missed`);
-    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.result, () => trophy ? __privateMethod(this, _GuysVsGalsGame_instances, winTrophy_fn).call(this, trophy) : __privateMethod(this, _GuysVsGalsGame_instances, next_fn).call(this, next));
+    const quick = right && !trophy && !c.challenged && ["facts", "stuff", "pics"].includes(c.deck);
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, quick ? T4.right : T4.result, () => trophy ? __privateMethod(this, _GuysVsGalsGame_instances, winTrophy_fn).call(this, trophy) : __privateMethod(this, _GuysVsGalsGame_instances, next_fn).call(this, next));
     __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
   };
   next_fn = function(side) {
@@ -5931,7 +5934,7 @@
     this.result = r;
     c.stage = "done";
     this.phase = "result";
-    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, r.wild || r.captured ? T4.wild : T4.result, () => __privateMethod(this, _GuysVsGalsGame_instances, raceAfter_fn).call(this));
+    __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, r.wild || r.captured ? T4.wild : r.more ? T4.right : T4.result, () => __privateMethod(this, _GuysVsGalsGame_instances, raceAfter_fn).call(this));
     __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
   };
   raceAfter_fn = function() {
@@ -6730,7 +6733,7 @@
   var SOUND_NAMES = [
     { name: "lobby", label: "Lobby music (loops while players join)", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"] },
     { name: "think", label: "Final Jeopardy thinking music", games: ["shared", "jeopardy", "spynight", "guysvsgals"], labels: { guysvsgals: "Music under a charade (Our Moves)", spynight: "Music under the game (loops from the deal to the end)" } },
-    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A card is dealt", piechase: "A question comes up", spynight: "The vote begins" } },
+    { name: "open", label: "Buzzers open", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A card is dealt to the same team", piechase: "A question comes up", spynight: "The vote begins" } },
     { name: "buzz", label: "Someone buzzes in", games: ["shared", "jeopardy"] },
     { name: "correct", label: "Right answer", games: ["shared", "jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The trophy moves toward a team", piechase: "A right answer", spynight: "A team is approved" } },
     { name: "wrong", label: "Wrong answer", games: ["shared", "jeopardy", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "A miss: over to the other team", piechase: "A wrong answer", spynight: "A team is rejected" } },
@@ -6746,7 +6749,7 @@
     { name: "bet", label: "A Daily Double wager is placed", games: ["jeopardy", "piechase"], labels: { piechase: "Landing on Roll Again" } },
     { name: "join", label: "A player joins", games: ["jeopardy", "spynight", "piechase", "guysvsgals"] },
     { name: "applause", label: "End of a round, and the winner", games: ["jeopardy", "piechase", "guysvsgals"], labels: { guysvsgals: "A trophy is won, and the winners", piechase: "Game over" } },
-    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The game begins", piechase: "The game begins", spynight: "The roles are dealt" } },
+    { name: "roundstart", label: "A new round begins", games: ["jeopardy", "feud", "spynight", "piechase", "guysvsgals"], labels: { guysvsgals: "The game begins, or it is the other team\u2019s turn", piechase: "The game begins", spynight: "The roles are dealt" } },
     { name: "ding", label: "A survey answer flips over", games: ["feud", "spynight", "guysvsgals"], labels: { guysvsgals: "A trophy is won, or a pawn gets across", spynight: "A mission succeeds" } },
     { name: "strike", label: "A strike (the big X)", games: ["feud", "spynight"], labels: { spynight: "A mission fails" } },
     { name: "strikeout", label: "The third strike", games: ["feud"] },

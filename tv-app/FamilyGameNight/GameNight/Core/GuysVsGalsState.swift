@@ -238,7 +238,12 @@ extension SoundPlanner {
             plan.cues.append(.pick)
         }
         if after.phase == .card, let c = after.card {
-            if c.n != before.card?.n { plan.cues.append(.open) }
+            if c.n != before.card?.n {
+                // Over to the other team: a sting. The same team's next card: a deal. The next question on a race
+                // card: nothing, the reader just carries on.
+                if before.phase != .lobby, before.turn != nil, after.turn != before.turn { plan.cues.append(.roundstart) }
+                else if (c.q ?? 1) <= 1 { plan.cues.append(.open) }
+            }
             else if c.challenged, before.card?.challenged != true { plan.cues.append(.dd) }
             else if c.stage != before.card?.stage, c.stage == "guess" || c.stage == "act" { plan.cues.append(.lock) }
         }
