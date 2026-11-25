@@ -851,12 +851,12 @@ private struct GvgDeckCard: View {
     private func middle(_ c: GvgCard, result: Bool) -> some View {
         if c.deck == "moves" {
             VStack(spacing: 26) {
-                shout(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : "ACT IT OUT!",
+                shout(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : c.stage == "ready" ? "GET READY!" : "ACT IT OUT!",
                       font: result ? nil : GV.bangers(96))
                 HStack(spacing: 30) {
-                    actor("🎭 \(c.reader.name)", side: c.about)
+                    actor("\(c.isReady(c.reader) ? "✅" : "🎭") \(c.reader.name)", side: c.about)
                     Text("VS").font(GV.bangers(60)).foregroundStyle(GV.ink)
-                    actor("🎭 \(c.actor?.name ?? "?")", side: game.turn ?? GuysVsGalsState.otherSide(c.about))
+                    actor("\(c.isReady(c.actor) ? "✅" : "🎭") \(c.actor?.name ?? "?")", side: game.turn ?? GuysVsGalsState.otherSide(c.about))
                 }
             }
         } else {
@@ -954,6 +954,7 @@ private struct GvgDeckCard: View {
         let turn = game.name(game.turn)
         switch c.deck {
         case "moves":
+            if c.stage == "ready" { return "\(reader) and \(c.actor?.name ?? "") are reading what to act out. The clock starts when both press Start on their phones" }
             return c.stage == "pick" ? "\(reader) picks someone on the \(turn) to act with"
                 : "Both act out the same thing. Each team shouts at their own actor. First to say it wins!"
         case "lives":

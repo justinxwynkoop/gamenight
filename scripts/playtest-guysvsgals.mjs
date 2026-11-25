@@ -117,6 +117,8 @@ while (Date.now() < end) {
       else pending = { at: Date.now() + 7000, what: 'the team votes', fn: async () => { for (const q of players) if (await q.page.locator('button.gv-pchoice[data-i]').count()) await q.page.locator(`button.gv-pchoice[data-i="${Math.floor(Math.random() * 3)}"]`).click().catch(() => {}); } };
     } else if ((p = await phoneWith('button.gv-pchoice[data-pid]'))) {
       pending = { at: Date.now() + 4000, what: `${p.name} picks an actor`, fn: () => p.page.locator('button.gv-pchoice[data-pid]').first().click() };
+    } else if ((p = await phoneWith('button.gv-ready'))) {
+      pending = { at: Date.now() + 5000, what: `${p.name} has read the charade and presses Start`, fn: () => p.page.locator('button.gv-ready').click() };
     } else if ((p = await phoneWith('.gv-judge.three'))) {
       pending = { at: Date.now() + 20000, what: `${p.name} calls who shouted it first`, fn: () => p.page.locator(`.gv-judge.three button[data-side="${Math.random() < 0.5 ? 'guys' : 'gals'}"]`).click() };
     }

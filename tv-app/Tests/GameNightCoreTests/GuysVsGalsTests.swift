@@ -184,6 +184,18 @@ final class GuysVsGalsSoundTests: XCTestCase {
         XCTAssertFalse(cues.contains(.open), "not the same-team deal")
     }
 
+    func testACharadeWaitsForBothActorsToPressStart() throws {
+        let ready = try XCTUnwrap(try Fixture.state("gvg-moves-ready").guysVsGals)
+        XCTAssertEqual(ready.card?.stage, "ready")
+        XCTAssertEqual(ready.card?.isReady(ready.card?.actor), true, "Leo has pressed Start")
+        XCTAssertEqual(ready.card?.isReady(ready.card?.reader), false, "Maya has not")
+        XCTAssertNil(ready.timer, "no clock until both are ready")
+        XCTAssertNil(ready.card?.text, "the TV never says what is acted out")
+        XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-ready").playMusic, false, "the music waits for the clock")
+        XCTAssertEqual(try plan("gvg-moves-ready", "gvg-moves-act").playMusic, true)
+        XCTAssertEqual(try plan("gvg-moves-ready", "gvg-moves-act").cues, [.lock])
+    }
+
     func testACharadeHasMusic() throws {
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").playMusic, true)
         XCTAssertEqual(try plan("gvg-moves-pick", "gvg-moves-act").cues, [.lock])

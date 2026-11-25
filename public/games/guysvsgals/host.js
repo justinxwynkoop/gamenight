@@ -66,6 +66,7 @@ export function render(raw, ctx) {
           body.push(card(eyebrow(`Who acts for the ${nameOf(g, g.turn)}?`), h('div', { class: 'list' }, (c.actors ?? []).map((p) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, p.name),
             button({ label: 'Acts', size: 'sm', onclick: () => act('actor', { pid: p.id }) }))))));
         }
+        if (c.stage === 'ready') dock.push(button({ label: 'Start the clock', icon: 'check', kind: 'primary', size: 'lg', block: true, onclick: () => act('movesReady') }));
         if (c.stage === 'act') {
           for (const s of ['guys', 'gals']) dock.push(button({ label: `${nameOf(g, s)} got it`, size: 'lg', block: true, kind: s === g.turn ? 'primary' : undefined, onclick: () => act('moves', { side: s }) }));
           dock.push(button({ label: 'Nobody', size: 'lg', block: true, onclick: () => act('moves', { side: null }) }));

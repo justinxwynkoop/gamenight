@@ -323,11 +323,24 @@ test('Our Moves: the reader picks an actor, both act it out, and whoever shouts 
   assert.throws(() => msg(W[0], { t: 'actor', pid: W[1].id }), /picks the actor/);
   assert.deepEqual(view(reader()).me.actors.map((p) => p.id), [W[0].id, W[1].id]);
   msg(reader(), { t: 'actor', pid: W[1].id });
-  assert.equal(g.card.stage, 'act');
+  // Both actors read what to act out first: no clock until both have pressed Start.
+  assert.equal(g.card.stage, 'ready');
   assert.ok(view(reader()).me.move);
   assert.equal(view(W[1]).me.move, view(reader()).me.move);
   assert.equal(view(W[0]).me.move, undefined);
   assert.equal(room.publicView().game.card.text, undefined, 'the TV doesn’t show it');
+  assert.equal(room.publicView().game.timer, null, 'the clock waits');
+  wait(T.moves * 2);
+  assert.equal(g.card.stage, 'ready', 'however long they take to read');
+  assert.throws(() => msg(W[0], { t: 'ready' }), /two actors/);
+  assert.throws(() => msg(reader(), { t: 'moves', side: 'guys' }), /No charade right now/);
+  msg(W[1], { t: 'ready' });
+  assert.equal(g.card.stage, 'ready', 'one of the two is not enough');
+  assert.equal(view(W[1]).me.ready, true);
+  assert.deepEqual(room.publicView().game.card.ready, [W[1].id]);
+  msg(reader(), { t: 'ready' });
+  assert.equal(g.card.stage, 'act');
+  assert.equal(view(W[1]).me.move, view(reader()).me.move);
   assert.equal(room.publicView().game.timer.kind, 'moves');
   // The Guys shout it first: stolen.
   msg(reader(), { t: 'moves', side: 'guys' });
@@ -338,6 +351,7 @@ test('Our Moves: the reader picks an actor, both act it out, and whoever shouts 
   // Nobody gets it in time: the turn passes.
   at(-4);
   msg(reader(), { t: 'actor', pid: G[0].id });
+  msg(G[0], { t: 'ready' }); msg(reader(), { t: 'ready' });
   wait(T.moves);
   assert.equal(g.result.timeout, true);
   assert.equal(g.pos, -4);
@@ -345,10 +359,22 @@ test('Our Moves: the reader picks an actor, both act it out, and whoever shouts 
   assert.equal(g.turn, 'gals');
 });
 
-test('one actor on the team: the charade starts straight away', () => {
-  const { g, begin, at } = setup({ gals: 1 });
+test('one actor on the team: nobody to pick, straight to getting ready', () => {
+  const { g, room, W, begin, at, msg, reader } = setup({ gals: 1 });
   begin();
   at(4);
+  assert.equal(g.card.stage, 'ready');
+  // An actor who has wandered off is not waited for, and the host can start the clock too.
+  room.setConnected(W[0].id, false);
+  msg(reader(), { t: 'ready' });
+  assert.equal(g.card.stage, 'act');
+});
+
+test('Our Moves: the host or the TV can start the clock', () => {
+  const { g, room, begin, at } = setup({ gals: 1 });
+  begin();
+  at(4);
+  room.act('advance');
   assert.equal(g.card.stage, 'act');
 });
 

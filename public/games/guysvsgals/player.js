@@ -187,6 +187,22 @@ export function mount(container, { send }) {
       } else parts.push(h('div', { class: 'gv-pcard accent' }, chips(g, c), h('div', { class: 'gv-pq' }, 'Charades!'), h('p', { class: 'dim' }, `${reader} is picking someone on your team to act with.`)));
       return parts;
     }
+    if (c.stage === 'ready') {
+      // Both actors read the card first. The clock only starts once both have pressed Start.
+      const other = me.reader ? c.actor?.name ?? '' : reader;
+      const otherReady = (c.ready ?? []).includes(me.reader ? c.actor?.id : c.reader?.id);
+      if (me.canReady) {
+        parts.push(h('div', { class: 'gv-pcard accent' }, chips(g, c), h('p', {}, 'You will act this out (no talking, no pointing at things!):'), h('div', { class: 'gv-move' }, me.move),
+          h('p', { class: 'dim' }, `${other} acts the same thing for the ${nameOf(g, me.reader ? g.turn : c.about)}. The clock starts when you have both pressed Start.`)),
+        me.ready
+          ? h('p', { class: 'gv-ready-wait' }, `✓ You’re ready. Waiting for ${other}…`)
+          : h('button', { type: 'button', class: 'gv-ready', onclick: () => send({ t: 'ready' }) }, otherReady ? `Start! ${other} is ready` : 'I’m ready: Start'));
+      } else {
+        parts.push(h('div', { class: 'gv-pcard accent' }, chips(g, c), h('div', { class: 'gv-pq' }, 'Get ready!'),
+          h('p', { class: 'dim' }, `${reader} and ${c.actor?.name ?? ''} are reading what to act out. The clock starts when they are both ready.`)));
+      }
+      return parts;
+    }
     if (me.move) {
       parts.push(h('div', { class: 'gv-pcard accent' }, chips(g, c), h('p', {}, 'Act this out (no talking, no pointing at things!):'), h('div', { class: 'gv-move' }, me.move),
         h('p', { class: 'dim' }, me.reader ? `${c.actor?.name ?? ''} is acting the same thing for the ${nameOf(g, g.turn)}. Your team guesses yours.` : `${reader} is acting the same thing for the ${nameOf(g, c.about)}. Your team guesses yours.`)));
@@ -256,10 +272,11 @@ export function mount(container, { send }) {
   function helper(g) {
     if (!g.me?.canStart || ['lobby', 'gameover'].includes(g.phase)) return null;
     const guessing = g.phase === 'card' && g.card?.stage === 'guess';
-    if (g.phase === 'card' && !guessing) return null;
+    const starting = g.phase === 'card' && g.card?.stage === 'ready';
+    if (g.phase === 'card' && !guessing && !starting) return null;
     return h('details', { class: 'gv-pcard' }, h('summary', {}, 'Someone gone quiet?'),
       h('p', { class: 'dim' }, 'You started the game, so you can keep it moving.'),
-      btn(guessing ? 'Lock in their guesses now' : 'Move on', '', () => send({ t: 'advance' })));
+      btn(guessing ? 'Lock in their guesses now' : starting ? 'Start the clock now' : 'Move on', '', () => send({ t: 'advance' })));
   }
 
   function refresh() {

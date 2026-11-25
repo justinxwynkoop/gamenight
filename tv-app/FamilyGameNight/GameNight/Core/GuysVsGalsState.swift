@@ -81,12 +81,19 @@ struct GvgCard: Decodable, Equatable {
     var deckName: String
     /// Whose stuff it is (the reading team): "guys" (answered by the Gals) or "gals".
     var about: String
-    /// read | secret | guess | pick | act | done
+    /// read | secret | guess | pick | ready | act | done
     var stage: String
     var challenged: Bool
     var reader: GvgPerson
     /// Our Moves: who acts for the answering team.
     var actor: GvgPerson?
+    /// Our Moves, before the clock starts ("ready"): which of the two actors have pressed Start.
+    var ready: [String]?
+    /// Whether this actor has pressed Start.
+    func isReady(_ person: GvgPerson?) -> Bool {
+        guard let id = person?.id else { return false }
+        return ready?.contains(id) ?? false
+    }
     /// The question (not on an Our Moves card).
     var text: String?
     var cat: String?
