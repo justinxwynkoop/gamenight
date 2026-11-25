@@ -45,11 +45,11 @@ test('the Family set is valid and has all five decks for both sides, with their 
   for (const set of Object.values(SETS)) assert.equal(validateSet(set), true);
   const fam = SETS.family;
   for (const half of [fam.guyStuff, fam.galStuff]) {
-    assert.ok(half.facts.length >= 80, 'facts');
-    assert.ok(half.stuff.length >= 40, 'stuff');
-    assert.ok(half.pics.length >= 25, 'pics');
-    assert.ok(half.lives.length >= 30, 'lives');
-    assert.ok(half.moves.length >= 40, 'moves');
+    assert.ok(half.facts.length >= 140, 'facts');
+    assert.ok(half.stuff.length >= 100, 'stuff');
+    assert.ok(half.pics.length >= 50, 'pics');
+    assert.ok(half.lives.length >= 65, 'lives');
+    assert.ok(half.moves.length >= 90, 'moves');
     for (const p of half.pics) {
       assert.ok(existsSync(`public/games/guysvsgals/pics/${p.img}.png`), p.img);
       assert.ok(existsSync(`tv-app/FamilyGameNight/Assets.xcassets/GvgPic-${p.img}.imageset/${p.img}.png`), p.img);
