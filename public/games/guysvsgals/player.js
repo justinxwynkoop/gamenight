@@ -119,7 +119,7 @@ export function mount(container, { send }) {
     const c = g.card;
     const me = g.me ?? {};
     const reader = c.reader?.name ?? '';
-    const face = [chips(g, c), c.img ? pic(c.img) : null, h('div', { class: 'gv-pq' }, c.text)];
+    const face = [chips(g, c), c.img ? pic(c.img) : null, h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text)];
     if (me.canJudge) {
       return [
         h('div', { class: 'gv-pcard accent' }, face,
@@ -147,7 +147,7 @@ export function mount(container, { send }) {
     const c = g.card;
     const me = g.me ?? {};
     const reader = c.reader?.name ?? '';
-    const face = [chips(g, c), h('div', { class: 'gv-pq' }, c.text)];
+    const face = [chips(g, c), h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text)];
     if (c.stage === 'secret') {
       if (me.canPick) {
         return [h('div', { class: 'gv-pcard accent' }, face, h('p', { class: 'dim' }, `It’s about you! Read the question and the three answers out loud, then secretly tap the one that’s true for you. The ${nameOf(g, g.turn)} have to guess it.`)),
@@ -208,7 +208,7 @@ export function mount(container, { send }) {
     if (isRace(g)) {
       const head = r.won ? `🏁 The ${nameOf(g, r.won)} win the race!` : r.right ? 'Right!' : 'Wrong!';
       return h('div', { class: 'gv-pcard accent' }, chips(g, c), h('h2', {}, head),
-        c.text ? h('div', { class: 'gv-pq' }, c.text) : null,
+        c.text ? h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text) : null,
         r.answer ? h('div', { class: 'gv-pans' }, h('small', {}, 'THE ANSWER'), r.answer) : null,
         r.wild ? h('div', { class: 'gv-pans', style: { background: teamOf(g, r.wild.owner)?.color, color: '#fff' } }, h('small', {}, `${nameOf(g, r.wild.owner).toUpperCase()} WILD CARD`), r.wild.text) : null,
         r.captured ? h('p', {}, `🔒 A ${nameOf(g, r.captured)} pawn is taken prisoner!`) : null,
@@ -220,7 +220,7 @@ export function mount(container, { send }) {
         : r.challenged ? (r.right ? `The ${nameOf(g, c.about)} beat the challenge!` : `The ${nameOf(g, c.about)} missed the challenge!`)
           : r.right ? 'Right!' : 'Wrong!';
     return h('div', { class: 'gv-pcard accent' }, chips(g, c), h('h2', {}, head),
-      c.text ? h('div', { class: 'gv-pq' }, c.text) : null,
+      c.text ? h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text) : null,
       r.answer ? h('div', { class: 'gv-pans' }, h('small', {}, c.deck === 'lives' ? `${c.reader?.name ?? ''} PICKED` : c.deck === 'moves' ? 'THE MOVE WAS' : 'THE ANSWER'), r.answer) : null,
       h('p', { class: 'dim' }, g.line.next));
   }
@@ -272,7 +272,7 @@ export function mount(container, { send }) {
     else if (g.phase === 'trophy') body = trophyWon(g);
     else if (g.phase === 'gameover') body = gameover(g);
     else body = waiting(g);
-    setKids(container, h('div', { class: 'gv', style: g.card && (g.phase === 'card' || g.phase === 'result') ? { '--a': deckOf(g, g.card.deck).color } : {} }, header(g), body,
+    setKids(container, h('div', { class: 'gv', style: g.card && (g.phase === 'card' || g.phase === 'result') ? { '--a': deckOf(g, g.card.deck).color, '--back': teamOf(g, g.card.about)?.color } : {} }, header(g), body,
       g.phase !== 'lobby' ? h('div', { class: 'gv-pcard gv-ppath' }, isRace(g) ? raceTrack(g, { compact: true }) : path(g, { compact: true })) : null,
       helper(g), g.phase !== 'lobby' ? rules(g) : null, reacts(g)));
   }

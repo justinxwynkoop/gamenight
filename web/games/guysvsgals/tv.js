@@ -165,7 +165,7 @@ function deckCard(g) {
   const reader = c.reader?.name ?? '';
   if (c.deck === 'moves') {
     middle = h('div', { class: 'gv-moves' },
-      result ? h('div', { class: 'gv-q' }, r.answer) : h('div', { class: 'gv-q' }, c.stage === 'pick' ? 'CHARADES!' : 'ACT IT OUT!'),
+      result ? h('div', { class: 'gv-q big' }, r.answer) : h('div', { class: 'gv-q big' }, c.stage === 'pick' ? 'CHARADES!' : 'ACT IT OUT!'),
       h('div', { class: 'gv-actors' },
         h('span', { style: { '--c': teamOf(g, c.about)?.color } }, '🎭 ', reader),
         h('b', {}, 'VS'),
@@ -176,7 +176,7 @@ function deckCard(g) {
   } else {
     const parts = [];
     if (c.img) parts.push(pic(c.img));
-    parts.push(h('div', { class: 'gv-q' }, c.text));
+    parts.push(h('div', { class: 'gv-q' }, h('span', { class: 'gv-qa' }, 'Q:'), c.text));
     if (c.deck === 'lives') {
       const secret = result ? r.secret : null;
       const pickI = result ? r.pick : null;
@@ -188,7 +188,7 @@ function deckCard(g) {
         }
         return h('div', { class: `gv-choice ${cls}`, style: { '--l': LETTER_COLORS[i] } }, h('span', { class: 'gv-letter' }, LETTERS[i]), h('span', { class: 'txt' }, x), mark);
       })));
-    } else if (result) parts.push(h('div', { class: 'gv-answer' }, h('small', {}, 'ANSWER'), r.answer));
+    } else if (result) parts.push(h('div', { class: 'gv-answer' }, h('span', { class: 'gv-qa' }, 'A:'), r.answer));
     if (result && r.wild) parts.push(h('div', { class: 'gv-wildcard', style: { '--c': teamOf(g, r.wild.owner)?.color } }, h('small', {}, `${nameOf(g, r.wild.owner).toUpperCase()} WILD CARD`), r.wild.text));
     middle = h('div', { class: `gv-body ${c.img ? 'with-pic' : ''}` }, parts);
     if (!result) {
@@ -200,9 +200,12 @@ function deckCard(g) {
       else foot = c.challenged ? `Challenge! The ${nameOf(g, c.about)} answer it themselves, no help from ${reader}. ${reader} judges.` : `📖 ${reader} reads · the ${nameOf(g, g.turn)} say the answer out loud`;
     }
   }
-  return h('div', { class: `gv-card deck-${c.deck}`, 'data-n': c.n, style: { '--a': d.color } }, top, stamp, result ? pow(g) : null, middle,
+  return h('div', { class: `gv-card deck-${c.deck}`, 'data-n': c.n, style: { '--a': d.color, '--back': teamOf(g, c.about)?.color } }, cardStripe(), top, stamp, result ? pow(g) : null, middle,
     result ? verdict(g) : h('div', { class: 'gv-foot' }, foot));
 }
+
+/** The dark stripe down the left of every question card, with the game's name on it. */
+const cardStripe = () => h('div', { class: 'gv-stripe' }, h('span', {}, 'GUYS', h('b', {}, ' VS '), 'GALS'));
 
 function confetti() {
   const colors = ['#3b8bff', '#ff4fa3', '#ffe14d', '#2ee59d', '#ffffff', '#b07bff'];
@@ -244,7 +247,7 @@ export function render(v) {
   }
   let center;
   if ((g.phase === 'card' || g.phase === 'result') && g.card) center = deckCard(g);
-  else center = h('div', { class: 'gv-card', style: { '--a': '#ffd23f' } }, h('div', { class: 'gv-q' }, g.line.text), g.line.next ? h('div', { class: 'gv-foot' }, g.line.next) : null);
+  else center = h('div', { class: 'gv-card', style: { '--a': '#ffd23f' } }, cardStripe(), h('div', { class: 'gv-q big' }, g.line.text), g.line.next ? h('div', { class: 'gv-foot' }, g.line.next) : null);
   let over = null;
   if (g.phase === 'trophy') over = trophyScreen(g);
   else if (g.phase === 'gameover') over = winScreen(g);

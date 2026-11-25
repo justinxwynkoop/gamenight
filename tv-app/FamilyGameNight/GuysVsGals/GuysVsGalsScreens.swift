@@ -291,25 +291,20 @@ private struct GvgPath: View {
                 }
             }
             .frame(height: 84)
+            .overlay(GvgHalfway())
             circle("gals")
         }
-        .padding(.horizontal, 22).padding(.vertical, 18)
-        .comicPanel(.white)
+        .padding(.horizontal, 30).padding(.vertical, 22)
+        .gvgBoard()
     }
 
     private func space(_ i: Int) -> some View {
         let d = game.spaceDeck(i)
         let here = i == game.pos
         let fill: Color = i == 0 ? Color(hex: 0x9B5CFF) : Color(playerHex: d.color)
-        return ZStack {
-            Rectangle().fill(fill)
-            Rectangle().strokeBorder(GV.ink, lineWidth: 5)
-            Text(i == 0 ? "START" : d.short.uppercased()).font(GV.bangers(26)).foregroundStyle(i == 0 ? .white : GV.ink)
-                .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 4)
-        }
-        .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.14, d: 1, tx: 6, ty: 0))
-        .overlay(Rectangle().strokeBorder(here ? GV.ink : .clear, lineWidth: 6).padding(-10))
-        .zIndex(here ? 1 : 0)
+        return GvgRoundSpace(fill: fill, label: i == 0 ? "START" : d.short.uppercased(), ink: i == 0 ? .white : GV.ink)
+            .overlay(Circle().strokeBorder(here ? .white : .clear, lineWidth: 6).padding(-8))
+            .zIndex(here ? 1 : 0)
     }
 
     private func circle(_ side: String) -> some View {
@@ -323,6 +318,51 @@ private struct GvgPath: View {
         .padding(.horizontal, 18).padding(.vertical, 10)
         .background(Capsule().fill(GV.color(game, side)))
         .overlay(Capsule().strokeBorder(GV.ink, lineWidth: 5))
+    }
+}
+
+/// A round space on the board, like a painted dot on a blue field. Follows .gv-space in guysvsgals.css.
+private struct GvgRoundSpace: View {
+    let fill: Color
+    let label: String
+    let ink: Color
+
+    var body: some View {
+        ZStack {
+            Circle().fill(RadialGradient(colors: [fill.opacity(0.75), fill], center: UnitPoint(x: 0.35, y: 0.3), startRadius: 2, endRadius: 50))
+            Circle().strokeBorder(GV.ink, lineWidth: 5)
+            Text(label).font(GV.bangers(22)).foregroundStyle(ink)
+                .shadow(color: ink == .white ? GV.ink : .clear, radius: 0, x: 2, y: 2)
+                .lineLimit(1).minimumScaleFactor(0.4).padding(.horizontal, 8)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// The dashed line down the middle of the board between the two teams' halves.
+private struct GvgHalfway: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Path { p in
+                p.move(to: CGPoint(x: proxy.size.width / 2, y: -8))
+                p.addLine(to: CGPoint(x: proxy.size.width / 2, y: proxy.size.height + 8))
+            }
+            .stroke(Color.white.opacity(0.55), style: StrokeStyle(lineWidth: 4, dash: [10, 8]))
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+private extension View {
+    /// The board: a deep blue field with a yellow and red rim. Follows .gv-tracks in guysvsgals.css.
+    func gvgBoard() -> some View {
+        self
+            .background(RadialGradient(colors: [Color(hex: 0x3F74EA), Color(hex: 0x1A3FAE)], center: UnitPoint(x: 0.3, y: 0.2), startRadius: 10, endRadius: 900))
+            .overlay(Rectangle().strokeBorder(Color(hex: 0xE8323C), lineWidth: 16))
+            .overlay(Rectangle().strokeBorder(GV.yellow, lineWidth: 10))
+            .overlay(Rectangle().strokeBorder(GV.ink, lineWidth: 6))
+            .background(Rectangle().fill(GV.ink).offset(x: 10, y: 10))
     }
 }
 
@@ -360,10 +400,11 @@ private struct GvgRaceTrack: View {
                     }
                 }
                 .frame(height: 84)
+                .overlay(GvgHalfway())
                 bin(race, "gals")
             }
-            .padding(.horizontal, 22).padding(.vertical, 18)
-            .comicPanel(.white)
+            .padding(.horizontal, 30).padding(.vertical, 22)
+            .gvgBoard()
         }
     }
 
@@ -372,14 +413,7 @@ private struct GvgRaceTrack: View {
         let wild = race.wildSide(x)
         let fill: Color = start.map { GV.color(game, $0) } ?? wild.map { GV.color(game, $0) } ?? .white
         let label = start != nil ? "START" : wild != nil ? "WILD" : "\(x)"
-        return ZStack {
-            Rectangle().fill(fill)
-            Rectangle().strokeBorder(GV.ink, lineWidth: 5)
-            Text(label).font(GV.bangers(24)).foregroundStyle(start != nil || wild != nil ? .white : GV.ink)
-                .shadow(color: start != nil || wild != nil ? GV.ink : .clear, radius: 0, x: 2, y: 2)
-                .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 4)
-        }
-        .transformEffect(CGAffineTransform(a: 1, b: 0, c: -0.14, d: 1, tx: 6, ty: 0))
+        return GvgRoundSpace(fill: fill, label: label, ink: start != nil || wild != nil ? .white : GV.ink)
     }
 
     /// By a team's START: its pawns still waiting, the other team's pawns that made it across, and any prisoner taken.
@@ -528,32 +562,29 @@ private struct GvgDeckCard: View {
         let c = game.card!
         let result = game.phase == .result
         let deckColor = Color(playerHex: game.deck(c.deck)?.color ?? "#cccccc")
-        // A game card: a thick frame in the deck's colour, rounded corners, the deck's name on a banner across the top.
-        let shape = RoundedRectangle(cornerRadius: 34, style: .continuous)
-        VStack(spacing: 0) {
-            HStack(spacing: 14) {
-                Text(c.deckName.uppercased()).font(GV.bangers(66)).tracking(2).foregroundStyle(.white)
-                    .shadow(color: GV.ink, radius: 0, x: 4, y: 4).lineLimit(1).fixedSize()
-                Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: GV.color(game, c.about), ink: .white, size: 36)
-                if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 36).lineLimit(1).minimumScaleFactor(0.5) }
-                if let q = c.q, let of = c.of { Sticker(text: "\(q) OF \(of)", fill: .white, size: 36) }
-                Spacer(minLength: 120)
-            }
-            .padding(.horizontal, 40).padding(.top, 20).padding(.bottom, 14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(deckColor)
-            VStack(spacing: 22) {
+        // A printed question card: white, a dark stripe down the left with the game's name, Q: and A: lines, and the
+        // card's back (blue for guy stuff, pink for gal stuff) peeking out from the pile underneath. Follows .gv-card.
+        let back = GV.color(game, c.about)
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        VStack(alignment: .leading, spacing: 22) {
+                HStack(spacing: 12) {
+                    Sticker(text: c.deckName.uppercased(), fill: deckColor, size: 34)
+                    Sticker(text: GuysVsGalsState.aboutText(c.about).uppercased(), fill: back, ink: .white, size: 34)
+                    if let cat = c.cat, !cat.isEmpty { Sticker(text: cat.uppercased(), size: 34).lineLimit(1).minimumScaleFactor(0.5) }
+                    if let q = c.q, let of = c.of { Sticker(text: "QUESTION \(q) OF \(of)", fill: .white, size: 34) }
+                    Spacer(minLength: 120)
+                }
                 middle(c, result: result)
-                if !result { Rectangle().fill(GV.ink.opacity(0.3)).frame(height: 3).padding(.horizontal, 20) }
-                footer(c, result: result)
-            }
-            .padding(.horizontal, 40).padding(.top, 24).padding(.bottom, 36)
+                if !result { Rectangle().fill(GV.ink.opacity(0.3)).frame(height: 3) }
+                footer(c, result: result).frame(maxWidth: .infinity)
         }
-        .background(Color.white)
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(deckColor, lineWidth: 20))
+        .padding(.leading, 132).padding(.trailing, 36).padding(.vertical, 26)
+        .frame(minHeight: 340)
+        .overlay(alignment: .leading) { GvgCardStripe().padding(.vertical, 18).padding(.leading, 18) }
+        .background(shape.fill(.white))
         .overlay(shape.strokeBorder(GV.ink, lineWidth: 6))
-        .background(shape.fill(GV.ink).offset(x: 10, y: 10))
+        .background(shape.fill(back).overlay(shape.strokeBorder(GV.ink, lineWidth: 6)).offset(x: 22, y: 22))
+        .padding(.trailing, 22).padding(.bottom, 22)
         .rotationEffect(.degrees(0.4))
         .overlay(alignment: .topTrailing) {
             if result, let r = game.result {
@@ -585,16 +616,21 @@ private struct GvgDeckCard: View {
         return r.right ? "POW!" : "OOF!"
     }
 
-    /// The question, printed on the card.
+    /// The question, printed on the card after a big "Q:".
     private func balloon(_ text: String, size: CGFloat = 52, font: Font? = nil) -> some View {
-        Text(text)
-            .font(font ?? GV.body(size + 4, .black))
-            .foregroundStyle(GV.ink)
-            .multilineTextAlignment(.center)
+        (Text("Q:  ").font(GV.bangers(size + 8)).foregroundColor(GV.color(game, game.card?.about)) + Text(text).font(GV.body(size + 4, .black)).foregroundColor(GV.ink))
+            .multilineTextAlignment(.leading)
             .lineLimit(7)
             .minimumScaleFactor(0.4)
             .allowsTightening(true)
-            .padding(.horizontal, 20).padding(.vertical, 8)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Charades: a big call to act, centred.
+    private func shout(_ text: String, font: Font? = nil) -> some View {
+        Text(text).font(font ?? GV.body(56, .black)).foregroundStyle(GV.ink)
+            .multilineTextAlignment(.center).lineLimit(4).minimumScaleFactor(0.4)
             .frame(maxWidth: .infinity)
     }
 
@@ -602,8 +638,8 @@ private struct GvgDeckCard: View {
     private func middle(_ c: GvgCard, result: Bool) -> some View {
         if c.deck == "moves" {
             VStack(spacing: 26) {
-                balloon(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : "ACT IT OUT!",
-                        font: result ? nil : GV.bangers(96))
+                shout(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : "ACT IT OUT!",
+                      font: result ? nil : GV.bangers(96))
                 HStack(spacing: 30) {
                     actor("🎭 \(c.reader.name)", side: c.about)
                     Text("VS").font(GV.bangers(60)).foregroundStyle(GV.ink)
@@ -620,9 +656,9 @@ private struct GvgDeckCard: View {
                             ForEach(Array(choices.enumerated()), id: \.offset) { i, text in choice(i, text, result: result) }
                         }
                     } else if result, let answer = game.result?.answer ?? c.answer {
-                        VStack(spacing: 2) {
-                            Text("ANSWER").font(GV.bangers(26)).tracking(3)
-                            Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.4)
+                        HStack(alignment: .firstTextBaseline, spacing: 14) {
+                            Text("A:").font(GV.bangers(48))
+                            Text(answer).font(GV.body(44, .black)).multilineTextAlignment(.leading).lineLimit(3).minimumScaleFactor(0.4)
                         }
                         .foregroundStyle(GV.ink)
                         .padding(.horizontal, 30).padding(.vertical, 12)
@@ -720,6 +756,26 @@ private struct GvgDeckCard: View {
 }
 
 /// A speech balloon: an oval with a tail down to the left.
+/// The dark stripe down the left of every question card, with the game's name running up it.
+private struct GvgCardStripe: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12).fill(GV.ink)
+            Capsule().strokeBorder(.white, lineWidth: 3).padding(8)
+            HStack(spacing: 10) {
+                Text("GUYS").foregroundStyle(.white)
+                Text("VS").font(GV.bangers(30)).foregroundStyle(GV.yellow)
+                Text("GALS").foregroundStyle(.white)
+            }
+            .font(GV.bangers(38)).tracking(3)
+            .fixedSize()
+            .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 84)
+        .frame(maxHeight: .infinity)
+    }
+}
+
 /// POW! The one big moment: a starburst that slams on when the answer is revealed.
 private struct Pow: View {
     let text: String
