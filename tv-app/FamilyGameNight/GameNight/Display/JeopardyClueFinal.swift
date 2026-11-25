@@ -446,6 +446,8 @@ struct JeoRulingCard: View {
         let name = player?.name ?? "Someone"
         let answer = result?.answer ?? ""
         let blank = result == nil || answer.isEmpty || result?.timedOut == true
+        // Said out loud and ruled by the host: there is no typed answer to show, and nobody ran out of time.
+        let spoken = result != nil && result?.answer == nil && result?.timedOut != true
         let others = game.players.contains { $0.connected && !clue.tried.contains($0.id) && $0.id != result?.pid }
         let amount = abs(result?.delta ?? 0)
         let correct = result?.correct == true
@@ -461,7 +463,7 @@ struct JeoRulingCard: View {
                 HStack(spacing: 16) {
                     BWAvatar(name: name, color: color, size: 60)
                     (Text(name).font(BW.body(34, .heavy)).foregroundColor(color)
-                     + Text(blank ? (result?.timedOut == true ? " ran out of time" : " did not answer") : " says"))
+                     + Text(spoken ? " answered" : blank ? (result?.timedOut == true ? " ran out of time" : " did not answer") : " says"))
                         .font(BW.body(34, .semibold))
                 }
                 if !blank {
@@ -473,7 +475,7 @@ struct JeoRulingCard: View {
                         .frame(maxWidth: 1600)
                         .bwEnter(scale: 0.6)
                 }
-                BWStamp(ok: correct, text: correct ? "RIGHT \u{00B7} \(BW.signed(amount))" : "\(blank ? "TIME\u{2019}S UP" : "NOT QUITE") \u{00B7} \u{2212}\(BW.money(amount))")
+                BWStamp(ok: correct, text: correct ? "RIGHT \u{00B7} \(BW.signed(amount))" : "\(spoken ? "WRONG" : blank ? "TIME\u{2019}S UP" : "NOT QUITE") \u{00B7} \u{2212}\(BW.money(amount))")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             JeoCardFoot { Text(next) }
@@ -527,7 +529,7 @@ struct JeoRevealCard: View {
             let said = r.answer ?? ""
             let words: String = r.correct
                 ? (said.isEmpty ? " got it" : " got it with \u{201C}\(said)\u{201D}")
-                : (r.timedOut == true || said.isEmpty ? " ran out of time" : " said \u{201C}\(said)\u{201D}")
+                : (r.timedOut == true ? " ran out of time" : said.isEmpty ? " missed it" : " said \u{201C}\(said)\u{201D}")
             HStack(spacing: 14) {
                 BWAvatar(name: name, color: color, size: 48)
                 (Text(name).font(BW.body(34, .heavy)).foregroundColor(color) + Text(words))

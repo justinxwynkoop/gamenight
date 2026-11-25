@@ -274,6 +274,10 @@ try {
   await until(async () => /buzzed in first/i.test(await host.locator('body').innerText()), 'who buzzed in first, on the host page');
   await shot(host, 'host-answering');
   await tap('Correct');
+  // The ruling on a spoken answer: they answered (out loud), not "did not answer" or "time's up".
+  await phase('ruling', 'the ruling');
+  await until(async () => /Ann answered/.test((await tv.locator('#app').innerText()).replace(/\s+/g, ' ')), 'the TV saying Ann answered');
+  for (const t of [await tv.locator('#app').innerText(), await phones.Ann.locator('body').innerText()]) if (/did not answer|TIME’S UP|\(nothing\)/i.test(t)) fail(`a spoken answer shows as no answer: ${t.replace(/\s+/g, ' ').slice(0, 160)}`);
   await phase('board', 'back to the board after a right answer');
   if (hostView.controllerId !== pid('Ann')) fail('a right answer gives control to Ann');
   log('clue 1: Ann buzzed, the host ruled Correct');
@@ -299,6 +303,7 @@ try {
   await pickTile(false);
   await tap('Open buzzers');
   await phase('open', 'the buzzers open');
+  await sleep(1200);   // a moment with nobody buzzing (the host page ignores a tap there right after Open buzzers: a double tap)
   await tap('Nobody. Show the answer');
   await phase('reveal', 'the answer');
   await shot(host, 'host-reveal');
@@ -329,6 +334,7 @@ try {
   await tap('Place this bet');
   await phase('dd-answer', 'the Daily Double clue');
   if (hostView.clue.wager !== 300) fail(`the host's typed bet is the wager (got ${hostView.clue.wager})`);
+  await sleep(1200);   // the host reads the clue out loud (a tap on Correct right after Place this bet is taken as a double tap)
   await tap('Correct');
   await phase('board', 'back to the board (with a host, a right answer skips the answer screen)');
   log(`clue 5: Daily Double, ${ddBy} told the host $300, the host typed it in and ruled Correct`);
@@ -351,6 +357,7 @@ try {
   await host.locator('input[data-k="dd-wager"]').fill('200');
   await tap('Place this bet');
   await phase('dd-answer', 'the Daily Double clue');
+  await sleep(1200);   // the host reads the clue out loud
   await tap('Wrong');
   await phase('reveal', 'the answer');
   await tap('Back to the board');
