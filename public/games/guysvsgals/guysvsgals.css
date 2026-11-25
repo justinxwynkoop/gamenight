@@ -419,3 +419,10 @@
   box-shadow: inset 0 0 0 .8vmin rgb(255 255 255 / .9), inset 0 0 0 1.2vmin var(--gv-ink); }
 .gv-deck-top span { font-family: 'Bangers', sans-serif; font-size: 2.6vmin; letter-spacing: .06em; color: #fff; -webkit-text-stroke: .2vmin var(--gv-ink); paint-order: stroke fill; }
 @media (max-aspect-ratio: 3/2) { .gv-board { grid-template-columns: 5vw minmax(0, 1fr) 37vw minmax(0, 1fr) 5vw; } }
+
+/* Our Moves: both actors read the card, then press Start. */
+.gv-ready { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; text-align: center; min-height: 110px; padding: 18px 12px;
+  font-family: 'Bangers', sans-serif; font-size: 2.2rem; letter-spacing: .05em; background: var(--gv-green); color: var(--gv-ink);
+  border: 3px solid var(--gv-ink); box-shadow: 6px 6px 0 var(--gv-ink); }
+.gv-ready:active { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--gv-ink); }
+.gv-ready-wait { text-align: center; font-weight: 800; font-size: 1.15rem; padding: 18px 10px; }

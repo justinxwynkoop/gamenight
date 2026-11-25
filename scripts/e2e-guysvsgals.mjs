@@ -161,6 +161,19 @@ try {
       }
     } else if (await phoneWith('button.gv-pchoice[data-pid]')) {
       await (await phoneWith('button.gv-pchoice[data-pid]')).locator('button.gv-pchoice[data-pid]').first().click(); acted = true;
+    } else if (await phoneWith('button.gv-ready')) {
+      // Charades: the two actors read what to act out, and the clock waits until both have pressed Start.
+      const first = await phoneWith('button.gv-ready');
+      if (!(await first.locator('.gv-move').count())) fail('an actor cannot see what to act out before the clock starts');
+      if (await phoneWith('.gv-judge.three')) fail('the charade can be called before it has started');
+      await shot(tv, 'moves-ready'); await shot(first, 'phone-moves-ready');
+      if (!/GET READY/i.test(await tvText())) fail('the TV does not say to get ready');
+      await first.locator('button.gv-ready').click();
+      await until(async () => (await first.locator('.gv-ready-wait').count()) > 0 || (await phoneWith('.gv-judge.three')) !== null, 'the first actor to be ready');
+      const second = await phoneWith('button.gv-ready');
+      if (second) await second.locator('button.gv-ready').click();
+      await until(async () => (await phoneWith('.gv-judge.three')) !== null, 'the charade to start once both are ready');
+      acted = true;
     } else if (await phoneWith('.gv-judge.three')) {
       await shot(tv, 'moves');
       const caller = await phoneWith('.gv-judge.three');

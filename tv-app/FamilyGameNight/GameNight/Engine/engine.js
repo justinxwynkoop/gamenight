@@ -4962,7 +4962,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5052,6 +5052,18 @@
         __privateMethod(this, _GuysVsGalsGame_instances, note_fn2).call(this, `The ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, FIRST)} go first`);
       }
       __privateMethod(this, _GuysVsGalsGame_instances, deal_fn).call(this);
+    }
+    /** An actor has read the card and is ready. The clock starts once both are (someone who wandered off is not waited for). */
+    movesReady(by) {
+      const c = this.card;
+      if (this.phase !== "card" || c?.stage !== "ready") fail("No charade to start right now");
+      if (by !== "host") {
+        if (!__privateMethod(this, _GuysVsGalsGame_instances, actors_fn).call(this).includes(by.id)) fail("Only the two actors can start the clock");
+        c.ready = { ...c.ready ?? {}, [by.id]: true };
+      }
+      const waiting = __privateMethod(this, _GuysVsGalsGame_instances, actors_fn).call(this).filter((id) => !c.ready?.[id] && this.room.connected.has(id));
+      if (by === "host" || !waiting.length) __privateMethod(this, _GuysVsGalsGame_instances, startMoves_fn).call(this);
+      __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
     }
     /** Right or wrong, for an Our Facts, Stuff or Pics card (the reader's phone, or the host). */
     judge(by, right) {
@@ -5144,6 +5156,10 @@
     advance() {
       if (this.phase === "card" && this.card?.stage === "guess") {
         __privateMethod(this, _GuysVsGalsGame_instances, lockGuess_fn).call(this);
+        return;
+      }
+      if (this.phase === "card" && this.card?.stage === "ready") {
+        this.movesReady("host");
         return;
       }
       if (this.phase === "result" || this.phase === "trophy") {
@@ -5272,6 +5288,8 @@
           return this.movesWinner("host", a.side ? String(a.side) : null);
         case "actor":
           return this.pickActor("host", a.pid);
+        case "movesReady":
+          return this.movesReady("host");
         case "nudge":
           return this.nudge(a.delta, a.side ? String(a.side) : null);
         case "endGame":
@@ -5322,6 +5340,9 @@
           return { t: "ack", what: "vote" };
         case "actor":
           this.pickActor(player, msg.pid);
+          return void 0;
+        case "ready":
+          this.movesReady(player);
           return void 0;
         case "moves":
           this.movesWinner(player, msg.side ? String(msg.side) : null);
@@ -5398,6 +5419,11 @@
         if (c.stage === "pick") {
           me.canPickActor = side === reading;
           if (me.canPickActor) me.actors = __privateMethod(this, _GuysVsGalsGame_instances, members_fn3).call(this, this.turn).map((p) => ({ id: p.id, name: p.name }));
+        }
+        if (c.stage === "ready" && (me.reader || me.actor)) {
+          me.move = c.m;
+          me.canReady = true;
+          me.ready = !!c.ready?.[player.id];
         }
         if (c.stage === "act") {
           me.canCall = side === reading;
@@ -5685,10 +5711,20 @@
     }
     __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
   };
+  /** The two actors are set: both read what to act out on their phones, and the clock waits for them. */
   act_fn = function(actorId) {
     const c = this.card;
     c.actor = actorId;
-    c.stage = "act";
+    c.stage = "ready";
+    c.ready = {};
+  };
+  /** The two who act out the charade (the reader and the picked actor). */
+  actors_fn = function() {
+    const c = this.card;
+    return [c.reader, c.actor].filter(Boolean);
+  };
+  startMoves_fn = function() {
+    this.card.stage = "act";
     __privateMethod(this, _GuysVsGalsGame_instances, setTimer_fn4).call(this, T4.moves, () => __privateMethod(this, _GuysVsGalsGame_instances, movesDone_fn).call(this, null, true), "moves");
   };
   /** Who guesses an Our Lives card: the team at play, or, on a challenge, the reader's teammates. */
@@ -5991,6 +6027,7 @@
         if (__privateMethod(this, _GuysVsGalsGame_instances, isRace_fn).call(this)) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === "moves") {
           if (c.stage === "pick") return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${__privateMethod(this, _GuysVsGalsGame_instances, name_fn2).call(this, this.turn)} to act with` };
+          if (c.stage === "ready") return { text: "Get ready!", next: `${reader} and ${__privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.actor)} read what to act out. The clock starts when both press Start` };
           return { text: "Act it out!", next: `${reader} and ${__privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.actor)} act out the same thing. Shout it first!` };
         }
         if (c.challenged) {
@@ -6052,6 +6089,7 @@
       reader: { id: c.reader, name: __privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.reader) }
     };
     if (c.actor) v.actor = { id: c.actor, name: __privateMethod(this, _GuysVsGalsGame_instances, pname_fn).call(this, c.actor) };
+    if (c.stage === "ready") v.ready = Object.keys(c.ready ?? {});
     if (c.deck !== "moves") v.text = c.q;
     if (c.cat) v.cat = c.cat;
     if (c.img) v.img = c.img;

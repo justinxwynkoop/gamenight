@@ -159,20 +159,21 @@ function deckCard(g) {
     h('span', { class: `gv-chip ${c.about}` }, aboutText(c.about)),
     c.cat && !race ? h('span', { class: 'gv-chip ghost' }, c.cat) : null,
     c.of ? h('span', { class: 'gv-chip gv-qcount' }, `QUESTION ${c.q} OF ${c.of}`) : null);
-  const top = h('div', { class: 'gv-card-top' }, chips, c.deck === 'moves' && !result ? ring(g.timer) : null);
+  const top = h('div', { class: 'gv-card-top' }, chips, c.deck === 'moves' && !result && c.stage === 'act' ? ring(g.timer) : null);
   const stamp = c.challenged && !result ? h('div', { class: 'gv-stamp' }, 'CHALLENGE!') : null;
   let middle;
   let foot;
   const reader = c.reader?.name ?? '';
   if (c.deck === 'moves') {
     middle = h('div', { class: 'gv-moves' },
-      result ? h('div', { class: 'gv-q big' }, r.answer) : h('div', { class: 'gv-q big' }, c.stage === 'pick' ? 'CHARADES!' : 'ACT IT OUT!'),
+      result ? h('div', { class: 'gv-q big' }, r.answer) : h('div', { class: 'gv-q big' }, c.stage === 'pick' ? 'CHARADES!' : c.stage === 'ready' ? 'GET READY!' : 'ACT IT OUT!'),
       h('div', { class: 'gv-actors' },
-        h('span', { style: { '--c': teamOf(g, c.about)?.color } }, '🎭 ', reader),
+        h('span', { style: { '--c': teamOf(g, c.about)?.color } }, (c.ready ?? []).includes(c.reader?.id) ? '✅ ' : '🎭 ', reader),
         h('b', {}, 'VS'),
-        h('span', { style: { '--c': teamOf(g, g.turn)?.color } }, '🎭 ', c.actor?.name ?? '?')));
+        h('span', { style: { '--c': teamOf(g, g.turn)?.color } }, (c.ready ?? []).includes(c.actor?.id) ? '✅ ' : '🎭 ', c.actor?.name ?? '?')));
     foot = result ? null : c.stage === 'pick'
       ? `${reader} picks someone on the ${nameOf(g, g.turn)} to act with`
+      : c.stage === 'ready' ? `${reader} and ${c.actor?.name ?? ''} are reading what to act out. The clock starts when both press Start on their phones`
       : 'Both act out the same thing. Each team shouts at their own actor. First to say it wins!';
   } else {
     const parts = [];

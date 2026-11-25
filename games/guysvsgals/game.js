@@ -378,10 +378,29 @@ export class GuysVsGalsGame {
     }
     this.#changed();
   }
+  /** The two actors are set: both read what to act out on their phones, and the clock waits for them. */
   #act(actorId) {
     const c = this.card;
     c.actor = actorId;
-    c.stage = 'act';
+    c.stage = 'ready';
+    c.ready = {};
+  }
+  /** The two who act out the charade (the reader and the picked actor). */
+  #actors() { const c = this.card; return [c.reader, c.actor].filter(Boolean); }
+  /** An actor has read the card and is ready. The clock starts once both are (someone who wandered off is not waited for). */
+  movesReady(by) {
+    const c = this.card;
+    if (this.phase !== 'card' || c?.stage !== 'ready') fail('No charade to start right now');
+    if (by !== 'host') {
+      if (!this.#actors().includes(by.id)) fail('Only the two actors can start the clock');
+      c.ready = { ...(c.ready ?? {}), [by.id]: true };
+    }
+    const waiting = this.#actors().filter((id) => !c.ready?.[id] && this.room.connected.has(id));
+    if (by === 'host' || !waiting.length) this.#startMoves();
+    this.#changed();
+  }
+  #startMoves() {
+    this.card.stage = 'act';
     this.#setTimer(T.moves, () => this.#movesDone(null, true), 'moves');
   }
   /** Who guesses an Our Lives card: the team at play, or, on a challenge, the reader's teammates. */
@@ -722,6 +741,7 @@ export class GuysVsGalsGame {
   /** Moves things along: locks in the guesses now, or skips the wait after a result or a trophy. */
   advance() {
     if (this.phase === 'card' && this.card?.stage === 'guess') { this.#lockGuess(); return; }
+    if (this.phase === 'card' && this.card?.stage === 'ready') { this.movesReady('host'); return; }
     if (this.phase === 'result' || this.phase === 'trophy') { const t = this.timer; this.timer = null; t?.fire(); }
   }
   /** The host throws out a card (a dud, or one nobody could know) and deals the same team another. */
@@ -833,6 +853,7 @@ export class GuysVsGalsGame {
       case 'judge': return this.judge('host', a.right === true);
       case 'moves': return this.movesWinner('host', a.side ? String(a.side) : null);
       case 'actor': return this.pickActor('host', a.pid);
+      case 'movesReady': return this.movesReady('host');
       case 'nudge': return this.nudge(a.delta, a.side ? String(a.side) : null);
       case 'endGame': case 'playAgain': return this.endGame();
       case 'setSet': return this.setSet(a.id);
@@ -863,6 +884,7 @@ export class GuysVsGalsGame {
       case 'secret': this.secretPick(player, msg.choice); return undefined;
       case 'vote': this.vote(player, msg.choice); return { t: 'ack', what: 'vote' };
       case 'actor': this.pickActor(player, msg.pid); return undefined;
+      case 'ready': this.movesReady(player); return undefined;
       case 'moves': this.movesWinner(player, msg.side ? String(msg.side) : null); return undefined;
       case 'challenge': this.challenge(player); return undefined;
       case 'react': this.react(player, msg.e); return undefined;
@@ -886,6 +908,7 @@ export class GuysVsGalsGame {
         if (this.#isRace()) return { text: `${who}: question ${c.i + 1} of ${c.qs.length}`, next: `${reader} reads. Say your answer out loud!` };
         if (c.deck === 'moves') {
           if (c.stage === 'pick') return { text: `${who}: Our Moves`, next: `${reader} picks someone on the ${this.#name(this.turn)} to act with` };
+          if (c.stage === 'ready') return { text: 'Get ready!', next: `${reader} and ${this.#pname(c.actor)} read what to act out. The clock starts when both press Start` };
           return { text: 'Act it out!', next: `${reader} and ${this.#pname(c.actor)} act out the same thing. Shout it first!` };
         }
         if (c.challenged) {
@@ -940,6 +963,7 @@ export class GuysVsGalsGame {
       reader: { id: c.reader, name: this.#pname(c.reader) },
     };
     if (c.actor) v.actor = { id: c.actor, name: this.#pname(c.actor) };
+    if (c.stage === 'ready') v.ready = Object.keys(c.ready ?? {});
     if (c.deck !== 'moves') v.text = c.q;
     if (c.cat) v.cat = c.cat;
     if (c.img) v.img = c.img;
@@ -1003,6 +1027,11 @@ export class GuysVsGalsGame {
       if (c.stage === 'pick') {
         me.canPickActor = side === reading;
         if (me.canPickActor) me.actors = this.#members(this.turn).map((p) => ({ id: p.id, name: p.name }));
+      }
+      if (c.stage === 'ready' && (me.reader || me.actor)) {
+        me.move = c.m;
+        me.canReady = true;
+        me.ready = !!c.ready?.[player.id];
       }
       if (c.stage === 'act') {
         me.canCall = side === reading;

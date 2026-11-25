@@ -139,6 +139,9 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
   tickBy(GT.result);                    // to -4: Our Moves
   saveG('moves-pick');
   msg(reader(), { t: 'actor', pid: guys[1].id });
+  msg(guys[1], { t: 'ready' });
+  saveG('moves-ready');                 // both read the card; one has pressed Start
+  msg(reader(), { t: 'ready' });
   saveG('moves-act');
   msg(reader(), { t: 'moves', side: 'gals' });   // the Gals shout it first: stolen
   saveG('moves-stolen');
