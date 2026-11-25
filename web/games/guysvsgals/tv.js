@@ -3,7 +3,7 @@
 // along the foot with the trophy on it. A trophy won and the winners take over the whole screen. The answer only reaches
 // the TV once the card has been judged.
 import { h } from '../../common.js';
-import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText } from './shared.js';
+import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText, pawnBin } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b', '#ffa7d8'];
 const HOP_MS = 320;
@@ -234,6 +234,83 @@ function winScreen(g) {
       h('div', { class: 'gv-sub' }, `${isRace(g) ? g.teams.map((x) => `${x.name} ${acrossText(g, x.side)}`).join('  ·  ') : g.teams.map((x) => `${x.name} ${x.trophies} ${x.trophies === 1 ? 'trophy' : 'trophies'}`).join('  ·  ')}  ·  ${g.hosted ? 'The host can start a rematch.' : 'The first player can start a rematch.'}`)));
 }
 
+// ---------- the race board ----------
+// The pawn race is played on a board like the classic one: a deep blue field with a yellow and red rim, each team's
+// START rail down its outer edge, two halves of round spaces in staggered columns, each team's wild columns in its
+// colour, and the two decks of cards in the middle, where the card being read sits. Our own art throughout.
+
+const BOARD_ROWS = 6;
+const DOT_FILLS = ['#ff8a8a', '#ffd76a', '#8be08b', '#ffb26b', '#ff9ccf', '#8fc8ff', '#c7a6ff', '#7fe0d4'];
+const DOT_ICONS = ['⚽', '🍕', '🔧', '💄', '🚗', '🎸', '👠', '🏈', '🛒', '🎣', '🧁', '📺', '🛠️', '👗', '🎮', '🍳', '🏀', '💅', '🔨', '🎤', '🏌️', '🧶', '🍔', '🛋️'];
+
+/** Which row a pawn walks along: the Guys' pawns on the upper middle rows, the Gals' on the lower ones. */
+export function pawnRow(g, side, i) {
+  const n = g.race.pawns[side].length;
+  return side === 'guys' ? (n === 1 ? 2 : 1 + i) : (n === 1 ? 3 : 3 + i);
+}
+
+function boardDot(g, x, row) {
+  const r = g.race;
+  const wild = r.wild.guys.includes(x) ? 'guys' : r.wild.gals.includes(x) ? 'gals' : null;
+  const seed = x * 7 + row * 3;
+  const kids = [];
+  for (const side of ['guys', 'gals']) {
+    r.pawns[side].forEach((p, i) => {
+      if (p.state === 'board' && p.x === x && pawnRow(g, side, i) === row) kids.push(token(side, '', 128, 'gv-dot-pawn'));
+    });
+  }
+  const label = wild ? h('b', {}, (teamOf(g, wild)?.name ?? wild).toUpperCase()) : h('i', {}, DOT_ICONS[seed % DOT_ICONS.length]);
+  return h('div', { class: `gv-dot ${wild ? `wild ${wild}` : ''} ${kids.length ? 'has-pawn' : ''}`, 'data-x': x, 'data-row': row,
+    style: { '--d': wild ? teamOf(g, wild)?.color : DOT_FILLS[seed % DOT_FILLS.length] } }, label, kids);
+}
+
+function boardHalf(g, from, to) {
+  const cols = [];
+  for (let x = from; x <= to; x++) {
+    cols.push(h('div', { class: `gv-col ${x % 2 ? 'odd' : 'even'}` }, Array.from({ length: BOARD_ROWS }, (_, row) => boardDot(g, x, row))));
+  }
+  return h('div', { class: 'gv-half' }, cols);
+}
+
+function boardRail(g, side) {
+  return h('div', { class: `gv-rail ${side}`, style: { '--c': teamOf(g, side)?.color } },
+    h('div', { class: 'gv-rail-name' }, 'START'), pawnBin(g, side, false));
+}
+
+/** A team's corner of the middle: name, whose turn it is, the players and how many pawns are across. */
+function boardTeam(g, side) {
+  const t = teamOf(g, side);
+  const c = g.card;
+  const live = (g.phase === 'card' || g.phase === 'result') && c;
+  const turn = live && g.turn === side;
+  const reading = live && c.about === side;
+  return h('div', { class: `gv-bteam ${side} ${turn ? 'turn' : ''}`, style: { '--c': t?.color } },
+    token(side, '', 128, 'gv-bteam-hero'),
+    h('div', {},
+      h('div', { class: 'gv-bteam-name' }, (t?.name ?? side).toUpperCase(),
+        turn ? h('span', { class: 'gv-clock-badge' }, 'YOUR TURN!') : reading ? h('span', { class: 'gv-clock-badge reading' }, 'READING!') : null),
+      h('div', { class: 'gv-bteam-who' }, (t?.members ?? []).map((m) => h('span', { class: m.connected ? '' : 'off' }, m.name, live && c.reader?.id === m.id ? ' 📖' : ''))),
+      h('div', { class: 'gv-bteam-across' }, acrossText(g, side).toUpperCase(), g.race.skip?.[side] ? ' 💤' : '')));
+}
+
+/** The two decks in the middle of the board: the Guys' cards (blue backs) and the Gals' (pink backs). */
+function boardDecks(g) {
+  const deck = (side) => h('div', { class: `gv-deck ${side}`, style: { '--c': teamOf(g, side)?.color } },
+    h('div', { class: 'gv-deck-top' }, h('span', {}, `${(teamOf(g, side)?.name ?? side).toUpperCase()} STUFF`)));
+  return h('div', { class: 'gv-decks' }, deck('guys'), deck('gals'));
+}
+
+function raceBoard(g, center) {
+  const len = g.race.len;
+  const mid = Math.floor(len / 2);
+  return h('div', { class: 'gv-board' },
+    h('div', { class: 'gv-banner l' }, 'GUYS ', h('small', {}, 'VS'), ' GALS'),
+    h('div', { class: 'gv-banner r' }, 'GUYS ', h('small', {}, 'VS'), ' GALS'),
+    boardRail(g, 'guys'), boardHalf(g, 1, mid),
+    h('div', { class: 'gv-mid' }, h('div', { class: 'gv-bteams' }, boardTeam(g, 'guys'), boardTeam(g, 'gals')), h('div', { class: 'gv-center' }, center), boardDecks(g)),
+    boardHalf(g, mid + 1, len), boardRail(g, 'gals'));
+}
+
 export function render(v) {
   loadStyles();
   const g = v.game;
@@ -252,6 +329,7 @@ export function render(v) {
   if (g.phase === 'trophy') over = trophyScreen(g);
   else if (g.phase === 'gameover') over = winScreen(g);
   if (center) requestAnimationFrame(() => fitCard(center));
+  if (race) return h('div', { class: `gv-tv gv-tv-board phase-${g.phase}` }, raceBoard(g, center), over, floats(g));
   return h('div', { class: `gv-tv phase-${g.phase}` }, bg(),
     h('div', { class: 'gv-stage' }, teamPanel(g, 'guys'), h('div', { class: 'gv-center' }, center), teamPanel(g, 'gals')),
     strip,

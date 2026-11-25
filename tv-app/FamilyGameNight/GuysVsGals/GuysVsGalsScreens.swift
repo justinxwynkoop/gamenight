@@ -60,6 +60,20 @@ struct GuysVsGalsScreen: View {
     let receivedAt: Date
 
     var body: some View {
+        if game.isRace {
+            // The pawn race is played on the board itself. Follows raceBoard() in public/games/guysvsgals/tv.js.
+            ZStack {
+                GvgRaceBoard(game: game) { center }
+                GvgReactions(game: game)
+                overlay
+            }
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: game.phase)
+        } else {
+            trophyGame
+        }
+    }
+
+    private var trophyGame: some View {
         ZStack {
             GvgPaper()
             VStack(spacing: 34) {
@@ -366,6 +380,184 @@ private extension View {
     }
 }
 
+// MARK: - The race board
+
+/// The pawn race board, like the classic one: a deep blue field with a yellow and red rim, each team's START rail
+/// down its outer edge, two halves of round spaces in staggered columns, each team's wild columns in its colour, and
+/// the two decks in the middle where the card being read sits. Follows raceBoard() in public/games/guysvsgals/tv.js.
+private struct GvgRaceBoard<Center: View>: View {
+    let game: GuysVsGalsState
+    @ViewBuilder let center: () -> Center
+
+    static var rows: Int { 6 }
+    static let fills: [UInt32] = [0xFF8A8A, 0xFFD76A, 0x8BE08B, 0xFFB26B, 0xFF9CCF, 0x8FC8FF, 0xC7A6FF, 0x7FE0D4]
+    static let icons = ["⚽", "🍕", "🔧", "💄", "🚗", "🎸", "👠", "🏈", "🛒", "🎣", "🧁", "📺", "🛠️", "👗", "🎮", "🍳", "🏀", "💅", "🔨", "🎤", "🏌️", "🧶", "🍔", "🛋️"]
+
+    var body: some View {
+        if let race = game.race {
+            let shape = RoundedRectangle(cornerRadius: 22)
+            HStack(spacing: 16) {
+                rail(race, "guys").frame(width: 100)
+                half(race, 1...(race.len / 2))
+                VStack(spacing: 20) {
+                    HStack(spacing: 16) { team(race, "guys"); team(race, "gals") }
+                    center().frame(maxWidth: .infinity, maxHeight: .infinity)
+                    HStack(spacing: 50) { deck("guys"); deck("gals") }
+                }
+                .frame(width: 600)
+                half(race, (race.len / 2 + 1)...race.len)
+                rail(race, "gals").frame(width: 100)
+            }
+            .padding(.horizontal, 26).padding(.top, 74).padding(.bottom, 36)
+            .background(shape.fill(RadialGradient(colors: [Color(hex: 0x3F74EA), Color(hex: 0x1D47C2), Color(hex: 0x14318F)],
+                                                  center: UnitPoint(x: 0.3, y: 0.25), startRadius: 20, endRadius: 1300)))
+            .overlay(shape.strokeBorder(GV.yellow, lineWidth: 14))
+            .overlay(shape.inset(by: 14).strokeBorder(Color(hex: 0xE8323C), lineWidth: 8))
+            .overlay(shape.strokeBorder(GV.ink, lineWidth: 5))
+            .overlay(alignment: .topLeading) { banner.padding(.leading, 170).offset(y: -6) }
+            .overlay(alignment: .topTrailing) { banner.padding(.trailing, 170).offset(y: -6) }
+            .padding(28)
+            .background(Color(hex: 0x0F2A7A))
+        }
+    }
+
+    private var banner: some View {
+        HStack(spacing: 8) {
+            Text("GUYS").foregroundStyle(.white)
+            Text("VS").font(GV.bangers(30)).foregroundStyle(GV.yellow)
+            Text("GALS").foregroundStyle(.white)
+        }
+        .font(GV.bangers(48)).tracking(2)
+        .shadow(color: GV.ink, radius: 0, x: 3, y: 3)
+        .padding(.horizontal, 36).padding(.vertical, 2)
+        .background(Capsule().fill(Color(hex: 0xE8323C)))
+        .overlay(Capsule().strokeBorder(GV.ink, lineWidth: 5))
+    }
+
+    /// Which row a pawn walks along: the Guys' pawns on the upper middle rows, the Gals' on the lower ones.
+    private func pawnRow(_ race: GvgRace, _ side: String, _ i: Int) -> Int {
+        let n = race.pawns(side).count
+        return side == "guys" ? (n == 1 ? 2 : 1 + i) : (n == 1 ? 3 : 3 + i)
+    }
+
+    private func half(_ race: GvgRace, _ xs: ClosedRange<Int>) -> some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width / CGFloat(xs.count)
+            let h = proxy.size.height / CGFloat(Self.rows)
+            let d = min(h * 0.72, sqrt(w * w + h * h / 4) - 8)
+            HStack(spacing: 0) {
+                ForEach(Array(xs), id: \.self) { x in
+                    VStack(spacing: 0) {
+                        ForEach(0..<Self.rows, id: \.self) { row in
+                            dot(race, x, row, size: d).frame(width: w, height: h)
+                        }
+                    }
+                    .offset(y: x % 2 == 1 ? -h / 4 : h / 4)
+                }
+            }
+        }
+    }
+
+    private func dot(_ race: GvgRace, _ x: Int, _ row: Int, size: CGFloat) -> some View {
+        let wild = race.wildSide(x)
+        let seed = x * 7 + row * 3
+        let fill: Color = wild.map { GV.color(game, $0) } ?? Color(hex: Self.fills[seed % Self.fills.count])
+        var here: [String] = []
+        for side in ["guys", "gals"] {
+            for (i, p) in race.pawns(side).enumerated() where p.state == "board" && p.x == x && pawnRow(race, side, i) == row { here.append(side) }
+        }
+        return ZStack {
+            Circle().fill(RadialGradient(colors: [fill.opacity(0.6), fill], center: UnitPoint(x: 0.35, y: 0.3), startRadius: 1, endRadius: size * 0.6))
+                .background(Circle().fill(.white))
+            Circle().strokeBorder(GV.ink, lineWidth: 5)
+            if let wild {
+                Text(game.name(wild).uppercased()).font(GV.bangers(size * 0.3)).foregroundStyle(.white)
+                    .shadow(color: GV.ink, radius: 0, x: 2, y: 2).rotationEffect(.degrees(-12))
+                    .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 6)
+            } else {
+                Text(Self.icons[seed % Self.icons.count]).font(.system(size: size * 0.46)).opacity(0.9)
+            }
+            ForEach(Array(here.enumerated()), id: \.offset) { k, side in
+                GvgToken(side: side, size: size * 1.4).offset(x: CGFloat(k) * size * 0.3, y: -size * 0.15)
+            }
+        }
+        .frame(width: size, height: size)
+        .shadow(color: .black.opacity(0.35), radius: 0, x: 3, y: 4)
+        .overlay(Circle().strokeBorder(here.isEmpty ? .clear : .white, lineWidth: 6).padding(-8))
+        .zIndex(here.isEmpty ? 0 : 1)
+        .animation(.spring(response: 0.6, dampingFraction: 0.65), value: here)
+    }
+
+    /// A team's START rail: its pawns still waiting, the other team's pawns that made it across, and any prisoner taken.
+    private func rail(_ race: GvgRace, _ side: String) -> some View {
+        let other = side == "guys" ? "gals" : "guys"
+        let waiting = race.pawns(side).filter { $0.state == "wait" }.count
+        let home = race.pawns(other).filter { $0.state == "home" }.count
+        let jailed = race.pawns(other).filter { $0.state == "jail" }.count
+        let shape = RoundedRectangle(cornerRadius: 34)
+        return VStack(spacing: 16) {
+            Text("START").font(GV.bangers(40)).tracking(4).foregroundStyle(.white)
+                .shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+                .fixedSize().rotationEffect(.degrees(side == "guys" ? -90 : 90)).frame(width: 60, height: 150)
+            ForEach(0..<waiting, id: \.self) { _ in GvgToken(side: side, size: 76, outline: false).opacity(0.6) }
+            ForEach(0..<home, id: \.self) { _ in GvgToken(side: other, size: 76) }
+            ForEach(0..<jailed, id: \.self) { _ in
+                GvgToken(side: other, size: 76).overlay(alignment: .bottomTrailing) { Text("🔒").font(.system(size: 30)) }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 20)
+        .frame(maxHeight: .infinity)
+        .background(shape.fill(GV.color(game, side)))
+        .overlay(shape.strokeBorder(GV.ink, lineWidth: 5))
+    }
+
+    /// A team's corner of the middle: name, whose turn it is, the players and how many pawns are across.
+    private func team(_ race: GvgRace, _ side: String) -> some View {
+        let c = game.card
+        let live = (game.phase == .card || game.phase == .result) && c != nil
+        let turn = live && game.turn == side
+        let reading = live && c?.about == side
+        let shape = RoundedRectangle(cornerRadius: 16)
+        let members = game.team(side)?.members ?? []
+        return HStack(spacing: 10) {
+            GvgToken(side: side, size: 70, outline: false)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(game.name(side).uppercased()).font(GV.bangers(42)).foregroundStyle(.white).shadow(color: GV.ink, radius: 0, x: 2, y: 2)
+                    if turn { Sticker(text: "YOUR TURN!", fill: .white, size: 22) } else if reading { Sticker(text: "READING!", size: 22) }
+                }
+                Text(members.map { $0.name + (live && c?.reader.id == $0.id ? " 📖" : "") }.joined(separator: " · "))
+                    .font(GV.body(20, .heavy)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.6)
+                Text("\(race.across(side)) OF \(race.pawns(side).count) ACROSS\(race.skip?[side] == true ? " 💤" : "")")
+                    .font(GV.bangers(24)).tracking(1).foregroundStyle(GV.yellow).shadow(color: GV.ink, radius: 0, x: 1, y: 1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(shape.fill(GV.color(game, side)))
+        .overlay(shape.strokeBorder(turn ? .white : GV.ink, lineWidth: turn ? 6 : 5))
+        .scaleEffect(turn ? 1.04 : 1)
+    }
+
+    /// One of the two decks in the middle: the Guys' cards (blue backs) or the Gals' (pink backs).
+    private func deck(_ side: String) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 10)
+        let fill = GV.color(game, side)
+        return ZStack {
+            shape.fill(fill).overlay(shape.strokeBorder(GV.ink, lineWidth: 4)).offset(x: 10, y: 10)
+            shape.fill(fill).overlay(shape.strokeBorder(GV.ink, lineWidth: 4)).offset(x: 5, y: 5)
+            shape.fill(fill)
+                .overlay(shape.inset(by: 8).strokeBorder(.white, lineWidth: 5))
+                .overlay(shape.strokeBorder(GV.ink, lineWidth: 4))
+                .overlay(Text("\(game.name(side).uppercased()) STUFF").font(GV.bangers(30)).tracking(2).foregroundStyle(.white)
+                    .shadow(color: GV.ink, radius: 0, x: 2, y: 2))
+        }
+        .frame(width: 220, height: 76)
+    }
+}
+
 // MARK: - The pawn race
 
 /// The race track: the Guys' START on the left, the spaces with each side's wild spaces in its colour, and the Gals'
@@ -578,7 +770,7 @@ private struct GvgDeckCard: View {
                 if !result { Rectangle().fill(GV.ink.opacity(0.3)).frame(height: 3) }
                 footer(c, result: result).frame(maxWidth: .infinity)
         }
-        .padding(.leading, 132).padding(.trailing, 36).padding(.vertical, 26)
+        .padding(.leading, 120).padding(.trailing, 30).padding(.vertical, 24)
         .frame(minHeight: 340)
         .overlay(alignment: .leading) { GvgCardStripe().padding(.vertical, 18).padding(.leading, 18) }
         .background(shape.fill(.white))
@@ -759,20 +951,20 @@ private struct GvgDeckCard: View {
 /// The dark stripe down the left of every question card, with the game's name running up it.
 private struct GvgCardStripe: View {
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12).fill(GV.ink)
-            Capsule().strokeBorder(.white, lineWidth: 3).padding(8)
-            HStack(spacing: 10) {
-                Text("GUYS").foregroundStyle(.white)
-                Text("VS").font(GV.bangers(30)).foregroundStyle(GV.yellow)
-                Text("GALS").foregroundStyle(.white)
-            }
-            .font(GV.bangers(38)).tracking(3)
-            .fixedSize()
-            .rotationEffect(.degrees(-90))
-        }
-        .frame(width: 84)
-        .frame(maxHeight: .infinity)
+        RoundedRectangle(cornerRadius: 12).fill(GV.ink)
+            .overlay(Capsule().strokeBorder(.white, lineWidth: 3).padding(8))
+            .overlay(
+                HStack(spacing: 10) {
+                    Text("GUYS").foregroundStyle(.white)
+                    Text("VS").font(GV.bangers(26)).foregroundStyle(GV.yellow)
+                    Text("GALS").foregroundStyle(.white)
+                }
+                .font(GV.bangers(36)).tracking(3)
+                .fixedSize()
+                .rotationEffect(.degrees(-90))
+            )
+            .frame(width: 76)
+            .frame(maxHeight: .infinity)
     }
 }
 

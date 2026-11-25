@@ -96,7 +96,7 @@ try {
     const card = e.querySelector('.gv-card');
     return {
       phase: [...e.classList].find((c) => c.startsWith('phase-'))?.slice(6) ?? 'lobby',
-      turn: e.querySelector('.gv-team.turn')?.classList.contains('guys') ? 'guys' : e.querySelector('.gv-team.turn') ? 'gals' : null,
+      turn: e.querySelector('.gv-team.turn, .gv-bteam.turn')?.classList.contains('guys') ? 'guys' : e.querySelector('.gv-team.turn, .gv-bteam.turn') ? 'gals' : null,
       n: card?.dataset.n ?? null, deck: [...(card?.classList ?? [])].find((c) => c.startsWith('deck-'))?.slice(5) ?? null,
       challenged: !!e.querySelector('.gv-stamp'), answer: !!e.querySelector('.gv-answer'), pic: !!e.querySelector('.gv-card .gv-pic'),
       sig: `${[...e.classList].join(' ')}|${card?.dataset.n}|${card?.querySelector('.gv-foot')?.textContent ?? ''}|${!!e.querySelector('.gv-stamp')}`,
@@ -185,7 +185,7 @@ try {
   await until(async () => /The race/.test(await tvText()), 'the TV lobby to show the race rules');
   await shot(tv, 'race-lobby');
   await ann.getByRole('button', { name: /start the battle/i }).click();
-  await until(async () => (await tv.locator('.gv-race').count()) > 0, 'the race track');
+  await until(async () => (await tv.locator('.gv-board .gv-dot').count()) > 0, 'the race board');
   let wilds = 0;
   let questions = 0;
   let across = 0;
