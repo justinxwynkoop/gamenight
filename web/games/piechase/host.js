@@ -3,7 +3,7 @@
 // player who has gone away. Players still roll and move on their own phones.
 import { h, ink } from '../../common.js';
 import { button, seg, toggle, card, eyebrow } from '../../ui.js';
-import { loadStyles, board, pie, nameOf, catOf, spaceName, goalText } from './shared.js';
+import { loadStyles, board, pie, nameOf, catOf, spaceName, goalText, icon } from './shared.js';
 
 const SUB = {
   lobby: 'Setting up', rolloff: 'Rolling to see who goes first', roll: 'Rolling', move: 'Moving', choose: 'Picking a category',
@@ -30,7 +30,7 @@ export function render(raw, ctx) {
       const q = g.question;
       const c = catOf(g, q.cat);
       body.push(h('div', { class: 'pc' }, h('div', { class: 'pc-qcard', style: { '--c': c.color, '--ink': ink(c.color) } },
-        h('div', { class: 'top' }, h('span', {}, c.name), h('span', {}, q.final ? 'For the win' : q.hq && !q.hasWedge ? 'For the wedge' : '')),
+        h('div', { class: 'top' }, h('span', {}, icon(g, q.cat, 22, 'currentColor'), c.name), q.final || (q.hq && !q.hasWedge) ? h('span', { class: 'tag' }, q.final ? 'For the win' : 'For the wedge') : null),
         h('div', { class: 'q' }, q.text),
         h('div', { class: 'a' }, h('small', {}, 'Answer'), q.answer ?? ''))));
       if (g.phase === 'question') {
@@ -43,7 +43,7 @@ export function render(raw, ctx) {
     if (g.phase === 'choose') {
       body.push(card(eyebrow(g.chooser === 'opponents' ? `Category for ${who}’s winning question` : `${who} picks a category`),
         h('p', { class: 'dim' }, g.chooser === 'opponents' ? 'The other players choose. Tap it for them, or let them pick on their phones.' : 'They can pick on their phone, or tell you.'),
-        h('div', { class: 'pc' }, h('div', { class: 'pc-cats' }, g.categories.map((c, i) => h('button', { type: 'button', class: 'pc-cat', style: { '--c': c.color, '--ink': ink(c.color) }, onclick: () => act('choose', { cat: i }) }, c.name))))));
+        h('div', { class: 'pc' }, h('div', { class: 'pc-cats' }, g.categories.map((c, i) => h('button', { type: 'button', class: 'pc-cat', style: { '--c': c.color, '--ink': ink(c.color) }, onclick: () => act('choose', { cat: i }) }, icon(g, i, 30, 'currentColor'), h('span', {}, c.name)))))));
     }
     if (g.phase === 'move' && g.options.length > 1) {
       body.push(card(eyebrow(`${who} rolled ${g.die?.value}: where to?`), h('p', { class: 'dim' }, 'They pick on their phone. You can tap for them.'),

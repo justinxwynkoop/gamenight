@@ -2,7 +2,7 @@
 // screen; the right has whose turn it is, the die and everyone's pie. Questions come up on a card over the board. The
 // answer is only on the TV once it has been judged.
 import { h, ink } from '../../common.js';
-import { loadStyles, board, pie, die, nameOf, catOf, unitOf, legend, spaceName, spaceOf, goalText } from './shared.js';
+import { loadStyles, board, pie, die, nameOf, catOf, unitOf, legend, spaceName, spaceOf, logo, icon, confetti } from './shared.js';
 
 const HOP_MS = 170;   // a token takes this long per space when it moves
 let seenDie = null;   // the roll the TV has already tumbled (the screen is redrawn on every change)
@@ -18,46 +18,60 @@ export function lobby(v, ctx) {
   return h('div', { class: 'pc-tv pc-lobby' },
     h('div', { class: 'pc-left' }, board(g, { tokens: false })),
     h('div', { class: 'pc-side' },
-      h('h1', { class: 'pc-title' }, 'Pie Chase'),
-      h('div', { class: 'pc-sub' }, `Win a wedge in each category, then race back to the hub. ${g.minUnits} to ${g.maxUnits} ${teams ? 'teams' : 'players'}.`),
+      logo(g),
+      h('div', { class: 'pc-sub' }, `Win a wedge in every category, then race back to the hub. ${g.minUnits} to ${g.maxUnits} ${teams ? 'teams' : 'players'}.`),
       h('div', { class: 'pc-join' },
         h('div', { class: 'qr-big' }, ctx.qr()),
         h('div', {},
           h('div', { class: 'pc-say' }, 'Scan to join'),
           ctx.info?.code
-            ? h('div', { class: 'pc-next' }, 'or open ', h('b', {}, ctx.info.site), ' and type ', h('b', { class: 'roomcode pc-code' }, ctx.info.code))
+            ? h('div', { class: 'pc-next' }, 'or open ', h('b', {}, ctx.info.site), ' and type ', h('br'), h('b', { class: 'roomcode pc-code' }, ctx.info.code))
             : ctx.info?.joinUrl ? h('div', { class: 'pc-next' }, `or open ${ctx.info.joinUrl.replace(/^https?:\/\//, '')}`) : null)),
+      steps(g),
       h('div', { class: 'pc-units' }, g.units.length
         ? g.units.map((u) => unitRow(g, u, { lobby: true }))
         : h('div', { class: 'pc-next' }, 'Nobody has joined yet')),
-      h('div', { class: 'pc-next' }, `Questions: ${g.setTitle || 'All question sets'} · ${goalText(g)}`),
-      h('div', { class: 'pc-next' }, n < g.minUnits ? `Waiting for ${g.minUnits - n} more ${teams ? 'team' : 'player'}` : g.hosted ? 'The host starts the game.' : 'The first player to join starts the game on their phone.'),
+      h('div', { class: 'pc-next pc-foot' }, `${g.setTitle || 'All question sets'} · ${n < g.minUnits ? `waiting for ${g.minUnits - n} more ${teams ? 'team' : 'player'}` : g.hosted ? 'the host starts the game' : 'the first player to join starts the game on their phone'}`),
       legend(g)));
+}
+
+/** How to win, in three pictures. */
+function steps(g) {
+  const want = g.settings?.wedgesToWin ?? 6;
+  return h('div', { class: 'pc-steps' },
+    h('div', { class: 'pc-step' }, die(5, { size: 60 }), h('b', {}, 'Roll'), 'Move that many spaces, any way'),
+    h('div', { class: 'pc-step' }, h('div', { class: 'pc-step-hq' }, icon(g, 0, 30, '#fff')), h('b', {}, 'Win wedges'), 'Answer right on the big spaces'),
+    h('div', { class: 'pc-step' }, pie(g, [0, 1, 2, 3, 4, 5].slice(0, want), 60, '#d48a42'), h('b', {}, 'Fill your pie'), 'Then win in the hub'));
 }
 
 function unitRow(g, u, { lobby = false } = {}) {
   const turn = !lobby && g.turn === u.id;
+  const fresh = !lobby && g.phase === 'result' && g.result?.wedge != null && g.turn === u.id ? g.result.wedge : null;
   return h('div', { class: `pc-unit ${turn ? 'turn' : ''} ${u.connected ? '' : 'off'}`, style: { '--c': u.color } },
-    pie(g, u.wedges, lobby ? 44 : 58, u.color),
+    pie(g, u.wedges, lobby ? 44 : 58, u.color, '', fresh),
     h('div', { class: 'pc-uname' },
       h('b', {}, u.name),
       u.members?.length ? h('small', {}, u.members.join(', ')) : !lobby ? h('small', {}, u.won ? 'Won!' : `${u.wedges.length} ${u.wedges.length === 1 ? 'wedge' : 'wedges'} · ${spaceName(g, u.pos)}`) : null),
-    turn ? h('span', { class: 'pc-arrow' }, '◀') : null);
+    !lobby ? h('span', { class: 'pc-count' }, String(u.wedges.length), h('small', {}, `/${g.settings?.wedgesToWin ?? 6}`)) : null);
 }
 
-/** The card over the board: the question, and once it is judged, the answer. */
+/** The recipe card over the board: the question, and once it is judged, the stamp and the answer. */
 function questionCard(g) {
   const q = g.question;
   const c = catOf(g, q.cat);
   const who = nameOf(g, g.turn);
   const res = g.result;
   const tag = q.final ? 'FOR THE WIN' : q.hq ? (q.hasWedge && !res?.wedge ? 'HEADQUARTERS' : 'FOR THE WEDGE') : null;
+  const wedge = res && res.wedge !== null && res.wedge !== undefined;
+  const u = unitOf(g, g.turn);
   return h('div', { class: `pc-card ${res ? (res.correct ? 'right' : 'wrong') : ''}`, style: { '--c': c.color, '--ink': ink(c.color) } },
-    h('div', { class: 'pc-card-top' }, h('span', {}, c.name), tag ? h('span', { class: 'pc-tag' }, tag) : null),
+    h('div', { class: 'pc-card-top' }, h('span', {}, h('i', { class: 'pc-badge' }, icon(g, q.cat, 30, '#fff')), c.name), tag ? h('span', { class: 'pc-tag' }, tag) : null),
     h('div', { class: 'pc-q' }, q.text),
     res
       ? h('div', { class: 'pc-ans' },
-        h('div', { class: 'pc-verdict' }, res.win ? `🏆 ${who} WINS!` : res.wedge !== null && res.wedge !== undefined ? `RIGHT! ${who} wins the ${catOf(g, res.wedge).name} wedge` : res.correct ? 'RIGHT!' : 'NOT QUITE'),
+        h('div', { class: 'pc-won' },
+          wedge && u ? pie(g, u.wedges, 120, u.color, '', res.wedge) : null,
+          h('div', { class: 'pc-verdict' }, res.win ? `🏆 ${who} WINS!` : wedge ? `RIGHT! ${who} wins the ${catOf(g, res.wedge).name} wedge` : res.correct ? 'RIGHT!' : 'NOT QUITE')),
         h('div', {}, h('small', {}, 'Answer: '), h('b', {}, q.answer)))
       : h('div', { class: 'pc-card-foot' }, `${who} answers out loud`, g.readerId ? ` · ${nameOf(g, g.readerId)} reads and judges` : g.hosted ? ' · the host judges' : ''));
 }
@@ -80,7 +94,7 @@ function chooseCard(g) {
   return h('div', { class: 'pc-card plain' },
     h('div', { class: 'pc-card-top' }, h('span', {}, g.chooser === 'opponents' ? `${who} is in the hub with every wedge!` : `${who} is in the hub`)),
     h('div', { class: 'pc-next' }, g.chooser === 'opponents' ? 'The other players pick the category for the winning question.' : `${who} picks any category.`),
-    legend(g));
+    h('div', { class: 'pc-cats-tv' }, g.categories.map((c, i) => h('span', { style: { '--c': c.color, '--ink': ink(c.color) } }, icon(g, i, 24, 'currentColor'), c.name))));
 }
 
 function winnerCard(g) {
@@ -112,16 +126,21 @@ export function render(v) {
   if (rolled) seenDie = g.die.n;
   const dieBox = g.die && ['move', 'roll', 'question', 'choose', 'result', 'rolloff'].includes(g.phase)
     ? die(g.die.value, { size: 120, rolling: rolled, key: g.die.n }) : null;
+  const turnUnit = unitOf(g, g.turn);
+  const winner = g.phase === 'gameover' ? unitOf(g, g.winners?.[0]) : null;
 
   const side = h('div', { class: 'pc-side' },
-    h('h1', { class: 'pc-title' }, 'Pie Chase'),
-    h('div', { class: 'pc-status' },
-      h('div', { class: 'pc-dieslot' }, dieBox),
+    logo(g),
+    h('div', { class: 'pc-status', style: { '--c': (winner ?? turnUnit)?.color ?? null } },
+      h('div', { class: 'pc-dieslot' }, dieBox ?? (winner ? pie(g, winner.wedges, 100, winner.color) : turnUnit ? pie(g, turnUnit.wedges, 100, turnUnit.color) : null)),
       h('div', {}, h('div', { class: 'pc-say' }, g.line.text), g.line.next ? h('div', { class: 'pc-next' }, g.line.next) : null)),
-    g.phase === 'move' && g.options.length > 1 ? h('div', { class: 'pc-opts' }, g.options.map((id, i) => h('span', {}, h('b', {}, String(i + 1)), spaceName(g, id)))) : null,
+    g.phase === 'move' && g.options.length > 1 ? h('div', { class: 'pc-opts' }, g.options.map((id, i) => {
+      const sp = spaceOf(g, id);
+      return h('span', { style: { '--c': sp?.cat != null ? catOf(g, sp.cat).color : null } }, h('b', {}, String(i + 1)), spaceName(g, id));
+    })) : null,
     h('div', { class: 'pc-units' }, g.units.map((u) => unitRow(g, u))),
     legend(g));
-  return h('div', { class: `pc-tv phase-${g.phase}` }, left, side);
+  return h('div', { class: `pc-tv phase-${g.phase} ${g.units.length > 4 ? 'many' : ''}` }, left, side, g.phase === 'gameover' ? confetti() : null);
 }
 
 /** Moves the token that just moved along its path, a hop per space, ending where the view put it. */

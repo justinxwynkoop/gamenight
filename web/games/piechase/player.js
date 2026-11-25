@@ -2,7 +2,7 @@
 // list under it). When someone else answers, your phone shows the question and the answer, so you can read it out and
 // say whether they got it right; the next player in turn is the one who reads. With a host, the host reads instead.
 import { h, setKids, ink } from '../../common.js';
-import { loadStyles, board, pie, die, nameOf, catOf, unitOf, spaceName, spaceOf, goalText } from './shared.js';
+import { loadStyles, board, pie, die, nameOf, catOf, unitOf, spaceName, spaceOf, goalText, icon, logo, confetti } from './shared.js';
 
 export function mount(container, { send }) {
   loadStyles();
@@ -19,7 +19,7 @@ export function mount(container, { send }) {
     const u = mine(v);
     if (!u) return null;
     const teams = view.room?.mode === 'teams';
-    return h('div', { class: 'pc-me' }, pie(v, u.wedges, 54, u.color),
+    return h('div', { class: 'pc-me', style: { '--c': u.color } }, pie(v, u.wedges, 54, u.color),
       h('div', {}, h('b', {}, teams ? `Team ${u.name}` : u.name),
         h('div', { class: 'dim' }, `${u.wedges.length} of ${v.settings.wedgesToWin} wedges${v.phase !== 'lobby' ? ` · ${spaceName(v, u.pos)}` : ''}`)));
   }
@@ -42,7 +42,7 @@ export function mount(container, { send }) {
     const n = v.units.length;
     const teams = view.room?.mode === 'teams';
     return [
-      card(h('h2', {}, 'Pie Chase'),
+      card(h('div', { class: 'pc-hero' }, logo(v, 'div')),
         h('p', {}, `Win a wedge in each of the six categories, then race back to the hub and answer one last question to win. To win: ${goalText(v)}.`),
         h('p', { class: 'dim' }, `${n} ${teams ? (n === 1 ? 'team' : 'teams') : n === 1 ? 'player' : 'players'} · ${v.minUnits} to ${v.maxUnits}`),
         h('div', { class: 'pc-scores' }, v.units.map((u) => h('div', { class: 'pc-score' }, pie(v, [], 30, u.color), h('b', {}, u.name), u.members ? h('span', { class: 'dim' }, u.members.join(', ')) : null)))),
@@ -81,12 +81,12 @@ export function mount(container, { send }) {
   function rollPhase(v) {
     const m = me(v);
     const who = nameOf(v, v.turn);
-    if (!m.myTurn) return card(h('h2', {}, `${who}’s turn`), h('p', { class: 'dim' }, v.line.text));
+    if (!m.myTurn) return [card(h('h2', {}, `${who}’s turn`), h('p', { class: 'dim' }, v.line.text)), h('div', { class: 'pc-mini small' }, board(v, { focus: v.turn }))];
     const u = mine(v);
     const allIn = u && u.wedges.length >= v.settings.wedgesToWin;
     return [
-      v.again ? h('div', { class: 'pc-pcard', style: { borderColor: '#22c55e' } }, h('h2', {}, v.again === 'correct' ? 'Right! Roll again' : 'Roll Again space! Roll again')) : null,
-      btn('🎲 Roll the die', 'go huge', () => send({ t: 'roll' })),
+      v.again ? h('div', { class: 'pc-pcard good' }, h('h2', {}, v.again === 'correct' ? 'Right! Roll again' : 'Roll Again space! Roll again')) : null,
+      btn('🎲 Roll the die', 'go huge roll', () => send({ t: 'roll' })),
       allIn ? h('p', {}, 'You have every wedge: head for the hub, and land on it exactly!') : null,
     ];
   }
@@ -99,7 +99,7 @@ export function mount(container, { send }) {
     if (sp?.kind === 'hq') note = u?.wedges.includes(sp.cat) ? 'you have this wedge' : 'win the wedge!';
     else if (sp?.kind === 'hub') note = u && u.wedges.length >= v.settings.wedgesToWin ? 'the winning question!' : 'pick any category';
     else if (sp?.kind === 'again') note = 'roll again';
-    return { c, note };
+    return { c, note, cat: sp?.cat ?? null };
   }
 
   function movePhase(v) {
@@ -107,7 +107,7 @@ export function mount(container, { send }) {
     const who = nameOf(v, v.turn);
     const dieEl = h('div', { class: 'pc-bigdie' }, die(v.die?.value, { size: 110, rolling: v.die?.n !== lastRoll }));
     lastRoll = v.die?.n;
-    if (!m.myTurn) return [card(h('h2', {}, `${who} rolled ${v.die?.value}`), h('p', { class: 'dim' }, v.options.length > 1 ? 'They are picking where to go.' : 'Moving…')), dieEl];
+    if (!m.myTurn) return [card(h('h2', {}, `${who} rolled ${v.die?.value}`), h('p', { class: 'dim' }, v.options.length > 1 ? 'They are picking where to go.' : 'Moving…')), dieEl, h('div', { class: 'pc-mini small' }, board(v, { focus: v.turn, highlight: v.options }))];
     if (v.options.length === 1) return [dieEl, card(h('h2', {}, `Moving to ${spaceName(v, v.options[0])}`))];
     // The list is in the same order as the numbers on the board.
     const go = (id) => send({ t: 'move', to: id });
@@ -115,9 +115,9 @@ export function mount(container, { send }) {
       h('div', { class: 'pc-row' }, dieEl, card(h('h2', {}, `You rolled ${v.die?.value}`), h('p', { class: 'dim' }, 'Tap where to go: on the board or in the list.'))),
       h('div', { class: 'pc-mini' }, board(v, { highlight: v.options, onPick: go, focus: v.turn, labels: true })),
       h('div', { class: 'pc-dests' }, v.options.map((id, i) => {
-        const { c, note } = describe(v, id);
+        const { c, note, cat } = describe(v, id);
         return h('button', { type: 'button', class: 'pc-dest', 'data-id': id, style: { '--c': c?.color ?? '#5b6a99' }, onclick: () => go(id) },
-          h('span', { class: 'n' }, String(i + 1)), h('span', { class: 'sw' }), spaceName(v, id), note ? h('small', {}, note) : null);
+          h('span', { class: 'n' }, String(i + 1)), h('span', { class: 'sw' }, cat != null ? icon(v, cat, 18, '#fff') : h('span', {}, '⚂')), spaceName(v, id), note ? h('small', {}, note) : null);
       })),
     ];
   }
@@ -133,7 +133,7 @@ export function mount(container, { send }) {
     return [
       card(h('h2', {}, v.chooser === 'opponents' ? `Pick the category for ${who}’s winning question` : 'You are in the hub: pick any category'),
         v.chooser === 'opponents' ? h('p', { class: 'dim' }, 'Talk it over with the other players. Their hardest category?') : null),
-      h('div', { class: 'pc-cats' }, v.categories.map((c, i) => h('button', { type: 'button', class: 'pc-cat', style: { '--c': c.color, '--ink': ink(c.color) }, onclick: () => pick(i) }, c.name))),
+      h('div', { class: 'pc-cats' }, v.categories.map((c, i) => h('button', { type: 'button', class: 'pc-cat', style: { '--c': c.color, '--ink': ink(c.color) }, onclick: () => pick(i) }, icon(v, i, 30, 'currentColor'), h('span', {}, c.name)))),
     ];
   }
 
@@ -142,7 +142,7 @@ export function mount(container, { send }) {
     const c = catOf(v, q.cat);
     const tag = q.final ? 'For the win' : q.hq && !q.hasWedge ? 'For the wedge' : '';
     return h('div', { class: 'pc-qcard', style: { '--c': c.color, '--ink': ink(c.color) } },
-      h('div', { class: 'top' }, h('span', {}, c.name), tag ? h('span', {}, tag) : null),
+      h('div', { class: 'top' }, h('span', {}, icon(v, q.cat, 22, 'currentColor'), c.name), tag ? h('span', { class: 'tag' }, tag) : null),
       h('div', { class: 'q' }, q.text),
       withAnswer && q.answer ? h('div', { class: 'a' }, h('small', {}, 'Answer'), q.answer) : null);
   }
@@ -166,16 +166,21 @@ export function mount(container, { send }) {
     const r = v.result;
     const who = nameOf(v, v.turn);
     const text = r.win ? `🏆 ${who} wins!` : r.wedge != null ? `${who} wins the ${catOf(v, r.wedge).name} wedge!` : r.correct ? 'Right!' : 'Not quite';
-    return [h('div', { class: 'pc-pcard', style: { borderColor: r.correct ? '#22c55e' : '#ef4444' } }, h('h2', {}, text), h('p', { class: 'dim' }, v.line.next)), qcard(v, true)];
+    const u = unitOf(v, v.turn);
+    const wedge = r.wedge != null && u;
+    return [h('div', { class: `pc-pcard ${r.win || wedge ? 'gold' : r.correct ? 'good' : 'bad'}` },
+      wedge ? h('div', { class: 'pc-wonpie' }, pie(v, u.wedges, 120, u.color, '', r.wedge)) : null,
+      h('h2', {}, text), h('p', { class: 'dim' }, v.line.next)), qcard(v, true)];
   }
 
   function gameover(v) {
     const ws = (v.winners ?? []).map((id) => unitOf(v, id)).filter(Boolean);
     const won = ws.some((u) => u.id === me(v).unitId);
     return [
+      won ? confetti(40) : null,
       card(h('h2', {}, ws.length > 1 ? `A tie: ${ws.map((u) => u.name).join(' and ')}!` : `${ws[0]?.name ?? 'Someone'} wins!`),
         won ? h('p', {}, 'That’s you! 🎉') : null,
-        h('div', { class: 'pc-scores' }, ws.map((u) => h('div', { class: 'pc-score' }, pie(v, u.wedges, 60, u.color), h('b', {}, u.name))))),
+        h('div', { class: 'pc-scores' }, ws.map((u) => h('div', { class: 'pc-wonpie' }, pie(v, u.wedges, 120, u.color), h('b', {}, u.name))))),
       me(v).canStart ? btn('Play again', 'go huge', () => send({ t: 'play-again' })) : h('p', { class: 'dim' }, v.hosted ? 'The host can start another game.' : 'The first player can start another game.'),
     ];
   }
