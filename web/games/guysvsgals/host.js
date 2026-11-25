@@ -24,7 +24,7 @@ export function render(raw, ctx) {
     else body.push(card(eyebrow('How it works'),
       h('p', { class: 'dim' }, `The trophy starts on START and the ${nameOf(g, g.first)} go first. A player on the other team reads a card from their own side’s deck and judges the answer on their phone (you can judge here too). Readers take turns.`),
       h('p', { class: 'dim' }, `Right pulls the trophy one space toward the answering team, who keep going; wrong passes the turn. A right answer on your own green space wins the trophy. First to ${g.target} ${g.target === 1 ? 'trophy' : 'trophies'} wins.`),
-      h('p', { class: 'dim' }, 'The space picks the deck: Our Facts, Our Stuff, Our Pics, Our Lives (the reader secretly picks A, B or C) and Our Moves (charades, both teams at once).')));
+      h('p', { class: 'dim' }, `The space picks the deck: Our Facts, Our Stuff, Our Pics${(g.decks ?? []).some((d) => d.id === 'lives') ? ', Our Lives (the reader secretly picks A, B or C)' : ''} and Our Moves (charades, both teams at once).`)));
     body.push(card(eyebrow('Who is on which side'), h('div', { class: 'list' }, players.length ? players.map((p) => {
       const side = g.teams.find((t) => t.id === p.teamId)?.side;
       return h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, p.name),

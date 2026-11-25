@@ -184,7 +184,7 @@ try {
     if (['facts', 'stuff', 'pics'].includes(st.deck)) cards++;
     await until(async () => (await tvState()).sig !== st.sig, 'the TV to move on', 10000);
   }
-  for (const d of ['facts', 'stuff', 'pics', 'lives', 'moves']) if (!decks.has(d)) fail(`never played an ${d} card`);
+  for (const d of ['facts', 'stuff', 'pics', 'moves']) if (!decks.has(d)) fail(`never played an ${d} card`);
   if (trophies !== 3) fail(`the Guys should win three trophies, saw ${trophies}`);
   if (!challenged) fail('never challenged');
   await until(async () => (await tv.locator('.gv-win').count()) > 0, 'the winner screen', 20000);

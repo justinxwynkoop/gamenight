@@ -98,6 +98,9 @@ const save = (name) => { writeFileSync(path.join(out, `jp-${name}.json`), JSON.s
 {
   let t = 1000;
   const set = JSON.parse(readFileSync(path.join(root, 'data/guysvsgals/family.json'), 'utf8'));
+  // The shipped sets carry no Our Lives cards; a family's own set can, so the fixtures keep that screen covered.
+  const lives = [{ q: 'On a Saturday you will find me:', choices: ['In the garage', 'On the couch', 'Out on the lake'] }, { q: 'My go-to order is:', choices: ['A burger', 'A salad', 'Whatever is fastest'] }];
+  for (const part of ['guyStuff', 'galStuff']) set[part].lives = lives;
   const groom = new Room({
     games: GAMES, now: () => t, random: () => 0,
     loadContent: (game, id) => (game === 'guysvsgals' && id === 'family' ? set : null),
