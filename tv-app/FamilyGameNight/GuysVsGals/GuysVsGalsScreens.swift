@@ -854,9 +854,9 @@ private struct GvgDeckCard: View {
                 shout(result ? (game.result?.answer ?? c.answer ?? "") : c.stage == "pick" ? "CHARADES!" : c.stage == "ready" ? "GET READY!" : "ACT IT OUT!",
                       font: result ? nil : GV.bangers(96))
                 HStack(spacing: 30) {
-                    actor("\(c.ready?.contains(c.reader.id) == true ? "✅" : "🎭") \(c.reader.name)", side: c.about)
+                    actor("\(c.isReady(c.reader) ? "✅" : "🎭") \(c.reader.name)", side: c.about)
                     Text("VS").font(GV.bangers(60)).foregroundStyle(GV.ink)
-                    actor("\(c.actor.map { c.ready?.contains($0.id) == true } == true ? "✅" : "🎭") \(c.actor?.name ?? "?")", side: game.turn ?? GuysVsGalsState.otherSide(c.about))
+                    actor("\(c.isReady(c.actor) ? "✅" : "🎭") \(c.actor?.name ?? "?")", side: game.turn ?? GuysVsGalsState.otherSide(c.about))
                 }
             }
         } else {
