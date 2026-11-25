@@ -14,94 +14,9 @@
     "a": "26.2 miles"
    },
    {
-    "cat": "Sports",
-    "q": "In which sport do players try to sink the 8-ball last?",
-    "a": "Pool (billiards)"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is a 'hat trick' in hockey or soccer?",
-    "a": "Three goals by one player"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What does Pac-Man eat as he goes through the maze?",
-    "a": "Dots (pellets)"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What do you collect in Super Mario to grow bigger?",
-    "a": "A mushroom"
-   },
-   {
     "cat": "Video Games",
     "q": "In Fortnite, how many players start a standard Battle Royale match?",
     "a": "100"
-   },
-   {
-    "cat": "Video Games",
-    "q": "Which yellow character's main enemies are ghosts?",
-    "a": "Pac-Man"
-   },
-   {
-    "cat": "Video Games",
-    "q": "Which handheld Nintendo console can also plug into the TV?",
-    "a": "Nintendo Switch"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is Superman's weakness?",
-    "a": "Kryptonite"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which superhero is also called the Dark Knight?",
-    "a": "Batman"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which hero carries a round shield with a star on it?",
-    "a": "Captain America"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which superhero comes from the country of Wakanda?",
-    "a": "Black Panther"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which wizarding hero has a lightning-bolt scar?",
-    "a": "Harry Potter"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is the name of the hairy Star Wars co-pilot who flies with Han Solo?",
-    "a": "Chewbacca"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which movie franchise features cars, heists and 'family', starring Vin Diesel?",
-    "a": "Fast & Furious"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "In Top Gun, what does Maverick fly?",
-    "a": "Fighter jets"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which NFL team plays its home games at Lambeau Field?",
-    "a": "The Green Bay Packers"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is it called when a bowler knocks down all ten pins with the first ball?",
-    "a": "A strike"
-   },
-   {
-    "cat": "Sports",
-    "q": "In golf, what is one stroke under par on a hole called?",
-    "a": "A birdie"
    },
    {
     "cat": "Sports",
@@ -110,28 +25,8 @@
    },
    {
     "cat": "Sports",
-    "q": "How many holes are played in a standard round of golf?",
-    "a": "18"
-   },
-   {
-    "cat": "Sports",
     "q": "What is the maximum score in a single game of ten-pin bowling?",
     "a": "300"
-   },
-   {
-    "cat": "Sports",
-    "q": "In baseball, what is it called when a batter hits a home run with the bases loaded?",
-    "a": "A grand slam"
-   },
-   {
-    "cat": "Sports",
-    "q": "How many outs does each team get in one half-inning of baseball?",
-    "a": "3"
-   },
-   {
-    "cat": "Sports",
-    "q": "How many points is a field goal worth in American football?",
-    "a": "3"
    },
    {
     "cat": "Sports",
@@ -140,33 +35,8 @@
    },
    {
     "cat": "Sports",
-    "q": "How many yards must a football team gain to get a new first down?",
-    "a": "10"
-   },
-   {
-    "cat": "Sports",
-    "q": "How long is an American football field between the goal lines, in yards?",
-    "a": "100"
-   },
-   {
-    "cat": "Sports",
-    "q": "In hockey, what is it called when one player scores three goals in a game?",
-    "a": "A hat trick"
-   },
-   {
-    "cat": "Sports",
-    "q": "What trophy does the NHL champion win?",
-    "a": "The Stanley Cup"
-   },
-   {
-    "cat": "Sports",
     "q": "What trophy does the NBA champion win?",
     "a": "The Larry O'Brien Trophy"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which NBA team has a leprechaun spinning a basketball as its logo?",
-    "a": "The Boston Celtics"
    },
    {
     "cat": "Sports",
@@ -185,11 +55,6 @@
    },
    {
     "cat": "Sports",
-    "q": "How tall is a regulation basketball hoop, in feet?",
-    "a": "10 feet"
-   },
-   {
-    "cat": "Sports",
     "q": "How far is a free throw line from the backboard, in feet?",
     "a": "15 feet (from the backboard)"
    },
@@ -197,26 +62,6 @@
     "cat": "Sports",
     "q": "In basketball, what is it called when a player gets double digits in points, rebounds and assists?",
     "a": "A triple-double"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which basketball player was nicknamed 'His Airness'?",
-    "a": "Michael Jordan"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which golfer is nicknamed 'Tiger'?",
-    "a": "Eldrick 'Tiger' Woods"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which boxer called himself 'The Greatest' and said 'float like a butterfly, sting like a bee'?",
-    "a": "Muhammad Ali"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which race is called 'The Greatest Spectacle in Racing' and is run every Memorial Day weekend?",
-    "a": "The Indianapolis 500"
    },
    {
     "cat": "Sports",
@@ -230,23 +75,8 @@
    },
    {
     "cat": "Sports",
-    "q": "Which NASCAR race is called 'The Great American Race'?",
-    "a": "The Daytona 500"
-   },
-   {
-    "cat": "Sports",
     "q": "What color flag means the last lap in a car race?",
     "a": "White"
-   },
-   {
-    "cat": "Sports",
-    "q": "What color flag tells race drivers to slow down for a crash?",
-    "a": "Yellow"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which horse race is called 'the most exciting two minutes in sports'?",
-    "a": "The Kentucky Derby"
    },
    {
     "cat": "Sports",
@@ -255,28 +85,8 @@
    },
    {
     "cat": "Sports",
-    "q": "In soccer, what card does a referee show to send a player off?",
-    "a": "A red card"
-   },
-   {
-    "cat": "Sports",
     "q": "Which country has won the most men's soccer World Cups?",
     "a": "Brazil (5)"
-   },
-   {
-    "cat": "Sports",
-    "q": "In tennis, what is a score of zero called?",
-    "a": "Love"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which tennis tournament is played on grass in London?",
-    "a": "Wimbledon"
-   },
-   {
-    "cat": "Sports",
-    "q": "In football, what is it called when the defense tackles the quarterback behind the line of scrimmage?",
-    "a": "A sack"
    },
    {
     "cat": "Sports",
@@ -320,28 +130,8 @@
    },
    {
     "cat": "Sports",
-    "q": "In bowling, what is it called when you knock down all ten pins with two balls?",
-    "a": "A spare"
-   },
-   {
-    "cat": "Sports",
-    "q": "In darts, what is the small center circle called?",
-    "a": "The bullseye"
-   },
-   {
-    "cat": "Sports",
-    "q": "In archery, what is the center of the target called?",
-    "a": "The bullseye (or the gold)"
-   },
-   {
-    "cat": "Sports",
     "q": "Which sport uses the terms 'birdie', 'shuttlecock' and 'smash'?",
     "a": "Badminton"
-   },
-   {
-    "cat": "Sports",
-    "q": "In the Olympics, how many rings are on the flag?",
-    "a": "5"
    },
    {
     "cat": "Sports",
@@ -365,43 +155,8 @@
    },
    {
     "cat": "Sports",
-    "q": "What is the name of the NFL's championship game for the AFC and NFC winners?",
-    "a": "The Super Bowl"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which NFL team has a horseshoe on its helmet?",
-    "a": "The Indianapolis Colts"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which NFL team is nicknamed 'America's Team'?",
-    "a": "The Dallas Cowboys"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which NFL team's fans wear foam 'cheeseheads'?",
-    "a": "The Green Bay Packers"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which sport has positions called 'tight end' and 'free safety'?",
-    "a": "American football"
-   },
-   {
-    "cat": "Sports",
-    "q": "Which sport has a 'power play' when the other team has a player in the penalty box?",
-    "a": "Hockey"
-   },
-   {
-    "cat": "Sports",
     "q": "What is the 'seventh-inning stretch'?",
     "a": "Fans standing up in the middle of the 7th inning of a baseball game"
-   },
-   {
-    "cat": "Sports",
-    "q": "In basketball, how many points is a shot from behind the arc worth?",
-    "a": "3"
    },
    {
     "cat": "Sports",
@@ -415,38 +170,8 @@
    },
    {
     "cat": "Sports",
-    "q": "What does UFC stand for?",
-    "a": "Ultimate Fighting Championship"
-   },
-   {
-    "cat": "Sports",
     "q": "In boxing, what does TKO stand for?",
     "a": "Technical knockout"
-   },
-   {
-    "cat": "Video Games",
-    "q": "In which game do players build with blocks and fight creepers?",
-    "a": "Minecraft"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What is the name of Mario's brother?",
-    "a": "Luigi"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What is the name of the princess Mario usually rescues?",
-    "a": "Princess Peach"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What is the name of the hero in The Legend of Zelda games?",
-    "a": "Link"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What color is Sonic the Hedgehog?",
-    "a": "Blue"
    },
    {
     "cat": "Video Games",
@@ -455,23 +180,8 @@
    },
    {
     "cat": "Video Games",
-    "q": "In Pac-Man, what do the ghosts turn when Pac-Man eats a power pellet?",
-    "a": "Blue"
-   },
-   {
-    "cat": "Video Games",
     "q": "Which falling-block puzzle game was created in the Soviet Union?",
     "a": "Tetris"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What company makes the PlayStation?",
-    "a": "Sony"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What company makes the Xbox?",
-    "a": "Microsoft"
    },
    {
     "cat": "Video Games",
@@ -480,83 +190,13 @@
    },
    {
     "cat": "Video Games",
-    "q": "In Fortnite, what is the moving storm that shrinks the map called?",
-    "a": "The storm (the Storm circle)"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What does 'GG' mean when gamers type it at the end of a match?",
-    "a": "Good game"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What does 'NPC' stand for in video games?",
-    "a": "Non-player character"
-   },
-   {
-    "cat": "Video Games",
-    "q": "Which yellow Pokémon is Ash's partner?",
-    "a": "Pikachu"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What is the name of Mario's dinosaur friend?",
-    "a": "Yoshi"
-   },
-   {
-    "cat": "Video Games",
-    "q": "In which game series do you steal cars and cause trouble in cities like Los Santos?",
-    "a": "Grand Theft Auto"
-   },
-   {
-    "cat": "Video Games",
     "q": "Which sports video game series is named after a famous football coach and announcer?",
     "a": "Madden NFL (John Madden)"
    },
    {
     "cat": "Video Games",
-    "q": "What is the big turtle-dragon villain of the Mario games called?",
-    "a": "Bowser"
-   },
-   {
-    "cat": "Video Games",
-    "q": "In Minecraft, what green creature sneaks up on you and explodes?",
-    "a": "A creeper"
-   },
-   {
-    "cat": "Video Games",
     "q": "What was Nintendo's handheld console that came with Tetris in 1989?",
     "a": "The Game Boy"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What is the name of the big ape who threw barrels at Mario in the original arcade game?",
-    "a": "Donkey Kong"
-   },
-   {
-    "cat": "Video Games",
-    "q": "Which shooting game series has a mode called 'Zombies' and titles like Modern Warfare?",
-    "a": "Call of Duty"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is Batman's real name?",
-    "a": "Bruce Wayne"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is Spider-Man's real name?",
-    "a": "Peter Parker"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is Superman's home planet?",
-    "a": "Krypton"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What green rock takes away Superman's powers?",
-    "a": "Kryptonite"
    },
    {
     "cat": "Superheroes & Action",
@@ -575,53 +215,13 @@
    },
    {
     "cat": "Superheroes & Action",
-    "q": "What is Iron Man's real name?",
-    "a": "Tony Stark"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "What is the Hulk's real name?",
     "a": "Bruce Banner"
    },
    {
     "cat": "Superheroes & Action",
-    "q": "Which purple villain snaps his fingers with the Infinity Gauntlet?",
-    "a": "Thanos"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "In Star Wars, who tells Luke 'I am your father'?",
-    "a": "Darth Vader"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is the name of Han Solo's ship in Star Wars?",
-    "a": "The Millennium Falcon"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "What color is Luke Skywalker's lightsaber in Return of the Jedi?",
     "a": "Green"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which tiny green Jedi master says 'Do or do not, there is no try'?",
-    "a": "Yoda"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "In Jurassic Park, what kind of dinosaur is the big one that chases the jeep?",
-    "a": "A T. rex (Tyrannosaurus rex)"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which secret agent is known by the number 007?",
-    "a": "James Bond"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "In The Terminator, what line does Arnold Schwarzenegger make famous before he leaves?",
-    "a": "'I'll be back'"
    },
    {
     "cat": "Superheroes & Action",
@@ -635,11 +235,6 @@
    },
    {
     "cat": "Superheroes & Action",
-    "q": "In Back to the Future, what car is turned into a time machine?",
-    "a": "A DeLorean"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "In Back to the Future, what speed does the time machine need to reach?",
     "a": "88 miles per hour"
    },
@@ -650,43 +245,8 @@
    },
    {
     "cat": "Superheroes & Action",
-    "q": "Which superhero team includes Leonardo, Raphael, Donatello and Michelangelo?",
-    "a": "The Teenage Mutant Ninja Turtles"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What is the name of Batman's butler?",
-    "a": "Alfred"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "What city does Batman protect?",
-    "a": "Gotham City"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "Which superhero is 'the fastest man alive' and wears red with a lightning bolt?",
-    "a": "The Flash"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "In The Matrix, which color pill does Neo take?",
     "a": "The red pill"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "In Jaws, what kind of shark terrorizes the beach town?",
-    "a": "A great white shark"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "What is a male deer called?",
-    "a": "A buck"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "What is a group of wolves called?",
-    "a": "A pack"
    },
    {
     "cat": "Outdoors",
@@ -695,23 +255,8 @@
    },
    {
     "cat": "Outdoors",
-    "q": "On a compass, what direction does the needle point to?",
-    "a": "North (magnetic north)"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "What kind of tree do acorns come from?",
-    "a": "An oak"
-   },
-   {
-    "cat": "Outdoors",
     "q": "What is the name of the long trail from Georgia to Maine?",
     "a": "The Appalachian Trail"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "In fishing, what is a 'bobber' for?",
-    "a": "Floating on the water to show when a fish bites"
    },
    {
     "cat": "Outdoors",
@@ -725,23 +270,473 @@
    },
    {
     "cat": "Outdoors",
-    "q": "Which national park has the geyser called Old Faithful?",
-    "a": "Yellowstone"
-   },
-   {
-    "cat": "Outdoors",
     "q": "What kind of wood is famous for keeping moths away in closets and chests?",
     "a": "Cedar"
    },
    {
-    "cat": "Outdoors",
-    "q": "What is the name for wood that is cut and dried to burn in a fireplace?",
-    "a": "Firewood (seasoned wood)"
+    "cat": "Sports",
+    "q": "What is a 'pick-six' in football?",
+    "a": "An interception run back for a touchdown"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is a 'Hail Mary' in football?",
+    "a": "A long, desperate pass at the very end of a half or game"
+   },
+   {
+    "cat": "Sports",
+    "q": "In football, what is a 'blitz'?",
+    "a": "Extra defenders rushing the quarterback"
+   },
+   {
+    "cat": "Sports",
+    "q": "In football, where is the 'red zone'?",
+    "a": "Inside the other team's 20-yard line"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is an 'onside kick'?",
+    "a": "A short kickoff the kicking team tries to get back"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which football player snaps the ball to the quarterback?",
+    "a": "The center"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is a two-point conversion?",
+    "a": "Running or passing into the end zone after a touchdown, instead of kicking"
+   },
+   {
+    "cat": "Sports",
+    "q": "How many players does a football team have on the field at once?",
+    "a": "11"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is 'icing' in hockey?",
+    "a": "Shooting the puck from your own half all the way past the far goal line"
+   },
+   {
+    "cat": "Sports",
+    "q": "What machine cleans and smooths the ice at a hockey game?",
+    "a": "A Zamboni"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is the hockey penalty box nicknamed?",
+    "a": "The sin bin"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is a 'balk'?",
+    "a": "An illegal move by the pitcher, so the runners move up a base"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is a 'full count'?",
+    "a": "Three balls and two strikes"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is 'hitting for the cycle'?",
+    "a": "A single, double, triple and home run in one game"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, what is a 'perfect game'?",
+    "a": "No batter from the other team reaches base"
+   },
+   {
+    "cat": "Sports",
+    "q": "What does RBI stand for?",
+    "a": "Runs batted in"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is a 'southpaw'?",
+    "a": "A left-handed pitcher or boxer"
+   },
+   {
+    "cat": "Sports",
+    "q": "In baseball, a .200 batting average is known as the what line?",
+    "a": "The Mendoza Line"
+   },
+   {
+    "cat": "Sports",
+    "q": "How many fouls does it take to foul out of an NBA game?",
+    "a": "6"
+   },
+   {
+    "cat": "Sports",
+    "q": "How long is the NBA shot clock?",
+    "a": "24 seconds"
+   },
+   {
+    "cat": "Sports",
+    "q": "In basketball, what is an 'alley-oop'?",
+    "a": "A pass caught in the air and dunked"
+   },
+   {
+    "cat": "Sports",
+    "q": "How many teams make the March Madness tournament?",
+    "a": "68"
+   },
+   {
+    "cat": "Sports",
+    "q": "In golf, what is one stroke over par called?",
+    "a": "A bogey"
+   },
+   {
+    "cat": "Sports",
+    "q": "In golf, what is three strokes under par on one hole called?",
+    "a": "An albatross (double eagle)"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which golf tournament gives its winner a green jacket?",
+    "a": "The Masters"
+   },
+   {
+    "cat": "Sports",
+    "q": "In golf, what is a 'mulligan'?",
+    "a": "A free do-over shot"
+   },
+   {
+    "cat": "Sports",
+    "q": "In car racing, what is 'drafting'?",
+    "a": "Tucking in close behind another car to cut the wind"
+   },
+   {
+    "cat": "Sports",
+    "q": "In car racing, what is the 'pole position'?",
+    "a": "The first starting spot"
+   },
+   {
+    "cat": "Sports",
+    "q": "What is the Indianapolis Motor Speedway's nickname?",
+    "a": "The Brickyard"
+   },
+   {
+    "cat": "Sports",
+    "q": "How many rounds is a championship boxing match?",
+    "a": "12"
+   },
+   {
+    "cat": "Sports",
+    "q": "What numbers does the Super Bowl use in its name?",
+    "a": "Roman numerals"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which team won the very first Super Bowl?",
+    "a": "The Green Bay Packers"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which NFL team's defense was called the 'Steel Curtain'?",
+    "a": "The Pittsburgh Steelers"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which city did the Colts play in before Indianapolis?",
+    "a": "Baltimore"
+   },
+   {
+    "cat": "Sports",
+    "q": "What jersey number did Peyton Manning wear for the Colts?",
+    "a": "18"
+   },
+   {
+    "cat": "Sports",
+    "q": "The movie Hoosiers is based on which tiny Indiana high school's 1954 title?",
+    "a": "Milan"
+   },
+   {
+    "cat": "Sports",
+    "q": "Which basketball legend is 'the Hick from French Lick'?",
+    "a": "Larry Bird"
+   },
+   {
+    "cat": "Sports",
+    "q": "In fantasy football, what does PPR stand for?",
+    "a": "Point per reception"
+   },
+   {
+    "cat": "Sports",
+    "q": "In soccer, how many players does a team have on the field?",
+    "a": "11"
+   },
+   {
+    "cat": "Sports",
+    "q": "In tennis, what is a score of 40-40 called?",
+    "a": "Deuce"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "What is the best possible hand in poker?",
+    "a": "A royal flush"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In poker, which is better: a flush or a straight?",
+    "a": "A flush"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In Texas Hold'em, how many cards is each player dealt face down?",
+    "a": "2"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In Texas Hold'em, what is the last shared card called?",
+    "a": "The river"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In poker, what is three of a kind plus a pair called?",
+    "a": "A full house"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In blackjack, what number are you trying to reach without going over?",
+    "a": "21"
+   },
+   {
+    "cat": "Cards & Poker",
+    "q": "In euchre, what is the highest trump card called?",
+    "a": "The right bower"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What is the famous Konami cheat code?",
+    "a": "Up, Up, Down, Down, Left, Right, Left, Right, B, A"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What was Mario called in the original Donkey Kong arcade game?",
+    "a": "Jumpman"
+   },
+   {
+    "cat": "Video Games",
+    "q": "Which fighting game has the announcer say 'Finish Him!'?",
+    "a": "Mortal Kombat"
+   },
+   {
+    "cat": "Video Games",
+    "q": "In Street Fighter, what does Ryu shout when he throws a fireball?",
+    "a": "Hadouken!"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What is the name of Master Chief's AI companion in Halo?",
+    "a": "Cortana"
+   },
+   {
+    "cat": "Video Games",
+    "q": "In Minecraft, what block do you need to build a Nether portal?",
+    "a": "Obsidian"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What is the default Minecraft character named?",
+    "a": "Steve"
+   },
+   {
+    "cat": "Video Games",
+    "q": "In Mario Kart, which shell chases down the player in first place?",
+    "a": "The blue shell"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What does FPS stand for as a kind of game?",
+    "a": "First-person shooter"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What does RPG stand for?",
+    "a": "Role-playing game"
+   },
+   {
+    "cat": "Video Games",
+    "q": "In a shooting game, what is 'camping'?",
+    "a": "Hiding in one spot and waiting for enemies"
+   },
+   {
+    "cat": "Video Games",
+    "q": "Which company makes Fortnite?",
+    "a": "Epic Games"
+   },
+   {
+    "cat": "Video Games",
+    "q": "Who is the main villain of the Legend of Zelda games?",
+    "a": "Ganon (Ganondorf)"
+   },
+   {
+    "cat": "Video Games",
+    "q": "What are the three starter types in Pokémon games?",
+    "a": "Grass, Fire and Water"
+   },
+   {
+    "cat": "Video Games",
+    "q": "Kratos is the hero of which game series?",
+    "a": "God of War"
+   },
+   {
+    "cat": "Video Games",
+    "q": "Which Sega console battled the Super Nintendo in the 1990s?",
+    "a": "The Genesis"
+   },
+   {
+    "cat": "Video Games",
+    "q": "On which console did GoldenEye 007 come out in 1997?",
+    "a": "The Nintendo 64"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Star Wars, what is Boba Fett's job?",
+    "a": "Bounty hunter"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is Indiana Jones afraid of?",
+    "a": "Snakes"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Gladiator, what is the hero's name?",
+    "a": "Maximus"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Braveheart, which Scottish hero does Mel Gibson play?",
+    "a": "William Wallace"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Top Gun, what is the call sign of Maverick's best friend?",
+    "a": "Goose"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In The Godfather, what does the movie producer find in his bed?",
+    "a": "A horse's head"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Caddyshack, what animal does the groundskeeper battle?",
+    "a": "A gopher"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In The Lord of the Rings, what is the name of Frodo's sword?",
+    "a": "Sting"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In the first John Wick movie, what sets him off on his revenge?",
+    "a": "They killed his puppy (and stole his car)"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is the hero's name in the Die Hard movies?",
+    "a": "John McClane"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "How does James Bond take his martini?",
+    "a": "Shaken, not stirred"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What make of car is James Bond most famous for driving?",
+    "a": "Aston Martin"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "Finish the line from Jaws: 'You're gonna need a bigger...'",
+    "a": "'...boat'"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is the Mandalorian's catchphrase?",
+    "a": "'This is the way'"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is Deadpool's real name?",
+    "a": "Wade Wilson"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is Black Widow's real name?",
+    "a": "Natasha Romanoff"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "What is the name of Tony Stark's computer butler?",
+    "a": "J.A.R.V.I.S."
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "How many Infinity Stones are there?",
+    "a": "6"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "Who is the Joker's girlfriend?",
+    "a": "Harley Quinn"
+   },
+   {
+    "cat": "Superheroes & Action",
+    "q": "In Star Trek, what is the name of Captain Kirk's ship?",
+    "a": "The USS Enterprise"
    },
    {
     "cat": "Outdoors",
-    "q": "What is a baby bear called?",
-    "a": "A cub"
+    "q": "What is a male turkey called?",
+    "a": "A tom (or gobbler)"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "When a hunter says 'a ten-point buck', what is being counted?",
+    "a": "The points (tines) on its antlers"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "What is the most common shotgun size in America?",
+    "a": "12 gauge"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "Which shotgun has the bigger barrel: a 12 gauge or a 20 gauge?",
+    "a": "The 12 gauge"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "What is the lure in fly fishing called?",
+    "a": "A fly"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "In duck hunting, what is a decoy?",
+    "a": "A fake duck that draws real ones in"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "What is a tree stand for?",
+    "a": "Hunting from up in a tree"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "Which star do you find to know which way is north?",
+    "a": "Polaris (the North Star)"
+   },
+   {
+    "cat": "Outdoors",
+    "q": "What is a carabiner?",
+    "a": "A metal clip used in climbing"
    }
   ],
   "stuff": [
@@ -756,69 +751,9 @@
     "a": "The starter motor"
    },
    {
-    "cat": "Cars & Trucks",
-    "q": "Name a car brand that only makes electric cars.",
-    "a": "Tesla (also Rivian, Lucid, Polestar)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "How many wheels does a typical semi truck (18-wheeler) have?",
-    "a": "18"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is the famous race held every Memorial Day weekend in Indianapolis?",
-    "a": "The Indy 500"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "NASCAR races are mostly driven on what kind of track?",
-    "a": "Oval tracks"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What fluid needs changing in a car roughly every few thousand miles?",
-    "a": "Engine oil"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What part of a car do you check with a tire gauge?",
-    "a": "Tire pressure"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What do you call a car with two doors and a sloping roof, built for speed?",
-    "a": "A coupe"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Ferrari and Lamborghini come from which country?",
-    "a": "Italy"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What tool squeezes two pieces of wood together while the glue dries?",
-    "a": "A clamp"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do you flip at the breaker box when the power goes out in one room?",
-    "a": "A circuit breaker"
-   },
-   {
     "cat": "Grilling & Food",
     "q": "What cut of beef is also called a 'New York strip'?",
     "a": "Strip steak"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What do you call meat cooked low and slow in smoke for hours?",
-    "a": "Barbecue (smoked)"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "Name a US city famous for its own style of barbecue.",
-    "a": "Kansas City (also Memphis, St. Louis, Texas cities)"
    },
    {
     "cat": "Grilling & Food",
@@ -832,21 +767,6 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "How many cylinders does a V6 engine have?",
-    "a": "6"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does '4x4' mean on a truck?",
-    "a": "All four wheels can be driven by the engine"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What part of a car stores electricity to start the engine?",
-    "a": "The battery"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "What part keeps charging the battery while the engine runs?",
     "a": "The alternator"
    },
@@ -854,16 +774,6 @@
     "cat": "Cars & Trucks",
     "q": "What part makes the spark that lights the fuel in a gas engine?",
     "a": "The spark plug"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a car's radiator do?",
-    "a": "Cools the engine"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What fluid do you check with a dipstick under the hood?",
-    "a": "Engine oil"
    },
    {
     "cat": "Cars & Trucks",
@@ -882,53 +792,13 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What is it called when you rotate a car's tires to different wheels?",
-    "a": "A tire rotation"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a muffler do?",
-    "a": "Makes the exhaust quieter"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "What does a catalytic converter clean up?",
     "a": "The car's exhaust gases"
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What does horsepower measure?",
-    "a": "An engine's power"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "What is a 'hemi' engine named after?",
     "a": "The half-dome (hemispherical) shape of its combustion chambers"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which car company makes the Mustang?",
-    "a": "Ford"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which car company makes the Corvette?",
-    "a": "Chevrolet"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which car company makes the Wrangler?",
-    "a": "Jeep"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which truck has been America's best-selling vehicle for decades?",
-    "a": "The Ford F-150 (F-Series)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which company makes the Silverado pickup?",
-    "a": "Chevrolet"
    },
    {
     "cat": "Cars & Trucks",
@@ -942,23 +812,8 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "Which Italian car brand has a prancing horse logo?",
-    "a": "Ferrari"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which Italian car brand has a raging bull logo?",
-    "a": "Lamborghini"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "Which German car brand has four rings as its logo?",
     "a": "Audi"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Which motorcycle company is famous for its loud 'potato-potato' V-twin engines and is from Milwaukee?",
-    "a": "Harley-Davidson"
    },
    {
     "cat": "Cars & Trucks",
@@ -969,11 +824,6 @@
     "cat": "Cars & Trucks",
     "q": "What is the 'redline' on a tachometer?",
     "a": "The highest safe engine speed"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a tow hitch's 'ball' size of 2 inches refer to?",
-    "a": "The diameter of the hitch ball"
    },
    {
     "cat": "Cars & Trucks",
@@ -989,16 +839,6 @@
     "cat": "Cars & Trucks",
     "q": "What does ABS stand for on a car?",
     "a": "Anti-lock braking system"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does 'MPG' stand for?",
-    "a": "Miles per gallon"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What are 'jumper cables' used for?",
-    "a": "Starting a car with a dead battery from another car"
    },
    {
     "cat": "Cars & Trucks",
@@ -1022,18 +862,8 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What tool shows if something is perfectly flat or straight up, with a bubble?",
-    "a": "A level"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What tool is used to cut curves in wood?",
     "a": "A jigsaw (or coping saw)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What kind of saw has a round spinning blade and is used for straight cuts in plywood?",
-    "a": "A circular saw"
    },
    {
     "cat": "Tools & DIY",
@@ -1052,33 +882,13 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What do you call the soft, grey sheets that most inside walls are made of?",
-    "a": "Drywall (sheetrock)"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What tool turns a nut or bolt with a clicking handle and swappable sockets?",
     "a": "A ratchet (socket wrench)"
    },
    {
     "cat": "Tools & DIY",
-    "q": "What is 'lefty loosey, righty tighty' about?",
-    "a": "Which way to turn screws and bolts"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What does a torque wrench do?",
     "a": "Tightens a bolt to an exact amount of force"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a 'shop vac'?",
-    "a": "A heavy-duty vacuum for wet and dry messes"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a breaker box hold?",
-    "a": "Circuit breakers that cut power when a circuit is overloaded"
    },
    {
     "cat": "Tools & DIY",
@@ -1097,18 +907,8 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What does a plumber's snake do?",
-    "a": "Clears clogs in pipes"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What is the U-shaped pipe under a sink called?",
     "a": "The P-trap"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do you use caulk for?",
-    "a": "Sealing gaps and seams, like around a tub"
    },
    {
     "cat": "Tools & DIY",
@@ -1122,11 +922,6 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What kind of screwdriver tip is a flat, single blade?",
-    "a": "A flathead (slotted)"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What is the name for a pair of pliers that lock tight onto something?",
     "a": "Locking pliers (Vise-Grips)"
    },
@@ -1134,31 +929,6 @@
     "cat": "Tools & DIY",
     "q": "What tool is used to cut metal pipe or bolts by hand?",
     "a": "A hacksaw"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a chisel used for?",
-    "a": "Carving or chipping wood (or stone)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does WD-40 mostly do?",
-    "a": "Loosens stuck parts and drives out moisture"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a chainsaw's 'chain' need regularly so it cuts well?",
-    "a": "Sharpening (and oil)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What kind of mower do you sit on?",
-    "a": "A riding mower (or lawn tractor)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a 'weed whacker' also called?",
-    "a": "A string trimmer (weed eater)"
    },
    {
     "cat": "Tools & DIY",
@@ -1174,11 +944,6 @@
     "cat": "Grilling & Food",
     "q": "What is the safe internal temperature for cooked chicken?",
     "a": "165°F"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What cut of beef is the 'king of steaks', with a big bone shaped like a T?",
-    "a": "The T-bone (or porterhouse)"
    },
    {
     "cat": "Grilling & Food",
@@ -1207,23 +972,8 @@
    },
    {
     "cat": "Grilling & Food",
-    "q": "What does 'resting' a steak mean?",
-    "a": "Letting it sit after cooking so the juices settle"
-   },
-   {
-    "cat": "Grilling & Food",
     "q": "What kind of wood is famous for smoking with a strong flavor in Texas: mesquite or pine?",
     "a": "Mesquite (and oak)"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is a 'dry rub'?",
-    "a": "A mix of spices rubbed on meat before cooking"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is 'baby back' a kind of?",
-    "a": "Pork ribs"
    },
    {
     "cat": "Grilling & Food",
@@ -1242,33 +992,253 @@
    },
    {
     "cat": "Grilling & Food",
-    "q": "What does 'searing' do to a steak?",
-    "a": "Browns the outside over very high heat"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "Which hot pepper is hotter: a jalapeño or a habanero?",
-    "a": "A habanero"
-   },
-   {
-    "cat": "Grilling & Food",
     "q": "What scale measures how hot a pepper is?",
     "a": "The Scoville scale"
    },
    {
-    "cat": "Grilling & Food",
-    "q": "What is a 'wing night' favorite sauce named after a city in New York?",
-    "a": "Buffalo sauce"
+    "cat": "Cars & Trucks",
+    "q": "What does a differential do?",
+    "a": "Lets the two wheels on an axle turn at different speeds"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What did older engines use to mix air and fuel before fuel injection?",
+    "a": "A carburetor"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What holds a wheel onto a car?",
+    "a": "Lug nuts"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "How many pedals does a stick-shift car have?",
+    "a": "3"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'donut' on a car, besides a spin in a parking lot?",
+    "a": "A small temporary spare tire"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What do brake pads squeeze to stop the car?",
+    "a": "The rotor (brake disc)"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'dually'?",
+    "a": "A pickup with four wheels on the back axle"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'fifth wheel' on a truck?",
+    "a": "A big hitch in the truck bed for heavy trailers"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Diesel engines have no spark plugs. What lights the fuel?",
+    "a": "The heat of squeezing the air (compression)"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does the octane number of gas tell you?",
+    "a": "How well it resists knocking"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "In the penny test for tire tread, whose head do you look at?",
+    "a": "Lincoln's"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is hydroplaning?",
+    "a": "Tires riding up on a layer of water"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'sleeper' car?",
+    "a": "A plain-looking car that is secretly very fast"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "Mopar fans drive cars from which company?",
+    "a": "Chrysler (Dodge, Jeep, Ram, Plymouth)"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does '0 to 60' measure?",
+    "a": "How many seconds a car takes to reach 60 miles an hour"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is torque?",
+    "a": "Twisting force: the grunt that gets a car or truck moving"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a serpentine belt do?",
+    "a": "Drives the alternator, water pump and air conditioning off the engine"
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What does a mechanic plug into the OBD port?",
+    "a": "A scanner that reads the car computer's trouble codes"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a Sawzall?",
+    "a": "A reciprocating saw, for rough cutting and demolition"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a Dremel?",
+    "a": "A small hand-held rotary tool"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is another name for an Allen wrench?",
+    "a": "A hex key"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a speed square?",
+    "a": "A triangle-shaped carpenter's square for marking angles"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a chalk line for?",
+    "a": "Snapping a long, straight line onto a surface"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Finish the carpenter's rule: 'Measure twice...'",
+    "a": "'...cut once'"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What does a router do in woodworking?",
+    "a": "Cuts grooves and shaped edges"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a countersink?",
+    "a": "A cone-shaped hole so a screw head sits flush"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What does 'plumb' mean?",
+    "a": "Perfectly straight up and down"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What do joists hold up?",
+    "a": "A floor or a ceiling"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is rebar?",
+    "a": "Steel bars set inside concrete to make it stronger"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is Teflon tape for?",
+    "a": "Sealing the threads of pipe fittings"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a shim?",
+    "a": "A thin wedge used to level something or fill a gap"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "In plumbing, what does it mean to 'sweat' a pipe?",
+    "a": "Solder a copper joint"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a saw's 'kerf'?",
+    "a": "The width of the cut the blade makes"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "Which electrical wire is thicker: 12 gauge or 14 gauge?",
+    "a": "12 gauge"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What are Channellocks?",
+    "a": "Big adjustable pliers with long handles"
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What has happened to a 'stripped' screw?",
+    "a": "Its head is worn out, so the screwdriver just slips"
    },
    {
     "cat": "Grilling & Food",
-    "q": "What kind of beer is a 'stout', light or dark?",
-    "a": "Dark"
+    "q": "What is a 'reverse sear'?",
+    "a": "Cooking the meat low and slow first, then searing it at the end"
    },
    {
     "cat": "Grilling & Food",
-    "q": "What is jerky?",
-    "a": "Dried, seasoned strips of meat"
+    "q": "Burnt ends are cut from which piece of meat?",
+    "a": "The point of a brisket"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is the 'Texas crutch'?",
+    "a": "Wrapping the meat in foil or butcher paper to speed through the stall"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is the 'bark' on a brisket?",
+    "a": "The dark, crusty outside"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "The '3-2-1 method' is a way to smoke what?",
+    "a": "Ribs"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What does it mean to 'spatchcock' a chicken?",
+    "a": "Cut out the backbone and flatten it"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is a tomahawk steak?",
+    "a": "A ribeye with a long rib bone left on"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What does IPA stand for on a beer?",
+    "a": "India Pale Ale"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is a growler?",
+    "a": "A jug for taking draft beer home"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "Bourbon has to be made from at least 51 percent of what grain?",
+    "a": "Corn"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "Which state makes most of the world's bourbon?",
+    "a": "Kentucky"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What does it mean to order a whiskey 'neat'?",
+    "a": "Straight, with no ice or mixer"
+   },
+   {
+    "cat": "Grilling & Food",
+    "q": "What is cooking with 'indirect heat' on a grill?",
+    "a": "Putting the food beside the fire, not over it"
    }
   ],
   "pics": [
@@ -1276,11 +1246,6 @@
     "img": "wrench",
     "q": "A wrench whose jaws slide open and shut to fit any bolt is called a what?",
     "a": "An adjustable (crescent) wrench"
-   },
-   {
-    "img": "hammer",
-    "q": "The split end of this hammer that pulls out nails is called the what?",
-    "a": "The claw"
    },
    {
     "img": "screwdriver",
@@ -1293,16 +1258,6 @@
     "a": "A level"
    },
    {
-    "img": "nut-and-bolt",
-    "q": "Which way do you turn a bolt to loosen it?",
-    "a": "Counterclockwise (lefty loosey)"
-   },
-   {
-    "img": "fishing-pole",
-    "q": "Letting a fish go after you catch it is called catch and what?",
-    "a": "Release"
-   },
-   {
     "img": "american-football",
     "q": "A perfect, tight throw of this ball is called a what?",
     "a": "A spiral"
@@ -1313,11 +1268,6 @@
     "a": "A grand slam"
    },
    {
-    "img": "racing-car",
-    "q": "In a car race, what does the checkered flag mean?",
-    "a": "The race is over"
-   },
-   {
     "img": "pickup-truck",
     "q": "The open back of a pickup truck is called the what?",
     "a": "The bed"
@@ -1326,11 +1276,6 @@
     "img": "motorcycle",
     "q": "Riding a motorcycle on only its back wheel is called a what?",
     "a": "A wheelie"
-   },
-   {
-    "img": "video-game",
-    "q": "Which video game company makes the Switch?",
-    "a": "Nintendo"
    },
    {
     "img": "axe",
@@ -1351,11 +1296,6 @@
     "img": "bow-and-arrow",
     "q": "A bow with pulleys and cables on it is called a what?",
     "a": "A compound bow"
-   },
-   {
-    "img": "ice-hockey",
-    "q": "The hard rubber disc in hockey is called a what?",
-    "a": "A puck"
    },
    {
     "img": "boxing-glove",
@@ -1458,11 +1398,6 @@
     "a": "A pit stop"
    },
    {
-    "img": "pickup-truck",
-    "q": "The open back part of a pickup truck is called the what?",
-    "a": "The bed"
-   },
-   {
     "img": "motorcycle",
     "q": "On most motorcycles, which hand works the throttle?",
     "a": "The right hand"
@@ -1476,11 +1411,6 @@
     "img": "axe",
     "q": "The back, flat side of an axe head is called the what?",
     "a": "The poll"
-   },
-   {
-    "img": "carpentry-saw",
-    "q": "The little pointy cutting parts along a saw blade are called the what?",
-    "a": "Teeth"
    },
    {
     "img": "ladder",
@@ -1498,29 +1428,9 @@
     "a": "The blade"
    },
    {
-    "img": "boxing-glove",
-    "q": "In boxing, what is a short upward punch called?",
-    "a": "An uppercut"
-   },
-   {
     "img": "flying-disc",
     "q": "What team sport is played with a flying disc and end zones?",
     "a": "Ultimate (ultimate frisbee)"
-   },
-   {
-    "img": "tractor",
-    "q": "Which company makes the famous green tractors with a leaping deer logo?",
-    "a": "John Deere"
-   },
-   {
-    "img": "fuel-pump",
-    "q": "What octane number is 'regular' gas in most of the US?",
-    "a": "87"
-   },
-   {
-    "img": "necktie",
-    "q": "What is the most common tie knot, named after a British duke?",
-    "a": "The Windsor"
    },
    {
     "img": "flag-in-hole",
@@ -1533,21 +1443,6 @@
     "a": "Aim"
    },
    {
-    "img": "pool-8-ball",
-    "q": "In pool, what are the balls numbered 9 to 15 called?",
-    "a": "Stripes"
-   },
-   {
-    "img": "bullseye",
-    "q": "In darts, how many points is the outer bull ring worth?",
-    "a": "25"
-   },
-   {
-    "img": "tent",
-    "q": "The metal or wooden pins that hold a tent to the ground are called the what?",
-    "a": "Stakes (pegs)"
-   },
-   {
     "img": "cut-of-meat",
     "q": "A steak with lots of white fat streaks running through it is called well-what?",
     "a": "Well-marbled"
@@ -1558,9 +1453,134 @@
     "a": "Capsaicin"
    },
    {
+    "img": "wrench",
+    "q": "A wrench with a long handle that clicks when the bolt is tight enough is called a what?",
+    "a": "A torque wrench"
+   },
+   {
+    "img": "hammer",
+    "q": "A very heavy two-handed hammer for knocking down walls is called a what?",
+    "a": "A sledgehammer"
+   },
+   {
+    "img": "screwdriver",
+    "q": "A screwdriver bit with a square tip is named after which Canadian inventor?",
+    "a": "Robertson"
+   },
+   {
+    "img": "toolbox",
+    "q": "The set of metal cups that snap onto a ratchet are called what?",
+    "a": "Sockets"
+   },
+   {
+    "img": "nut-and-bolt",
+    "q": "A nut with two flat ears you can turn by hand is called a what?",
+    "a": "A wing nut"
+   },
+   {
+    "img": "fishing-pole",
+    "q": "Fishing through a hole cut in a frozen lake is called what?",
+    "a": "Ice fishing"
+   },
+   {
+    "img": "american-football",
+    "q": "What is the brown leather of a football nicknamed?",
+    "a": "Pigskin"
+   },
+   {
+    "img": "baseball",
+    "q": "A pitch that barely spins and flutters to the plate is called a what?",
+    "a": "A knuckleball"
+   },
+   {
     "img": "racing-car",
-    "q": "What is the checkered flag for?",
-    "a": "The end of the race (the winner)"
+    "q": "The crew that changes the tires and adds fuel in a race is called the what?",
+    "a": "The pit crew"
+   },
+   {
+    "img": "pickup-truck",
+    "q": "The door at the back of a pickup bed is called the what?",
+    "a": "The tailgate"
+   },
+   {
+    "img": "motorcycle",
+    "q": "A motorcycle with a small car for a passenger bolted to its side has a what?",
+    "a": "A sidecar"
+   },
+   {
+    "img": "axe",
+    "q": "A heavy, blunt axe made for splitting logs is called a splitting what?",
+    "a": "A maul"
+   },
+   {
+    "img": "carpentry-saw",
+    "q": "A fine-toothed saw in a slotted box for cutting angles is used with a what?",
+    "a": "A miter box"
+   },
+   {
+    "img": "ladder",
+    "q": "A ladder that slides out to reach a roof is called a what?",
+    "a": "An extension ladder"
+   },
+   {
+    "img": "bow-and-arrow",
+    "q": "The case that holds a hunter's arrows is called a what?",
+    "a": "A quiver"
+   },
+   {
+    "img": "ice-hockey",
+    "q": "The fight for the puck that starts play in hockey is called a what?",
+    "a": "A face-off"
+   },
+   {
+    "img": "boxing-glove",
+    "q": "In boxing, a quick straight punch with the front hand is called a what?",
+    "a": "A jab"
+   },
+   {
+    "img": "tractor",
+    "q": "The spinning shaft at the back of a tractor that runs other machines is called the what?",
+    "a": "The PTO (power take-off)"
+   },
+   {
+    "img": "fuel-pump",
+    "q": "The green handle at a gas station usually pumps which fuel?",
+    "a": "Diesel"
+   },
+   {
+    "img": "flag-in-hole",
+    "q": "Knocking the ball in with one swing from the tee is called a what?",
+    "a": "A hole-in-one (an ace)"
+   },
+   {
+    "img": "bowling",
+    "q": "Two pins left standing far apart are called a what?",
+    "a": "A split"
+   },
+   {
+    "img": "pool-8-ball",
+    "q": "The white ball you hit with the stick is called the what?",
+    "a": "The cue ball"
+   },
+   {
+    "img": "bullseye",
+    "q": "In darts, what is the highest score with three darts?",
+    "a": "180"
+   },
+   {
+    "img": "tent",
+    "q": "The waterproof cover that goes over the top of a tent is called the what?",
+    "a": "The rain fly"
+   },
+   {
+    "img": "cut-of-meat",
+    "q": "A steak cut from the rib with the bone taken out is called a what?",
+    "a": "A ribeye"
+   },
+   {
+    "img": "hot-pepper",
+    "q": "A dried, smoked jalapeño is called a what?",
+    "a": "A chipotle"
    }
   ],
   "lives": [
@@ -2422,93 +2442,8 @@
   "facts": [
    {
     "cat": "Movies & TV",
-    "q": "In Beauty and the Beast, what is Belle's favorite thing to do?",
-    "a": "Read books"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In the show Friends, what is the coffee shop where the friends hang out?",
-    "a": "Central Perk"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In The Notebook, the love story takes place in which part of the US?",
-    "a": "The South (the Carolinas)"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Gilmore Girls, which inn does Lorelai manage in the early seasons?",
     "a": "The Independence Inn"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "What is the British royal family drama on Netflix called?",
-    "a": "The Crown"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In the show Bridgerton, what is the 'season' all about?",
-    "a": "Finding a match to marry"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which chef-judge is famous for yelling on Hell's Kitchen?",
-    "a": "Gordon Ramsay"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Tangled, what is special about Rapunzel's hair?",
-    "a": "It's magic and super long"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which show follows Carrie Bradshaw and her friends in New York?",
-    "a": "Sex and the City"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which Disney princess has a tiger named Rajah?",
-    "a": "Jasmine"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "What is Mary Poppins famous for flying with?",
-    "a": "An umbrella"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer wore a famous dress made of meat?",
-    "a": "Lady Gaga"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which boy band had Harry Styles in it?",
-    "a": "One Direction"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer was famous as a teen pop star with '...Baby One More Time'?",
-    "a": "Britney Spears"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Whose fans are known as 'Little Monsters'?",
-    "a": "Lady Gaga"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer is famous for her high ponytail and the song 'Thank U, Next'?",
-    "a": "Ariana Grande"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "What is the famous fashion party held at a New York museum every May?",
-    "a": "The Met Gala"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Grease, what is the name of Sandy's girl gang rivals, led by Rizzo?",
-    "a": "The Pink Ladies"
    },
    {
     "cat": "Movies & TV",
@@ -2517,38 +2452,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "Finish the Dirty Dancing line: 'Nobody puts Baby...'",
-    "a": "'...in a corner'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Pretty Woman, which actress plays Vivian?",
-    "a": "Julia Roberts"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In The Notebook, what are the names of the two young lovers?",
-    "a": "Noah and Allie"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Mean Girls, what color do the Plastics wear on Wednesdays?",
-    "a": "Pink"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Legally Blonde, what school does Elle Woods get into?",
-    "a": "Harvard Law School"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "What is the name of Elle Woods' little dog in Legally Blonde?",
     "a": "Bruiser"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Sex and the City, what is Carrie Bradshaw's job?",
-    "a": "She writes a newspaper column (a writer)"
    },
    {
     "cat": "Movies & TV",
@@ -2562,16 +2467,6 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Titanic, what are the names of the two main lovers?",
-    "a": "Jack and Rose"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Sleepless in Seattle, on top of which building do the lovers finally meet?",
-    "a": "The Empire State Building"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In When Harry Met Sally, in what kind of restaurant does the famous 'I'll have what she's having' scene happen?",
     "a": "A deli (Katz's Delicatessen)"
    },
@@ -2582,38 +2477,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Clueless, what is the main character's name?",
-    "a": "Cher (Horowitz)"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Gilmore Girls, what is the name of the town Lorelai and Rory live in?",
     "a": "Stars Hollow"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Gilmore Girls, what is the name of Luke's restaurant?",
-    "a": "Luke's Diner"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Friends, what is Rachel's last name?",
-    "a": "Green"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Friends, what does Joey say as his famous pick-up line?",
-    "a": "'How you doin'?'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Friends, what kind of animal does Ross have as a pet in season one?",
-    "a": "A monkey (Marcel)"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Friends, who did Monica marry?",
-    "a": "Chandler"
    },
    {
     "cat": "Movies & TV",
@@ -2632,23 +2497,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "On The Bachelor, what does the Bachelor hand out at the end of each episode?",
-    "a": "Roses"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Little Women, how many March sisters are there?",
-    "a": "4"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "Which March sister in Little Women wants to be a writer?",
     "a": "Jo"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Pride and Prejudice, what is the name of the proud rich hero?",
-    "a": "Mr. Darcy"
    },
    {
     "cat": "Movies & TV",
@@ -2657,33 +2507,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In The Sound of Music, what is the governess's name?",
-    "a": "Maria"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Mamma Mia!, which band's songs are used for the whole movie?",
-    "a": "ABBA"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Mamma Mia!, how many possible fathers does Sophie invite to her wedding?",
     "a": "3"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In The Little Mermaid, what does Ariel give up to get legs?",
-    "a": "Her voice"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Cinderella, at what time does the magic wear off?",
-    "a": "Midnight"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Beauty and the Beast, what kind of flower is under the glass?",
-    "a": "A rose"
    },
    {
     "cat": "Movies & TV",
@@ -2692,63 +2517,13 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Moana, what is the name of the demigod voiced by Dwayne Johnson?",
-    "a": "Maui"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Encanto, what is the name of the family?",
     "a": "The Madrigals"
    },
    {
     "cat": "Movies & TV",
-    "q": "Finish the Encanto song title: 'We Don't Talk About...'",
-    "a": "'...Bruno'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Frozen, what is the name of the snowman?",
-    "a": "Olaf"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In The Hunger Games, what is Katniss's last name?",
-    "a": "Everdeen"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Twilight, what is the name of the vampire Bella falls in love with?",
-    "a": "Edward Cullen"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Twilight, what kind of creature is Jacob?",
-    "a": "A werewolf (shape-shifter)"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which show follows the Dutton family on a Montana ranch?",
-    "a": "Yellowstone"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Bridgerton, under what pen name does the gossip writer publish?",
     "a": "Lady Whistledown"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which show is about the British royal family and Queen Elizabeth II?",
-    "a": "The Crown"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Hallmark Christmas movies, a big-city career woman usually falls for a man from where?",
-    "a": "A small town"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which show had contestants sewing, baking and 'Star Baker' in a big tent?",
-    "a": "The Great British Bake Off (Baking Show)"
    },
    {
     "cat": "Movies & TV",
@@ -2767,11 +2542,6 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In The Wizard of Oz, what color are Dorothy's magic slippers in the movie?",
-    "a": "Ruby red"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Steel Magnolias, what color does the bride call her wedding colors: 'blush and...'?",
     "a": "Bashful"
    },
@@ -2786,34 +2556,9 @@
     "a": "Wishing dust"
    },
    {
-    "cat": "Movies & TV",
-    "q": "In The Parent Trap, what do the twins do at summer camp to switch lives?",
-    "a": "They swap places (each goes home as the other)"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Hocus Pocus, how many Sanderson sisters are there?",
-    "a": "3"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Barbie (2023), which actor plays Ken?",
-    "a": "Ryan Gosling"
-   },
-   {
     "cat": "Music & Stars",
     "q": "What was Taylor Swift's first album called?",
     "a": "Taylor Swift"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "What is the name of Taylor Swift's record-breaking concert tour that started in 2023?",
-    "a": "The Eras Tour"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer had hits with 'Like a Virgin' and 'Material Girl'?",
-    "a": "Madonna"
    },
    {
     "cat": "Music & Stars",
@@ -2822,38 +2567,8 @@
    },
    {
     "cat": "Music & Stars",
-    "q": "What theme park is named after Dolly Parton?",
-    "a": "Dollywood"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer sang 'I Will Always Love You' in The Bodyguard?",
-    "a": "Whitney Houston"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Who sang the Titanic song 'My Heart Will Go On'?",
-    "a": "Celine Dion"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer is known for the 'All I Want for Christmas Is You' song?",
-    "a": "Mariah Carey"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which group had members named Posh, Scary, Sporty, Baby and Ginger?",
-    "a": "The Spice Girls"
-   },
-   {
-    "cat": "Music & Stars",
     "q": "Which band did Beyoncé start out in?",
     "a": "Destiny's Child"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer is called the 'Queen of Soul' and sang 'Respect'?",
-    "a": "Aretha Franklin"
    },
    {
     "cat": "Music & Stars",
@@ -2872,31 +2587,6 @@
    },
    {
     "cat": "Music & Stars",
-    "q": "Which singer sang 'Shake It Off' and 'Love Story'?",
-    "a": "Taylor Swift"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which boy band sang 'I Want It That Way'?",
-    "a": "Backstreet Boys"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which boy band was Justin Timberlake in?",
-    "a": "NSYNC"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer is known for 'Bad Romance' and 'Poker Face'?",
-    "a": "Lady Gaga"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer's fans are called 'Arianators'?",
-    "a": "Ariana Grande"
-   },
-   {
-    "cat": "Music & Stars",
     "q": "Which singer sang 'drivers license' as her breakout hit?",
     "a": "Olivia Rodrigo"
    },
@@ -2912,16 +2602,6 @@
    },
    {
     "cat": "Music & Stars",
-    "q": "Which singer is known for 'Since U Been Gone'?",
-    "a": "Kelly Clarkson"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer sang 'Single Ladies (Put a Ring on It)'?",
-    "a": "Beyoncé"
-   },
-   {
-    "cat": "Music & Stars",
     "q": "Which singer married Blake Shelton after they met on The Voice?",
     "a": "Gwen Stefani"
    },
@@ -2932,78 +2612,8 @@
    },
    {
     "cat": "Music & Stars",
-    "q": "Which singer is known for 'Rolling in the Deep' and the album '21'?",
-    "a": "Adele"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer's song 'Flowers' was a huge hit in 2023?",
-    "a": "Miley Cyrus"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which Disney Channel show starred Miley Cyrus as a secret pop star?",
-    "a": "Hannah Montana"
-   },
-   {
-    "cat": "Music & Stars",
     "q": "Who is Miley Cyrus's famous country-singer dad?",
     "a": "Billy Ray Cyrus"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which TV talk-show host gave away cars, saying 'You get a car!'?",
-    "a": "Oprah Winfrey"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which talk-show host ends with 'Be kind to one another' and loved to dance?",
-    "a": "Ellen DeGeneres"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which singer was nicknamed 'J.Lo'?",
-    "a": "Jennifer Lopez"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which royal married Prince William in 2011?",
-    "a": "Kate Middleton (Catherine)"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which American actress married Prince Harry?",
-    "a": "Meghan Markle"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which princess died in 1997 and was called 'the People's Princess'?",
-    "a": "Princess Diana"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which reality family's famous sisters are Kim, Khloé and Kourtney?",
-    "a": "The Kardashians"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which Broadway musical about a founding father was filmed for Disney+?",
-    "a": "Hamilton"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which musical has the songs 'Defying Gravity' and 'Popular'?",
-    "a": "Wicked"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "In Wicked, what color is Elphaba's skin?",
-    "a": "Green"
-   },
-   {
-    "cat": "Music & Stars",
-    "q": "Which musical is about a nanny with a magical umbrella and 'Spoonful of Sugar'?",
-    "a": "Mary Poppins"
    },
    {
     "cat": "Music & Stars",
@@ -3017,31 +2627,6 @@
    },
    {
     "cat": "Books & Royals",
-    "q": "Who wrote the Harry Potter books?",
-    "a": "J.K. Rowling"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "What house at Hogwarts is Harry Potter in?",
-    "a": "Gryffindor"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Who wrote Pride and Prejudice?",
-    "a": "Jane Austen"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "In Gone with the Wind, what is the heroine's name?",
-    "a": "Scarlett O'Hara"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Finish Scarlett's famous line: 'After all, tomorrow is...'",
-    "a": "'...another day'"
-   },
-   {
-    "cat": "Books & Royals",
     "q": "In Anne of Green Gables, what color is Anne's hair?",
     "a": "Red"
    },
@@ -3049,16 +2634,6 @@
     "cat": "Books & Royals",
     "q": "Who wrote Little Women?",
     "a": "Louisa May Alcott"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "In Charlotte's Web, what kind of animal is Charlotte?",
-    "a": "A spider"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "In Charlotte's Web, what is the pig's name?",
-    "a": "Wilbur"
    },
    {
     "cat": "Books & Royals",
@@ -3072,48 +2647,8 @@
    },
    {
     "cat": "Books & Royals",
-    "q": "Which book club host has 'Oprah's Book Club'?",
-    "a": "Oprah Winfrey"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Which queen of England reigned for 70 years?",
-    "a": "Queen Elizabeth II"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Which English king had six wives?",
-    "a": "Henry VIII"
-   },
-   {
-    "cat": "Books & Royals",
     "q": "What is the name of the royal family's castle in Scotland where they spend summers?",
     "a": "Balmoral"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "What is the London home of the British king or queen?",
-    "a": "Buckingham Palace"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Which French queen is said to have said 'Let them eat cake'?",
-    "a": "Marie Antoinette"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Which Egyptian queen was famous for her beauty and Mark Antony?",
-    "a": "Cleopatra"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Who was the first woman to fly solo across the Atlantic?",
-    "a": "Amelia Earhart"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Who refused to give up her bus seat in Montgomery in 1955?",
-    "a": "Rosa Parks"
    },
    {
     "cat": "Books & Royals",
@@ -3124,11 +2659,6 @@
     "cat": "Books & Royals",
     "q": "Which nurse was called 'The Lady with the Lamp'?",
     "a": "Florence Nightingale"
-   },
-   {
-    "cat": "Books & Royals",
-    "q": "Whose diary, written while hiding in Amsterdam, became a famous book?",
-    "a": "Anne Frank's"
    },
    {
     "cat": "Holidays & Home",
@@ -3144,11 +2674,6 @@
     "cat": "Holidays & Home",
     "q": "What is the traditional gift for a first wedding anniversary?",
     "a": "Paper"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What is the birthstone for April?",
-    "a": "Diamond"
    },
    {
     "cat": "Holidays & Home",
@@ -3172,56 +2697,6 @@
    },
    {
     "cat": "Holidays & Home",
-    "q": "On which date is Valentine's Day?",
-    "a": "February 14"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "In which month is Mother's Day in the US?",
-    "a": "May (second Sunday)"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "At a wedding, what is the bride supposed to wear: something old, something new, something borrowed and...?",
-    "a": "Something blue"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "At a wedding, who traditionally walks down the aisle just before the bride, scattering petals?",
-    "a": "The flower girl"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What is a 'baby shower'?",
-    "a": "A party with gifts for a mom-to-be"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What is a 'bridal shower'?",
-    "a": "A party with gifts for a bride-to-be"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What is it called when the bride throws flowers over her shoulder to the single women?",
-    "a": "The bouquet toss"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What do you call the woman who stands closest to the bride at a wedding?",
-    "a": "The maid (or matron) of honor"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What flower is the symbol of the Netherlands and famous for spring fields?",
-    "a": "The tulip"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What flower is the traditional symbol of love on Valentine's Day?",
-    "a": "The red rose"
-   },
-   {
-    "cat": "Holidays & Home",
     "q": "Which flower's name means 'eye of the day' and has white petals with a yellow center?",
     "a": "The daisy"
    },
@@ -3239,53 +2714,428 @@
     "cat": "Holidays & Home",
     "q": "What is the name of the Christmas plant with big red leaves?",
     "a": "The poinsettia"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Dirty Dancing, what is the name of the resort?",
+    "a": "Kellerman's"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Pretty Woman, on which famous street does Vivian go shopping?",
+    "a": "Rodeo Drive"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Ghost, what are Demi Moore and Patrick Swayze making in the famous scene?",
+    "a": "Pottery"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "Which song plays during the pottery scene in Ghost?",
+    "a": "'Unchained Melody'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Legally Blonde, what move does Elle teach at the salon?",
+    "a": "The bend and snap"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Mean Girls, what is the book full of gossip called?",
+    "a": "The Burn Book"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Mean Girls, which word does Gretchen keep trying to 'make happen'?",
+    "a": "Fetch"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is Cher's catchphrase in Clueless?",
+    "a": "'As if!'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In How to Lose a Guy in 10 Days, what plant does Andie give Ben?",
+    "a": "A love fern"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In You've Got Mail, what is Meg Ryan's bookshop called?",
+    "a": "The Shop Around the Corner"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In The Holiday, what do the two women swap?",
+    "a": "Their houses"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In 27 Dresses, why does Jane own 27 dresses?",
+    "a": "She has been a bridesmaid 27 times"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Bridesmaids, where is the bachelorette party meant to be?",
+    "a": "Las Vegas"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In My Best Friend's Wedding, which song does the whole restaurant sing?",
+    "a": "'I Say a Little Prayer'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Crazy Rich Asians, which country does Rachel fly to?",
+    "a": "Singapore"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Sixteen Candles, who is Sam's dream guy?",
+    "a": "Jake Ryan"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Sex and the City, the four friends are Carrie, Samantha, Charlotte and who?",
+    "a": "Miranda"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Sex and the City, what is the nickname of Carrie's great love?",
+    "a": "Mr. Big"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Friends, what is the name of Phoebe's most famous song?",
+    "a": "'Smelly Cat'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Friends, what does Ross keep saying about his split from Rachel?",
+    "a": "'We were on a break!'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Friends, what is Monica's job?",
+    "a": "A chef"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Friends, what is Chandler's last name?",
+    "a": "Bing"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Gilmore Girls, which college does Rory go to?",
+    "a": "Yale"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Grey's Anatomy, who is Meredith's 'person'?",
+    "a": "Cristina Yang"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "On which street do the Desperate Housewives live?",
+    "a": "Wisteria Lane"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "How does Gossip Girl sign off?",
+    "a": "'XOXO, Gossip Girl'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In which city do The Golden Girls live?",
+    "a": "Miami"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "The Golden Girls are Dorothy, Blanche, Rose and who?",
+    "a": "Sophia"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is the family's last name in This Is Us?",
+    "a": "Pearson"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Outlander, what is Jamie's last name?",
+    "a": "Fraser"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "Who is the butler in Downton Abbey?",
+    "a": "Mr. Carson"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "Which TV network airs The Real Housewives?",
+    "a": "Bravo"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In which New York bridal shop is Say Yes to the Dress filmed?",
+    "a": "Kleinfeld"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "On Project Runway, Heidi Klum says 'One day you're in, and the next day...'",
+    "a": "'...you're out'"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What are Cinderella's stepsisters called in the Disney movie?",
+    "a": "Anastasia and Drizella"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is Sleeping Beauty's real name in the Disney movie?",
+    "a": "Aurora"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is the name of Ariel's fish friend?",
+    "a": "Flounder"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "Who is the villain in Beauty and the Beast?",
+    "a": "Gaston"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is the name of the princess in The Princess and the Frog?",
+    "a": "Tiana"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is the name of Mulan's little dragon?",
+    "a": "Mushu"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "In Frozen, what is the name of Elsa's kingdom?",
+    "a": "Arendelle"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "What is the name of the princess with wild red hair in Brave?",
+    "a": "Merida"
+   },
+   {
+    "cat": "Movies & TV",
+    "q": "Which character does Audrey Hepburn play in Breakfast at Tiffany's?",
+    "a": "Holly Golightly"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "What is Taylor Swift's lucky number?",
+    "a": "13"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Who is Beyoncé's husband?",
+    "a": "Jay-Z"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which Beyoncé album is named after a drink?",
+    "a": "Lemonade"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "What are Adele's albums named after?",
+    "a": "Her age when she wrote them"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Finish the Shania Twain line: 'That don't impress me...'",
+    "a": "'...much'"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Finish the Whitney Houston title: 'I Wanna Dance with...'",
+    "a": "'...Somebody'"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which Spice Girl was Victoria Beckham?",
+    "a": "Posh Spice"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Destiny's Child was Beyoncé, Kelly Rowland and who?",
+    "a": "Michelle Williams"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which girl group sang 'No Scrubs' and 'Waterfalls'?",
+    "a": "TLC"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which Alanis Morissette album has 'You Oughta Know' and 'Ironic'?",
+    "a": "Jagged Little Pill"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which Fleetwood Mac singer is famous for her shawls and twirling?",
+    "a": "Stevie Nicks"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which singer owns the makeup brand Fenty Beauty?",
+    "a": "Rihanna"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which singer owns the makeup brand Rare Beauty?",
+    "a": "Selena Gomez"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "What was Jennifer Aniston's famous 1990s haircut called?",
+    "a": "The Rachel"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "What stone is in Princess Diana's engagement ring, now worn by Kate?",
+    "a": "A sapphire"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which TV show was Meghan Markle on before she married Prince Harry?",
+    "a": "Suits"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which breed of dog did Queen Elizabeth II keep all her life?",
+    "a": "Corgis"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Finish the Marilyn Monroe song: 'Diamonds Are a Girl's...'",
+    "a": "'...Best Friend'"
+   },
+   {
+    "cat": "Music & Stars",
+    "q": "Which football player did Taylor Swift start dating in 2023?",
+    "a": "Travis Kelce"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Who wrote the Twilight books?",
+    "a": "Stephenie Meyer"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Who wrote The Hunger Games?",
+    "a": "Suzanne Collins"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Which author wrote It Ends with Us?",
+    "a": "Colleen Hoover"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "What is the rich hero's name in Fifty Shades of Grey?",
+    "a": "Christian Grey"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "In which state is the book The Help set?",
+    "a": "Mississippi"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "What does Bridget Jones write in?",
+    "a": "Her diary"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Who is Nancy Drew's boyfriend?",
+    "a": "Ned Nickerson"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Finish the Judy Blume title: 'Are You There God? It's Me, ...'",
+    "a": "'...Margaret'"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Which actress runs a famous book club with a Hello Sunshine sticker?",
+    "a": "Reese Witherspoon"
+   },
+   {
+    "cat": "Books & Royals",
+    "q": "Who wrote the Outlander books?",
+    "a": "Diana Gabaldon"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "Which zodiac sign is the twins?",
+    "a": "Gemini"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "Which zodiac sign is the scales?",
+    "a": "Libra"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is the traditional gift for a fifth wedding anniversary?",
+    "a": "Wood"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is the traditional gift for a tenth wedding anniversary?",
+    "a": "Tin (or aluminum)"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is a square-cut diamond called?",
+    "a": "A princess cut"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is a diamond shaped like a pointed oval called?",
+    "a": "A marquise"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What color is a Tiffany & Co. box?",
+    "a": "Robin's egg blue (Tiffany blue)"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What does RSVP stand for?",
+    "a": "Répondez s'il vous plaît (please reply)"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is the birthstone for February?",
+    "a": "Amethyst"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What is the birthstone for October?",
+    "a": "Opal (or tourmaline)"
+   },
+   {
+    "cat": "Holidays & Home",
+    "q": "What color should a guest never wear to a wedding?",
+    "a": "White"
    }
   ],
   "stuff": [
    {
     "cat": "Fashion",
-    "q": "What is a stiletto?",
-    "a": "A shoe with a tall, thin heel"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call the little bag a woman carries at a fancy evening event?",
-    "a": "A clutch"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What are 'jeggings'?",
-    "a": "Leggings that look like jeans"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call a dress that ends just above the knee or higher?",
-    "a": "A mini dress"
-   },
-   {
-    "cat": "Fashion",
-    "q": "Name a famous fashion house from Paris.",
-    "a": "Chanel (also Dior, Hermès, Louis Vuitton, Saint Laurent)"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'cardigan'?",
-    "a": "A sweater that buttons down the front"
-   },
-   {
-    "cat": "Fashion",
     "q": "What are espadrilles?",
     "a": "Shoes with rope soles"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call the shoes with no back that you slip your feet into?",
-    "a": "Mules"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call a top that shows your stomach?",
-    "a": "A crop top"
    },
    {
     "cat": "Fashion",
@@ -3294,73 +3144,8 @@
    },
    {
     "cat": "Fashion",
-    "q": "What do you call a scarf-like wrap worn over the shoulders?",
-    "a": "A shawl"
-   },
-   {
-    "cat": "Fashion",
-    "q": "Name a neutral color that goes with almost everything.",
-    "a": "Beige (also black, white, gray, navy)"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What do you call shorts made from cut-off jeans?",
-    "a": "Cut-offs"
-   },
-   {
-    "cat": "Fashion",
     "q": "Capri pants stop around which part of the leg?",
     "a": "Mid-calf"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is 'athleisure'?",
-    "a": "Workout clothes worn as everyday outfits"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'mani-pedi'?",
-    "a": "A manicure and a pedicure"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is foundation used for?",
-    "a": "Evening out skin tone"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are 'highlights' at the salon?",
-    "a": "Lighter streaks of hair color"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does a 'perm' do to hair?",
-    "a": "Makes it curly for months"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What do you call the ponytail made by twisting three strands together?",
-    "a": "A braid"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'messy bun'?",
-    "a": "Hair loosely twisted up on the head"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are acrylics at the nail salon?",
-    "a": "Fake nails"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What do you call the hair cut to fall across the forehead?",
-    "a": "Bangs"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What do you call cooking food in hot fat in a pan, quickly?",
-    "a": "Sautéing"
    },
    {
     "cat": "Cooking & Baking",
@@ -3369,73 +3154,8 @@
    },
    {
     "cat": "Cooking & Baking",
-    "q": "Croissants are made with what kind of dough?",
-    "a": "Flaky, buttery layered pastry"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Which appliance slowly cooks a meal all day, also called a Crock-Pot?",
-    "a": "A slow cooker"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does a recipe mean by 'a pinch' of salt?",
-    "a": "A tiny amount between your fingers"
-   },
-   {
-    "cat": "Cooking & Baking",
     "q": "What makes a cake 'red velvet' red?",
     "a": "Red food coloring (and a little cocoa)"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "Tiramisu is a dessert from which country?",
-    "a": "Italy"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is sourdough bread made with?",
-    "a": "A fermented starter"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'centerpiece'?",
-    "a": "A decoration in the middle of a table"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What do you call candles in little metal cups?",
-    "a": "Tea lights"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'Pinterest board'?",
-    "a": "A collection of saved ideas and pictures"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "Which color would make a small room feel bigger and brighter?",
-    "a": "A light color"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'farmhouse sink'?",
-    "a": "A big deep sink with an exposed front"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "Which store is famous for beauty products and a big Beauty Insider program?",
-    "a": "Sephora"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What do you call houseplants that are hard to kill, like snake plants and succulents?",
-    "a": "Low-maintenance plants"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'little black dress' often shortened to?",
-    "a": "An LBD"
    },
    {
     "cat": "Fashion",
@@ -3469,28 +3189,8 @@
    },
    {
     "cat": "Fashion",
-    "q": "What is a 'maxi' dress?",
-    "a": "A long dress that reaches the ankles"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'romper'?",
-    "a": "A one-piece outfit of shorts and a top"
-   },
-   {
-    "cat": "Fashion",
     "q": "What is the shoe with a flat sole and a strap across the top of the foot called?",
     "a": "A Mary Jane"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What kind of heel is thick and goes all the way under the shoe?",
-    "a": "A wedge"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What kind of shoe is open at the back with no strap?",
-    "a": "A mule (or slide)"
    },
    {
     "cat": "Fashion",
@@ -3509,18 +3209,8 @@
    },
    {
     "cat": "Fashion",
-    "q": "What fabric is made by silkworms?",
-    "a": "Silk"
-   },
-   {
-    "cat": "Fashion",
     "q": "What is 'chiffon'?",
     "a": "A thin, see-through, floaty fabric"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is the fabric of most jeans called?",
-    "a": "Denim"
    },
    {
     "cat": "Fashion",
@@ -3531,26 +3221,6 @@
     "cat": "Fashion",
     "q": "What is a 'pashmina'?",
     "a": "A soft, fine wool shawl or scarf"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'bralette'?",
-    "a": "A soft bra without underwire or padding"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What jewelry goes around the ankle?",
-    "a": "An anklet"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What kind of earring hangs down from the ear?",
-    "a": "A drop (or dangle) earring"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What kind of earring sits right on the earlobe with no dangle?",
-    "a": "A stud"
    },
    {
     "cat": "Fashion",
@@ -3571,21 +3241,6 @@
     "cat": "Fashion",
     "q": "What is 'rose gold'?",
     "a": "Gold mixed with copper, so it looks pink"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'statement necklace'?",
-    "a": "A big, bold necklace that is the center of an outfit"
-   },
-   {
-    "cat": "Fashion",
-    "q": "Which city hosts one of fashion's 'Big Four' weeks along with New York, London and Milan?",
-    "a": "Paris"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does SPF on sunscreen stand for?",
-    "a": "Sun protection factor"
    },
    {
     "cat": "Beauty & Hair",
@@ -3624,16 +3279,6 @@
    },
    {
     "cat": "Beauty & Hair",
-    "q": "What is a 'pixie cut'?",
-    "a": "A very short haircut"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are 'extensions'?",
-    "a": "Added hair to make it longer or fuller"
-   },
-   {
-    "cat": "Beauty & Hair",
     "q": "What does a 'keratin treatment' do to hair?",
     "a": "Smooths it and takes away frizz"
    },
@@ -3641,11 +3286,6 @@
     "cat": "Beauty & Hair",
     "q": "What is 'dry shampoo' for?",
     "a": "Soaking up oil to freshen hair without washing"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is the name for the white tips on a classic manicure?",
-    "a": "A French manicure (French tips)"
    },
    {
     "cat": "Beauty & Hair",
@@ -3659,23 +3299,8 @@
    },
    {
     "cat": "Beauty & Hair",
-    "q": "What is a 'pedicure'?",
-    "a": "A beauty treatment for the feet and toenails"
-   },
-   {
-    "cat": "Beauty & Hair",
     "q": "What is 'microblading'?",
     "a": "Semi-permanent tattooed eyebrow strokes"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does 'waterproof' mascara do?",
-    "a": "Doesn't run or smudge with water or tears"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is an eyelash curler used for?",
-    "a": "Curling the lashes up"
    },
    {
     "cat": "Beauty & Hair",
@@ -3689,28 +3314,8 @@
    },
    {
     "cat": "Beauty & Hair",
-    "q": "What is a 'scrunchie'?",
-    "a": "A fabric-covered hair tie"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What tool makes hair wavy or curly with a hot barrel?",
-    "a": "A curling iron (or wand)"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What tool makes hair straight with two hot plates?",
-    "a": "A flat iron (straightener)"
-   },
-   {
-    "cat": "Beauty & Hair",
     "q": "What is a 'blowout'?",
     "a": "Hair washed and blow-dried smooth at a salon"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "How many teaspoons are in a tablespoon?",
-    "a": "3"
    },
    {
     "cat": "Cooking & Baking",
@@ -3731,11 +3336,6 @@
     "cat": "Cooking & Baking",
     "q": "What does 'cream the butter and sugar' mean?",
     "a": "Beat them together until light and fluffy"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What makes bread dough rise?",
-    "a": "Yeast"
    },
    {
     "cat": "Cooking & Baking",
@@ -3809,16 +3409,6 @@
    },
    {
     "cat": "Cooking & Baking",
-    "q": "What cheese is used in a classic cheesecake?",
-    "a": "Cream cheese"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a 'charcuterie board'?",
-    "a": "A board of cured meats, cheeses and snacks"
-   },
-   {
-    "cat": "Cooking & Baking",
     "q": "What spice is the most expensive in the world by weight?",
     "a": "Saffron"
    },
@@ -3838,24 +3428,9 @@
     "a": "A heavy, lidded cast-iron pot"
    },
    {
-    "cat": "Cooking & Baking",
-    "q": "What is an 'Instant Pot'?",
-    "a": "An electric pressure cooker"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'duvet'?",
-    "a": "A soft quilt that goes inside a cover"
-   },
-   {
     "cat": "Home & Shopping",
     "q": "What does 'thread count' measure on sheets?",
     "a": "Threads woven into one square inch"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'throw pillow'?",
-    "a": "A small decorative pillow for a couch or bed"
    },
    {
     "cat": "Home & Shopping",
@@ -3869,31 +3444,6 @@
    },
    {
     "cat": "Home & Shopping",
-    "q": "What does 'farmhouse style' decor usually include?",
-    "a": "Shiplap, white paint, wood and rustic touches"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "Which Swedish store sells flat-pack furniture and meatballs?",
-    "a": "IKEA"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "Which store has a red bullseye logo?",
-    "a": "Target"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is 'BOGO' at a sale?",
-    "a": "Buy one, get one (free)"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What day after Thanksgiving is famous for big sales?",
-    "a": "Black Friday"
-   },
-   {
-    "cat": "Home & Shopping",
     "q": "What is a 'capsule wardrobe'?",
     "a": "A small set of clothes that all mix and match"
    },
@@ -3903,19 +3453,319 @@
     "a": "Tidying and keeping only what 'sparks joy'"
    },
    {
-    "cat": "Home & Shopping",
-    "q": "What does a 'lint trap' catch?",
-    "a": "Fluff from clothes in the dryer"
+    "cat": "Fashion",
+    "q": "What is an empire waist?",
+    "a": "A waistline that sits just under the bust"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a bodycon dress?",
+    "a": "A tight dress that hugs the body"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What are culottes?",
+    "a": "Wide, cropped pants that look like a skirt"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What are palazzo pants?",
+    "a": "Long, very wide-legged, flowing pants"
+   },
+   {
+    "cat": "Fashion",
+    "q": "Which designer made the wrap dress famous?",
+    "a": "Diane von Furstenberg"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a slingback?",
+    "a": "A shoe with a strap around the back of the heel"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a peep-toe shoe?",
+    "a": "A shoe with a small opening at the toes"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is tulle?",
+    "a": "The fine netting used for tutus and veils"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is houndstooth?",
+    "a": "A pattern of small broken checks, usually black and white"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is gingham?",
+    "a": "A pattern of small, even checks"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is paisley?",
+    "a": "A pattern of curved teardrop shapes"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What does ombré mean?",
+    "a": "Color that fades from dark to light"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is Spanx?",
+    "a": "Shapewear that smooths you out under clothes"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a hobo bag?",
+    "a": "A soft, slouchy, crescent-shaped shoulder bag"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What does a woman wear to a 'black tie' event?",
+    "a": "A floor-length gown"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a choker?",
+    "a": "A necklace that fits tight around the throat"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a tennis bracelet?",
+    "a": "A bracelet with a single row of diamonds all the way round"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a locket?",
+    "a": "A pendant that opens to hold a photo"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is cubic zirconia?",
+    "a": "A man-made stone that looks like a diamond"
+   },
+   {
+    "cat": "Fashion",
+    "q": "How many karats is pure gold?",
+    "a": "24"
+   },
+   {
+    "cat": "Fashion",
+    "q": "What does it mean when a tailor 'takes in' a dress?",
+    "a": "Makes it smaller"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is concealer for?",
+    "a": "Covering blemishes and dark circles"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is winged eyeliner also called?",
+    "a": "A cat eye"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is lip liner for?",
+    "a": "Outlining the lips so lipstick doesn't bleed"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is eyebrow threading?",
+    "a": "Pulling out hairs with a twisted cotton thread"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does it mean to exfoliate?",
+    "a": "Scrub away dead skin"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is micellar water?",
+    "a": "A gentle liquid that takes off makeup"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What does hyaluronic acid do for skin?",
+    "a": "Holds moisture in"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "Which goes on first: serum or moisturizer?",
+    "a": "Serum"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "Why do blondes use purple shampoo?",
+    "a": "To cancel out brassy yellow tones"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a chignon?",
+    "a": "A low bun at the back of the neck"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a diffuser?",
+    "a": "A hair dryer attachment for curly hair"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What are curtain bangs?",
+    "a": "Bangs parted in the middle and swept to each side"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What are dip powder nails?",
+    "a": "Nails dipped in colored powder and sealed, with no UV lamp"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "Name a fake-nail shape that is long, tapered and flat at the tip.",
+    "a": "Coffin (or ballerina)"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is bronzer for?",
+    "a": "Giving the skin a sun-tanned look"
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a lash lift?",
+    "a": "A perm for your eyelashes"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does it mean to braise meat?",
+    "a": "Brown it, then cook it slowly in a little liquid"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does it mean to deglaze a pan?",
+    "a": "Pour in liquid to lift the browned bits off the bottom"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a julienne cut?",
+    "a": "Thin matchstick strips"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a chiffonade?",
+    "a": "Leafy herbs rolled up and sliced into thin ribbons"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does it mean to blind bake a pie crust?",
+    "a": "Bake it empty, before the filling goes in"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a bain-marie?",
+    "a": "A hot water bath for gentle cooking"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is the difference between a macaron and a macaroon?",
+    "a": "A macaron is an almond sandwich cookie; a macaroon is a coconut mound"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "Which pastry dough makes cream puffs and éclairs?",
+    "a": "Choux pastry"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is on top of a crème brûlée?",
+    "a": "A crust of burnt sugar"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "How many tablespoons are in a stick of butter?",
+    "a": "8"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "How many sticks of butter are in a pound?",
+    "a": "4"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "How many ounces are in a cup?",
+    "a": "8"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does it mean to 'cut in' butter?",
+    "a": "Work cold butter into flour until it is crumbly"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "How do you make a buttermilk substitute at home?",
+    "a": "Add vinegar or lemon juice to milk"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What three vegetables make a mirepoix?",
+    "a": "Onion, carrot and celery"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "The seeds of the cilantro plant are which spice?",
+    "a": "Coriander"
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What does it mean to temper eggs?",
+    "a": "Warm them slowly with hot liquid so they don't scramble"
    },
    {
     "cat": "Home & Shopping",
-    "q": "What does bleach do to colored clothes?",
-    "a": "Fades or ruins the color"
+    "q": "What is a pillow sham?",
+    "a": "A decorative cover for a bed pillow"
    },
    {
     "cat": "Home & Shopping",
-    "q": "What water temperature is usually best for washing dark colors so they don't fade?",
-    "a": "Cold"
+    "q": "What is a bed skirt?",
+    "a": "Fabric that hangs from the mattress to the floor"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is wainscoting?",
+    "a": "Wood paneling on the lower part of a wall"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is hygge?",
+    "a": "The Danish idea of being cozy and content"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is a charger at a fancy dinner table?",
+    "a": "A big decorative plate that sits under the dinner plate"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "On which side of the plate do the forks go?",
+    "a": "The left"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is a tablescape?",
+    "a": "A dressed-up, decorated table setting"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What does a color catcher sheet do in the wash?",
+    "a": "Soaks up loose dye so colors don't run"
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is a wedding registry?",
+    "a": "The couple's list of gifts they would like"
    }
   ],
   "pics": [
@@ -3945,11 +3795,6 @@
     "a": "The left ring finger"
    },
    {
-    "img": "dress",
-    "q": "A long dress that goes all the way down to the ankles is called a what?",
-    "a": "A maxi dress"
-   },
-   {
     "img": "bikini",
     "q": "A swimsuit with a bikini bottom and a tank-top style top is called a what?",
     "a": "A tankini"
@@ -3958,11 +3803,6 @@
     "img": "ballet-shoes",
     "q": "Ballet shoes with stiff tips for dancing up on your toes are called what?",
     "a": "Pointe shoes"
-   },
-   {
-    "img": "lotion-bottle",
-    "q": "What does SPF on a bottle of lotion measure?",
-    "a": "Protection from sunburn"
    },
    {
     "img": "mirror",
@@ -3975,11 +3815,6 @@
     "a": "A sash"
    },
    {
-    "img": "bouquet",
-    "q": "At a wedding, who throws the bouquet over her shoulder?",
-    "a": "The bride"
-   },
-   {
     "img": "kimono",
     "q": "This traditional robe comes from which country?",
     "a": "Japan"
@@ -3988,11 +3823,6 @@
     "img": "teapot",
     "q": "The padded fabric cover that keeps a teapot warm is called a what?",
     "a": "A tea cozy"
-   },
-   {
-    "img": "cupcake",
-    "q": "The sweet topping swirled on a cupcake is called frosting, or what?",
-    "a": "Icing"
    },
    {
     "img": "purse",
@@ -4015,11 +3845,6 @@
     "a": "Crochet"
    },
    {
-    "img": "gem-stone",
-    "q": "Which gem is the birthstone for April?",
-    "a": "Diamond"
-   },
-   {
     "img": "sari",
     "q": "A sari is the traditional dress of which country?",
     "a": "India"
@@ -4035,11 +3860,6 @@
     "a": "Curly or natural hair (an Afro)"
    },
    {
-    "img": "shortcake",
-    "q": "Strawberry shortcake is topped with strawberries and what?",
-    "a": "Whipped cream"
-   },
-   {
     "img": "soap",
     "q": "A fizzy ball you drop in the bath that bubbles and smells nice is called a what?",
     "a": "A bath bomb"
@@ -4048,11 +3868,6 @@
     "img": "sponge",
     "q": "A soft, egg-shaped sponge for blending makeup is called a beauty what?",
     "a": "A beauty blender"
-   },
-   {
-    "img": "shopping-bags",
-    "q": "The big shopping day after Thanksgiving is called what?",
-    "a": "Black Friday"
    },
    {
     "img": "folding-hand-fan",
@@ -4065,11 +3880,6 @@
     "a": "Manolo Blahnik"
    },
    {
-    "img": "lipstick",
-    "q": "A clear or tinted shiny liquid for the lips is called lip what?",
-    "a": "Lip gloss"
-   },
-   {
     "img": "handbag",
     "q": "A small bag worn across the body on a long strap is called a what?",
     "a": "A crossbody bag"
@@ -4080,11 +3890,6 @@
     "a": "The top coat"
    },
    {
-    "img": "ring",
-    "q": "On which hand and finger does an engagement ring traditionally go in the US?",
-    "a": "The left hand, ring finger (fourth finger)"
-   },
-   {
     "img": "dress",
     "q": "A dress fitted at the top that flares out from the waist like a ball gown is called a what?",
     "a": "A fit-and-flare (or ball gown)"
@@ -4093,11 +3898,6 @@
     "img": "bikini",
     "q": "A swimsuit with a top that has no straps is called a what?",
     "a": "A bandeau"
-   },
-   {
-    "img": "ballet-shoes",
-    "q": "The hard-toed shoes ballerinas use to dance on tiptoe are called what?",
-    "a": "Pointe shoes"
    },
    {
     "img": "lotion-bottle",
@@ -4140,34 +3940,14 @@
     "a": "Hermès"
    },
    {
-    "img": "sewing-needle",
-    "q": "The little metal cap you wear on your finger while sewing is called a what?",
-    "a": "A thimble"
-   },
-   {
-    "img": "yarn",
-    "q": "Making fabric from yarn with one hook (not two needles) is called what?",
-    "a": "Crochet"
-   },
-   {
     "img": "gem-stone",
     "q": "Which gemstone is green and the birthstone for May?",
     "a": "Emerald"
    },
    {
-    "img": "sari",
-    "q": "A sari is traditional clothing from which country?",
-    "a": "India"
-   },
-   {
     "img": "hair-pick",
     "q": "A big round puffy hairstyle a hair pick is often used on is called an what?",
     "a": "An Afro"
-   },
-   {
-    "img": "shortcake",
-    "q": "Strawberry shortcake is usually topped with what?",
-    "a": "Whipped cream"
    },
    {
     "img": "sponge",
@@ -4183,6 +3963,126 @@
     "img": "dress",
     "q": "Which designer made Princess Diana's famous 'revenge dress'?",
     "a": "Christina Stambolian"
+   },
+   {
+    "img": "lipstick",
+    "q": "A lip color that soaks in and stays all day, like a dye, is called a lip what?",
+    "a": "A lip stain"
+   },
+   {
+    "img": "handbag",
+    "q": "A small, structured handbag carried by its short top handle is called a what?",
+    "a": "A satchel (top-handle bag)"
+   },
+   {
+    "img": "nail-polish",
+    "q": "Which nail shape is rounded at the tip and narrow like a nut?",
+    "a": "Almond"
+   },
+   {
+    "img": "ring",
+    "q": "A ring covered all the way around in diamonds is called an what band?",
+    "a": "An eternity band"
+   },
+   {
+    "img": "dress",
+    "q": "A straight, simple dress that hangs from the shoulders with no waist is called a what?",
+    "a": "A shift dress"
+   },
+   {
+    "img": "bikini",
+    "q": "A light wrap tied around the waist over a swimsuit is called a what?",
+    "a": "A sarong"
+   },
+   {
+    "img": "ballet-shoes",
+    "q": "The stiff, flat skirt a ballerina wears is called a what?",
+    "a": "A tutu"
+   },
+   {
+    "img": "lotion-bottle",
+    "q": "A product that gives you a tan with no sun is called a what?",
+    "a": "Self-tanner"
+   },
+   {
+    "img": "mirror",
+    "q": "A table with a mirror where you sit to do your makeup is called a what?",
+    "a": "A vanity"
+   },
+   {
+    "img": "ribbon",
+    "q": "A ribbon with ridges across it, used on hats and gifts, is called what?",
+    "a": "Grosgrain"
+   },
+   {
+    "img": "bouquet",
+    "q": "The filler flower with clouds of tiny white blooms is called what?",
+    "a": "Baby's breath"
+   },
+   {
+    "img": "kimono",
+    "q": "The wooden sandals worn with a kimono are called what?",
+    "a": "Geta"
+   },
+   {
+    "img": "teapot",
+    "q": "A fancy afternoon meal of tea, tiny sandwiches and cakes is called what?",
+    "a": "High tea (afternoon tea)"
+   },
+   {
+    "img": "clutch-bag",
+    "q": "A small bag that hangs from a loop around your wrist is called a what?",
+    "a": "A wristlet"
+   },
+   {
+    "img": "sewing-needle",
+    "q": "The tool that picks out stitches you got wrong is called a what?",
+    "a": "A seam ripper"
+   },
+   {
+    "img": "yarn",
+    "q": "One loop of yarn on a knitting needle is called a what?",
+    "a": "A stitch"
+   },
+   {
+    "img": "gem-stone",
+    "q": "Which purple gem is the birthstone for February?",
+    "a": "Amethyst"
+   },
+   {
+    "img": "sari",
+    "q": "The red dot some Indian women wear on the forehead is called a what?",
+    "a": "A bindi"
+   },
+   {
+    "img": "scarf",
+    "q": "A scarf sewn into a closed loop is called an what scarf?",
+    "a": "An infinity scarf"
+   },
+   {
+    "img": "hair-pick",
+    "q": "Rows of tight braids lying flat against the head are called what?",
+    "a": "Cornrows"
+   },
+   {
+    "img": "shortcake",
+    "q": "A small tart filled with custard and topped with fruit is called a what?",
+    "a": "A fruit tart"
+   },
+   {
+    "img": "soap",
+    "q": "A net ball that makes body wash foam up in the shower is called a what?",
+    "a": "A loofah (shower pouf)"
+   },
+   {
+    "img": "sponge",
+    "q": "A rough stone used to scrub hard skin off your feet is called a what?",
+    "a": "A pumice stone"
+   },
+   {
+    "img": "shopping-bags",
+    "q": "Buying things to cheer yourself up is called what kind of therapy?",
+    "a": "Retail therapy"
    }
   ],
   "lives": [
