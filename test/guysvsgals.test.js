@@ -41,20 +41,23 @@ function setup({ guys = 2, gals = 2, hosts = 0, sets = SETS } = {}) {
   return { room, g, G, W, wait, msg, view, begin, reader, judge, at, now: () => t };
 }
 
-test('the Family set is valid and has all five decks for both sides, with their pictures', () => {
+// A family's own set can still carry Our Lives cards (the shipped sets have none: Jason, "It's trivia").
+const LIVES = [1, 2, 3, 4].map((n) => ({ q: `My pick number ${n} is:`, choices: ['This', 'That', 'The other'] }));
+const HOME = { home: { ...SETS.family, title: 'Our own', guyStuff: { ...SETS.family.guyStuff, lives: LIVES }, galStuff: { ...SETS.family.galStuff, lives: LIVES } } };
+
+test('the Family set is valid and has its decks for both sides, with their pictures', () => {
   for (const set of Object.values(SETS)) assert.equal(validateSet(set), true);
   const fam = SETS.family;
   for (const half of [fam.guyStuff, fam.galStuff]) {
     assert.ok(half.facts.length >= 130, 'facts');
     assert.ok(half.stuff.length >= 100, 'stuff');
     assert.ok(half.pics.length >= 60, 'pics');
-    assert.ok(half.lives.length >= 65, 'lives');
+    assert.equal(half.lives, undefined, 'no Our Lives: every card is trivia');
     assert.ok(half.moves.length >= 90, 'moves');
     for (const p of half.pics) {
       assert.ok(existsSync(`public/games/guysvsgals/pics/${p.img}.png`), p.img);
       assert.ok(existsSync(`tv-app/FamilyGameNight/Assets.xcassets/GvgPic-${p.img}.imageset/${p.img}.png`), p.img);
     }
-    for (const l of half.lives) assert.equal(new Set(l.choices).size, 3, l.q);
   }
 });
 
@@ -272,7 +275,7 @@ test('Our Pics: a picture comes with the question', () => {
 });
 
 test('Our Lives: the reader picks in secret, the team guesses on their phones', () => {
-  const { room, g, G, W, begin, msg, view, reader, at, wait } = setup();
+  const { room, g, G, W, begin, msg, view, reader, at, wait } = setup({ sets: HOME });
   begin();
   at(3);
   assert.equal(g.card.deck, 'lives');
@@ -298,7 +301,7 @@ test('Our Lives: the reader picks in secret, the team guesses on their phones', 
 });
 
 test('Our Lives challenge: the reader’s teammates guess instead', () => {
-  const { g, G, W, begin, msg, reader, at } = setup();
+  const { g, G, W, begin, msg, reader, at } = setup({ sets: HOME });
   begin();
   at(-3);   // three spaces toward the Guys: Our Lives for the Gals too
   msg(reader(), { t: 'secret', choice: 0 });
@@ -675,18 +678,38 @@ test('the race survives a restart while a team is picking its space', () => {
   assert.equal(pawn(s2.g, 'gals').at, 1);
 });
 
+test('with no Our Lives cards in play, its space is a second Our Facts space and the deck is not listed', () => {
+  const { room, g, begin, at } = setup();
+  assert.deepEqual(room.publicView().game.path, ['facts', 'stuff', 'pics', 'facts', 'moves', 'any']);
+  assert.deepEqual(room.publicView().game.decks.map((d) => d.id), ['facts', 'stuff', 'pics', 'moves']);
+  begin();
+  at(3);
+  assert.equal(g.card.deck, 'facts');
+  const own = setup({ sets: HOME });
+  assert.equal(own.room.publicView().game.path[3], 'lives');
+  assert.equal(own.room.publicView().game.decks.length, 5);
+});
+
 // ---------- the grown-up set ----------
 test('the Grown-Ups set is valid, is where new games start, and the first player can switch sets from a phone', () => {
   assert.equal(validateSet(SETS.grownups), true);
   // Jason: "make sure none of the questions repeat". Nothing is asked twice anywhere in the set, in either half.
   const seen = new Set();
   for (const half of [SETS.grownups.guyStuff, SETS.grownups.galStuff]) {
-    assert.ok(half.facts.length >= 140 && half.stuff.length >= 130 && half.lives.length >= 30 && half.moves.length >= 36 && half.pics.length >= 14);
-    for (const deck of ['facts', 'stuff', 'pics', 'lives', 'moves']) {
+    assert.ok(half.facts.length >= 140 && half.stuff.length >= 130 && half.moves.length >= 36 && half.pics.length >= 14);
+    for (const deck of ['facts', 'stuff', 'pics', 'moves']) {
       for (const q of half[deck]) {
         const key = (q.q || q.m).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         assert.ok(!seen.has(key), `asked twice: ${q.q || q.m}`);
         seen.add(key);
+      }
+    }
+  }
+  // Jason: "It's trivia". Every question has one right answer: no debate or opinion prompts in any set.
+  for (const set of Object.values(SETS)) {
+    for (const half of [set.guyStuff, set.galStuff]) {
+      for (const q of [...half.facts, ...half.stuff, ...half.pics]) {
+        assert.ok(q.a && !/no right answer/i.test(q.a) && q.cat !== 'Funny Debate', `no right answer: ${q.q}`);
       }
     }
   }

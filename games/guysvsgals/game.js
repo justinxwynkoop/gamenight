@@ -302,10 +302,17 @@ export class GuysVsGalsGame {
     this.room.memory.save(GAME, { ...memory, seen: [...seen, cardKey(deckName, pick)].slice(-MAX_SEEN) });
     return pick;
   }
+  /** Our Lives is not trivia (Jason: "It's trivia"), so the shipped sets carry none; a family's own set still can.
+   *  With no Our Lives cards in play its space on the path is a second Our Facts space, and the deck is not listed. */
+  #hasLives() {
+    if (this.deck) return ['guyStuff', 'galStuff'].some((part) => this.deck[part].lives.length > 0);
+    return this.#sets().some((set) => ['guyStuff', 'galStuff'].some((part) => (set?.[part]?.lives ?? []).length > 0));
+  }
+  #path() { return this.#hasLives() ? PATH.slice() : PATH.map((d) => (d === 'lives' ? 'facts' : d)); }
   /** The deck a space draws from, for the side answering: a missing deck falls back to Facts, then Stuff. */
   #deckFor(side, space) {
     const piles = this.deck[SIDES[side].asks];
-    let want = PATH[Math.min(GREEN, Math.abs(space))];
+    let want = this.#path()[Math.min(GREEN, Math.abs(space))];
     if (want === 'any') {
       const options = ['facts', 'stuff', 'pics', 'lives'].filter((d) => piles[d].length);
       want = options[Math.floor(this.room.rng() * options.length)] ?? 'facts';
@@ -1054,8 +1061,8 @@ export class GuysVsGalsGame {
     const v = {
       game: GAME, scoreFormat: 'none', lobbyTitle: NAME,
       phase: this.phase, status: this.phase, hosted: this.room.hosts > 0,
-      pos: this.pos, green: GREEN, path: PATH.slice(), greenColor: GREEN_COLOR, first: FIRST,
-      decks: DECK_ORDER.map((id) => ({ id, ...DECKS[id] })),
+      pos: this.pos, green: GREEN, path: this.#path(), greenColor: GREEN_COLOR, first: FIRST,
+      decks: DECK_ORDER.filter((id) => id !== 'lives' || this.#hasLives()).map((id) => ({ id, ...DECKS[id] })),
       teams: this.#teamsView(), turn: this.turn, trophy: this.trophyN, target: this.settings.target,
       settings: { ...this.settings }, mode: this.settings.mode,
       line: this.#line(),
