@@ -26,12 +26,31 @@ async function downloadSeason(season) {
 }
 
 /**
+ * Only one page in a browser may run the room. Every tab shares the saved room and its code, so a second TV tab would
+ * run a second copy of the same game: each copy deals its own cards and both answer the phones, which then flip from
+ * one question to the other. A later page waits here (after `onWaiting`) and takes over when the first one closes.
+ */
+async function onlyTv(onWaiting) {
+  const locks = globalThis.navigator?.locks;
+  if (!locks) return;
+  const forever = () => new Promise(() => {});
+  const mine = await new Promise((resolve) => {
+    locks.request('gn-tv', { ifAvailable: true }, (lock) => { resolve(!!lock); return lock ? forever() : undefined; }).catch(() => resolve(true));
+  });
+  if (mine) return;
+  onWaiting();
+  await new Promise((resolve) => { locks.request('gn-tv', () => { resolve(); return forever(); }).catch(() => resolve()); });
+}
+
+/**
  * config     { url, key }: the Supabase project and its publishable key
  * game       'jeopardy', 'feud', 'spynight', 'piechase' or 'guysvsgals' to start that game (null: the host picks)
  * onState    (view) => void, what the TV shows
  * onStatus   (phonesConnected: boolean, issue: string | null) => void
+ * onWaiting  () => void, the game is already open in another tab; this page takes over when that one closes
  */
-export async function hostTv({ config, game = null, onState, onStatus = () => {} }) {
+export async function hostTv({ config, game = null, onState, onStatus = () => {}, onWaiting = () => {} }) {
+  await onlyTv(onWaiting);
   let content = {};
   try { content = await (await fetch('/sets.json', { cache: 'no-cache' })).json(); } catch { /* no shipped sets: the editor still works */ }
 
