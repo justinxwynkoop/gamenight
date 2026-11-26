@@ -4947,11 +4947,12 @@
     ]
   };
   var T4 = {
-    result: 4200,
+    // Jason (Nov 26): "sometimes the answer goes away too fast". The answer stays up long enough to read out loud.
+    result: 7e3,
     // a miss (and the answer), before the other team's card
-    right: 2200,
-    // a right answer on a spoken card: a quick beat, then the same team plays on
-    wild: 6500,
+    right: 4500,
+    // a right answer on a spoken card: the answer, then the same team plays on
+    wild: 8500,
     // the same, with a wild card or a prisoner to read
     trophy: 5200,
     // a trophy is won, before the next one goes on START

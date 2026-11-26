@@ -106,9 +106,10 @@ export const WILD_CARDS = {
 };
 
 export const T = {
-  result: 4200,        // a miss (and the answer), before the other team's card
-  right: 2200,         // a right answer on a spoken card: a quick beat, then the same team plays on
-  wild: 6500,          // the same, with a wild card or a prisoner to read
+  // Jason (Nov 26): "sometimes the answer goes away too fast". The answer stays up long enough to read out loud.
+  result: 7000,        // a miss (and the answer), before the other team's card
+  right: 4500,         // a right answer on a spoken card: the answer, then the same team plays on
+  wild: 8500,          // the same, with a wild card or a prisoner to read
   trophy: 5200,        // a trophy is won, before the next one goes on START
   moves: 60000,        // the clock on a charade
   move: 20000,         // the race: picking the space to step onto, before the pawn steps by itself
