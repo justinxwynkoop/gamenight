@@ -40,11 +40,6 @@
    },
    {
     "cat": "Sports",
-    "q": "Why was Pete Rose banned from baseball for life?",
-    "a": "Betting on games"
-   },
-   {
-    "cat": "Sports",
     "q": "In baseball, what batting average is the 'Mendoza Line'?",
     "a": ".200"
    },
@@ -105,11 +100,6 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Pulp Fiction, what do they call a Quarter Pounder with Cheese in Paris?",
-    "a": "A Royale with Cheese"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "Which actor asks 'Funny how? Like a clown?' in Goodfellas?",
     "a": "Joe Pesci"
    },
@@ -140,11 +130,6 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Step Brothers, what is Brennan warned never to touch?",
-    "a": "Dale's drum set"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Superbad, what single name is on Fogell's fake ID?",
     "a": "McLovin"
    },
@@ -161,7 +146,7 @@
    {
     "cat": "Movies & TV",
     "q": "In Tommy Boy, what does the family company make?",
-    "a": "Brake pads (auto parts)"
+    "a": "Brake pads"
    },
    {
     "cat": "Movies & TV",
@@ -180,18 +165,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Scarface, what does Tony Montana call his grenade launcher?",
-    "a": "His 'little friend'"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Rocky IV, who kills Apollo Creed in the ring?",
     "a": "Ivan Drago"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Anchorman, what gets punted off a bridge by an angry biker?",
-    "a": "Ron's dog, Baxter"
    },
    {
     "cat": "Movies & TV",
@@ -284,74 +259,14 @@
     "a": "The Konami Code"
    },
    {
-    "cat": "Sports",
-    "q": "In baseball, what does a balk generally involve?",
-    "a": "An illegal pitching motion that can cause runners to advance"
-   },
-   {
-    "cat": "Sports",
-    "q": "In golf, what is an albatross?",
-    "a": "Three strokes under par on a hole"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is the warning track in baseball made for?",
-    "a": "To warn outfielders they are nearing the wall"
-   },
-   {
-    "cat": "Sports",
-    "q": "In basketball, what is a 'sixth man'?",
-    "a": "A team's leading or prominent substitute, often the first player off the bench"
-   },
-   {
-    "cat": "Sports",
-    "q": "In soccer, what does a clean sheet mean?",
-    "a": "A team conceded no goals"
-   },
-   {
-    "cat": "Tech & Gaming",
-    "q": "What does FPS mean in video games?",
-    "a": "Frames per second"
-   },
-   {
     "cat": "Tech & Gaming",
     "q": "What does 'NPC' stand for in gaming?",
     "a": "Non-player character"
    },
    {
     "cat": "Tech & Gaming",
-    "q": "What does a GPU primarily handle?",
-    "a": "Graphics and highly parallel computations"
-   },
-   {
-    "cat": "Tech & Gaming",
-    "q": "In gaming, what is 'aggro'?",
-    "a": "An enemy's attention or aggression directed toward a player"
-   },
-   {
-    "cat": "Tech & Gaming",
     "q": "What does 'LAN' stand for?",
     "a": "Local Area Network"
-   },
-   {
-    "cat": "Tech & Gaming",
-    "q": "What is a mechanical keyboard switch?",
-    "a": "An individual physical switch beneath a key that registers a keystroke"
-   },
-   {
-    "cat": "Tech & Gaming",
-    "q": "What does 'ping' measure in online gaming?",
-    "a": "Network latency, usually in milliseconds"
-   },
-   {
-    "cat": "Tech & Gaming",
-    "q": "What is a battle pass?",
-    "a": "A progression system that unlocks rewards as players earn experience or complete challenges"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "In baseball scoring, what does a 6-4-3 double play indicate?",
-    "a": "Shortstop to second baseman to first baseman"
    },
    {
     "cat": "Hard Mode",
@@ -365,18 +280,8 @@
    },
    {
     "cat": "Hard Mode",
-    "q": "In poker, what beats a flush?",
-    "a": "A full house, four of a kind, straight flush, or royal flush"
-   },
-   {
-    "cat": "Hard Mode",
     "q": "What is the name for a golf score of one under par on a hole?",
     "a": "Birdie"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What does a car's OBD-II port allow?",
-    "a": "Access to onboard diagnostic information"
    },
    {
     "cat": "Hard Mode",
@@ -386,7 +291,7 @@
    {
     "cat": "Hard Mode",
     "q": "What does 'GT' commonly stand for in a car model name?",
-    "a": "Gran Turismo (or Grand Touring)"
+    "a": "Gran Turismo"
    },
    {
     "cat": "Science & Weird Facts",
@@ -395,43 +300,18 @@
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why does solid ice float in liquid water when almost every other substance sinks in its own liquid form?",
-    "a": "Hydrogen bonds arrange frozen water into an open hexagonal crystal lattice that is less dense than liquid water"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "What psychological phenomenon explains why humans see faces in electrical outlets, burnt toast, or the moon?",
-    "a": "Pareidolia (a specific type of apophenia)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why do onions make your eyes water when sliced, and how does chilling them beforehand reduce the sting?",
-    "a": "Damaged cells release enzymes forming a volatile gas; cold temperatures slow the chemical reaction and vaporization"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Which animal produces cube-shaped poop, and why is that geometric shape evolutionarily useful?",
-    "a": "Wombats; flat sides keep the droppings from rolling away when marking territory"
+    "a": "Pareidolia"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "Which planet in our solar system is the hottest, even though it isn't the closest to the Sun?",
-    "a": "Venus (its thick carbon dioxide atmosphere traps heat in a runaway greenhouse effect at ~867°F / 464°C)"
+    "a": "Venus"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "What is the largest organ of the human body?",
     "a": "The skin"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "How long does it take sunlight to travel from the Sun to Earth?",
-    "a": "About 8 minutes and 20 seconds"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why do humans get 'brain freeze' when eating ice cream too fast?",
-    "a": "Sudden cold on the roof of the mouth triggers rapid blood vessel constriction and rebound dilation, sending pain signals along the trigeminal nerve"
    },
    {
     "cat": "Science & Weird Facts",
@@ -445,28 +325,13 @@
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why do fingers and toes wrinkle after soaking in a bathtub or pool?",
-    "a": "An evolutionary nervous-system response that constricts blood vessels under the skin, creating tread-like channels for better grip on wet surfaces"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "Which animal sleeps while holding hands so they don't drift apart in ocean currents?",
     "a": "Sea otters"
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why can't astronauts burp properly in zero gravity?",
-    "a": "Without gravity to separate heavier liquid/food from lighter gas in the stomach, trying to burp results in a 'wet burp'"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "What is the most abundant gas in Earth's atmosphere?",
-    "a": "Nitrogen (~78%, followed by oxygen at ~21%)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "What is 'absolute zero' in Celsius or Fahrenheit?",
-    "a": "-273.15°C (-459.67°F / 0 Kelvin), where atomic thermal motion reaches its minimum"
+    "a": "Nitrogen"
    },
    {
     "cat": "Science & Weird Facts",
@@ -475,18 +340,8 @@
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why does honey never spoil, even when found inside 3,000-year-old Egyptian tombs?",
-    "a": "Its extremely low water content, high acidity, and natural hydrogen peroxide prevent bacteria and mold from surviving"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "Which bone in the human body is the longest and strongest?",
-    "a": "The femur (thigh bone)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why do flamingos turn pink?",
-    "a": "From carotenoid pigments in the brine shrimp and blue-green algae they eat, they hatch gray/white"
+    "a": "The femur"
    },
    {
     "cat": "Science & Weird Facts",
@@ -495,18 +350,8 @@
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why do dogs have wet noses?",
-    "a": "A thin layer of mucus helps trap and dissolve scent molecules, boosting their sense of smell and helping regulate body heat"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "Which marine animal has a spiral tusk that is actually an overgrown left canine tooth?",
     "a": "The narwhal"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why do knuckles crack when you pull or bend them?",
-    "a": "Rapidly stretching the joint capsule drops pressure in synovial fluid, causing dissolved gas bubbles to collapse/pop"
    },
    {
     "cat": "Science & Weird Facts",
@@ -516,12 +361,12 @@
    {
     "cat": "History & Money",
     "q": "Which U.S. state has the longest coastline by a landslide?",
-    "a": "Alaska (over 6,600 miles of general coastline, and over 33,000 miles of tidal shoreline)"
+    "a": "Alaska"
    },
    {
     "cat": "History & Money",
     "q": "In 1932, Australia deployed soldiers armed with Lewis machine guns to fight what flightless bird, and lost?",
-    "a": "Emus (The Great Emu War)"
+    "a": "Emus"
    },
    {
     "cat": "History & Money",
@@ -530,23 +375,8 @@
    },
    {
     "cat": "History & Money",
-    "q": "Which two countries share the longest international land border in the world?",
-    "a": "The United States and Canada"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What does 'APR' stand for on a credit card statement, and why is carrying a balance at 24% APR brutal?",
-    "a": "Annual Percentage Rate; interest compounds daily on unpaid balances, rapidly snowballing debt"
-   },
-   {
-    "cat": "History & Money",
     "q": "Which country is both a continent and a sovereign nation?",
     "a": "Australia"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What does '401(k)' get its name from?",
-    "a": "Section 401(k) of the U.S. Internal Revenue Code"
    },
    {
     "cat": "History & Money",
@@ -556,22 +386,12 @@
    {
     "cat": "History & Money",
     "q": "Which river is the longest in the world, Nile or Amazon?",
-    "a": "The Nile (though the Amazon carries far more water by volume)"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What is a 'fiduciary' financial advisor, and why does that word matter when hiring someone to manage your money?",
-    "a": "A fiduciary is legally and ethically obligated to act strictly in your best financial interest rather than pushing high-commission products"
+    "a": "The Nile"
    },
    {
     "cat": "History & Money",
     "q": "What year did the Berlin Wall fall, symbolizing the end of the Cold War division of Germany?",
-    "a": "1989 (November 9, 1989)"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What is the difference between a Roth IRA and a Traditional IRA when it comes to taxes?",
-    "a": "Traditional IRA gives a tax deduction upfront and taxes withdrawals in retirement; Roth IRA uses after-tax dollars now so qualified withdrawals in retirement are 100% tax-free"
+    "a": "1989"
    },
    {
     "cat": "History & Money",
@@ -585,33 +405,13 @@
    },
    {
     "cat": "History & Money",
-    "q": "What is 'dollar-cost averaging' in investing?",
-    "a": "Investing a fixed dollar amount on a regular schedule regardless of market highs or lows, reducing the risk of mistiming the market"
-   },
-   {
-    "cat": "History & Money",
     "q": "Who was the first woman to fly solo across the Atlantic Ocean?",
-    "a": "Amelia Earhart (1932)"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What does a 'credit utilization ratio' measure, and what percentage do credit experts recommend staying under?",
-    "a": "How much of your available revolving credit limit you're currently using; staying under 30% helps your credit score"
-   },
-   {
-    "cat": "History & Money",
-    "q": "In 18th-century Europe, why were pineapples so outrageously expensive that wealthy hosts rented them for parties just to carry around?",
-    "a": "They couldn't be grown locally in cold European climates and rarely survived long sea voyages, making them the ultimate status symbol"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What is an 'ETF' in the stock market?",
-    "a": "Exchange-Traded Fund, a basket of stocks, bonds, or assets that trades on an exchange like a single stock"
+    "a": "Amelia Earhart"
    },
    {
     "cat": "History & Money",
     "q": "What is the capital city of Australia, and why isn't it Sydney or Melbourne?",
-    "a": "Canberra (built as a planned compromise capital between rival cities Sydney and Melbourne)"
+    "a": "Canberra"
    },
    {
     "cat": "History & Money",
@@ -622,11 +422,6 @@
     "cat": "History & Money",
     "q": "Which mountain range separates Europe from Asia?",
     "a": "The Ural Mountains"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What is the difference between a 'debit card' and a 'credit card' regarding fraud liability and whose money is spent immediately?",
-    "a": "Debit pulls directly from your checking account; credit borrows from the bank's line of credit and offers stronger federal zero-liability fraud protection"
    },
    {
     "cat": "History & Money",
@@ -641,7 +436,7 @@
    {
     "cat": "Movies, Music & Games",
     "q": "In Mario Kart, what infamous item homes in on the racer in first place and explodes on impact?",
-    "a": "The Blue Shell (Spiny Shell)"
+    "a": "The Blue Shell"
    },
    {
     "cat": "Movies, Music & Games",
@@ -652,11 +447,6 @@
     "cat": "Movies, Music & Games",
     "q": "What is the most stolen food item globally?",
     "a": "Cheese"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "What does 'RSVP' literally stand for in French?",
-    "a": "Répondez s'il vous plaît ('Please respond')"
    },
    {
     "cat": "Movies, Music & Games",
@@ -680,18 +470,8 @@
    },
    {
     "cat": "Movies, Music & Games",
-    "q": "In Star Wars, what famous misquoted line does Darth Vader actually say to Luke Skywalker in The Empire Strikes Back?",
-    "a": "'No, I am your father' (never 'Luke, I am your father')"
-   },
-   {
-    "cat": "Movies, Music & Games",
     "q": "In The Legend of Zelda, what is the name of the green-clad hero you actually play as?",
-    "a": "Link (Zelda is the princess)"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "In Titanic, why did Rose and Jack supposedly not both fit on the floating wooden door, and what did James Cameron say about it?",
-    "a": "Cameron noted it wasn't size, it was buoyancy (both climbing on would submerge it in freezing water)"
+    "a": "Link"
    },
    {
     "cat": "Movies, Music & Games",
@@ -702,11 +482,6 @@
     "cat": "Movies, Music & Games",
     "q": "In The Matrix, which color pill does Neo take to learn the truth about reality?",
     "a": "The red pill"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "In Pac-Man, what are the names of the four ghosts?",
-    "a": "Blinky, Pinky, Inky, and Clyde"
    },
    {
     "cat": "Movies, Music & Games",
@@ -721,17 +496,7 @@
    {
     "cat": "Movies, Music & Games",
     "q": "In Shrek, what does Donkey famously announce he is making in the morning?",
-    "a": "Waffles ('And in the morning, I'm making waffles!')"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "In Super Smash Bros., what happens when your damage percentage gets super high?",
-    "a": "You get knocked farther off the stage when hit, making it easier to get KO'd"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "In Finding Nemo, what is the exact street address written on the diver's goggles?",
-    "a": "P. Sherman, 42 Wallaby Way, Sydney"
+    "a": "Waffles"
    },
    {
     "cat": "Movies, Music & Games",
@@ -778,7 +543,12 @@
    {
     "cat": "Booze & Bars",
     "q": "What two drinks make a boilermaker?",
-    "a": "A shot of whiskey and a beer"
+    "a": "A shot of whiskey and a beer",
+    "choices": [
+     "Vodka and an energy drink",
+     "A shot of whiskey and a beer",
+     "Rum and cola"
+    ]
    },
    {
     "cat": "Booze & Bars",
@@ -803,27 +573,32 @@
    {
     "cat": "Booze & Bars",
     "q": "What is a growler?",
-    "a": "A jug for taking draft beer home"
-   },
-   {
-    "cat": "Booze & Bars",
-    "q": "How do you 'shotgun' a beer?",
-    "a": "Punch a hole in the side of the can and drink it from there"
-   },
-   {
-    "cat": "Booze & Bars",
-    "q": "What is a kegerator?",
-    "a": "A fridge that keeps a keg cold and pours draft beer"
+    "a": "A jug for taking draft beer home",
+    "choices": [
+     "The foam on top of a beer",
+     "A jug for taking draft beer home",
+     "An extra-strong dark beer"
+    ]
    },
    {
     "cat": "Booze & Bars",
     "q": "What does ABV on a beer label stand for?",
-    "a": "Alcohol by volume"
+    "a": "Alcohol by volume",
+    "choices": [
+     "Alcohol by volume",
+     "Average barrel value",
+     "Aged before vending"
+    ]
    },
    {
     "cat": "Booze & Bars",
     "q": "What is a cigar humidor for?",
-    "a": "Keeping cigars from drying out"
+    "a": "Keeping cigars from drying out",
+    "choices": [
+     "Keeping cigars from drying out",
+     "Cutting the tip off a cigar",
+     "Lighting a cigar evenly"
+    ]
    },
    {
     "cat": "Poker Night",
@@ -833,17 +608,27 @@
    {
     "cat": "Poker Night",
     "q": "What is the best starting hand in Texas Hold'em?",
-    "a": "Two aces (pocket rockets)"
+    "a": "Two aces"
    },
    {
     "cat": "Poker Night",
     "q": "In poker, what is a 'tell'?",
-    "a": "A habit that gives away what you are holding"
+    "a": "A habit that gives away your hand",
+    "choices": [
+     "A habit that gives away your hand",
+     "A bet made without looking",
+     "The last card dealt"
+    ]
    },
    {
     "cat": "Poker Night",
     "q": "In blackjack, what do you do when you 'double down'?",
-    "a": "Double your bet and take exactly one more card"
+    "a": "Double your bet and take one more card",
+    "choices": [
+     "Split your cards into two hands",
+     "Give up half your bet and fold",
+     "Double your bet and take one more card"
+    ]
    },
    {
     "cat": "Poker Night",
@@ -861,21 +646,6 @@
     "a": "The clutch"
    },
    {
-    "cat": "Cars & Trucks",
-    "q": "What shape gives a HEMI engine its name?",
-    "a": "Half-sphere (hemispherical) combustion chambers"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is a 'sleeper' car?",
-    "a": "One that looks slow and plain but is secretly fast"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does 'rolling coal' mean?",
-    "a": "Rigging a diesel truck to belch black smoke"
-   },
-   {
     "cat": "Garage & Tools",
     "q": "What does the WD in WD-40 stand for?",
     "a": "Water displacement"
@@ -883,12 +653,12 @@
    {
     "cat": "Garage & Tools",
     "q": "How big is a '2 by 4' really?",
-    "a": "1.5 by 3.5 inches"
-   },
-   {
-    "cat": "Garage & Tools",
-    "q": "What does the choke do on a lawn mower?",
-    "a": "Cuts the air so a cold engine will start"
+    "a": "1.5 by 3.5 inches",
+    "choices": [
+     "2.5 by 4.5 inches",
+     "1.5 by 3.5 inches",
+     "2 by 4 inches exactly"
+    ]
    },
    {
     "cat": "Garage & Tools",
@@ -896,79 +666,74 @@
     "a": "A reciprocating saw"
    },
    {
-    "cat": "Garage & Tools",
-    "q": "What is a guy doing when he 'measures twice'?",
-    "a": "Making sure before he cuts once"
-   },
-   {
-    "cat": "Grill & Smoker",
-    "q": "In barbecue, what is 'the stall'?",
-    "a": "When the meat's temperature stops rising for hours"
-   },
-   {
-    "cat": "Grill & Smoker",
-    "q": "What is a reverse sear?",
-    "a": "Cook it low and slow first, then sear it at the end"
-   },
-   {
     "cat": "Grill & Smoker",
     "q": "About what temperature inside is a medium-rare steak?",
-    "a": "130 to 135 degrees"
+    "a": "130 to 135 degrees",
+    "choices": [
+     "130 to 135 degrees",
+     "110 to 115 degrees",
+     "155 to 160 degrees"
+    ]
    },
    {
     "cat": "Grill & Smoker",
     "q": "What are 'burnt ends' cut from?",
-    "a": "The point of a smoked brisket"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "What does it mean to 'go commando'?",
-    "a": "To wear no underwear"
+    "a": "The point of a smoked brisket",
+    "choices": [
+     "The tips of pork ribs",
+     "The skin of a smoked chicken",
+     "The point of a smoked brisket"
+    ]
    },
    {
     "cat": "Guy Code",
     "q": "What is 'calling shotgun'?",
-    "a": "Claiming the front passenger seat"
+    "a": "Claiming the front passenger seat",
+    "choices": [
+     "Picking the music",
+     "Claiming the front passenger seat",
+     "Offering to drive"
+    ]
    },
    {
     "cat": "Guy Code",
     "q": "What is a 'mulligan'?",
-    "a": "A free do-over shot in golf"
+    "a": "A free do-over shot in golf",
+    "choices": [
+     "A hole in one",
+     "A putt that lips out",
+     "A free do-over shot in golf"
+    ]
    },
    {
     "cat": "Guy Code",
     "q": "In fantasy football, what does PPR stand for?",
-    "a": "Points per reception"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "What are 'the yips'?",
-    "a": "Suddenly being unable to make an easy shot, like a short putt"
+    "a": "Points per reception",
+    "choices": [
+     "Points per reception",
+     "Passing plays run",
+     "Player performance rating"
+    ]
    },
    {
     "cat": "Guy Code",
     "q": "What is a 'Windsor'?",
-    "a": "A way of tying a necktie"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "What is a 'man cold'?",
-    "a": "A small cold a man acts like he is dying from"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "In the gym, what is 'skipping leg day'?",
-    "a": "Only ever working out the upper body"
-   },
-   {
-    "cat": "Guy Code",
-    "q": "What is a guy's 'spank bank'?",
-    "a": "The mental pictures he saves for private time"
+    "a": "A way of tying a necktie",
+    "choices": [
+     "A style of dress shoe",
+     "A cut of suit jacket",
+     "A way of tying a necktie"
+    ]
    },
    {
     "cat": "Outdoors",
     "q": "What does it mean when a hunter talks about a 'ten-point buck'?",
-    "a": "A deer with ten tips on its antlers"
+    "a": "A deer with ten tips on its antlers",
+    "choices": [
+     "A deer worth ten points in a contest",
+     "A deer with ten tips on its antlers",
+     "A deer that weighs a thousand pounds"
+    ]
    },
    {
     "cat": "Outdoors",
@@ -978,57 +743,37 @@
    {
     "cat": "Outdoors",
     "q": "What is a 'lunker'?",
-    "a": "A very big fish"
+    "a": "A very big fish",
+    "choices": [
+     "A heavy fishing weight",
+     "A snagged line",
+     "A very big fish"
+    ]
    },
    {
     "cat": "Outdoors",
     "q": "What is 'noodling'?",
-    "a": "Catching catfish with your bare hands"
+    "a": "Catching catfish with your bare hands",
+    "choices": [
+     "Fishing with extra-thin line",
+     "Poking a campfire with a stick",
+     "Catching catfish with your bare hands"
+    ]
    },
    {
     "cat": "Cars & Engines",
     "q": "What does a car's differential allow the wheels on the same axle to do?",
-    "a": "Rotate at different speeds"
-   },
-   {
-    "cat": "Cars & Engines",
-    "q": "What is the purpose of a turbocharger?",
-    "a": "To force more air into the engine so it can burn more fuel and make more power"
-   },
-   {
-    "cat": "Cars & Engines",
-    "q": "What does 'oversteer' mean?",
-    "a": "The rear tires lose grip more than the front, causing the car to rotate more than intended"
-   },
-   {
-    "cat": "Cars & Engines",
-    "q": "What is a limited-slip differential designed to do?",
-    "a": "Reduce wheelspin by sending torque to the wheel with more traction"
-   },
-   {
-    "cat": "Cars & Engines",
-    "q": "What does a VIN identify?",
-    "a": "A specific motor vehicle"
+    "a": "Rotate at different speeds",
+    "choices": [
+     "Brake at the same time",
+     "Steer in opposite directions",
+     "Rotate at different speeds"
+    ]
    },
    {
     "cat": "Tools & DIY",
     "q": "What tool is commonly used to check whether a surface is level?",
-    "a": "A spirit level (bubble level)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a torque wrench measure or control?",
-    "a": "The twisting force applied to a fastener"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a pilot hole?",
-    "a": "A small starter hole drilled before driving a screw or drilling a larger hole"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is the purpose of a breaker bar?",
-    "a": "To provide extra leverage for loosening or tightening stubborn fasteners"
+    "a": "A spirit level"
    },
    {
     "cat": "Tools & DIY",
@@ -1037,203 +782,48 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What is a countersink?",
-    "a": "A conical recess that lets a screw head sit flush with or below a surface"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What is the common name for a tool that strips insulation from electrical wire?",
     "a": "Wire stripper"
    },
    {
-    "cat": "Tools & DIY",
-    "q": "What does a stud finder locate?",
-    "a": "Framing members behind a wall surface, typically studs"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is the purpose of aftershave?",
-    "a": "To soothe or condition skin after shaving; some formulas are fragranced or antiseptic"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What does 'beard oil' primarily help with?",
-    "a": "Conditioning beard hair and moisturizing the skin beneath it"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is a taper fade?",
-    "a": "A haircut where hair gradually gets shorter around the sideburns and neckline"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is the purpose of a collar stay?",
-    "a": "To keep a shirt collar crisp and in shape"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is the difference between eau de toilette and eau de parfum, generally?",
-    "a": "Eau de parfum usually has a higher fragrance-oil concentration"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is a pomade commonly used for?",
-    "a": "Styling hair, often to provide hold and shine or texture"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What does 'business casual' usually mean?",
-    "a": "A polished look less formal than a suit, such as chinos or dress pants with a collared shirt"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is a double-breasted jacket?",
-    "a": "A jacket with overlapping front panels and two parallel columns of buttons"
-   },
-   {
-    "cat": "Drinks, Food & Night Out",
-    "q": "What is the main spirit in a classic Old Fashioned?",
-    "a": "Whiskey, commonly bourbon or rye"
-   },
-   {
     "cat": "Drinks, Food & Night Out",
     "q": "What does 'neat' mean when ordering a spirit?",
-    "a": "Served by itself, without ice or mixer"
-   },
-   {
-    "cat": "Drinks, Food & Night Out",
-    "q": "What is the difference between lager and ale?",
-    "a": "They use different yeast fermentation traditions and temperatures; lager is fermented cool, ale warmer"
-   },
-   {
-    "cat": "Drinks, Food & Night Out",
-    "q": "What is a dry martini?",
-    "a": "A martini made with a relatively small amount of dry vermouth compared with gin or vodka"
-   },
-   {
-    "cat": "Drinks, Food & Night Out",
-    "q": "What does '86 it' mean in restaurant or bar slang?",
-    "a": "Remove it, stop serving it, or indicate it is unavailable"
+    "a": "By itself, no ice or mixer",
+    "choices": [
+     "Over ice",
+     "With a splash of water",
+     "By itself, no ice or mixer"
+    ]
    },
    {
     "cat": "Drinks, Food & Night Out",
     "q": "What is a flight at a brewery or bar?",
-    "a": "A small sampler of several drinks served together"
+    "a": "A small sampler of several drinks",
+    "choices": [
+     "The last drink of the night",
+     "A small sampler of several drinks",
+     "A round bought for the whole bar"
+    ]
    },
    {
     "cat": "Drinks, Food & Night Out",
     "q": "What does 'on the rocks' mean?",
-    "a": "Served over ice"
-   },
-   {
-    "cat": "Drinks, Food & Night Out",
-    "q": "What is the difference between brisket and ribeye?",
-    "a": "Brisket comes from the chest and is suited to slow cooking; ribeye comes from the rib section and is usually tender and well-marbled"
+    "a": "Served over ice",
+    "choices": [
+     "Served over ice",
+     "Served with salt on the rim",
+     "Served warm"
+    ]
    },
    {
     "cat": "Dating & Relationships",
     "q": "What does 'DTR' stand for in dating?",
-    "a": "Define the relationship"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What is 'love bombing'?",
-    "a": "Overwhelming someone with affection, attention, or grand gestures early on, sometimes manipulatively"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What does 'ghosting' mean?",
-    "a": "Suddenly ending communication without explanation"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What does 'situationship' usually describe?",
-    "a": "A romantic or sexual connection without clearly defined relationship status or commitment"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What does 'hard launch' mean on social media dating posts?",
-    "a": "Publicly revealing a relationship or partner clearly"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What does 'the ick' mean in dating slang?",
-    "a": "A sudden feeling of turn-off or loss of attraction"
-   },
-   {
-    "cat": "Dating & Relationships",
-    "q": "What is a prenup?",
-    "a": "A prenuptial agreement made before marriage that sets out certain financial or property arrangements"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What is a 'project car'?",
-    "a": "A vehicle someone is restoring, modifying, or repairing over time"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What does 'two-factor authentication' add to an account login?",
-    "a": "A second verification factor beyond the password"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What is a 'man cave' commonly meant to be?",
-    "a": "A personal hangout or hobby space, often in a garage, basement, or spare room"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What is a 'dad bod'?",
-    "a": "A slang term for a relatively average, somewhat soft male physique"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What does 'wingman' mean?",
-    "a": "A friend who helps someone socialize or pursue a romantic interest"
-   },
-   {
-    "cat": "General Guy Culture",
-    "q": "What is a 'side quest' in everyday slang?",
-    "a": "An unexpected extra task or detour unrelated to the main objective"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In American football, what is a touchback, and how many points does it score?",
-    "a": "When a ball becomes dead in a team's own end zone after an incoming kick, punt, or turnover; 0 points"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What does 'TPMS' stand for on a car dashboard, and why does that yellow horseshoe-shaped light appear every autumn?",
-    "a": "Tire Pressure Monitoring System; cold air contracts, dropping tire pressure roughly 1 PSI per 10°F temperature drop"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In Formula 1, what does 'DRS' stand for, and what does it physically change on the car?",
-    "a": "Drag Reduction System; opens a flap in the rear wing to reduce aerodynamic drag and increase straight-line speed"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why does having All-Wheel Drive (AWD) help you accelerate in snow, yet offer zero advantage when slamming the brakes on black ice?",
-    "a": "AWD distributes engine power to all four wheels for traction going forward, whereas every car already has four-wheel brakes"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In tennis, what is the scoring term when both players are tied at 40-40, and how many consecutive points are needed to win from there?",
-    "a": "Deuce; 2 consecutive points (Advantage + Game)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why should lug nuts on a car wheel be tightened in a star/crisscross pattern rather than going around in a circle?",
-    "a": "To seat the wheel flush and evenly against the hub without warping the rotor or unevenly loading studs"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In baseball, what is a 'cycle' when achieved by a single batter in one game?",
-    "a": "Hitting a single, double, triple, and home run in the same game"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What is the actual function of a car's alternator, and why can't a new battery save a car if the alternator is dead?",
-    "a": "It converts mechanical engine energy into electricity to power electronics and recharge the battery while driving"
+    "a": "Define the relationship",
+    "choices": [
+     "Don't text right away",
+     "Define the relationship",
+     "Date the roommate"
+    ]
    },
    {
     "cat": "Sports & Cars",
@@ -1242,108 +832,33 @@
    },
    {
     "cat": "Sports & Cars",
-    "q": "What does 'OCTANE' rating (87, 89, 91/93) at a gas pump actually measure?",
-    "a": "The fuel's resistance to premature detonation under compression, not 'cleaner' or inherently more energetic gas"
-   },
-   {
-    "cat": "Sports & Cars",
     "q": "In basketball, how many seconds does an NBA team have to shoot the ball once they gain possession?",
-    "a": "24 seconds (the shot clock)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What does 'ABS' stand for in a car, and what does the brake pedal feel like when it kicks in on a wet or icy road?",
-    "a": "Anti-lock Braking System; the pedal pulses or vibrates rapidly under your foot as it pumps the brakes dozens of times per second so tires don't lock up and skid"
+    "a": "24 seconds"
    },
    {
     "cat": "Sports & Cars",
     "q": "In golf, what is the term for scoring 3 strokes under par on a single hole?",
-    "a": "An albatross (or double eagle)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "When jump-starting a dead car battery, which terminal do you connect the final black negative clamp to, and why NOT the dead battery's negative post?",
-    "a": "An unpainted metal ground surface on the dead car's engine block/frame away from the battery, to avoid sparks igniting hydrogen gas near the battery"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In the NFL, how many points is a 'safety' worth, and how does a team score one?",
-    "a": "2 points; scored by the defense when the offensive ball carrier is tackled or downed inside their own end zone"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What do the numbers in a motor oil label like '5W-30' actually stand for?",
-    "a": "The '5W' is cold/winter viscosity rating, and '30' is the oil's viscosity at normal hot engine operating temperature"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In ice hockey, what is a 'hat trick'?",
-    "a": "When a single player scores three goals in one game"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why is putting regular gasoline into a diesel truck (or diesel into a gas car) an instant roadside emergency?",
-    "a": "Diesel engines rely on high-compression ignition and fuel lubrication; gasoline ruins diesel fuel pumps and won't ignite properly, while diesel clogs gas spark plugs and injectors"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In tennis, what are the four Grand Slam tournaments held each year?",
-    "a": "Australian Open, French Open (Roland-Garros), Wimbledon, and the US Open"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What does a catalytic converter do under your car, and why do thieves love stealing them?",
-    "a": "It converts toxic exhaust gases into less harmful emissions; it contains valuable precious metals like platinum, palladium, and rhodium"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In soccer, what is the 'offside' rule in plain English?",
-    "a": "An attacking player cannot be nearer to the opponent's goal line than both the ball and the second-to-last defender at the exact moment a teammate passes the ball to them"
+    "a": "An albatross"
    },
    {
     "cat": "Sports & Cars",
     "q": "What does 'RPM' stand for on a car's tachometer gauge?",
-    "a": "Revolutions Per Minute (how fast the engine's crankshaft is spinning)"
+    "a": "Revolutions Per Minute"
    },
    {
     "cat": "Sports & Cars",
     "q": "In baseball, how many outs are in a full standard 9-inning game combined across both teams?",
-    "a": "54 outs (6 outs per inning × 9 innings)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why should you never open a hot radiator cap right after a car overheats?",
-    "a": "The cooling system is pressurized; opening it causes boiling coolant to erupt violently like a geyser, causing severe burns"
+    "a": "54 outs"
    },
    {
     "cat": "Sports & Cars",
     "q": "In boxing or MMA, what does 'TKO' stand for?",
-    "a": "Technical Knockout (when the referee stops the fight because a fighter cannot safely defend themselves)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What is the difference between torque and horsepower in a vehicle?",
-    "a": "Torque is twisting rotational force; horsepower is how fast that work is done over time"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In the Olympics, what are the five colors of the Olympic rings?",
-    "a": "Blue, yellow, black, green, and red (on a white background)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What does a squealing or grinding noise every time you press the brake pedal usually mean?",
-    "a": "Your brake pads are worn down, squealing is the built-in metal wear indicator; grinding means metal backing is scraping the brake rotor"
+    "a": "Technical Knockout"
    },
    {
     "cat": "Sports & Cars",
     "q": "In American football, how long is the playing field from end zone to end zone (excluding the end zones themselves)?",
-    "a": "100 yards (120 yards including both 10-yard end zones)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What is 'hydroplaning' while driving in heavy rain, and what is the worst reflex reaction to have when it happens?",
-    "a": "Tires lose contact with the road and ride on a thin layer of water; slamming the brakes or jerking the steering wheel makes you spin out, ease off the gas and steer gently"
+    "a": "100 yards"
    },
    {
     "cat": "Sports & Cars",
@@ -1353,17 +868,7 @@
    {
     "cat": "Sports & Cars",
     "q": "What does 'CVT' stand for in modern automatic car transmissions?",
-    "a": "Continuously Variable Transmission (uses belts and pulleys instead of fixed gears for seamless acceleration)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In basketball, what is a 'triple-double'?",
-    "a": "Reaching double digits in three statistical categories in a single game, usually points, rebounds, and assists"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "If your car battery dies completely, how long should you typically drive the car after a jump-start to recharge it?",
-    "a": "At least 20 to 30 minutes at highway/steady speeds (idling in the driveway barely charges it)"
+    "a": "Continuously Variable Transmission"
    },
    {
     "cat": "Sports & Cars",
@@ -1372,78 +877,33 @@
    },
    {
     "cat": "Sports & Cars",
-    "q": "What does a serpentine belt do under the hood of a car?",
-    "a": "A single long ribbed belt driven by the engine crankshaft that powers accessories like the alternator, power steering pump, water pump, and A/C compressor"
-   },
-   {
-    "cat": "Sports & Cars",
     "q": "In baseball, what is the distance between each base on a standard Major League diamond?",
     "a": "90 feet"
    },
    {
     "cat": "Sports & Cars",
-    "q": "Why do tires have small tread-wear indicator bars molded into the grooves?",
-    "a": "When the tire rubber wears down flush with those bars, the tire is legally bald and unsafe in wet weather"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In soccer, what happens when a player receives two yellow cards in the same match?",
-    "a": "They are shown a red card and ejected from the game, forcing their team to play a man down"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What is the 'check engine' light most commonly triggered by right after someone fills up their gas tank?",
-    "a": "A loose, cracked, or unclicked gas cap allowing fuel vapors to escape the EVAP system"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In the NFL, what is a 'pick-six'?",
-    "a": "When a defensive player intercepts a forward pass and returns it all the way for a 6-point touchdown"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What is the difference between a 'front-wheel drive' (FWD) and 'rear-wheel drive' (RWD) car in snow?",
-    "a": "FWD puts the heavy engine right over the front steering/driving wheels for better snow traction; RWD pushes from the back, making the rear end fishtail easily"
-   },
-   {
-    "cat": "Sports & Cars",
     "q": "In tennis, what is a 'bagel' score?",
-    "a": "Winning or losing a set 6-0"
+    "a": "Winning a set 6-0",
+    "choices": [
+     "A match with no breaks of serve",
+     "Winning a set 6-0",
+     "A serve nobody touches"
+    ]
    },
    {
     "cat": "Sports & Cars",
     "q": "What does 'OEM' stand for when buying replacement car parts?",
-    "a": "Original Equipment Manufacturer (parts made by the original company that built the car's components)"
+    "a": "Original Equipment Manufacturer"
    },
    {
     "cat": "Sports & Cars",
     "q": "In track and field, how long is a standard marathon in miles (to two decimal places)?",
-    "a": "26.22 miles (commonly cited as 26.2 miles)"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why do mechanics advise against resting your hand on the gearshift lever in a manual-transmission car while cruising?",
-    "a": "Even light pressure pushes the shift fork against rotating synchronizer collars inside the transmission, causing premature wear"
+    "a": "26.22 miles"
    },
    {
     "cat": "Sports & Cars",
     "q": "In golf, what is the name of the trophy awarded to the winner of The Open Championship (British Open)?",
     "a": "The Claret Jug"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "What does 'VIN' stand for on a vehicle, and how many characters long are modern VINs?",
-    "a": "Vehicle Identification Number; 17 characters"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "In hockey, what is 'icing'?",
-    "a": "Shooting the puck from behind the center red line all the way past the opposing team's goal line without anyone touching it"
-   },
-   {
-    "cat": "Sports & Cars",
-    "q": "Why do performance cars often have drilled or slotted brake rotors?",
-    "a": "To dissipate intense heat, vent gases, and clear water from the brake pad surface during aggressive braking"
    },
    {
     "cat": "Grill & Smoker",
@@ -1453,7 +913,12 @@
    {
     "cat": "Poker Night",
     "q": "In poker, what does it mean to hold 'the nuts'?",
-    "a": "The best possible hand at that moment"
+    "a": "The best possible hand at that moment",
+    "choices": [
+     "A bluff that worked",
+     "The best possible hand at that moment",
+     "A hand with no pairs"
+    ]
    },
    {
     "cat": "Outdoors",
@@ -1463,32 +928,37 @@
    {
     "cat": "Sports",
     "q": "In baseball, what is a 'golden sombrero'?",
-    "a": "Striking out four times in one game"
-   },
-   {
-    "cat": "Men's Grooming & Style",
-    "q": "What is 'manscaping'?",
-    "a": "Trimming or shaving a man's body hair"
+    "a": "Striking out four times in one game",
+    "choices": [
+     "Hitting four home runs in one game",
+     "Stealing four bases in one game",
+     "Striking out four times in one game"
+    ]
    },
    {
     "cat": "Guy Code",
     "q": "What does 'GOAT' stand for in a sports argument?",
-    "a": "Greatest of all time"
+    "a": "Greatest of all time",
+    "choices": [
+     "Greatest of all time",
+     "Going on a tear",
+     "Game on any terms"
+    ]
    },
    {
     "cat": "Booze & Bars",
     "q": "Behind a bar, what is a 'jigger'?",
-    "a": "The small metal cup used to measure a shot"
+    "a": "The small cup used to measure a shot",
+    "choices": [
+     "The strainer on a shaker",
+     "The small cup used to measure a shot",
+     "The long spoon for stirring"
+    ]
    },
    {
     "cat": "Booze & Bars",
     "q": "What plant gives beer its bitter flavor?",
     "a": "Hops"
-   },
-   {
-    "cat": "Sports",
-    "q": "In football, what is a 'Hail Mary'?",
-    "a": "A long, desperate pass at the end of a half or game"
    },
    {
     "cat": "Sports",
@@ -1502,18 +972,23 @@
    },
    {
     "cat": "Sports",
-    "q": "In hockey, what is a 'power play'?",
-    "a": "Playing with more skaters because the other team has a player in the penalty box"
-   },
-   {
-    "cat": "Sports",
     "q": "In baseball, what is a 'walk-off' home run?",
-    "a": "A home run that ends the game for the home team"
+    "a": "A home run that ends the game",
+    "choices": [
+     "A home run with the bases empty",
+     "A home run that leaves the stadium",
+     "A home run that ends the game"
+    ]
    },
    {
     "cat": "Sports",
     "q": "In golf, what is a 'bogey'?",
-    "a": "One stroke over par on a hole"
+    "a": "One stroke over par",
+    "choices": [
+     "One stroke over par",
+     "One stroke under par",
+     "Two strokes over par"
+    ]
    },
    {
     "cat": "Grill & Smoker",
@@ -1538,14 +1013,24 @@
    {
     "cat": "Outdoors",
     "q": "In duck hunting, what is a 'decoy'?",
-    "a": "A fake duck that lures real ones in"
+    "a": "A fake duck that lures real ones in",
+    "choices": [
+     "A hidden shelter for the hunter",
+     "A fake duck that lures real ones in",
+     "A whistle that sounds like a duck"
+    ]
    }
   ],
   "pics": [
    {
     "img": "pool-8-ball",
     "q": "In eight ball, what happens if you sink this ball before all of your others?",
-    "a": "You lose the game"
+    "a": "You lose the game",
+    "choices": [
+     "You get an extra turn",
+     "It goes back on the table",
+     "You lose the game"
+    ]
    },
    {
     "img": "american-football",
@@ -1563,14 +1048,9 @@
     "a": "A low blow"
    },
    {
-    "img": "fuel-pump",
-    "q": "What happens to a gasoline engine if you fill it with diesel from one of these?",
-    "a": "It stalls and has to be drained"
-   },
-   {
     "img": "motorcycle",
     "q": "What is a motorcycle rider's passenger seat nicknamed?",
-    "a": "The pillion (or riding 'two-up')"
+    "a": "The pillion"
    },
    {
     "img": "necktie",
@@ -1583,14 +1063,14 @@
     "a": "50"
    },
    {
-    "img": "flag-in-hole",
-    "q": "In golf, what do you call the nineteenth hole?",
-    "a": "The bar at the clubhouse"
-   },
-   {
     "img": "ice-hockey",
     "q": "In hockey, what three things make a 'Gordie Howe hat trick'?",
-    "a": "A goal, an assist and a fight"
+    "a": "A goal, an assist and a fight",
+    "choices": [
+     "Three goals in one period",
+     "A goal, a save and a penalty",
+     "A goal, an assist and a fight"
+    ]
    },
    {
     "img": "pickup-truck",
@@ -1605,7 +1085,7 @@
    {
     "img": "fishing-pole",
     "q": "What do you call it when a fish that got away gets bigger every time the story is told?",
-    "a": "A fish story (a tall tale)"
+    "a": "A fish story"
    },
    {
     "img": "racing-car",
@@ -1620,7 +1100,7 @@
    {
     "img": "tent",
     "q": "What is a guy 'pitching' if he wakes up with one of these under the sheets?",
-    "a": "A tent (morning wood)"
+    "a": "A tent"
    },
    {
     "img": "baseball",
@@ -1756,7 +1236,7 @@
    {
     "cat": "Movies & TV",
     "q": "In Sex and the City, what is the real name of the man Carrie calls 'Mr. Big'?",
-    "a": "John (John James Preston)"
+    "a": "John"
    },
    {
     "cat": "Movies & TV",
@@ -1770,28 +1250,13 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Dirty Dancing, finish the line: 'Nobody puts Baby...'",
-    "a": "'...in a corner'"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Pretty Woman, on which famous street do the shop assistants refuse to serve Vivian?",
     "a": "Rodeo Drive"
    },
    {
     "cat": "Movies & TV",
-    "q": "In Magic Mike, what do the men do for a living?",
-    "a": "They are male strippers"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Fifty Shades of Grey, what does Ana call Christian's playroom?",
     "a": "The Red Room of Pain"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In The Notebook, what does Noah build for Allie?",
-    "a": "Her dream house"
    },
    {
     "cat": "Movies & TV",
@@ -1802,11 +1267,6 @@
     "cat": "Movies & TV",
     "q": "On The Bachelor, what does a contestant need to be handed to stay another week?",
     "a": "A rose"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Titanic, what does Rose ask Jack to draw her like?",
-    "a": "One of his French girls"
    },
    {
     "cat": "Movies & TV",
@@ -1825,11 +1285,6 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In Friends, what was Ross's excuse for sleeping with someone else?",
-    "a": "'We were on a break'"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Ghost, what are Sam and Molly making in the famous love scene?",
     "a": "Pottery"
    },
@@ -1842,11 +1297,6 @@
     "cat": "Music",
     "q": "Which singer's fans are called the 'Beyhive'?",
     "a": "Beyoncé"
-   },
-   {
-    "cat": "Music",
-    "q": "Which Shania Twain song opens with 'Let's go, girls'?",
-    "a": "Man! I Feel Like a Woman!"
    },
    {
     "cat": "Music",
@@ -1882,16 +1332,6 @@
     "cat": "Books",
     "q": "What do readers call the hugely popular book genre that mixes romance and fantasy?",
     "a": "Romantasy"
-   },
-   {
-    "cat": "Books",
-    "q": "On BookTok, what does it mean when a book is called 'spicy'?",
-    "a": "It has a lot of steamy scenes"
-   },
-   {
-    "cat": "Books",
-    "q": "Which Colleen Hoover novel became a 2024 movie with Blake Lively?",
-    "a": "It Ends with Us"
    },
    {
     "cat": "Celebrity",
@@ -1960,58 +1400,8 @@
    },
    {
     "cat": "Hard Mode",
-    "q": "What does the cosmetic ingredient hyaluronic acid primarily help do?",
-    "a": "Bind and retain water, helping hydrate skin"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What is the difference between a demi-permanent and permanent hair color, generally?",
-    "a": "Permanent color uses chemistry designed for longer-lasting color change; demi-permanent deposits color with less lasting lift and gradually fades"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What does 'keratin treatment' aim to do to hair?",
-    "a": "Smooth and reduce frizz by altering or coating the hair fiber, depending on the treatment"
-   },
-   {
-    "cat": "Hard Mode",
     "q": "What is the name for the half-moon shape sometimes visible at the base of a fingernail?",
     "a": "Lunula"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What is a 'waterfall braid'?",
-    "a": "A braid where sections are dropped as the braid progresses, creating a cascading effect"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What does 'couture' literally relate to in fashion?",
-    "a": "Dressmaking or sewing; in fashion it often refers to high-end custom-made clothing"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What is a milliner?",
-    "a": "A hatmaker or hat designer"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What does 'demure' mean?",
-    "a": "Reserved, modest, or understated in manner or appearance"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What is the purpose of a color-correcting concealer?",
-    "a": "To neutralize discoloration using complementary colors before or alongside concealer"
-   },
-   {
-    "cat": "Hard Mode",
-    "q": "What is the difference between a pencil skirt and an A-line skirt?",
-    "a": "A pencil skirt is narrow and follows the body's line; an A-line skirt widens from the waist or hips"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "Which reality dating show made 'the final rose' famous, and roughly how many roses are handed out on a standard premiere night?",
-    "a": "The Bachelor; typically around 15 to 25 (varies by season)"
    },
    {
     "cat": "Pop Culture",
@@ -2025,18 +1415,8 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "In Love Is Blind, contestants spend roughly how long dating inside pods before seeing each other in person, and what is the most infamous pod cliché?",
-    "a": "About 10 days (cliché: 'I feel like I've known you my whole life' after 40 minutes)"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "Which RuPaul's Drag Race catchphrase is famously delivered when a queen is eliminated after a lip sync?",
-    "a": "'Sashay away.'"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "What viral meme featured a white cat glaring at a plate of vegetables while a woman yelled at it?",
-    "a": "Woman Yelling at a Cat (Smudge the Cat)"
+    "a": "Sashay away"
    },
    {
     "cat": "Pop Culture",
@@ -2051,12 +1431,7 @@
    {
     "cat": "Pop Culture",
     "q": "In The White Lotus Season 2, what iconic Italian coastal region serves as the primary setting?",
-    "a": "Sicily (specifically Taormina)"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "Which 1999 rom-com features Heath Ledger singing 'Can't Take My Eyes Off You' on the high school bleachers?",
-    "a": "10 Things I Hate About You"
+    "a": "Sicily"
    },
    {
     "cat": "Pop Culture",
@@ -2070,13 +1445,8 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "What does 'delulu' mean in Gen Z internet slang, and what is its classic rhyming follow-up phrase?",
-    "a": "Delusional; 'delulu is the solulu' (delusional is the solution)"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "In The Real Housewives of Beverly Hills, which cast member famously flipped out at a dinner party in Amsterdam yelling 'Beast?! How dare you!'?",
-    "a": "Eileen Davidson (responding to Kim Richards calling her a beast)"
+    "a": "Eileen Davidson"
    },
    {
     "cat": "Pop Culture",
@@ -2086,12 +1456,7 @@
    {
     "cat": "Pop Culture",
     "q": "What is the name of the fictional town in Schitt's Creek where the Rose family is forced to live after losing their fortune?",
-    "a": "Schitt's Creek (formerly owned as a joke by Johnny Rose)"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "In Keeping Up with the Kardashians, why did Kim Kardashian famously burst into tears in Bora Bora while Kris Humphries laughed?",
-    "a": "She lost her $75,000 diamond earring in the ocean (prompting Kourtney's 'Kim, there's people that are dying')"
+    "a": "Schitt's Creek"
    },
    {
     "cat": "Pop Culture",
@@ -2106,17 +1471,12 @@
    {
     "cat": "Pop Culture",
     "q": "In Friends, what is the exact name of the coffee shop where the gang hangs out, and what does the name play on?",
-    "a": "Central Perk (a pun on Central Park and perking coffee)"
+    "a": "Central Perk"
    },
    {
     "cat": "Pop Culture",
     "q": "Which Netflix reality competition show strands hot singles at a luxury villa where any kissing or intimacy deducts prize money from a $100,000+ pot?",
     "a": "Too Hot to Handle"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "What is 'girl math', and give one classic example of how it works?",
-    "a": "Playful financial logic justifying spending"
    },
    {
     "cat": "Pop Culture",
@@ -2155,11 +1515,6 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "What is 'soft launching' a partner on Instagram?",
-    "a": "Subtly hinting at a new relationship without showing their full face"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "Which reality cooking show features Gordon Ramsay screaming at chefs over raw scallops and beef Wellington?",
     "a": "Hell's Kitchen"
    },
@@ -2170,23 +1525,8 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "What does 'TL;DR' stand for at the top or bottom of a long internet post?",
-    "a": "Too Long; Didn't Read"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "Which 2004 teen comedy gave us 'Stop trying to make fetch happen' and 'On Wednesdays we wear pink'?",
     "a": "Mean Girls"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "In Survivor, what catchphrase does host Jeff Probst say right before snuffing out a voted-off contestant's torch?",
-    "a": "'The tribe has spoken.'"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "What is 'main character energy'?",
-    "a": "Acting with confidence and cinematic flair as if you are the protagonist of a movie rather than a background extra"
    },
    {
     "cat": "Pop Culture",
@@ -2200,11 +1540,6 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "What does 'FOMO' stand for, and what is its opposite 'JOMO'?",
-    "a": "Fear of Missing Out; Joy of Missing Out"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "Which iconic reality show judge is known for saying 'It's a no from me, dawg' on American Idol?",
     "a": "Randy Jackson"
    },
@@ -2215,18 +1550,8 @@
    },
    {
     "cat": "Pop Culture",
-    "q": "What is 'doomscrolling'?",
-    "a": "Compulsively scrolling through bad news or negative social media feeds late at night even though it makes you anxious"
-   },
-   {
-    "cat": "Pop Culture",
     "q": "Which British period drama is set at the fictional Yorkshire country estate of the aristocratic Crawley family?",
     "a": "Downton Abbey"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "In Jersey Shore, what does 'GTL' stand for?",
-    "a": "Gym, Tan, Laundry"
    },
    {
     "cat": "Pop Culture",
@@ -2237,11 +1562,6 @@
     "cat": "Pop Culture",
     "q": "Which 2022-2024 HBO series features Pedro Pascal escorting Bella Ramsey across a post-apocalyptic America overrun by Cordyceps-infected humans?",
     "a": "The Last of Us"
-   },
-   {
-    "cat": "Pop Culture",
-    "q": "What does 'breadcrumbing' mean in modern dating?",
-    "a": "Sending sporadic, low-effort flirty texts just to keep someone interested without any intention of actually committing or meeting up"
    },
    {
     "cat": "Pop Culture",
@@ -2256,22 +1576,12 @@
    {
     "cat": "Pop Culture",
     "q": "What viral phrase describes a man who looks extremely attractive from far away or in low lighting, only to disappoint up close, named after a Monet painting?",
-    "a": "A full-on Monet (from Clueless: 'From far away it's OK, but up close it's a big old mess')"
+    "a": "A full-on Monet"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "What is the only mammal capable of true, sustained powered flight?",
     "a": "Bats"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "How many hearts does an octopus have, and what metal gives its blood a blue color?",
-    "a": "3 hearts; copper (via hemocyanin instead of iron-based hemoglobin)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Which chemical element is represented by the symbol 'Au' on the periodic table, and what Latin word does it come from?",
-    "a": "Gold, from the Latin 'aurum' (meaning shining dawn)"
    },
    {
     "cat": "Science & Weird Facts",
@@ -2281,17 +1591,12 @@
    {
     "cat": "Science & Weird Facts",
     "q": "At what temperature are Celsius and Fahrenheit numerically identical?",
-    "a": "-40 degrees (-40°C = -40°F)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why don't penguins' feet freeze when standing on Antarctic ice all day?",
-    "a": "Countercurrent heat exchange in their legs warms returning cold blood using outgoing warm arterial blood, keeping feet just above freezing"
+    "a": "-40 degrees"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "Which blood type is known as the 'universal donor' for red blood cells?",
-    "a": "O negative (O-)"
+    "a": "O negative"
    },
    {
     "cat": "Science & Weird Facts",
@@ -2305,23 +1610,18 @@
    },
    {
     "cat": "Science & Weird Facts",
-    "q": "Why is the sky blue during the day but red/orange at sunrise and sunset?",
-    "a": "Rayleigh scattering: shorter blue wavelengths scatter in all directions through the atmosphere, while at sunset sunlight passes through thicker atmosphere, scattering blue away and leaving reds/oranges"
-   },
-   {
-    "cat": "Science & Weird Facts",
     "q": "Which mammal has the most powerful bite force in the animal kingdom (or among land mammals)?",
-    "a": "Hippopotamus (among land mammals, ~1,800 PSI; saltwater crocodiles top reptiles at ~3,700 PSI)"
+    "a": "Hippopotamus"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "What is the chemical formula for table salt?",
-    "a": "NaCl (Sodium chloride)"
+    "a": "NaCl"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "What is the speed of sound in dry air at room temperature (roughly in miles per hour)?",
-    "a": "About 767 mph (343 meters per second)"
+    "a": "About 767 mph"
    },
    {
     "cat": "Science & Weird Facts",
@@ -2331,22 +1631,12 @@
    {
     "cat": "Science & Weird Facts",
     "q": "Which insect tastes with its feet?",
-    "a": "Butterflies (and houseflies)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why do cats always seem to land on their feet when falling?",
-    "a": "Their 'righting reflex' and flexible backbone let them twist their front and back halves independently mid-air"
+    "a": "Butterflies"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "How many pairs of chromosomes do humans typically have?",
-    "a": "23 pairs (46 total chromosomes)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "What is the largest species of shark currently alive, and what does it actually eat?",
-    "a": "The whale shark; it's a gentle filter feeder that eats plankton and tiny fish"
+    "a": "23 pairs"
    },
    {
     "cat": "Science & Weird Facts",
@@ -2361,27 +1651,17 @@
    {
     "cat": "Science & Weird Facts",
     "q": "What gas do humans exhale that plants absorb for photosynthesis?",
-    "a": "Carbon dioxide (CO2)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "What is the smallest bone in the human body, and where is it located?",
-    "a": "The stapes (stirrup bone), located in the middle ear"
+    "a": "Carbon dioxide"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "What scale is used to measure the spiciness (heat) of chili peppers?",
-    "a": "The Scoville scale (Scoville Heat Units)"
+    "a": "The Scoville scale"
    },
    {
     "cat": "Science & Weird Facts",
     "q": "Which continent has no active volcanoes?",
-    "a": "Australia (mainland Australia has no currently active volcanoes)"
-   },
-   {
-    "cat": "Science & Weird Facts",
-    "q": "Why are human veins blue under skin even though blood is always red?",
-    "a": "Light wavelengths penetrate skin differently, blue light scatters back to your eyes before reaching deep red vessels, creating an optical illusion"
+    "a": "Australia"
    },
    {
     "cat": "History & Money",
@@ -2390,23 +1670,8 @@
    },
    {
     "cat": "History & Money",
-    "q": "What is the 'Rule of 72' in personal finance?",
-    "a": "Dividing 72 by an annual interest/return rate estimates how many years it takes an investment to double"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What is the difference between a 'bear market' and a 'bull market', and how do people remember which way the animals attack?",
-    "a": "Bear = falling prices (20%+ drop, swipes downward); Bull = rising prices (thrusts horns upward)"
-   },
-   {
-    "cat": "History & Money",
     "q": "What ancient trade route connected China to the Mediterranean and got its name from a luxury fabric?",
     "a": "The Silk Road"
-   },
-   {
-    "cat": "History & Money",
-    "q": "Which city is located on two continents simultaneously, Europe and Asia?",
-    "a": "Istanbul, Turkey"
    },
    {
     "cat": "History & Money",
@@ -2420,23 +1685,13 @@
    },
    {
     "cat": "History & Money",
-    "q": "What is 'inflation' in economics, and what happens to the purchasing power of cash sitting under a mattress during high inflation?",
-    "a": "A general rise in prices across an economy; each dollar buys fewer goods and services, eroding purchasing power"
-   },
-   {
-    "cat": "History & Money",
-    "q": "In ancient Rome, what was 'garum', a condiment so popular it was traded across the entire empire like ketchup?",
-    "a": "Fermented fish guts/blood sauce"
-   },
-   {
-    "cat": "History & Money",
     "q": "Which African country has the largest population?",
     "a": "Nigeria"
    },
    {
     "cat": "History & Money",
     "q": "Which U.S. state is the only one that does NOT have a rectangular flag?",
-    "a": "Ohio (it has a swallowtail pennant/burgee shape)"
+    "a": "Ohio"
    },
    {
     "cat": "History & Money",
@@ -2446,12 +1701,12 @@
    {
     "cat": "History & Money",
     "q": "Which country has the most time zones in the world when counting overseas territories?",
-    "a": "France (12 time zones, ahead of the U.S. and Russia)"
+    "a": "France"
    },
    {
     "cat": "History & Money",
     "q": "Which ancient city was buried under volcanic ash when Mount Vesuvius erupted in 79 AD?",
-    "a": "Pompeii (along with Herculaneum)"
+    "a": "Pompeii"
    },
    {
     "cat": "History & Money",
@@ -2466,27 +1721,12 @@
    {
     "cat": "History & Money",
     "q": "Which desert is the largest hot desert in the world?",
-    "a": "The Sahara Desert (Antarctica is the largest cold/polar desert overall)"
-   },
-   {
-    "cat": "History & Money",
-    "q": "Which two oceans does the Panama Canal connect?",
-    "a": "The Atlantic Ocean and the Pacific Ocean"
+    "a": "The Sahara Desert"
    },
    {
     "cat": "History & Money",
     "q": "Which country gifted the Statue of Liberty to the United States in 1886?",
     "a": "France"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What was the 'Tulip Mania' of the 1630s in the Netherlands?",
-    "a": "One of history's first recorded speculative financial bubbles, where single rare tulip bulbs briefly sold for more than luxury houses before crashing"
-   },
-   {
-    "cat": "History & Money",
-    "q": "What does 'FDIC' stand for on a bank's website or teller window, and how much per depositor does it insure?",
-    "a": "Federal Deposit Insurance Corporation; up to $250,000 per depositor, per insured bank, per ownership category"
    },
    {
     "cat": "History & Money",
@@ -2500,11 +1740,6 @@
    },
    {
     "cat": "History & Money",
-    "q": "What is 'shrinkflation' at the grocery store?",
-    "a": "When a company reduces the size or quantity of a product while keeping the retail price the same"
-   },
-   {
-    "cat": "History & Money",
     "q": "Which U.S. city is known as the 'Windy City', not because of weather, but originally because of its boastful 19th-century politicians?",
     "a": "Chicago"
    },
@@ -2512,11 +1747,6 @@
     "cat": "Movies, Music & Games",
     "q": "In The Office (US), what is the title of Michael Scott's self-written, self-directed spy thriller movie?",
     "a": "Threat Level Midnight"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "What is a 'beige flag' in modern dating slang?",
-    "a": "A weirdly specific, harmless, slightly odd habit that isn't toxic (red) or amazing (green), just memorable"
    },
    {
     "cat": "Movies, Music & Games",
@@ -2561,17 +1791,12 @@
    {
     "cat": "Movies, Music & Games",
     "q": "How many dots are on a standard pair of six-sided dice combined?",
-    "a": "42 dots (21 per die)"
+    "a": "42 dots"
    },
    {
     "cat": "Movies, Music & Games",
     "q": "Which instrument has 88 keys on a standard modern version?",
     "a": "The piano"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "What is the only food that can never go bad in a sealed jar, and what insect makes it?",
-    "a": "Honey, made by honeybees"
    },
    {
     "cat": "Movies, Music & Games",
@@ -2601,17 +1826,12 @@
    {
     "cat": "Movies, Music & Games",
     "q": "How many hearts does a human have?",
-    "a": "1 heart (with 4 chambers)"
-   },
-   {
-    "cat": "Movies, Music & Games",
-    "q": "Which 1980s hit song by Rick Astley became the centerpiece of the internet prank 'Rickrolling'?",
-    "a": "'Never Gonna Give You Up.'"
+    "a": "1 heart"
    },
    {
     "cat": "Movies, Music & Games",
     "q": "What color is a polar bear's skin underneath its translucent white fur?",
-    "a": "Black (to absorb heat from sunlight)"
+    "a": "Black"
    },
    {
     "cat": "Movies, Music & Games",
@@ -2631,54 +1851,59 @@
    {
     "cat": "Movies, Music & Games",
     "q": "If you shuffle a standard 52-card deck thoroughly, what are the odds that exact card order has ever existed before in human history?",
-    "a": "Practically zero (52 factorial is ~8 × 10^67, more combinations than atoms on Earth)"
+    "a": "Practically zero"
    }
   ],
   "stuff": [
    {
     "cat": "Wine & Cocktails",
-    "q": "What four things go into a Cosmopolitan?",
-    "a": "Vodka, orange liqueur, cranberry and lime"
-   },
-   {
-    "cat": "Wine & Cocktails",
     "q": "What are the three ingredients of an Aperol Spritz?",
-    "a": "Aperol, prosecco and soda water"
+    "a": "Aperol, prosecco and soda water",
+    "choices": [
+     "Aperol, gin and tonic",
+     "Aperol, vodka and orange juice",
+     "Aperol, prosecco and soda water"
+    ]
    },
    {
     "cat": "Wine & Cocktails",
     "q": "What is the difference between Champagne and prosecco?",
-    "a": "Champagne is from France, prosecco is from Italy"
-   },
-   {
-    "cat": "Wine & Cocktails",
-    "q": "What does 'bottomless' mean at brunch?",
-    "a": "Unlimited drinks, usually mimosas, for a set price"
-   },
-   {
-    "cat": "Wine & Cocktails",
-    "q": "What makes a rosé wine pink?",
-    "a": "Red grape skins left in for only a short time"
+    "a": "Champagne is French, prosecco is Italian",
+    "choices": [
+     "Champagne is white, prosecco is pink",
+     "Champagne has bubbles, prosecco does not",
+     "Champagne is French, prosecco is Italian"
+    ]
    },
    {
     "cat": "Wine & Cocktails",
     "q": "What is in an espresso martini besides espresso?",
-    "a": "Vodka and coffee liqueur"
+    "a": "Vodka and coffee liqueur",
+    "choices": [
+     "Vodka and coffee liqueur",
+     "Rum and cream",
+     "Gin and chocolate syrup"
+    ]
    },
    {
     "cat": "Wine & Cocktails",
     "q": "What does it mean when a wine is 'corked'?",
-    "a": "It has gone bad and smells musty"
-   },
-   {
-    "cat": "Under It All",
-    "q": "What do the number and the letter in a bra size each measure?",
-    "a": "The number is the band around the ribs, the letter is the cup"
+    "a": "It has gone bad and smells musty",
+    "choices": [
+     "It is sealed with a real cork",
+     "It has gone bad and smells musty",
+     "It has never been opened"
+    ]
    },
    {
     "cat": "Under It All",
     "q": "What is Spanx?",
-    "a": "Tight shapewear that smooths everything in"
+    "a": "Tight shapewear",
+    "choices": [
+     "Tight shapewear",
+     "A push-up bra",
+     "Stick-on nails"
+    ]
    },
    {
     "cat": "Under It All",
@@ -2688,32 +1913,62 @@
    {
     "cat": "Under It All",
     "q": "What are 'chicken cutlets' when a woman is getting dressed?",
-    "a": "Silicone pads that go inside a bra"
+    "a": "Silicone pads that go inside a bra",
+    "choices": [
+     "Gel insoles for heels",
+     "Silicone pads that go inside a bra",
+     "Thick shoulder pads"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "What is a 'Brazilian' at a salon?",
-    "a": "A wax that takes off nearly everything down there"
+    "a": "A wax that takes off nearly everything",
+    "choices": [
+     "A deep-tissue massage",
+     "A spray tan",
+     "A wax that takes off nearly everything"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "About how long is one full menstrual cycle?",
-    "a": "About 28 days"
+    "a": "About 28 days",
+    "choices": [
+     "About 14 days",
+     "About 40 days",
+     "About 28 days"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "What does an epidural do during labor?",
-    "a": "Numbs the lower body for the pain"
+    "a": "Numbs the lower body for the pain",
+    "choices": [
+     "Numbs the lower body for the pain",
+     "Speeds up contractions",
+     "Puts the mother to sleep"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "What is a 'push present'?",
-    "a": "A gift a new mom gets for giving birth"
+    "a": "A gift a new mom gets for giving birth",
+    "choices": [
+     "A gift for the baby shower host",
+     "A gift from the bridesmaids",
+     "A gift a new mom gets for giving birth"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "What are Kegels?",
-    "a": "Exercises that squeeze the pelvic floor muscles"
+    "a": "Exercises for the pelvic floor",
+    "choices": [
+     "Stretches for the lower back",
+     "Breathing exercises for labor",
+     "Exercises for the pelvic floor"
+    ]
    },
    {
     "cat": "Body & Health",
@@ -2723,7 +1978,12 @@
    {
     "cat": "Body & Health",
     "q": "What are Braxton Hicks?",
-    "a": "Practice contractions before real labor"
+    "a": "Practice contractions before real labor",
+    "choices": [
+     "Practice contractions before real labor",
+     "The first kicks of the baby",
+     "Cravings in the first trimester"
+    ]
    },
    {
     "cat": "Body & Health",
@@ -2732,138 +1992,83 @@
    },
    {
     "cat": "Girl Code",
-    "q": "What is the number one rule of girl code about a friend's ex?",
-    "a": "You do not date him"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "What is a 'work husband'?",
-    "a": "A male coworker she is close to, with nothing romantic going on"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "What is 'the mental load'?",
-    "a": "Being the one who has to remember and plan everything at home"
-   },
-   {
-    "cat": "Girl Code",
     "q": "What does a woman mean by her 'body count'?",
-    "a": "How many people she has slept with"
+    "a": "How many people she has slept with",
+    "choices": [
+     "How many people she has slept with",
+     "How many exes still text her",
+     "How many dates she had this month"
+    ]
    },
    {
     "cat": "Girl Code",
     "q": "What is a 'boyfriend' in the world of jeans?",
-    "a": "A loose, slouchy fit"
+    "a": "A loose, slouchy fit",
+    "choices": [
+     "A skin-tight fit",
+     "A high-waisted flare",
+     "A loose, slouchy fit"
+    ]
    },
    {
     "cat": "Weddings",
     "q": "Which finger and hand does an engagement ring traditionally go on?",
-    "a": "The fourth finger of the left hand"
+    "a": "Fourth finger of the left hand",
+    "choices": [
+     "Fourth finger of the left hand",
+     "Fourth finger of the right hand",
+     "Middle finger of the left hand"
+    ]
    },
    {
     "cat": "Weddings",
     "q": "What are the 'four Cs' of a diamond?",
-    "a": "Cut, color, clarity and carat"
+    "a": "Cut, color, clarity and carat",
+    "choices": [
+     "Cut, cost, class and carat",
+     "Color, cost, clarity and charm",
+     "Cut, color, clarity and carat"
+    ]
    },
    {
     "cat": "Weddings",
     "q": "What is a 'bridezilla'?",
-    "a": "A bride who turns into a monster over her wedding"
-   },
-   {
-    "cat": "Weddings",
-    "q": "At a wedding, what is the 'something blue' part of?",
-    "a": "Something old, something new, something borrowed, something blue"
+    "a": "A bride who turns into a monster over her wedding",
+    "choices": [
+     "A bride who turns into a monster over her wedding",
+     "A bride who elopes",
+     "A bride who has been married before"
+    ]
    },
    {
     "cat": "Weddings",
     "q": "What does the maid of honor traditionally plan?",
-    "a": "The bridal shower and the bachelorette party"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What does SPF measure on sunscreen?",
-    "a": "Protection against UVB-related sunburn, under standardized testing"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What is the difference between a serum and a moisturizer?",
-    "a": "A serum is typically a concentrated treatment; a moisturizer helps hydrate and reduce water loss"
+    "a": "The bridal shower and bachelorette party",
+    "choices": [
+     "The honeymoon",
+     "The rehearsal dinner",
+     "The bridal shower and bachelorette party"
+    ]
    },
    {
     "cat": "Beauty & Skincare",
     "q": "What does 'non-comedogenic' mean?",
-    "a": "Formulated to be less likely to clog pores"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What is a cuticle?",
-    "a": "The thin tissue at the base of the nail that helps protect the nail matrix"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What does 'waterline' mean in makeup?",
-    "a": "The inner rim of the eyelid along the edge of the eye"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What is micellar water used for?",
-    "a": "Removing makeup, sunscreen, and surface impurities"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What does 'retinol' belong to?",
-    "a": "The retinoid family, derived from vitamin A"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What is the purpose of a setting spray?",
-    "a": "To help makeup last longer and sometimes alter the finish"
-   },
-   {
-    "cat": "Beauty & Skincare",
-    "q": "What does 'toner' generally do in a skincare routine?",
-    "a": "It is a liquid product used after cleansing; formulas may hydrate, exfoliate, or target specific concerns"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a capsule wardrobe?",
-    "a": "A small, coordinated collection of versatile clothing pieces"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a peplum?",
-    "a": "A short flared fabric detail attached at the waist of a garment"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What does 'bias cut' mean?",
-    "a": "Fabric cut diagonally across the grain, often allowing it to drape and cling fluidly"
+    "a": "Less likely to clog pores",
+    "choices": [
+     "Free of fragrance",
+     "Less likely to clog pores",
+     "Not tested on animals"
+    ]
    },
    {
     "cat": "Fashion & Style",
     "q": "What is a stiletto heel?",
-    "a": "A very narrow, high heel"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a bateau neckline?",
-    "a": "A wide, shallow neckline that runs nearly horizontally across the collarbone"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a wrap dress?",
-    "a": "A dress that wraps across the body and fastens at the side or waist"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What does 'petite' mean in women's clothing sizing?",
-    "a": "Sizing proportioned for shorter heights, not simply smaller body size"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a gusset in clothing?",
-    "a": "An added fabric panel that provides shape, strength, or extra room"
+    "a": "A very narrow, high heel",
+    "choices": [
+     "A thick block heel",
+     "A flat pointed shoe",
+     "A very narrow, high heel"
+    ]
    },
    {
     "cat": "Fashion & Style",
@@ -2871,394 +2076,94 @@
     "a": "A shirt-jacket hybrid"
    },
    {
-    "cat": "Fashion & Style",
-    "q": "What is a clutch bag?",
-    "a": "A small handbag typically carried in the hand without a shoulder strap"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What is a French manicure?",
-    "a": "A manicure traditionally featuring a pale or nude nail bed with white tips"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What is a 'root smudge' in hair coloring?",
-    "a": "A technique that softens the transition between natural roots and colored hair"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What does 'ombré' mean in hair color?",
-    "a": "A gradual transition from darker roots to lighter ends, or between shades"
-   },
-   {
     "cat": "Hair & Nails",
     "q": "What is a gel manicure cured with?",
-    "a": "A UV or LED nail lamp, depending on the gel system"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What is a top coat used for in nail polish?",
-    "a": "To seal the color, add finish, and help protect the manicure"
+    "a": "A UV or LED lamp",
+    "choices": [
+     "A bowl of ice water",
+     "A UV or LED lamp",
+     "A hair dryer"
+    ]
    },
    {
     "cat": "Hair & Nails",
     "q": "What is a blowout at a salon?",
-    "a": "A professional wash and blow-dry styling service"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What is dry shampoo designed to do?",
-    "a": "Absorb excess oil at the roots and refresh hair between washes"
-   },
-   {
-    "cat": "Hair & Nails",
-    "q": "What does 'balayage' differ from traditional foil highlights by?",
-    "a": "Balayage is typically hand-painted for a softer, more graduated result; foils isolate sections and can lift more uniformly"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What does 'soft launch' mean when someone posts about a new relationship?",
-    "a": "Hinting at a partner without clearly revealing their identity"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What is 'weaponized incompetence'?",
-    "a": "Using or performing incompetence to avoid responsibility or make someone else take over a task"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What does 'emotional labor' often refer to in relationships?",
-    "a": "The effort of managing feelings, anticipating needs, and maintaining social or household relationships"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What does 'orbiting' mean in dating slang?",
-    "a": "Someone stops direct communication but continues watching or interacting with social media posts"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What is 'future faking'?",
-    "a": "Making promises about a shared future without genuine intent to follow through"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What does 'stonewalling' mean in a conflict?",
-    "a": "Withdrawing from or shutting down communication during a discussion"
-   },
-   {
-    "cat": "Relationships & Dating",
-    "q": "What is a 'meet-cute'?",
-    "a": "A charming or unusual first meeting between romantic leads"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What is a charcuterie board traditionally centered on?",
-    "a": "Cured meats, often accompanied by cheeses and other small foods"
+    "a": "A wash and blow-dry styling",
+    "choices": [
+     "A wash and blow-dry styling",
+     "A big haircut",
+     "A full head of highlights"
+    ]
    },
    {
     "cat": "Everyday Life & Culture",
     "q": "What does 'BYOB' stand for?",
-    "a": "Bring Your Own Beverage (often historically 'bottle')"
+    "a": "Bring Your Own Beverage"
    },
    {
     "cat": "Everyday Life & Culture",
     "q": "What is a mimosa traditionally made with?",
-    "a": "Sparkling wine and orange juice"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What is a Dutch oven in cooking?",
-    "a": "A heavy, thick-walled pot, commonly cast iron or enameled cast iron, with a tight-fitting lid"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What is a bridal shower traditionally for?",
-    "a": "Celebrating the bride-to-be and giving gifts, often for the couple's home or new life"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What is a bachelorette party?",
-    "a": "A celebration for someone before her wedding, traditionally organized by friends"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What does 'potluck' mean?",
-    "a": "A gathering where attendees each bring a dish to share"
-   },
-   {
-    "cat": "Everyday Life & Culture",
-    "q": "What is a 'registry' for a wedding or baby shower?",
-    "a": "A curated list of gifts the person or couple would like to receive"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why does placing a wooden spoon across a pot of boiling water temporarily prevent boil-overs, and when does it fail?",
-    "a": "The dry, cooler wood pops surface foam bubbles on contact; once the wood heats up and becomes saturated, bubbles spill over anyway"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'deglazing a pan' mean in cooking, and what are the browned bits stuck to the bottom officially called?",
-    "a": "Adding liquid to dissolve browned caramelized bits into a sauce; the browned bits are called 'fond'"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why does throwing a 100% wool sweater into a hot dryer shrink it permanently into toddler size?",
-    "a": "Heat, moisture, and agitation cause microscopic scales on wool fibers to interlock permanently (felting)"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the 'burrito method' used to solve one of the most frustrating bedroom chores?",
-    "a": "Rolling a duvet insert and cover together like a burrito and flipping it inside-out to put a duvet cover on cleanly"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What quick emergency household item stops a snag or 'run' in sheer tights from spreading further up your leg?",
-    "a": "Clear nail polish (or hairspray) dabbed at the tip of the tear"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "In skincare, what is the rule of thumb for layering products by consistency, and why does sunscreen always go last in the morning?",
-    "a": "Apply thinnest to thickest; sunscreen goes last so it forms an uninterrupted protective film on top of the skin"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you never put cast-iron skillets in the dishwasher or soak them overnight?",
-    "a": "Detergent and prolonged water strip the polymerized oil seasoning and cause the iron to rust"
+    "a": "Sparkling wine and orange juice",
+    "choices": [
+     "Sparkling wine and orange juice",
+     "Vodka and orange juice",
+     "White wine and peach juice"
+    ]
    },
    {
     "cat": "Everyday Life",
     "q": "What does the little triangle-inside-a-circle symbol or crossed-out triangle on a clothing care tag actually mean?",
-    "a": "Bleach instructions (empty triangle = any bleach; crossed-out triangle = do not bleach)"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why does resting a steak for 5-10 minutes after cooking keep it juicier when you slice into it?",
-    "a": "Muscle fibers relax as the temperature cools slightly, allowing juices to redistribute rather than gushing onto the cutting board"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is 'mise en place' in a kitchen, and why do people who ignore it end up frantically chopping garlic while butter burns?",
-    "a": "French for 'putting in place', prepping and measuring all ingredients before turning on the heat"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you NEVER mix bleach and ammonia (or bleach and vinegar) when cleaning a bathroom?",
-    "a": "It creates toxic chloramine or chlorine gas that can severely damage your lungs"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between baking soda and baking powder, and what happens if you swap them 1:1 in pancakes?",
-    "a": "Baking soda is pure sodium bicarbonate requiring an acid to activate; baking powder already contains an acid. Swapping them leaves either flat pancakes or a metallic, soapy taste"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do avocados turn brown after being cut, and how does squeezing lemon or lime juice on them slow it down?",
-    "a": "Enzymes react with oxygen (oxidation); citric acid lowers the pH and slows down the enzyme activity"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'al dente' literally translate to in Italian, and how should pasta feel when cooked that way?",
-    "a": "'To the tooth', tender on the outside with a slight, firm bite in the center (not mushy)"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do people put a dry paper towel inside a bag of washed salad greens in the fridge?",
-    "a": "It absorbs excess moisture, preventing leaves from turning slimy and wilting early"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between a comforter and a duvet?",
-    "a": "A comforter is a single quilted, stitched blanket ready to use as-is; a duvet is a plain fluffy insert meant to go inside a removable, washable duvet cover"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "If you accidentally oversalt a pot of soup or stew, what is the most reliable way to fix it?",
-    "a": "Dilute it by adding unsalted broth, water, or salt-free ingredients like cream, tomatoes, or extra veggies"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you never wash raw chicken in the kitchen sink before cooking it?",
-    "a": "Splashing water spreads Campylobacter and Salmonella bacteria up to 3 feet across countertops and utensils; cooking to 165°F kills bacteria safely"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'tempering' eggs or chocolate mean in cooking?",
-    "a": "Gradually bringing the temperature of eggs or melted chocolate up by slowly adding warm liquid or seed chocolate so eggs don't scramble and chocolate stays glossy"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do brown sugar bricks turn rock-hard in the pantry, and what overnight trick softens them back up?",
-    "a": "Moisture evaporates from the molasses; sealing it in a container with a slice of bread, apple wedge, or damp terracotta disc restores moisture"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between 'use by,' 'sell by,' and 'best by' dates on U.S. grocery products?",
-    "a": "'Sell by' is for store inventory management; 'best by' indicates peak flavor/quality; 'use by' is the manufacturer's last recommended date for peak quality"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you store fresh herbs like cilantro and parsley upright in a glass of water, while keeping basil on the counter instead of the fridge?",
-    "a": "Cilantro/parsley thrive like cut flowers in cold water; basil is tropical and turns black in cold refrigerator temperatures"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'blanching' vegetables mean?",
-    "a": "Briefly boiling veggies in salted water and immediately plunging them into an ice bath to lock in bright color, crispness, and halt cooking"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why does rubbing stainless steel with your hands after chopping garlic or onions remove the smell?",
-    "a": "Sulfur compounds from garlic/onions bind to the chromium/iron molecules in stainless steel instead of clinging to your skin"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the golden rule when cleaning a red wine spill on a white carpet or sofa?",
-    "a": "Blot, never rub, immediately with cold water/club soda and salt or baking soda so you don't grind the pigment deeper into the fibers"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "In laundry, why should you zip up zippers and button buttons differently, zip zippers UP, leave buttons UNBUTTONED?",
-    "a": "Open zippers snag and tear delicate clothes in the drum; buttoned shirts pull against thread and rip buttonholes during agitation"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is 'dry brushing' in beauty and wellness routines?",
-    "a": "Gently brushing dry skin upward toward the heart with a natural-bristle brush before showering to exfoliate dead skin cells"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do restaurant pasta sauces cling to noodles so much better than homemade ones?",
-    "a": "Chefs finish cooking the pasta directly in the sauce pan with a splash of starchy pasta water, emulsifying fat and liquid into a glossy coating"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between white vinegar and cleaning vinegar?",
-    "a": "Cleaning vinegar has a higher acidity, making it stronger on mineral deposits and not meant for eating"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do people add a pinch of salt to sweet baked goods like chocolate chip cookies or brownies?",
-    "a": "Salt suppresses bitterness and sharpens sweet and chocolate flavor receptors on your tongue"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you never store batteries loose in a junk drawer where they can touch keys or coins?",
-    "a": "Metal objects can bridge the positive and negative terminals, causing a short circuit, overheating, or fire"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'julienne' mean when a recipe tells you to julienne carrots or bell peppers?",
-    "a": "Cutting vegetables into thin, uniform matchstick strips"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why does air-drying hair partially before blow-drying reduce frizz and heat damage?",
-    "a": "Hair is weakest and most porous when soaking wet; letting it dry ~70-80% first cuts high-heat exposure dramatically"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between a standard pillowcase and a silk or satin pillowcase for hair and skin?",
-    "a": "Silk/satin creates far less friction than cotton, reducing hair breakage, frizz, and sleep creases on skin"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you never put hot glass bakeware (like Pyrex) directly from the oven onto a wet countertop or cold granite?",
-    "a": "Thermal shock causes rapid uneven contraction, which can make the glass shatter violently"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is 'emulsification' in salad dressing, and what common fridge condiment acts as a magic emulsifier?",
-    "a": "Forcing oil and vinegar to stay smoothly blended together; mustard (especially Dijon) stabilizes the mixture"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do you wash dark jeans inside-out in cold water?",
-    "a": "It protects the outer indigo dye from friction abrasion against the washer drum and prevents hot water from fading the color"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'spatchcocking' a whole chicken or turkey mean?",
-    "a": "Removing the backbone with kitchen shears and pressing the bird flat so it roasts faster and far more evenly"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you wait at least 30 seconds after turning off a blender full of hot soup, or leave the center cap vented with a towel?",
-    "a": "Trapped steam expands rapidly when blades spin, blowing the lid off and spraying boiling soup across the kitchen"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the difference between a moisturizer that is a 'humectant' (like hyaluronic acid) and an 'occlusive' (like Vaseline)?",
-    "a": "Humectants pull water into the top layer of skin; occlusives create a physical seal on top to prevent moisture from evaporating"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do bananas make other fruit on your counter ripen, and rot, twice as fast?",
-    "a": "Bananas release high amounts of ethylene gas, a natural plant hormone that accelerates ripening in nearby produce"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'folding' batter mean in baking, as opposed to stirring or whisking?",
-    "a": "Gently scooping from the bottom and turning batter over itself with a spatula so you don't deflate whipped egg whites or cream"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do cheap nonstick pans lose their coating quickly when heated empty on high heat?",
-    "a": "PTFE coatings break down and degrade above ~500°F, which an empty skillet hits in under two minutes on high"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is the household trick for removing water rings from wooden furniture using a hairdryer or clothes iron?",
-    "a": "Low heat gently evaporates trapped moisture beneath the finish"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do people keep opened bottles of vermouth or olive oil away from the stove?",
-    "a": "Heat, light, and oxygen oxidize fats and delicate wines rapidly, turning olive oil rancid and vermouth sour"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What is 'thread count' on bedsheets, and why is anything advertised above 800-1,000 usually marketing nonsense?",
-    "a": "The number of horizontal and vertical threads per square inch; brands inflate numbers by twisting multi-ply weak yarns together instead of using single-ply long-staple cotton"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why should you clean out your dryer's lint trap before EVERY load?",
-    "a": "Clogged lint traps restrict airflow, double drying times, hike electricity bills, and are the #1 cause of household dryer fires"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "What does 'simmering' look like compared to a 'rolling boil'?",
-    "a": "Simmering has small, gentle bubbles breaking the surface slowly; a rolling boil has large, vigorous bubbles that don't stop when stirred"
-   },
-   {
-    "cat": "Everyday Life",
-    "q": "Why do you put a wooden toothpick into the center of a cake before taking it out of the oven?",
-    "a": "If it comes out clean or with a few moist crumbs (no wet batter), the center is fully baked"
+    "a": "Bleach instructions"
    },
    {
     "cat": "Under It All",
     "q": "What is a 'bralette'?",
-    "a": "A soft bra with no underwire"
+    "a": "A soft bra with no underwire",
+    "choices": [
+     "A soft bra with no underwire",
+     "A strapless bra",
+     "A sports bra with a zipper"
+    ]
    },
    {
     "cat": "Under It All",
     "q": "What does 'VPL' stand for?",
-    "a": "Visible panty line"
+    "a": "Visible panty line",
+    "choices": [
+     "Very plunging neckline",
+     "Velvet party leggings",
+     "Visible panty line"
+    ]
    },
    {
     "cat": "Weddings",
     "q": "What is a maid of honor called if she is married?",
-    "a": "A matron of honor"
+    "a": "Matron of honor",
+    "choices": [
+     "Matron of honor",
+     "Madam of honor",
+     "Lady of honor"
+    ]
    },
    {
     "cat": "Wine & Cocktails",
     "q": "What does 'brut' mean on a bottle of bubbly?",
-    "a": "Dry, with very little sugar"
+    "a": "Dry, with very little sugar",
+    "choices": [
+     "Very sweet",
+     "Extra bubbly",
+     "Dry, with very little sugar"
+    ]
    },
    {
     "cat": "Hair & Nails",
     "q": "What are 'acrylics' at a nail salon?",
-    "a": "Fake nails built from liquid and powder"
+    "a": "Fake nails built from liquid and powder",
+    "choices": [
+     "Stick-on nail stickers",
+     "A clear strengthening polish",
+     "Fake nails built from liquid and powder"
+    ]
    },
    {
     "cat": "Body & Health",
@@ -3286,39 +2191,34 @@
     "a": "Primer"
    },
    {
-    "cat": "Hair & Nails",
-    "q": "What are 'curtain bangs'?",
-    "a": "Bangs parted in the middle and swept to each side"
-   },
-   {
-    "cat": "Fashion & Style",
-    "q": "What is a 'romper'?",
-    "a": "A one-piece outfit with a top and shorts joined together"
-   },
-   {
     "cat": "Fashion & Style",
     "q": "What is a 'kitten heel'?",
-    "a": "A short, thin heel, about two inches or less"
-   },
-   {
-    "cat": "Body & Health",
-    "q": "What is a 'doula'?",
-    "a": "A trained helper who supports a mother through labor and birth"
+    "a": "A short, thin heel",
+    "choices": [
+     "A heel with a fur trim",
+     "A short, thin heel",
+     "A tall platform heel"
+    ]
    },
    {
     "cat": "Body & Health",
     "q": "What is ovulation?",
-    "a": "When an ovary releases an egg"
-   },
-   {
-    "cat": "Girl Code",
-    "q": "In a couple, what is a 'hall pass'?",
-    "a": "Permission to sleep with one named person, usually a celebrity"
+    "a": "When an ovary releases an egg",
+    "choices": [
+     "When a period starts",
+     "When an egg is fertilized",
+     "When an ovary releases an egg"
+    ]
    },
    {
     "cat": "Hair & Nails",
     "q": "What is a 'top knot'?",
-    "a": "Hair pulled up into a bun on top of the head"
+    "a": "A bun on top of the head",
+    "choices": [
+     "A bun on top of the head",
+     "A braid down the back",
+     "A ponytail to one side"
+    ]
    }
   ],
   "pics": [
@@ -3330,7 +2230,12 @@
    {
     "img": "lipstick",
     "q": "What is a 'lip plumper' meant to do?",
-    "a": "Make lips look fuller"
+    "a": "Make lips look fuller",
+    "choices": [
+     "Make lips look fuller",
+     "Make lipstick last longer",
+     "Make lips look thinner"
+    ]
    },
    {
     "img": "ring",
@@ -3355,17 +2260,32 @@
    {
     "img": "bouquet",
     "q": "At a wedding, what does catching this supposedly mean?",
-    "a": "You will be the next to marry"
+    "a": "You will be the next to marry",
+    "choices": [
+     "You give the next toast",
+     "You will be the next to marry",
+     "You owe the bride a dance"
+    ]
    },
    {
     "img": "mirror",
     "q": "What is a 'thirst trap'?",
-    "a": "A sexy photo posted to get attention"
+    "a": "A sexy photo posted to get attention",
+    "choices": [
+     "A bar with a long line",
+     "A sexy photo posted to get attention",
+     "A drink that is mostly ice"
+    ]
    },
    {
     "img": "dress",
     "q": "What do the letters LBD stand for?",
-    "a": "Little black dress"
+    "a": "Little black dress",
+    "choices": [
+     "Low back dress",
+     "Little black dress",
+     "Long beach dress"
+    ]
    },
    {
     "img": "gem-stone",
@@ -3375,22 +2295,32 @@
    {
     "img": "lotion-bottle",
     "q": "What is 'self-tanner' for?",
-    "a": "A tan without the sun"
+    "a": "A tan without the sun",
+    "choices": [
+     "A tan without the sun",
+     "A tan that never fades",
+     "Sunscreen with color"
+    ]
    },
    {
     "img": "cupcake",
     "q": "What is a 'cheat day'?",
-    "a": "A day off from the diet"
+    "a": "A day off from the diet",
+    "choices": [
+     "A day off from the diet",
+     "A day off from the gym",
+     "A day you skip work"
+    ]
    },
    {
     "img": "shopping-bags",
     "q": "What is 'retail therapy'?",
-    "a": "Shopping to feel better"
-   },
-   {
-    "img": "purse",
-    "q": "What is a 'wristlet'?",
-    "a": "A small purse with a strap that loops around the wrist"
+    "a": "Shopping to feel better",
+    "choices": [
+     "Working a shift at the mall",
+     "Shopping to feel better",
+     "Returning everything you bought"
+    ]
    }
   ],
   "moves": [

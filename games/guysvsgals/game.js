@@ -137,6 +137,11 @@ export function validateSet(set) {
         if (!q || !text(q.q)) fail(`${where}: write the question`);
         if (!text(q.a)) fail(`${where}: write the answer`);
         if (deck === 'pics' && !text(q.img)) fail(`${where}: choose a picture`);
+        if (q.choices !== undefined) {
+          const c = Array.isArray(q.choices) ? q.choices.map(text) : [];
+          if (c.length !== 3 || c.some((x) => !x)) fail(`${where}: a multiple choice question needs three choices, A, B and C`);
+          if (!c.includes(text(q.a))) fail(`${where}: the answer must be one of the three choices`);
+        }
       });
     }
     (half.lives ?? []).forEach((q, n) => {
@@ -276,6 +281,9 @@ export class GuysVsGalsGame {
               item = { q: text(x.q), a: text(x.a) };
               if (text(x.cat)) item.cat = text(x.cat);
               if (d === 'pics') item.img = text(x.img);
+              // Multiple choice: A, B and C go up on the TV, and the right one is marked with the answer.
+              const choices = Array.isArray(x.choices) ? x.choices.map(text) : [];
+              if (choices.length === 3 && choices.every(Boolean) && choices.includes(item.a)) item.choices = choices;
             }
             if (!item) continue;
             const k = `${part}:${cardKey(d, item)}`;
@@ -375,7 +383,7 @@ export class GuysVsGalsGame {
       stage: 'read', challenged: false, votes: {}, voteOrder: [], secret: null, pick: null, actor: null,
     };
     if (d === 'moves') c.m = item.m;
-    else { c.q = item.q; if (d === 'lives') c.choices = item.choices.slice(); else c.a = item.a; }
+    else { c.q = item.q; if (item.choices) c.choices = item.choices.slice(); if (d !== 'lives') c.a = item.a; }
     if (item.cat) c.cat = item.cat;
     if (item.img) c.img = item.img;
     this.card = c;
@@ -537,6 +545,8 @@ export class GuysVsGalsGame {
     } else if (right) this.#outcome({ right: true, moveSide: c.about, next: c.about });   // the challenged team got it
     else this.#outcome({ right: false, moveSide: at, next: at });                           // they missed: it's ours
   }
+  /** On a multiple choice trivia card, which of A, B and C is right (null on every other card). */
+  #rightChoice(c) { const i = c.choices && c.deck !== 'lives' ? c.choices.indexOf(c.a) : -1; return i < 0 ? null : i; }
   /** The trophy moves (or a team wins it), the answer shows, and then the next card. */
   #outcome({ right, moveSide, next, timeout = false, stolen = false }) {
     const c = this.card;
@@ -550,7 +560,7 @@ export class GuysVsGalsGame {
     this.result = {
       right, moved: moveSide, trophy, next, timeout, stolen, challenged: !!c.challenged,
       answer: c.deck === 'moves' ? c.m : c.deck === 'lives' ? (c.secret === null ? null : c.choices[c.secret]) : c.a,
-      secret: c.secret ?? null, pick: c.pick ?? null,
+      secret: c.deck === 'lives' ? c.secret ?? null : this.#rightChoice(c), pick: c.pick ?? null,
     };
     c.stage = 'done';
     this.phase = 'result';
@@ -665,10 +675,11 @@ export class GuysVsGalsGame {
   #raceQuestion() {
     const c = this.card;
     const q = c.qs[c.i];
-    for (const k of ['q', 'a', 'cat', 'img']) delete c[k];
+    for (const k of ['q', 'a', 'cat', 'img', 'choices']) delete c[k];
     Object.assign(c, { deck: q.deck, q: q.q, a: q.a, stage: 'read' });
     if (q.cat) c.cat = q.cat;
     if (q.img) c.img = q.img;
+    if (q.choices) c.choices = q.choices.slice();
   }
   /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
   #movePawn(side, n, row = null) {
@@ -741,7 +752,7 @@ export class GuysVsGalsGame {
     const c = this.card;
     const side = this.turn;
     delete c.moves;
-    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
+    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: this.#rightChoice(c), pick: null, more: false, q: c.i + 1 };
     let crossed = null;
     if (right) {
       c.right += 1;

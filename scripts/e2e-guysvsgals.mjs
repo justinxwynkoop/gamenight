@@ -114,6 +114,7 @@ try {
   const decks = new Set();
   let cards = 0;
   let challenged = false;
+  let mcSeen = false; let mcMarked = false;
   let trophies = 0;
   let last = null;
   const end = Date.now() + 6 * 60_000;
@@ -124,6 +125,7 @@ try {
     if (st.phase === 'trophy') { if (was !== 'trophy' && !trophies++) await shot(tv, 'trophy'); await sleep(150); continue; }
     if (st.phase === 'result') {
       if (cards === 1) await shot(tv, 'result');
+      if ((await tv.locator('.gv-card .gv-choice').count()) && (await tv.locator('.gv-card .gv-choice.right').count()) === 1) { mcMarked = true; await shot(tv, 'choices-result'); }
       const move = ann.getByRole('button', { name: /^Move on$/ });
       if (await move.count()) { await ann.locator('details.gv-pcard summary', { hasText: 'gone quiet' }).click().catch(() => {}); await move.click().catch(() => {}); }
       await sleep(150);
@@ -148,6 +150,14 @@ try {
       if (st.challenged) await shot(tv, 'challenge');
       if (!cards) { await shot(tv, 'card'); await shot(judge, 'phone-reader'); }
       if (st.deck === 'pics') { await shot(tv, 'pics'); }
+      // Multiple choice: A, B and C are on the TV and the reader's phone, and nothing is marked until it is judged.
+      if (await tv.locator('.gv-card .gv-choice').count()) {
+        if ((await tv.locator('.gv-card .gv-choice').count()) !== 3) fail('a multiple choice card needs A, B and C on the TV');
+        if (await tv.locator('.gv-card .gv-choice.right').count()) fail('the TV marks the right choice before the card is judged');
+        if ((await judge.locator('.gv-pchoice').count()) !== 3) fail('the reader does not see the three choices');
+        await shot(tv, 'choices'); await shot(judge, 'phone-choices');
+        mcSeen = true;
+      }
       // Normal: right for the Guys, wrong for the Gals. Challenged (the Guys answer): they got it.
       await judge.locator(st.challenged || guysTurn ? 'button.yes' : 'button.no').click(); acted = true;
     } else if (await phoneWith('button.gv-pchoice[data-i]')) {
@@ -184,6 +194,7 @@ try {
     if (['facts', 'stuff', 'pics'].includes(st.deck)) cards++;
     await until(async () => (await tvState()).sig !== st.sig, 'the TV to move on', 10000);
   }
+  if (mcSeen && !mcMarked) fail('a multiple choice card never marked its right answer on the TV');
   for (const d of ['facts', 'stuff', 'pics', 'moves']) if (!decks.has(d)) fail(`never played an ${d} card`);
   if (trophies !== 3) fail(`the Guys should win three trophies, saw ${trophies}`);
   if (!challenged) fail('never challenged');

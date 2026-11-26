@@ -179,7 +179,7 @@ function deckCard(g) {
     const parts = [];
     if (c.img) parts.push(pic(c.img));
     parts.push(h('div', { class: 'gv-q' }, h('span', { class: 'gv-qa' }, 'Q:'), c.text));
-    if (c.deck === 'lives') {
+    if (c.choices) {
       const secret = result ? r.secret : null;
       const pickI = result ? r.pick : null;
       parts.push(h('div', { class: 'gv-choices three' }, c.choices.map((x, i) => {

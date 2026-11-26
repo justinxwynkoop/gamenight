@@ -49,8 +49,8 @@ test('the Family set is valid and has its decks for both sides, with their pictu
   for (const set of Object.values(SETS)) assert.equal(validateSet(set), true);
   const fam = SETS.family;
   for (const half of [fam.guyStuff, fam.galStuff]) {
-    assert.ok(half.facts.length >= 130, 'facts');
-    assert.ok(half.stuff.length >= 100, 'stuff');
+    assert.ok(half.facts.length >= 110, 'facts');
+    assert.ok(half.stuff.length >= 50, 'stuff');
     assert.ok(half.pics.length >= 60, 'pics');
     assert.equal(half.lives, undefined, 'no Our Lives: every card is trivia');
     assert.ok(half.moves.length >= 90, 'moves');
@@ -690,13 +690,51 @@ test('with no Our Lives cards in play, its space is a second Our Facts space and
   assert.equal(own.room.publicView().game.decks.length, 5);
 });
 
+// Jason: "the only questions are one word answer questions and add in some multiple choice".
+test('every question has a short answer (a word or a name) or is multiple choice with A, B and C', () => {
+  for (const [id, set] of Object.entries(SETS)) {
+    let mc = 0;
+    for (const half of [set.guyStuff, set.galStuff]) {
+      for (const q of [...half.facts, ...half.stuff, ...half.pics]) {
+        if (q.choices) {
+          mc += 1;
+          assert.equal(new Set(q.choices).size, 3, q.q);
+          assert.ok(q.choices.includes(q.a), `the answer is one of the choices: ${q.q}`);
+        } else {
+          const words = q.a.replace(/^(a|an|the)\s+/i, '').split(/\s+/);
+          assert.ok(words.length <= 4 && !/[;,(]/.test(q.a), `${id}: too long to judge at a glance: ${q.q} => ${q.a}`);
+        }
+      }
+    }
+    assert.ok(mc >= 40, `${id} has multiple choice questions`);
+  }
+});
+
+test('a multiple choice card shows A, B and C, is still said out loud, and the right one is marked with the answer', () => {
+  const mcq = { cat: 'Test', q: 'Which is right?', a: 'This one', choices: ['Not this', 'This one', 'Nor this'] };
+  const half = { facts: [mcq], stuff: [mcq], pics: [], moves: [{ m: 'Wave' }] };
+  const sets = { quiz: { title: 'Quiz', guyStuff: half, galStuff: half } };
+  assert.equal(validateSet(sets.quiz), true);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [{ ...mcq, a: 'Other' }] }, galStuff: half }), /one of the three choices/);
+  assert.throws(() => validateSet({ title: 'x', guyStuff: { facts: [{ ...mcq, choices: ['This one', 'B'] }] }, galStuff: half }), /three choices/);
+  const { room, g, begin, msg, reader } = setup({ sets });
+  begin();
+  const card = room.publicView().game.card;
+  assert.deepEqual(card.choices, mcq.choices);
+  assert.equal(card.answer, undefined, 'the TV does not know the answer yet');
+  msg(reader(), { t: 'judge', right: true });
+  assert.equal(g.result.answer, 'This one');
+  assert.equal(g.result.secret, 1, 'B is marked right');
+  assert.equal(g.result.pick, null);
+});
+
 // ---------- the grown-up set ----------
 test('the Grown-Ups set is valid, is where new games start, and the first player can switch sets from a phone', () => {
   assert.equal(validateSet(SETS.grownups), true);
   // Jason: "make sure none of the questions repeat". Nothing is asked twice anywhere in the set, in either half.
   const seen = new Set();
   for (const half of [SETS.grownups.guyStuff, SETS.grownups.galStuff]) {
-    assert.ok(half.facts.length >= 140 && half.stuff.length >= 130 && half.moves.length >= 36 && half.pics.length >= 14);
+    assert.ok(half.facts.length >= 100 && half.stuff.length >= 40 && half.moves.length >= 36 && half.pics.length >= 13);
     for (const deck of ['facts', 'stuff', 'pics', 'moves']) {
       for (const q of half[deck]) {
         const key = (q.q || q.m).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

@@ -4980,6 +4980,11 @@
           if (!q || !text(q.q)) fail(`${where}: write the question`);
           if (!text(q.a)) fail(`${where}: write the answer`);
           if (deck === "pics" && !text(q.img)) fail(`${where}: choose a picture`);
+          if (q.choices !== void 0) {
+            const c = Array.isArray(q.choices) ? q.choices.map(text) : [];
+            if (c.length !== 3 || c.some((x) => !x)) fail(`${where}: a multiple choice question needs three choices, A, B and C`);
+            if (!c.includes(text(q.a))) fail(`${where}: the answer must be one of the three choices`);
+          }
         });
       }
       (half.lives ?? []).forEach((q, n) => {
@@ -4996,7 +5001,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, hasLives_fn, path_fn, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, hasLives_fn, path_fn, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, rightChoice_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5679,6 +5684,8 @@
               item = { q: text(x.q), a: text(x.a) };
               if (text(x.cat)) item.cat = text(x.cat);
               if (d === "pics") item.img = text(x.img);
+              const choices = Array.isArray(x.choices) ? x.choices.map(text) : [];
+              if (choices.length === 3 && choices.every(Boolean) && choices.includes(item.a)) item.choices = choices;
             }
             if (!item) continue;
             const k = `${part}:${cardKey(d, item)}`;
@@ -5767,8 +5774,8 @@
     if (d === "moves") c.m = item.m;
     else {
       c.q = item.q;
-      if (d === "lives") c.choices = item.choices.slice();
-      else c.a = item.a;
+      if (item.choices) c.choices = item.choices.slice();
+      if (d !== "lives") c.a = item.a;
     }
     if (item.cat) c.cat = item.cat;
     if (item.img) c.img = item.img;
@@ -5849,6 +5856,11 @@
     } else if (right) __privateMethod(this, _GuysVsGalsGame_instances, outcome_fn).call(this, { right: true, moveSide: c.about, next: c.about });
     else __privateMethod(this, _GuysVsGalsGame_instances, outcome_fn).call(this, { right: false, moveSide: at, next: at });
   };
+  /** On a multiple choice trivia card, which of A, B and C is right (null on every other card). */
+  rightChoice_fn = function(c) {
+    const i = c.choices && c.deck !== "lives" ? c.choices.indexOf(c.a) : -1;
+    return i < 0 ? null : i;
+  };
   /** The trophy moves (or a team wins it), the answer shows, and then the next card. */
   outcome_fn = function({ right, moveSide, next, timeout = false, stolen = false }) {
     const c = this.card;
@@ -5868,7 +5880,7 @@
       stolen,
       challenged: !!c.challenged,
       answer: c.deck === "moves" ? c.m : c.deck === "lives" ? c.secret === null ? null : c.choices[c.secret] : c.a,
-      secret: c.secret ?? null,
+      secret: c.deck === "lives" ? c.secret ?? null : __privateMethod(this, _GuysVsGalsGame_instances, rightChoice_fn).call(this, c),
       pick: c.pick ?? null
     };
     c.stage = "done";
@@ -5972,10 +5984,11 @@
   raceQuestion_fn = function() {
     const c = this.card;
     const q = c.qs[c.i];
-    for (const k of ["q", "a", "cat", "img"]) delete c[k];
+    for (const k of ["q", "a", "cat", "img", "choices"]) delete c[k];
     Object.assign(c, { deck: q.deck, q: q.q, a: q.a, stage: "read" });
     if (q.cat) c.cat = q.cat;
     if (q.img) c.img = q.img;
+    if (q.choices) c.choices = q.choices.slice();
   };
   /** Moves a side's pawn on the board (negative: back toward its START). Returns true if it got across. */
   movePawn_fn = function(side, n, row = null) {
@@ -6051,7 +6064,7 @@
     const c = this.card;
     const side = this.turn;
     delete c.moves;
-    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: null, pick: null, more: false, q: c.i + 1 };
+    const r = { right, moved: null, trophy: null, next: side, timeout: false, stolen: false, challenged: false, answer: c.a, secret: __privateMethod(this, _GuysVsGalsGame_instances, rightChoice_fn).call(this, c), pick: null, more: false, q: c.i + 1 };
     let crossed = null;
     if (right) {
       c.right += 1;
