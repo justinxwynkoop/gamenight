@@ -53,7 +53,7 @@ export function render(raw, ctx) {
         if (c.stage === 'guess') kids.push(h('p', { class: 'dim' }, `${c.voters?.length ?? 0} of ${c.guessers?.length ?? 0} have guessed.`));
       }
       const ans = result ? g.result?.answer : c.answer ?? c.move;
-      if (ans && !c.choices) kids.push(h('div', { class: 'gv-pans' }, h('small', {}, c.deck === 'moves' ? 'THE MOVE' : 'THE ANSWER'), ans));
+      if (ans && c.deck !== 'lives') kids.push(h('div', { class: 'gv-pans' }, h('small', {}, c.deck === 'moves' ? 'THE MOVE' : 'THE ANSWER'), ans));
       if (result && g.result?.wild) kids.push(h('div', { class: 'gv-pans' }, h('small', {}, `${nameOf(g, g.result.wild.owner).toUpperCase()} WILD CARD`), g.result.wild.text));
       body.push(h('div', { class: 'gv' }, h('div', { class: 'gv-pcard accent' }, kids)));
       if (g.phase === 'card') {

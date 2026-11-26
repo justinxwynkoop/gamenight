@@ -148,7 +148,8 @@ export function mount(container, { send }) {
     const c = g.card;
     const me = g.me ?? {};
     const reader = c.reader?.name ?? '';
-    const face = [chips(g, c), c.img ? pic(c.img) : null, h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text)];
+    const face = [chips(g, c), c.img ? pic(c.img) : null, h('div', { class: 'gv-pq' }, h('span', { class: 'gv-qa' }, 'Q: '), c.text),
+      c.choices ? h('div', { class: 'gv-pchoices' }, c.choices.map((x, i) => h('div', { class: 'gv-pchoice', style: { '--l': LETTER_COLORS[i] } }, h('span', { class: 'gv-letter' }, LETTERS[i]), h('span', {}, x)))) : null];
     if (me.canJudge) {
       return [
         h('div', { class: 'gv-pcard accent' }, face,

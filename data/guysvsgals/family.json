@@ -46,7 +46,7 @@
    {
     "cat": "Sports",
     "q": "Which baseball stadium is famous for ivy on its outfield walls?",
-    "a": "Wrigley Field (Chicago Cubs)"
+    "a": "Wrigley Field"
    },
    {
     "cat": "Sports",
@@ -56,7 +56,7 @@
    {
     "cat": "Sports",
     "q": "How far is a free throw line from the backboard, in feet?",
-    "a": "15 feet (from the backboard)"
+    "a": "15 feet"
    },
    {
     "cat": "Sports",
@@ -80,13 +80,8 @@
    },
    {
     "cat": "Sports",
-    "q": "What three horse races make up the Triple Crown?",
-    "a": "Kentucky Derby, Preakness Stakes and Belmont Stakes"
-   },
-   {
-    "cat": "Sports",
     "q": "Which country has won the most men's soccer World Cups?",
-    "a": "Brazil (5)"
+    "a": "Brazil"
    },
    {
     "cat": "Sports",
@@ -107,11 +102,6 @@
     "cat": "Sports",
     "q": "In baseball, what number is the shortstop when keeping score?",
     "a": "6"
-   },
-   {
-    "cat": "Sports",
-    "q": "What does ERA stand for in baseball stats?",
-    "a": "Earned run average"
    },
    {
     "cat": "Sports",
@@ -136,7 +126,7 @@
    {
     "cat": "Sports",
     "q": "Which athlete has won the most Olympic gold medals ever?",
-    "a": "Michael Phelps (swimming)"
+    "a": "Michael Phelps"
    },
    {
     "cat": "Sports",
@@ -151,17 +141,12 @@
    {
     "cat": "Sports",
     "q": "Which NFL quarterback has won the most Super Bowls?",
-    "a": "Tom Brady (7)"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is the 'seventh-inning stretch'?",
-    "a": "Fans standing up in the middle of the 7th inning of a baseball game"
+    "a": "Tom Brady"
    },
    {
     "cat": "Sports",
     "q": "In wrestling, what is it called when you hold your opponent's shoulders to the mat?",
-    "a": "A pin (or fall)"
+    "a": "A pin"
    },
    {
     "cat": "Sports",
@@ -191,7 +176,7 @@
    {
     "cat": "Video Games",
     "q": "Which sports video game series is named after a famous football coach and announcer?",
-    "a": "Madden NFL (John Madden)"
+    "a": "Madden NFL"
    },
    {
     "cat": "Video Games",
@@ -235,11 +220,6 @@
    },
    {
     "cat": "Superheroes & Action",
-    "q": "In Back to the Future, what speed does the time machine need to reach?",
-    "a": "88 miles per hour"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "In Die Hard, what is the name of the tower where the movie takes place?",
     "a": "Nakatomi Plaza"
    },
@@ -275,48 +255,13 @@
    },
    {
     "cat": "Sports",
-    "q": "What is a 'pick-six' in football?",
-    "a": "An interception run back for a touchdown"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is a 'Hail Mary' in football?",
-    "a": "A long, desperate pass at the very end of a half or game"
-   },
-   {
-    "cat": "Sports",
-    "q": "In football, what is a 'blitz'?",
-    "a": "Extra defenders rushing the quarterback"
-   },
-   {
-    "cat": "Sports",
-    "q": "In football, where is the 'red zone'?",
-    "a": "Inside the other team's 20-yard line"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is an 'onside kick'?",
-    "a": "A short kickoff the kicking team tries to get back"
-   },
-   {
-    "cat": "Sports",
     "q": "Which football player snaps the ball to the quarterback?",
     "a": "The center"
    },
    {
     "cat": "Sports",
-    "q": "What is a two-point conversion?",
-    "a": "Running or passing into the end zone after a touchdown, instead of kicking"
-   },
-   {
-    "cat": "Sports",
     "q": "How many players does a football team have on the field at once?",
     "a": "11"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is 'icing' in hockey?",
-    "a": "Shooting the puck from your own half all the way past the far goal line"
    },
    {
     "cat": "Sports",
@@ -327,36 +272,6 @@
     "cat": "Sports",
     "q": "What is the hockey penalty box nicknamed?",
     "a": "The sin bin"
-   },
-   {
-    "cat": "Sports",
-    "q": "In baseball, what is a 'balk'?",
-    "a": "An illegal move by the pitcher, so the runners move up a base"
-   },
-   {
-    "cat": "Sports",
-    "q": "In baseball, what is a 'full count'?",
-    "a": "Three balls and two strikes"
-   },
-   {
-    "cat": "Sports",
-    "q": "In baseball, what is 'hitting for the cycle'?",
-    "a": "A single, double, triple and home run in one game"
-   },
-   {
-    "cat": "Sports",
-    "q": "In baseball, what is a 'perfect game'?",
-    "a": "No batter from the other team reaches base"
-   },
-   {
-    "cat": "Sports",
-    "q": "What does RBI stand for?",
-    "a": "Runs batted in"
-   },
-   {
-    "cat": "Sports",
-    "q": "What is a 'southpaw'?",
-    "a": "A left-handed pitcher or boxer"
    },
    {
     "cat": "Sports",
@@ -375,11 +290,6 @@
    },
    {
     "cat": "Sports",
-    "q": "In basketball, what is an 'alley-oop'?",
-    "a": "A pass caught in the air and dunked"
-   },
-   {
-    "cat": "Sports",
     "q": "How many teams make the March Madness tournament?",
     "a": "68"
    },
@@ -391,27 +301,12 @@
    {
     "cat": "Sports",
     "q": "In golf, what is three strokes under par on one hole called?",
-    "a": "An albatross (double eagle)"
+    "a": "An albatross"
    },
    {
     "cat": "Sports",
     "q": "Which golf tournament gives its winner a green jacket?",
     "a": "The Masters"
-   },
-   {
-    "cat": "Sports",
-    "q": "In golf, what is a 'mulligan'?",
-    "a": "A free do-over shot"
-   },
-   {
-    "cat": "Sports",
-    "q": "In car racing, what is 'drafting'?",
-    "a": "Tucking in close behind another car to cut the wind"
-   },
-   {
-    "cat": "Sports",
-    "q": "In car racing, what is the 'pole position'?",
-    "a": "The first starting spot"
    },
    {
     "cat": "Sports",
@@ -461,7 +356,12 @@
    {
     "cat": "Sports",
     "q": "In fantasy football, what does PPR stand for?",
-    "a": "Point per reception"
+    "a": "Points per reception",
+    "choices": [
+     "Points per reception",
+     "Passing plays run",
+     "Player performance rating"
+    ]
    },
    {
     "cat": "Sports",
@@ -510,11 +410,6 @@
    },
    {
     "cat": "Video Games",
-    "q": "What is the famous Konami cheat code?",
-    "a": "Up, Up, Down, Down, Left, Right, Left, Right, B, A"
-   },
-   {
-    "cat": "Video Games",
     "q": "What was Mario called in the original Donkey Kong arcade game?",
     "a": "Jumpman"
    },
@@ -560,23 +455,13 @@
    },
    {
     "cat": "Video Games",
-    "q": "In a shooting game, what is 'camping'?",
-    "a": "Hiding in one spot and waiting for enemies"
-   },
-   {
-    "cat": "Video Games",
     "q": "Which company makes Fortnite?",
     "a": "Epic Games"
    },
    {
     "cat": "Video Games",
     "q": "Who is the main villain of the Legend of Zelda games?",
-    "a": "Ganon (Ganondorf)"
-   },
-   {
-    "cat": "Video Games",
-    "q": "What are the three starter types in Pokémon games?",
-    "a": "Grass, Fire and Water"
+    "a": "Ganon"
    },
    {
     "cat": "Video Games",
@@ -635,18 +520,8 @@
    },
    {
     "cat": "Superheroes & Action",
-    "q": "In the first John Wick movie, what sets him off on his revenge?",
-    "a": "They killed his puppy (and stole his car)"
-   },
-   {
-    "cat": "Superheroes & Action",
     "q": "What is the hero's name in the Die Hard movies?",
     "a": "John McClane"
-   },
-   {
-    "cat": "Superheroes & Action",
-    "q": "How does James Bond take his martini?",
-    "a": "Shaken, not stirred"
    },
    {
     "cat": "Superheroes & Action",
@@ -656,12 +531,12 @@
    {
     "cat": "Superheroes & Action",
     "q": "Finish the line from Jaws: 'You're gonna need a bigger...'",
-    "a": "'...boat'"
+    "a": "Boat"
    },
    {
     "cat": "Superheroes & Action",
     "q": "What is the Mandalorian's catchphrase?",
-    "a": "'This is the way'"
+    "a": "This is the way"
    },
    {
     "cat": "Superheroes & Action",
@@ -676,7 +551,7 @@
    {
     "cat": "Superheroes & Action",
     "q": "What is the name of Tony Stark's computer butler?",
-    "a": "J.A.R.V.I.S."
+    "a": "J.A.R.V.I.S"
    },
    {
     "cat": "Superheroes & Action",
@@ -696,12 +571,7 @@
    {
     "cat": "Outdoors",
     "q": "What is a male turkey called?",
-    "a": "A tom (or gobbler)"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "When a hunter says 'a ten-point buck', what is being counted?",
-    "a": "The points (tines) on its antlers"
+    "a": "A tom"
    },
    {
     "cat": "Outdoors",
@@ -720,23 +590,8 @@
    },
    {
     "cat": "Outdoors",
-    "q": "In duck hunting, what is a decoy?",
-    "a": "A fake duck that draws real ones in"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "What is a tree stand for?",
-    "a": "Hunting from up in a tree"
-   },
-   {
-    "cat": "Outdoors",
     "q": "Which star do you find to know which way is north?",
-    "a": "Polaris (the North Star)"
-   },
-   {
-    "cat": "Outdoors",
-    "q": "What is a carabiner?",
-    "a": "A metal clip used in climbing"
+    "a": "Polaris"
    }
   ],
   "stuff": [
@@ -762,11 +617,6 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What does the 'V' in a V8 engine describe?",
-    "a": "The V shape the cylinders are set in"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "What part keeps charging the battery while the engine runs?",
     "a": "The alternator"
    },
@@ -777,33 +627,8 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "About how many miles do most modern cars go between oil changes: 500, 5,000 or 50,000?",
-    "a": "About 5,000 (often 5,000 to 7,500)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does PSI stand for on a tire gauge?",
-    "a": "Pounds per square inch"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does the clutch pedal do in a stick-shift car?",
-    "a": "Disconnects the engine from the wheels so you can change gears"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a catalytic converter clean up?",
-    "a": "The car's exhaust gases"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is a 'hemi' engine named after?",
-    "a": "The half-dome (hemispherical) shape of its combustion chambers"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "Which company makes the Ram pickup?",
-    "a": "Ram (once Dodge)"
+    "a": "Ram"
    },
    {
     "cat": "Cars & Trucks",
@@ -822,38 +647,8 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What is the 'redline' on a tachometer?",
-    "a": "The highest safe engine speed"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What color is fresh engine coolant usually: green/orange, black, or clear?",
-    "a": "Green or orange (or pink)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a timing belt keep in step?",
-    "a": "The crankshaft and the camshaft (the engine's valves and pistons)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does ABS stand for on a car?",
-    "a": "Anti-lock braking system"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "When jump-starting a car, which color clamp goes on the positive post?",
     "a": "Red"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a 2x4 board's real size, in inches?",
-    "a": "About 1.5 by 3.5 inches"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a stud finder find in a wall?",
-    "a": "The wooden (or metal) studs behind the drywall"
    },
    {
     "cat": "Tools & DIY",
@@ -863,17 +658,7 @@
    {
     "cat": "Tools & DIY",
     "q": "What tool is used to cut curves in wood?",
-    "a": "A jigsaw (or coping saw)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a 'miter' cut?",
-    "a": "An angled cut, like the corners of a picture frame"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is sandpaper's 'grit' number about?",
-    "a": "How coarse or fine it is (higher is finer)"
+    "a": "A jigsaw"
    },
    {
     "cat": "Tools & DIY",
@@ -883,17 +668,7 @@
    {
     "cat": "Tools & DIY",
     "q": "What tool turns a nut or bolt with a clicking handle and swappable sockets?",
-    "a": "A ratchet (socket wrench)"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a torque wrench do?",
-    "a": "Tightens a bolt to an exact amount of force"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What color is the ground wire in most home wiring?",
-    "a": "Green or bare copper"
+    "a": "A ratchet"
    },
    {
     "cat": "Tools & DIY",
@@ -902,38 +677,18 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What is a GFCI outlet for?",
-    "a": "Cutting power fast to prevent shocks, near water"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What is the U-shaped pipe under a sink called?",
     "a": "The P-trap"
    },
    {
     "cat": "Tools & DIY",
-    "q": "What is a 'pilot hole'?",
-    "a": "A small hole drilled first so a screw goes in easily"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a 'lag bolt'?",
-    "a": "A big, heavy screw with a hex head for wood"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "What is the name for a pair of pliers that lock tight onto something?",
-    "a": "Locking pliers (Vise-Grips)"
+    "a": "Locking pliers"
    },
    {
     "cat": "Tools & DIY",
     "q": "What tool is used to cut metal pipe or bolts by hand?",
     "a": "A hacksaw"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What fuel mix do many two-stroke engines, like leaf blowers, need?",
-    "a": "Gas mixed with two-stroke oil"
    },
    {
     "cat": "Grilling & Food",
@@ -963,17 +718,12 @@
    {
     "cat": "Grilling & Food",
     "q": "What part of the pig is used for pulled pork?",
-    "a": "The shoulder (pork butt)"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is 'the stall' when smoking a brisket?",
-    "a": "When the meat's temperature stops rising for hours"
+    "a": "The shoulder"
    },
    {
     "cat": "Grilling & Food",
     "q": "What kind of wood is famous for smoking with a strong flavor in Texas: mesquite or pine?",
-    "a": "Mesquite (and oak)"
+    "a": "Mesquite"
    },
    {
     "cat": "Grilling & Food",
@@ -987,18 +737,8 @@
    },
    {
     "cat": "Grilling & Food",
-    "q": "What is a chimney starter for?",
-    "a": "Lighting charcoal without lighter fluid"
-   },
-   {
-    "cat": "Grilling & Food",
     "q": "What scale measures how hot a pepper is?",
     "a": "The Scoville scale"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a differential do?",
-    "a": "Lets the two wheels on an axle turn at different speeds"
    },
    {
     "cat": "Cars & Trucks",
@@ -1017,33 +757,8 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What is a 'donut' on a car, besides a spin in a parking lot?",
-    "a": "A small temporary spare tire"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "What do brake pads squeeze to stop the car?",
-    "a": "The rotor (brake disc)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is a 'dually'?",
-    "a": "A pickup with four wheels on the back axle"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is a 'fifth wheel' on a truck?",
-    "a": "A big hitch in the truck bed for heavy trailers"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "Diesel engines have no spark plugs. What lights the fuel?",
-    "a": "The heat of squeezing the air (compression)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does the octane number of gas tell you?",
-    "a": "How well it resists knocking"
+    "a": "The rotor"
    },
    {
     "cat": "Cars & Trucks",
@@ -1052,48 +767,8 @@
    },
    {
     "cat": "Cars & Trucks",
-    "q": "What is hydroplaning?",
-    "a": "Tires riding up on a layer of water"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is a 'sleeper' car?",
-    "a": "A plain-looking car that is secretly very fast"
-   },
-   {
-    "cat": "Cars & Trucks",
     "q": "Mopar fans drive cars from which company?",
-    "a": "Chrysler (Dodge, Jeep, Ram, Plymouth)"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does '0 to 60' measure?",
-    "a": "How many seconds a car takes to reach 60 miles an hour"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What is torque?",
-    "a": "Twisting force: the grunt that gets a car or truck moving"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a serpentine belt do?",
-    "a": "Drives the alternator, water pump and air conditioning off the engine"
-   },
-   {
-    "cat": "Cars & Trucks",
-    "q": "What does a mechanic plug into the OBD port?",
-    "a": "A scanner that reads the car computer's trouble codes"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a Sawzall?",
-    "a": "A reciprocating saw, for rough cutting and demolition"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a Dremel?",
-    "a": "A small hand-held rotary tool"
+    "a": "Chrysler"
    },
    {
     "cat": "Tools & DIY",
@@ -1102,63 +777,8 @@
    },
    {
     "cat": "Tools & DIY",
-    "q": "What is a speed square?",
-    "a": "A triangle-shaped carpenter's square for marking angles"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a chalk line for?",
-    "a": "Snapping a long, straight line onto a surface"
-   },
-   {
-    "cat": "Tools & DIY",
     "q": "Finish the carpenter's rule: 'Measure twice...'",
-    "a": "'...cut once'"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does a router do in woodworking?",
-    "a": "Cuts grooves and shaped edges"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a countersink?",
-    "a": "A cone-shaped hole so a screw head sits flush"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What does 'plumb' mean?",
-    "a": "Perfectly straight up and down"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What do joists hold up?",
-    "a": "A floor or a ceiling"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is rebar?",
-    "a": "Steel bars set inside concrete to make it stronger"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is Teflon tape for?",
-    "a": "Sealing the threads of pipe fittings"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a shim?",
-    "a": "A thin wedge used to level something or fill a gap"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "In plumbing, what does it mean to 'sweat' a pipe?",
-    "a": "Solder a copper joint"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What is a saw's 'kerf'?",
-    "a": "The width of the cut the blade makes"
+    "a": "Cut once"
    },
    {
     "cat": "Tools & DIY",
@@ -1166,49 +786,9 @@
     "a": "12 gauge"
    },
    {
-    "cat": "Tools & DIY",
-    "q": "What are Channellocks?",
-    "a": "Big adjustable pliers with long handles"
-   },
-   {
-    "cat": "Tools & DIY",
-    "q": "What has happened to a 'stripped' screw?",
-    "a": "Its head is worn out, so the screwdriver just slips"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is a 'reverse sear'?",
-    "a": "Cooking the meat low and slow first, then searing it at the end"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "Burnt ends are cut from which piece of meat?",
-    "a": "The point of a brisket"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is the 'Texas crutch'?",
-    "a": "Wrapping the meat in foil or butcher paper to speed through the stall"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is the 'bark' on a brisket?",
-    "a": "The dark, crusty outside"
-   },
-   {
     "cat": "Grilling & Food",
     "q": "The '3-2-1 method' is a way to smoke what?",
     "a": "Ribs"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What does it mean to 'spatchcock' a chicken?",
-    "a": "Cut out the backbone and flatten it"
-   },
-   {
-    "cat": "Grilling & Food",
-    "q": "What is a tomahawk steak?",
-    "a": "A ribeye with a long rib bone left on"
    },
    {
     "cat": "Grilling & Food",
@@ -1218,7 +798,12 @@
    {
     "cat": "Grilling & Food",
     "q": "What is a growler?",
-    "a": "A jug for taking draft beer home"
+    "a": "A jug for taking draft beer home",
+    "choices": [
+     "The foam on top of a beer",
+     "A jug for taking draft beer home",
+     "An extra-strong dark beer"
+    ]
    },
    {
     "cat": "Grilling & Food",
@@ -1231,21 +816,111 @@
     "a": "Kentucky"
    },
    {
-    "cat": "Grilling & Food",
-    "q": "What does it mean to order a whiskey 'neat'?",
-    "a": "Straight, with no ice or mixer"
+    "cat": "Tools & DIY",
+    "q": "What is a 'miter' cut?",
+    "a": "An angled cut, like the corners of a picture frame",
+    "choices": [
+     "A small hole drilled first so a screw goes in easily",
+     "A thin wedge used to level something or fill a gap",
+     "An angled cut, like the corners of a picture frame"
+    ]
    },
    {
-    "cat": "Grilling & Food",
-    "q": "What is cooking with 'indirect heat' on a grill?",
-    "a": "Putting the food beside the fire, not over it"
+    "cat": "Tools & DIY",
+    "q": "What is a 'pilot hole'?",
+    "a": "A small hole drilled first so a screw goes in easily",
+    "choices": [
+     "A small hole drilled first so a screw goes in easily",
+     "A big, heavy screw with a hex head for wood",
+     "A small hand-held rotary tool"
+    ]
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a 'lag bolt'?",
+    "a": "A big, heavy screw with a hex head for wood",
+    "choices": [
+     "A big, heavy screw with a hex head for wood",
+     "A small hand-held rotary tool",
+     "A thin wedge used to level something or fill a gap"
+    ]
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'donut' on a car, besides a spin in a parking lot?",
+    "a": "A small temporary spare tire",
+    "choices": [
+     "A plain-looking car that is secretly very fast",
+     "A small temporary spare tire",
+     "A big hitch in the truck bed for heavy trailers"
+    ]
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'dually'?",
+    "a": "A pickup with four wheels on the back axle",
+    "choices": [
+     "A pickup with four wheels on the back axle",
+     "A small temporary spare tire",
+     "A big hitch in the truck bed for heavy trailers"
+    ]
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'fifth wheel' on a truck?",
+    "a": "A big hitch in the truck bed for heavy trailers",
+    "choices": [
+     "A small temporary spare tire",
+     "A big hitch in the truck bed for heavy trailers",
+     "A pickup with four wheels on the back axle"
+    ]
+   },
+   {
+    "cat": "Cars & Trucks",
+    "q": "What is a 'sleeper' car?",
+    "a": "A plain-looking car that is secretly very fast",
+    "choices": [
+     "A big hitch in the truck bed for heavy trailers",
+     "A plain-looking car that is secretly very fast",
+     "A pickup with four wheels on the back axle"
+    ]
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a Dremel?",
+    "a": "A small hand-held rotary tool",
+    "choices": [
+     "A cone-shaped hole so a screw head sits flush",
+     "A small hole drilled first so a screw goes in easily",
+     "A small hand-held rotary tool"
+    ]
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a countersink?",
+    "a": "A cone-shaped hole so a screw head sits flush",
+    "choices": [
+     "A small hole drilled first so a screw goes in easily",
+     "A cone-shaped hole so a screw head sits flush",
+     "A big, heavy screw with a hex head for wood"
+    ]
+   },
+   {
+    "cat": "Tools & DIY",
+    "q": "What is a shim?",
+    "a": "A thin wedge used to level something or fill a gap",
+    "choices": [
+     "An angled cut, like the corners of a picture frame",
+     "A thin wedge used to level something or fill a gap",
+     "A small hole drilled first so a screw goes in easily"
+    ]
    }
   ],
   "pics": [
    {
     "img": "wrench",
     "q": "A wrench whose jaws slide open and shut to fit any bolt is called a what?",
-    "a": "An adjustable (crescent) wrench"
+    "a": "An adjustable wrench"
    },
    {
     "img": "screwdriver",
@@ -1350,7 +1025,7 @@
    {
     "img": "cut-of-meat",
     "q": "A T-bone steak has a strip steak on one side of the bone. What is on the other side?",
-    "a": "Filet mignon (tenderloin)"
+    "a": "Filet mignon"
    },
    {
     "img": "hot-pepper",
@@ -1405,7 +1080,7 @@
    {
     "img": "video-game",
     "q": "The buttons in a plus shape on a game controller are called the what?",
-    "a": "The D-pad (directional pad)"
+    "a": "The D-pad"
    },
    {
     "img": "axe",
@@ -1430,7 +1105,7 @@
    {
     "img": "flying-disc",
     "q": "What team sport is played with a flying disc and end zones?",
-    "a": "Ultimate (ultimate frisbee)"
+    "a": "Ultimate"
    },
    {
     "img": "flag-in-hole",
@@ -1540,7 +1215,7 @@
    {
     "img": "tractor",
     "q": "The spinning shaft at the back of a tractor that runs other machines is called the what?",
-    "a": "The PTO (power take-off)"
+    "a": "The PTO"
    },
    {
     "img": "fuel-pump",
@@ -1550,7 +1225,7 @@
    {
     "img": "flag-in-hole",
     "q": "Knocking the ball in with one swing from the tee is called a what?",
-    "a": "A hole-in-one (an ace)"
+    "a": "A hole-in-one"
    },
    {
     "img": "bowling",
@@ -1898,7 +1573,7 @@
    {
     "cat": "Movies & TV",
     "q": "In When Harry Met Sally, in what kind of restaurant does the famous 'I'll have what she's having' scene happen?",
-    "a": "A deli (Katz's Delicatessen)"
+    "a": "A deli"
    },
    {
     "cat": "Movies & TV",
@@ -1964,11 +1639,6 @@
     "cat": "Movies & TV",
     "q": "On Dancing with the Stars, what is the trophy called?",
     "a": "The Mirrorball Trophy"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "Which TV home team flipped houses in Waco, Texas, on Fixer Upper?",
-    "a": "Chip and Joanna Gaines"
    },
    {
     "cat": "Movies & TV",
@@ -2123,7 +1793,7 @@
    {
     "cat": "Holidays & Home",
     "q": "What is the birthstone for December?",
-    "a": "Turquoise (or tanzanite or blue zircon)"
+    "a": "Turquoise"
    },
    {
     "cat": "Holidays & Home",
@@ -2163,12 +1833,7 @@
    {
     "cat": "Movies & TV",
     "q": "Which song plays during the pottery scene in Ghost?",
-    "a": "'Unchained Melody'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Legally Blonde, what move does Elle teach at the salon?",
-    "a": "The bend and snap"
+    "a": "Unchained Melody"
    },
    {
     "cat": "Movies & TV",
@@ -2183,7 +1848,7 @@
    {
     "cat": "Movies & TV",
     "q": "What is Cher's catchphrase in Clueless?",
-    "a": "'As if!'"
+    "a": "As if!"
    },
    {
     "cat": "Movies & TV",
@@ -2202,18 +1867,8 @@
    },
    {
     "cat": "Movies & TV",
-    "q": "In 27 Dresses, why does Jane own 27 dresses?",
-    "a": "She has been a bridesmaid 27 times"
-   },
-   {
-    "cat": "Movies & TV",
     "q": "In Bridesmaids, where is the bachelorette party meant to be?",
     "a": "Las Vegas"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In My Best Friend's Wedding, which song does the whole restaurant sing?",
-    "a": "'I Say a Little Prayer'"
    },
    {
     "cat": "Movies & TV",
@@ -2238,12 +1893,7 @@
    {
     "cat": "Movies & TV",
     "q": "In Friends, what is the name of Phoebe's most famous song?",
-    "a": "'Smelly Cat'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "In Friends, what does Ross keep saying about his split from Rachel?",
-    "a": "'We were on a break!'"
+    "a": "Smelly Cat"
    },
    {
     "cat": "Movies & TV",
@@ -2269,11 +1919,6 @@
     "cat": "Movies & TV",
     "q": "On which street do the Desperate Housewives live?",
     "a": "Wisteria Lane"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "How does Gossip Girl sign off?",
-    "a": "'XOXO, Gossip Girl'"
    },
    {
     "cat": "Movies & TV",
@@ -2313,12 +1958,7 @@
    {
     "cat": "Movies & TV",
     "q": "On Project Runway, Heidi Klum says 'One day you're in, and the next day...'",
-    "a": "'...you're out'"
-   },
-   {
-    "cat": "Movies & TV",
-    "q": "What are Cinderella's stepsisters called in the Disney movie?",
-    "a": "Anastasia and Drizella"
+    "a": "You're out"
    },
    {
     "cat": "Movies & TV",
@@ -2377,18 +2017,13 @@
    },
    {
     "cat": "Music & Stars",
-    "q": "What are Adele's albums named after?",
-    "a": "Her age when she wrote them"
-   },
-   {
-    "cat": "Music & Stars",
     "q": "Finish the Shania Twain line: 'That don't impress me...'",
-    "a": "'...much'"
+    "a": "Much"
    },
    {
     "cat": "Music & Stars",
     "q": "Finish the Whitney Houston title: 'I Wanna Dance with...'",
-    "a": "'...Somebody'"
+    "a": "Somebody"
    },
    {
     "cat": "Music & Stars",
@@ -2448,7 +2083,7 @@
    {
     "cat": "Music & Stars",
     "q": "Finish the Marilyn Monroe song: 'Diamonds Are a Girl's...'",
-    "a": "'...Best Friend'"
+    "a": "Best Friend"
    },
    {
     "cat": "Music & Stars",
@@ -2493,7 +2128,7 @@
    {
     "cat": "Books & Royals",
     "q": "Finish the Judy Blume title: 'Are You There God? It's Me, ...'",
-    "a": "'...Margaret'"
+    "a": "Margaret"
    },
    {
     "cat": "Books & Royals",
@@ -2523,7 +2158,7 @@
    {
     "cat": "Holidays & Home",
     "q": "What is the traditional gift for a tenth wedding anniversary?",
-    "a": "Tin (or aluminum)"
+    "a": "Tin"
    },
    {
     "cat": "Holidays & Home",
@@ -2537,23 +2172,13 @@
    },
    {
     "cat": "Holidays & Home",
-    "q": "What color is a Tiffany & Co. box?",
-    "a": "Robin's egg blue (Tiffany blue)"
-   },
-   {
-    "cat": "Holidays & Home",
-    "q": "What does RSVP stand for?",
-    "a": "Répondez s'il vous plaît (please reply)"
-   },
-   {
-    "cat": "Holidays & Home",
     "q": "What is the birthstone for February?",
     "a": "Amethyst"
    },
    {
     "cat": "Holidays & Home",
     "q": "What is the birthstone for October?",
-    "a": "Opal (or tourmaline)"
+    "a": "Opal"
    },
    {
     "cat": "Holidays & Home",
@@ -2562,16 +2187,6 @@
    }
   ],
   "stuff": [
-   {
-    "cat": "Fashion",
-    "q": "What are espadrilles?",
-    "a": "Shoes with rope soles"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'fascinator'?",
-    "a": "A small fancy hat or headpiece"
-   },
    {
     "cat": "Fashion",
     "q": "Capri pants stop around which part of the leg?",
@@ -2583,19 +2198,9 @@
     "a": "Nutmeg"
    },
    {
-    "cat": "Cooking & Baking",
-    "q": "What makes a cake 'red velvet' red?",
-    "a": "Red food coloring (and a little cocoa)"
-   },
-   {
     "cat": "Fashion",
     "q": "Which designer is famous for the little black dress and Chanel No. 5?",
     "a": "Coco Chanel"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'peplum'?",
-    "a": "A short flared ruffle at the waist of a top or dress"
    },
    {
     "cat": "Fashion",
@@ -2605,17 +2210,12 @@
    {
     "cat": "Fashion",
     "q": "What kind of neckline goes straight across from shoulder to shoulder?",
-    "a": "A boat neck (bateau)"
+    "a": "A boat neck"
    },
    {
     "cat": "Fashion",
     "q": "What kind of sleeve stops short with a puff at the shoulder?",
-    "a": "A cap sleeve (or puff sleeve)"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is an A-line skirt shaped like?",
-    "a": "Fitted at the waist and flaring out, like the letter A"
+    "a": "A cap sleeve"
    },
    {
     "cat": "Fashion",
@@ -2625,32 +2225,17 @@
    {
     "cat": "Fashion",
     "q": "What is a 'kitten heel'?",
-    "a": "A short, thin heel"
+    "a": "A short, thin heel",
+    "choices": [
+     "A heel with a fur trim",
+     "A short, thin heel",
+     "A tall platform heel"
+    ]
    },
    {
     "cat": "Fashion",
     "q": "Which shoe designer is famous for red soles?",
     "a": "Christian Louboutin"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is cashmere made from?",
-    "a": "The soft wool of cashmere goats"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is 'chiffon'?",
-    "a": "A thin, see-through, floaty fabric"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What does 'petite' mean in clothing sizes?",
-    "a": "Sized for shorter women (about 5'4\" and under)"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'pashmina'?",
-    "a": "A soft, fine wool shawl or scarf"
    },
    {
     "cat": "Fashion",
@@ -2660,62 +2245,17 @@
    {
     "cat": "Fashion",
     "q": "What are the 'four Cs' of a diamond?",
-    "a": "Cut, color, clarity and carat"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a 'solitaire' ring?",
-    "a": "A ring with a single stone"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is 'rose gold'?",
-    "a": "Gold mixed with copper, so it looks pink"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'contouring' in makeup?",
-    "a": "Shading to make cheekbones and features look sharper"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'highlighter' in makeup for?",
-    "a": "Making parts of the face catch the light and glow"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'beauty blender'?",
-    "a": "An egg-shaped sponge for blending makeup"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does 'primer' do before makeup?",
-    "a": "Smooths the skin so makeup goes on and lasts better"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does setting spray do?",
-    "a": "Keeps makeup in place all day"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'balayage'?",
-    "a": "Hand-painted hair highlights that look natural"
+    "a": "Cut, color, clarity and carat",
+    "choices": [
+     "Cut, cost, class and carat",
+     "Color, cost, clarity and charm",
+     "Cut, color, clarity and carat"
+    ]
    },
    {
     "cat": "Beauty & Hair",
     "q": "What is a 'lob' haircut?",
     "a": "A long bob"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does a 'keratin treatment' do to hair?",
-    "a": "Smooths it and takes away frizz"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'dry shampoo' for?",
-    "a": "Soaking up oil to freshen hair without washing"
    },
    {
     "cat": "Beauty & Hair",
@@ -2726,26 +2266,6 @@
     "cat": "Beauty & Hair",
     "q": "What is the skin at the base of a fingernail called?",
     "a": "The cuticle"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'microblading'?",
-    "a": "Semi-permanent tattooed eyebrow strokes"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is 'retinol' used for in skin care?",
-    "a": "Fighting wrinkles and acne"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'toner' in skin care?",
-    "a": "A liquid used after washing to balance the skin"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a 'blowout'?",
-    "a": "Hair washed and blow-dried smooth at a salon"
    },
    {
     "cat": "Cooking & Baking",
@@ -2759,48 +2279,8 @@
    },
    {
     "cat": "Cooking & Baking",
-    "q": "What does 'fold' mean in a recipe?",
-    "a": "Gently mix in a light ingredient without stirring out the air"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does 'cream the butter and sugar' mean?",
-    "a": "Beat them together until light and fluffy"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is the difference between baking soda and baking powder?",
-    "a": "Baking powder has its own acid; baking soda needs an acid in the recipe"
-   },
-   {
-    "cat": "Cooking & Baking",
     "q": "What is it called when you let bread dough rest and rise a second time?",
     "a": "Proofing"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is 'zest'?",
-    "a": "The grated colored outer skin of a citrus fruit"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a 'roux'?",
-    "a": "Flour cooked in fat to thicken sauces"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does 'al dente' mean for pasta?",
-    "a": "Cooked but still firm to the bite"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is 'blanching' vegetables?",
-    "a": "Boiling them briefly, then plunging them into ice water"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a 'bundt' pan?",
-    "a": "A ring-shaped cake pan with fluted sides"
    },
    {
     "cat": "Cooking & Baking",
@@ -2809,33 +2289,8 @@
    },
    {
     "cat": "Cooking & Baking",
-    "q": "What is 'meringue' made of?",
-    "a": "Egg whites beaten with sugar"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What are 'stiff peaks'?",
-    "a": "Whipped cream or egg whites that hold their points"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is 'ganache'?",
-    "a": "Chocolate melted with cream"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is 'fondant'?",
-    "a": "A smooth sugar paste rolled out to cover cakes"
-   },
-   {
-    "cat": "Cooking & Baking",
     "q": "What kind of icing is made from butter and powdered sugar?",
     "a": "Buttercream"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a 'sourdough starter'?",
-    "a": "A live mix of flour, water and wild yeast used to make bread rise"
    },
    {
     "cat": "Cooking & Baking",
@@ -2848,109 +2303,19 @@
     "a": "Basil"
    },
    {
-    "cat": "Cooking & Baking",
-    "q": "What is 'mise en place'?",
-    "a": "Having all your ingredients measured and ready before cooking"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does a 'Dutch oven' look like?",
-    "a": "A heavy, lidded cast-iron pot"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What does 'thread count' measure on sheets?",
-    "a": "Threads woven into one square inch"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'valance'?",
-    "a": "A short decorative curtain across the top of a window"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is 'shiplap'?",
-    "a": "Wooden wall boards with a farmhouse look"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a 'capsule wardrobe'?",
-    "a": "A small set of clothes that all mix and match"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is the KonMari method about?",
-    "a": "Tidying and keeping only what 'sparks joy'"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is an empire waist?",
-    "a": "A waistline that sits just under the bust"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a bodycon dress?",
-    "a": "A tight dress that hugs the body"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What are culottes?",
-    "a": "Wide, cropped pants that look like a skirt"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What are palazzo pants?",
-    "a": "Long, very wide-legged, flowing pants"
-   },
-   {
     "cat": "Fashion",
     "q": "Which designer made the wrap dress famous?",
     "a": "Diane von Furstenberg"
    },
    {
     "cat": "Fashion",
-    "q": "What is a slingback?",
-    "a": "A shoe with a strap around the back of the heel"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a peep-toe shoe?",
-    "a": "A shoe with a small opening at the toes"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is tulle?",
-    "a": "The fine netting used for tutus and veils"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is houndstooth?",
-    "a": "A pattern of small broken checks, usually black and white"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is gingham?",
-    "a": "A pattern of small, even checks"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is paisley?",
-    "a": "A pattern of curved teardrop shapes"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What does ombré mean?",
-    "a": "Color that fades from dark to light"
-   },
-   {
-    "cat": "Fashion",
     "q": "What is Spanx?",
-    "a": "Shapewear that smooths you out under clothes"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a hobo bag?",
-    "a": "A soft, slouchy, crescent-shaped shoulder bag"
+    "a": "Tight shapewear",
+    "choices": [
+     "Tight shapewear",
+     "A push-up bra",
+     "Stick-on nails"
+    ]
    },
    {
     "cat": "Fashion",
@@ -2959,38 +2324,8 @@
    },
    {
     "cat": "Fashion",
-    "q": "What is a choker?",
-    "a": "A necklace that fits tight around the throat"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a tennis bracelet?",
-    "a": "A bracelet with a single row of diamonds all the way round"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is a locket?",
-    "a": "A pendant that opens to hold a photo"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What is cubic zirconia?",
-    "a": "A man-made stone that looks like a diamond"
-   },
-   {
-    "cat": "Fashion",
     "q": "How many karats is pure gold?",
     "a": "24"
-   },
-   {
-    "cat": "Fashion",
-    "q": "What does it mean when a tailor 'takes in' a dress?",
-    "a": "Makes it smaller"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is concealer for?",
-    "a": "Covering blemishes and dark circles"
    },
    {
     "cat": "Beauty & Hair",
@@ -2999,118 +2334,18 @@
    },
    {
     "cat": "Beauty & Hair",
-    "q": "What is lip liner for?",
-    "a": "Outlining the lips so lipstick doesn't bleed"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is eyebrow threading?",
-    "a": "Pulling out hairs with a twisted cotton thread"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does it mean to exfoliate?",
-    "a": "Scrub away dead skin"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is micellar water?",
-    "a": "A gentle liquid that takes off makeup"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What does hyaluronic acid do for skin?",
-    "a": "Holds moisture in"
-   },
-   {
-    "cat": "Beauty & Hair",
     "q": "Which goes on first: serum or moisturizer?",
     "a": "Serum"
    },
    {
     "cat": "Beauty & Hair",
-    "q": "Why do blondes use purple shampoo?",
-    "a": "To cancel out brassy yellow tones"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a chignon?",
-    "a": "A low bun at the back of the neck"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a diffuser?",
-    "a": "A hair dryer attachment for curly hair"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are curtain bangs?",
-    "a": "Bangs parted in the middle and swept to each side"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What are dip powder nails?",
-    "a": "Nails dipped in colored powder and sealed, with no UV lamp"
-   },
-   {
-    "cat": "Beauty & Hair",
     "q": "Name a fake-nail shape that is long, tapered and flat at the tip.",
-    "a": "Coffin (or ballerina)"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is bronzer for?",
-    "a": "Giving the skin a sun-tanned look"
-   },
-   {
-    "cat": "Beauty & Hair",
-    "q": "What is a lash lift?",
-    "a": "A perm for your eyelashes"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does it mean to braise meat?",
-    "a": "Brown it, then cook it slowly in a little liquid"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does it mean to deglaze a pan?",
-    "a": "Pour in liquid to lift the browned bits off the bottom"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a julienne cut?",
-    "a": "Thin matchstick strips"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a chiffonade?",
-    "a": "Leafy herbs rolled up and sliced into thin ribbons"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does it mean to blind bake a pie crust?",
-    "a": "Bake it empty, before the filling goes in"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is a bain-marie?",
-    "a": "A hot water bath for gentle cooking"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is the difference between a macaron and a macaroon?",
-    "a": "A macaron is an almond sandwich cookie; a macaroon is a coconut mound"
+    "a": "Coffin"
    },
    {
     "cat": "Cooking & Baking",
     "q": "Which pastry dough makes cream puffs and éclairs?",
     "a": "Choux pastry"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What is on top of a crème brûlée?",
-    "a": "A crust of burnt sugar"
    },
    {
     "cat": "Cooking & Baking",
@@ -3129,53 +2364,8 @@
    },
    {
     "cat": "Cooking & Baking",
-    "q": "What does it mean to 'cut in' butter?",
-    "a": "Work cold butter into flour until it is crumbly"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "How do you make a buttermilk substitute at home?",
-    "a": "Add vinegar or lemon juice to milk"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What three vegetables make a mirepoix?",
-    "a": "Onion, carrot and celery"
-   },
-   {
-    "cat": "Cooking & Baking",
     "q": "The seeds of the cilantro plant are which spice?",
     "a": "Coriander"
-   },
-   {
-    "cat": "Cooking & Baking",
-    "q": "What does it mean to temper eggs?",
-    "a": "Warm them slowly with hot liquid so they don't scramble"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a pillow sham?",
-    "a": "A decorative cover for a bed pillow"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a bed skirt?",
-    "a": "Fabric that hangs from the mattress to the floor"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is wainscoting?",
-    "a": "Wood paneling on the lower part of a wall"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is hygge?",
-    "a": "The Danish idea of being cozy and content"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a charger at a fancy dinner table?",
-    "a": "A big decorative plate that sits under the dinner plate"
    },
    {
     "cat": "Home & Shopping",
@@ -3183,19 +2373,314 @@
     "a": "The left"
    },
    {
+    "cat": "Fashion",
+    "q": "What is a 'fascinator'?",
+    "a": "A small fancy hat or headpiece",
+    "choices": [
+     "A small fancy hat or headpiece",
+     "A thin, see-through, floaty fabric",
+     "A pendant that opens to hold a photo"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'peplum'?",
+    "a": "A short flared ruffle at the waist of a top or dress",
+    "choices": [
+     "A thin, see-through, floaty fabric",
+     "A small fancy hat or headpiece",
+     "A short flared ruffle at the waist of a top or dress"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is 'chiffon'?",
+    "a": "A thin, see-through, floaty fabric",
+    "choices": [
+     "A thin, see-through, floaty fabric",
+     "A pattern of curved teardrop shapes",
+     "A necklace that fits tight around the throat"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'pashmina'?",
+    "a": "A soft, fine wool shawl or scarf",
+    "choices": [
+     "A shoe with a small opening at the toes",
+     "A soft, fine wool shawl or scarf",
+     "A small fancy hat or headpiece"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a 'solitaire' ring?",
+    "a": "A ring with a single stone",
+    "choices": [
+     "A ring with a single stone",
+     "A pattern of small, even checks",
+     "A pattern of curved teardrop shapes"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is 'contouring' in makeup?",
+    "a": "Shading to make cheekbones and features look sharper",
+    "choices": [
+     "Shading to make cheekbones and features look sharper",
+     "Fighting wrinkles and acne",
+     "Pulling out hairs with a twisted cotton thread"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a 'beauty blender'?",
+    "a": "An egg-shaped sponge for blending makeup",
+    "choices": [
+     "A hair dryer attachment for curly hair",
+     "An egg-shaped sponge for blending makeup",
+     "A low bun at the back of the neck"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is 'retinol' used for in skin care?",
+    "a": "Fighting wrinkles and acne",
+    "choices": [
+     "Fighting wrinkles and acne",
+     "Pulling out hairs with a twisted cotton thread",
+     "Shading to make cheekbones and features look sharper"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a 'toner' in skin care?",
+    "a": "A liquid used after washing to balance the skin",
+    "choices": [
+     "A hair dryer attachment for curly hair",
+     "An egg-shaped sponge for blending makeup",
+     "A liquid used after washing to balance the skin"
+    ]
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a 'bundt' pan?",
+    "a": "A ring-shaped cake pan with fluted sides",
+    "choices": [
+     "A ring-shaped cake pan with fluted sides",
+     "A smooth sugar paste rolled out to cover cakes",
+     "A crust of burnt sugar"
+    ]
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is 'fondant'?",
+    "a": "A smooth sugar paste rolled out to cover cakes",
+    "choices": [
+     "A ring-shaped cake pan with fluted sides",
+     "A smooth sugar paste rolled out to cover cakes",
+     "A hot water bath for gentle cooking"
+    ]
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is a 'capsule wardrobe'?",
+    "a": "A small set of clothes that all mix and match",
+    "choices": [
+     "A decorative cover for a bed pillow",
+     "A dressed-up, decorated table setting",
+     "A small set of clothes that all mix and match"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is an empire waist?",
+    "a": "A waistline that sits just under the bust",
+    "choices": [
+     "A waistline that sits just under the bust",
+     "A soft, fine wool shawl or scarf",
+     "A pattern of curved teardrop shapes"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a bodycon dress?",
+    "a": "A tight dress that hugs the body",
+    "choices": [
+     "A tight dress that hugs the body",
+     "A soft, slouchy, crescent-shaped shoulder bag",
+     "A small fancy hat or headpiece"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a slingback?",
+    "a": "A shoe with a strap around the back of the heel",
+    "choices": [
+     "A thin, see-through, floaty fabric",
+     "A shoe with a strap around the back of the heel",
+     "A tight dress that hugs the body"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a peep-toe shoe?",
+    "a": "A shoe with a small opening at the toes",
+    "choices": [
+     "A small fancy hat or headpiece",
+     "A shoe with a small opening at the toes",
+     "A pattern of curved teardrop shapes"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is gingham?",
+    "a": "A pattern of small, even checks",
+    "choices": [
+     "A thin, see-through, floaty fabric",
+     "A pattern of small, even checks",
+     "A small fancy hat or headpiece"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is paisley?",
+    "a": "A pattern of curved teardrop shapes",
+    "choices": [
+     "A pattern of curved teardrop shapes",
+     "A waistline that sits just under the bust",
+     "A pattern of small, even checks"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a hobo bag?",
+    "a": "A soft, slouchy, crescent-shaped shoulder bag",
+    "choices": [
+     "A ring with a single stone",
+     "A short flared ruffle at the waist of a top or dress",
+     "A soft, slouchy, crescent-shaped shoulder bag"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a choker?",
+    "a": "A necklace that fits tight around the throat",
+    "choices": [
+     "A thin, see-through, floaty fabric",
+     "A pattern of small, even checks",
+     "A necklace that fits tight around the throat"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is a locket?",
+    "a": "A pendant that opens to hold a photo",
+    "choices": [
+     "A waistline that sits just under the bust",
+     "A tight dress that hugs the body",
+     "A pendant that opens to hold a photo"
+    ]
+   },
+   {
+    "cat": "Fashion",
+    "q": "What is cubic zirconia?",
+    "a": "A man-made stone that looks like a diamond",
+    "choices": [
+     "A pattern of small, even checks",
+     "A pattern of curved teardrop shapes",
+     "A man-made stone that looks like a diamond"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is eyebrow threading?",
+    "a": "Pulling out hairs with a twisted cotton thread",
+    "choices": [
+     "Pulling out hairs with a twisted cotton thread",
+     "Shading to make cheekbones and features look sharper",
+     "Fighting wrinkles and acne"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is micellar water?",
+    "a": "A gentle liquid that takes off makeup",
+    "choices": [
+     "A perm for your eyelashes",
+     "A gentle liquid that takes off makeup",
+     "An egg-shaped sponge for blending makeup"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a chignon?",
+    "a": "A low bun at the back of the neck",
+    "choices": [
+     "An egg-shaped sponge for blending makeup",
+     "A liquid used after washing to balance the skin",
+     "A low bun at the back of the neck"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a diffuser?",
+    "a": "A hair dryer attachment for curly hair",
+    "choices": [
+     "A low bun at the back of the neck",
+     "A hair dryer attachment for curly hair",
+     "An egg-shaped sponge for blending makeup"
+    ]
+   },
+   {
+    "cat": "Beauty & Hair",
+    "q": "What is a lash lift?",
+    "a": "A perm for your eyelashes",
+    "choices": [
+     "A perm for your eyelashes",
+     "A gentle liquid that takes off makeup",
+     "A liquid used after washing to balance the skin"
+    ]
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is a bain-marie?",
+    "a": "A hot water bath for gentle cooking",
+    "choices": [
+     "A crust of burnt sugar",
+     "A ring-shaped cake pan with fluted sides",
+     "A hot water bath for gentle cooking"
+    ]
+   },
+   {
+    "cat": "Cooking & Baking",
+    "q": "What is on top of a crème brûlée?",
+    "a": "A crust of burnt sugar",
+    "choices": [
+     "A crust of burnt sugar",
+     "A ring-shaped cake pan with fluted sides",
+     "A smooth sugar paste rolled out to cover cakes"
+    ]
+   },
+   {
+    "cat": "Home & Shopping",
+    "q": "What is a pillow sham?",
+    "a": "A decorative cover for a bed pillow",
+    "choices": [
+     "A small set of clothes that all mix and match",
+     "A decorative cover for a bed pillow",
+     "A dressed-up, decorated table setting"
+    ]
+   },
+   {
     "cat": "Home & Shopping",
     "q": "What is a tablescape?",
-    "a": "A dressed-up, decorated table setting"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What does a color catcher sheet do in the wash?",
-    "a": "Soaks up loose dye so colors don't run"
-   },
-   {
-    "cat": "Home & Shopping",
-    "q": "What is a wedding registry?",
-    "a": "The couple's list of gifts they would like"
+    "a": "A dressed-up, decorated table setting",
+    "choices": [
+     "A small set of clothes that all mix and match",
+     "A decorative cover for a bed pillow",
+     "A dressed-up, decorated table setting"
+    ]
    }
   ],
   "pics": [
@@ -3218,11 +2703,6 @@
     "img": "nail-polish",
     "q": "What clear polish goes on first, to protect the nail?",
     "a": "A base coat"
-   },
-   {
-    "img": "ring",
-    "q": "On which hand and finger is an engagement ring usually worn?",
-    "a": "The left ring finger"
    },
    {
     "img": "bikini",
@@ -3282,12 +2762,7 @@
    {
     "img": "scarf",
     "q": "A big scarf worn over the shoulders, often in soft wool, is called a what?",
-    "a": "A shawl (or pashmina)"
-   },
-   {
-    "img": "hair-pick",
-    "q": "This wide-tooth comb is made for what kind of hair?",
-    "a": "Curly or natural hair (an Afro)"
+    "a": "A shawl"
    },
    {
     "img": "soap",
@@ -3322,7 +2797,7 @@
    {
     "img": "dress",
     "q": "A dress fitted at the top that flares out from the waist like a ball gown is called a what?",
-    "a": "A fit-and-flare (or ball gown)"
+    "a": "A fit-and-flare"
    },
    {
     "img": "bikini",
@@ -3357,7 +2832,7 @@
    {
     "img": "cupcake",
     "q": "The paper cup a cupcake is baked in is called a cupcake what?",
-    "a": "A liner (cupcake liner)"
+    "a": "A liner"
    },
    {
     "img": "purse",
@@ -3387,7 +2862,7 @@
    {
     "img": "folding-hand-fan",
     "q": "In old Spain and Victorian England, hand fans were used to send what to admirers?",
-    "a": "Secret messages (the language of the fan)"
+    "a": "Secret messages"
    },
    {
     "img": "dress",
@@ -3402,7 +2877,7 @@
    {
     "img": "handbag",
     "q": "A small, structured handbag carried by its short top handle is called a what?",
-    "a": "A satchel (top-handle bag)"
+    "a": "A satchel"
    },
    {
     "img": "nail-polish",
@@ -3457,7 +2932,7 @@
    {
     "img": "teapot",
     "q": "A fancy afternoon meal of tea, tiny sandwiches and cakes is called what?",
-    "a": "High tea (afternoon tea)"
+    "a": "High tea"
    },
    {
     "img": "clutch-bag",
@@ -3502,7 +2977,7 @@
    {
     "img": "soap",
     "q": "A net ball that makes body wash foam up in the shower is called a what?",
-    "a": "A loofah (shower pouf)"
+    "a": "A loofah"
    },
    {
     "img": "sponge",
