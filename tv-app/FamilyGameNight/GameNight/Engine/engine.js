@@ -2386,7 +2386,7 @@
   // games/feud/game.js
   var MAX_STRIKES = 3;
   var FAST_MONEY_QUESTIONS = 5;
-  var AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200 };
+  var AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500 };
   var GAME2 = "feud";
   var SLOTS = ["p1", "p2"];
   var unique = (list) => new Set(list.map((x) => x.toLowerCase())).size === list.length;
@@ -2432,12 +2432,12 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, leader_fn, stakes_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffPlayer_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, faceoffFollowup_fn, faceoffDecided_fn, endRound_fn, beginSuddenDeath_fn, suddenQuestion_fn, leader_fn, stakes_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, noteDup_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, partRevealed_fn, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var _FeudGame = class _FeudGame {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
       this.room = room;
-      this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false, answerSeconds: 10 };
+      this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false, answerSeconds: 10, suddenDeath: true };
       this.setId = null;
       this.set = null;
       this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
@@ -2470,6 +2470,10 @@
       if (this.run.status !== "lobby" && !this.set) this.run = __privateMethod(this, _FeudGame_instances, blankRun_fn).call(this, "lobby");
       const fm0 = this.run.fm;
       if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => v === null ? 0 : 2), p2: fm0.points.p2.map((v) => v === null ? 0 : 2) };
+      if (fm0 && fm0.part === void 0) {
+        fm0.part = ["reveal", "results"].includes(fm0.step) ? "all" : null;
+        fm0.hidden = { p1: false };
+      }
       if (this.run.answerTimer) this.run.answerTimer = null;
       const tm = this.run.fm?.timer;
       if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;
@@ -2580,7 +2584,7 @@
       if (!this.typed() || run.status !== "round" || !player) return false;
       if (run.step === "faceoff") {
         const f = run.faceoff;
-        return !!f.turn && f.reps[f.turn] === player.id;
+        return !!f.turn && __privateMethod(this, _FeudGame_instances, faceoffPlayer_fn).call(this, f.turn)?.id === player.id;
       }
       if (run.step === "play" || run.step === "steal") return player.teamId === run.control;
       return false;
@@ -2602,7 +2606,7 @@
       return { ok: true, hit: index !== -1, label: index === -1 ? null : answers[index].text };
     }
     // ---------- setup ----------
-    setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed, answerSeconds }) {
+    setSettings({ targetScore, multipliers, fastMoney, suddenDeath, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed, answerSeconds }) {
       const inRange = (v, lo, hi, what) => {
         const n = int(v);
         if (!(n >= lo && n <= hi)) fail(`${what} must be ${lo} to ${hi}`);
@@ -2611,6 +2615,7 @@
       if (targetScore !== void 0) this.settings.targetScore = inRange(targetScore, 50, 5e3, "Winning score");
       if (typeof multipliers === "boolean") this.settings.multipliers = multipliers;
       if (typeof fastMoney === "boolean") this.settings.fastMoney = fastMoney;
+      if (typeof suddenDeath === "boolean") this.settings.suddenDeath = suddenDeath;
       if (typeof typed === "boolean") {
         this.settings.typed = typed;
         const f = this.run.status === "round" && this.run.step === "faceoff" ? this.run.faceoff : null;
@@ -2661,10 +2666,12 @@
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     multiplier(i = this.run.round) {
+      if (this.run.sudden) return this.run.sudden.mult;
       if (!this.settings.multipliers) return 1;
       return i < 3 ? 1 : i === 3 ? 2 : 3;
     }
     pot() {
+      if (this.run.sudden?.pts != null) return this.run.sudden.pts;
       const answers = __privateMethod(this, _FeudGame_instances, answers_fn).call(this);
       return this.run.revealed.reduce((sum, i) => sum + (answers[i]?.points ?? 0), 0);
     }
@@ -2725,11 +2732,10 @@
     faceoffWin(id) {
       const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "faceoff");
       __privateMethod(this, _FeudGame_instances, unit_fn).call(this, id);
+      if (run.sudden && !run.faceoff.attempts.some((a) => a.unitId === id && a.rank !== null)) fail("Sudden death is decided by an answer on the board: tap the one they gave");
       __privateMethod(this, _FeudGame_instances, remember_fn).call(this);
-      run.faceoff.winner = id;
       run.faceoff.open = false;
-      run.faceoff.turn = null;
-      run.step = "choose";
+      __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, id);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     /** The host starts the answer clock (10 seconds by default) when it is a player's turn on the team that is playing or stealing.
@@ -2796,7 +2802,11 @@
       const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "roundEnd");
       const top = Math.max(...__privateMethod(this, _FeudGame_instances, teams_fn).call(this).map((t) => t.score));
       const last = run.round >= this.set.rounds.length - 1;
-      if (last || top >= this.settings.targetScore) return this.finishRounds();
+      if (top >= this.settings.targetScore) return this.finishRounds();
+      if (run.sudden || last) {
+        if (this.settings.suddenDeath === false) return this.finishRounds();
+        return __privateMethod(this, _FeudGame_instances, beginSuddenDeath_fn).call(this, top);
+      }
       this.history = [];
       __privateMethod(this, _FeudGame_instances, beginRound_fn).call(this, run.round + 1);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2815,6 +2825,10 @@
           step: leader ? "pick" : "team",
           stakes: leader ? "bonus" : "tiebreak",
           players: [],
+          part: null,
+          hidden: { p1: false },
+          rejected: [],
+          dupBuzz: 0,
           answers: { p1: null, p2: null },
           points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
           labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
@@ -2875,16 +2889,31 @@
       else fail("There is nothing to time right now");
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
+    /** Moves Fast Money on: Player 1 is done, so their answers are revealed; once they have been (and the host says so) they are
+     *  hidden and Player 2 comes in with Player 1's score still up; Player 2 is done, so theirs are revealed. */
     fmNext() {
       this.run.autoAt = null;
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
       if (fm.step === "p1") {
+        __privateMethod(this, _FeudGame_instances, zeroBlanks_fn).call(this, "p1");
+        fm.step = "reveal";
+        fm.part = "p1";
+        fm.timer = null;
+        fm.rejected = [];
+        if (this.typed()) this.run.autoAt = this.room.now() + AUTO.fmReveal;
+      } else if (fm.step === "reveal" && fm.part === "p1") {
+        if (!fm.shown.p1.every((v) => v === 2)) fail("Reveal all of Player 1\u2019s answers first");
         fm.step = "p2";
+        fm.hidden.p1 = true;
+        fm.rejected = [];
         __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds2);
       } else if (fm.step === "p2") {
+        __privateMethod(this, _FeudGame_instances, zeroBlanks_fn).call(this, "p2");
         fm.step = "reveal";
+        fm.part = "p2";
+        fm.hidden.p1 = false;
         fm.timer = null;
-        __privateMethod(this, _FeudGame_instances, zeroBlanks_fn).call(this);
+        fm.rejected = [];
         if (this.typed()) this.run.autoAt = this.room.now() + AUTO.fmReveal;
       } else fail("Nothing further");
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2895,9 +2924,10 @@
       __privateMethod(this, _FeudGame_instances, fmSlot_fn).call(this, slot);
       if (!["p1", "p2", "reveal"].includes(fm.step)) fail("Answers can be entered once Fast Money has started");
       const clean2 = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
-      if (slot === "p2" && fm.step !== "reveal") {
+      if (slot === "p2" && fm.step === "p2") {
         const dup = __privateMethod(this, _FeudGame_instances, repeatsOfPlayer1_fn).call(this, clean2);
-        if (dup.length) fail(`Question ${dup[0] + 1}: Player 1 already said that. Ask for a different answer.`);
+        for (const q of dup) clean2[q] = "";
+        __privateMethod(this, _FeudGame_instances, noteDup_fn).call(this, fm, dup);
       }
       fm.answers[slot] = clean2;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2911,6 +2941,7 @@
       if (fm.step === "p2") {
         rejected = __privateMethod(this, _FeudGame_instances, repeatsOfPlayer1_fn).call(this, clean2);
         for (const q of rejected) clean2[q] = "";
+        __privateMethod(this, _FeudGame_instances, noteDup_fn).call(this, fm, rejected);
       }
       fm.answers[fm.step] = clean2;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
@@ -2932,8 +2963,8 @@
     }
     /** First tap: the TV types out what the player said. An answer nobody gave goes straight to its 0. */
     fmShowAnswer(slot, q) {
-      const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this);
       __privateMethod(this, _FeudGame_instances, fmSlot_fn).call(this, slot);
+      const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this, slot);
       __privateMethod(this, _FeudGame_instances, fmQuestion_fn).call(this, q);
       if (fm.shown[slot][q] >= 1) fail("That answer is already up");
       if (__privateMethod(this, _FeudGame_instances, isBlank_fn).call(this, fm, slot, q)) {
@@ -2946,8 +2977,8 @@
     }
     /** Second tap ("survey says"): the TV shows the points. The host can give the points and the matching answer, or leave them to the suggestion. Can be used again to correct a score. */
     fmShowPoints(slot, q, points, label) {
-      const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this);
       __privateMethod(this, _FeudGame_instances, fmSlot_fn).call(this, slot);
+      const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this, slot);
       __privateMethod(this, _FeudGame_instances, fmQuestion_fn).call(this, q);
       if (fm.shown[slot][q] < 1) fail("Show what they said first");
       let pts;
@@ -2970,7 +3001,7 @@
     /** The next step of the reveal, in the show's order (player 1's five answers, then player 2's): what was said, then the points the survey gives. */
     fmRevealNext() {
       const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this);
-      for (const s of SLOTS) {
+      for (const s of fm.step === "results" || fm.part === "all" ? SLOTS : [fm.part]) {
         for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
           if (fm.shown[s][q] === 0) return this.fmShowAnswer(s, q);
           if (fm.shown[s][q] === 1) return this.fmShowPoints(s, q);
@@ -3007,8 +3038,10 @@
         if (run.status === "round" && run.step === "faceoff" && !run.faceoff.open && !run.faceoff.turn && !run.faceoff.winner) this.replayFaceoff();
         else if (fm && (fm.step === "p1" || fm.step === "p2") && fm.timer?.timedOut) this.fmNext();
         else if (fm && fm.step === "reveal") {
-          this.fmRevealNext();
-          if (fm.step === "reveal") run.autoAt = now + AUTO.fmReveal;
+          if (__privateMethod(this, _FeudGame_instances, partRevealed_fn).call(this, fm)) {
+            if (fm.part === "p1") this.fmNext();
+          } else this.fmRevealNext();
+          if (fm.step === "reveal") run.autoAt = now + (__privateMethod(this, _FeudGame_instances, partRevealed_fn).call(this, fm) ? AUTO.fmHold : AUTO.fmReveal);
         }
       } catch {
       }
@@ -3049,6 +3082,8 @@
       winner: null,
       awarded: 0,
       fm: null,
+      sudden: null,
+      // sudden death (after the last round, nobody at the winning score): { n, mult, question, pts }
       said: null,
       // the last typed guess: { unitId, name, text, index } (index -1 when it was not on the board)
       autoAt: null
@@ -3056,13 +3091,14 @@
     };
   };
   blankFaceoff_fn = function() {
-    return { reps: {}, open: false, turn: null, attempts: [], winner: null, buzzes: [], openedAt: null };
+    return { reps: {}, open: false, turn: null, attempts: [], winner: null, buzzes: [], openedAt: null, followup: false };
   };
   /** Opens the face-off buzzers and starts the clock: each press is timed against this moment. */
   openFaceoff_fn = function(f) {
     f.open = true;
     f.turn = null;
     f.attempts = [];
+    f.followup = false;
     f.openedAt = this.room.now();
     f.buzzes = [];
   };
@@ -3088,7 +3124,7 @@
   };
   // ---------- rounds ----------
   question_fn = function() {
-    return this.set.rounds[this.run.round];
+    return this.run.sudden?.question ?? this.set.rounds[this.run.round];
   };
   answers_fn = function() {
     return ranked(__privateMethod(this, _FeudGame_instances, question_fn).call(this));
@@ -3098,6 +3134,7 @@
     run.status = "round";
     run.round = i;
     run.step = "faceoff";
+    run.sudden = null;
     run.revealed = [];
     run.strikes = 0;
     run.control = null;
@@ -3130,12 +3167,21 @@
     if (this.run.revealed.includes(i)) fail("That answer is already up");
     this.run.revealed.push(i);
   };
+  /** Who answers for a team in the face-off: its face-off player first and, when both of those have missed, the next
+   *  players in line behind them (the team's players in order, wrapping round). */
+  faceoffPlayer_fn = function(unitId, f = this.run.faceoff) {
+    const members = __privateMethod(this, _FeudGame_instances, members_fn).call(this, unitId);
+    if (!members.length) return null;
+    const rep = Math.max(0, members.findIndex((p) => p.id === f.reps[unitId]));
+    const went = f.attempts.filter((a) => a.unitId === unitId).length;
+    return members[(rep + went) % members.length];
+  };
   faceoffAnswer_fn = function(i) {
     const f = this.run.faceoff;
     if (!f.turn) fail("Open the buzzers (or give the turn to a team) first");
     __privateMethod(this, _FeudGame_instances, remember_fn).call(this);
     __privateMethod(this, _FeudGame_instances, reveal_fn).call(this, i);
-    f.attempts.push({ unitId: f.turn, rank: i });
+    f.attempts.push({ unitId: f.turn, rank: i, playerId: __privateMethod(this, _FeudGame_instances, faceoffPlayer_fn).call(this, f.turn)?.id ?? null });
     __privateMethod(this, _FeudGame_instances, judgeFaceoff_fn).call(this);
     __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
   };
@@ -3143,34 +3189,68 @@
     const f = this.run.faceoff;
     if (!f.turn) fail("Open the buzzers (or give the turn to a team) first");
     __privateMethod(this, _FeudGame_instances, remember_fn).call(this);
-    f.attempts.push({ unitId: f.turn, rank: null });
+    f.attempts.push({ unitId: f.turn, rank: null, playerId: __privateMethod(this, _FeudGame_instances, faceoffPlayer_fn).call(this, f.turn)?.id ?? null });
     __privateMethod(this, _FeudGame_instances, judgeFaceoff_fn).call(this);
     __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
   };
-  /** The face-off rules: the top answer wins at once; otherwise the other player gets a go, and the better answer wins. */
+  /** The face-off rules: the top answer wins at once; otherwise the other player gets a go, and the better answer wins.
+   *  If both miss, the next players in line answer, the team that buzzed first leading off, then the other team, and so on
+   *  down both lines: the first answer on the board wins it. */
   judgeFaceoff_fn = function() {
     const run = this.run;
     const f = run.faceoff;
-    const [first, second] = f.attempts;
-    const finish = (unitId) => {
-      f.winner = unitId;
-      f.turn = null;
-      run.step = "choose";
-    };
-    if (!second) {
-      if (first.rank === 0) finish(first.unitId);
-      else f.turn = __privateMethod(this, _FeudGame_instances, other_fn).call(this, first.unitId).id;
+    const n = f.attempts.length;
+    const last = f.attempts[n - 1];
+    if (n === 1) {
+      if (last.rank === 0) __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, last.unitId);
+      else f.turn = __privateMethod(this, _FeudGame_instances, other_fn).call(this, last.unitId).id;
       return;
     }
-    if (first.rank === null && second.rank === null) {
-      f.turn = null;
-      f.open = false;
-      if (this.typed()) run.autoAt = this.room.now() + AUTO.faceoffReplay;
+    if (n === 2) {
+      const [first, second] = f.attempts;
+      if (first.rank === null && second.rank === null) return __privateMethod(this, _FeudGame_instances, faceoffFollowup_fn).call(this);
+      if (first.rank === null) return __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, second.unitId);
+      if (second.rank === null) return __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, first.unitId);
+      return __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, second.rank < first.rank ? second.unitId : first.unitId);
+    }
+    if (last.rank !== null) return __privateMethod(this, _FeudGame_instances, faceoffDecided_fn).call(this, last.unitId);
+    __privateMethod(this, _FeudGame_instances, faceoffFollowup_fn).call(this);
+  };
+  /** Both face-off players missed: on to the next player in line, alternating teams, the first buzz leading off. */
+  faceoffFollowup_fn = function() {
+    const run = this.run;
+    const f = run.faceoff;
+    const first = f.attempts[0].unitId;
+    const second = __privateMethod(this, _FeudGame_instances, other_fn).call(this, first).id;
+    const order = f.attempts.length % 2 === 0 ? [first, second] : [second, first];
+    for (const unitId of order) {
+      if (f.attempts.filter((a) => a.unitId === unitId).length < __privateMethod(this, _FeudGame_instances, members_fn).call(this, unitId).length) {
+        f.turn = unitId;
+        f.followup = true;
+        return;
+      }
+    }
+    f.turn = null;
+    f.open = false;
+    f.followup = false;
+    if (this.typed()) run.autoAt = this.room.now() + AUTO.faceoffReplay;
+  };
+  /** The face-off has a winner. In a normal round they choose to play or pass; in sudden death it is all over. */
+  faceoffDecided_fn = function(unitId) {
+    const run = this.run;
+    const f = run.faceoff;
+    f.winner = unitId;
+    f.turn = null;
+    f.followup = false;
+    const win = f.attempts.filter((a) => a.unitId === unitId && a.rank !== null).sort((x, y) => x.rank - y.rank)[0];
+    if (win?.playerId) f.reps[unitId] = win.playerId;
+    if (run.sudden) {
+      if (!win) fail("Tap the answer they gave first");
+      run.sudden.pts = __privateMethod(this, _FeudGame_instances, answers_fn).call(this)[win.rank].points;
+      __privateMethod(this, _FeudGame_instances, endRound_fn).call(this, unitId);
       return;
     }
-    if (first.rank === null) return finish(second.unitId);
-    if (second.rank === null) return finish(first.unitId);
-    finish(second.rank < first.rank ? second.unitId : first.unitId);
+    run.step = "choose";
   };
   endRound_fn = function(winnerId) {
     const run = this.run;
@@ -3179,6 +3259,39 @@
     run.awarded = this.pot() * this.multiplier();
     unit.score += run.awarded;
     run.step = "roundEnd";
+  };
+  /** One face-off question, worth five times its answer (ten when the gap to the winning score is too big for five). */
+  beginSuddenDeath_fn = function(top) {
+    const run = this.run;
+    const used = run.suddenUsed ?? [];
+    const question = __privateMethod(this, _FeudGame_instances, suddenQuestion_fn).call(this, used);
+    used.push(question.question);
+    const best = Math.max(...question.answers.map((a) => int(a.points)));
+    const need = this.settings.targetScore - top;
+    const mult = need <= best * 5 ? 5 : 10;
+    const n = (run.sudden?.n ?? 0) + 1;
+    this.history = [];
+    __privateMethod(this, _FeudGame_instances, beginRound_fn).call(this, run.round + 1);
+    run.suddenUsed = used;
+    run.sudden = { n, mult, question, pts: null };
+    __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+  };
+  /** A question nobody has seen this game: from the other question sets, else this set's Fast Money questions or its rounds. */
+  suddenQuestion_fn = function(used) {
+    const asked = /* @__PURE__ */ new Set([...this.set.rounds.map((q2) => q2.question), ...used]);
+    let pool = [];
+    for (const meta of this.room.listContent(GAME2)) {
+      if (meta.id === this.setId) continue;
+      try {
+        pool.push(...this.room.loadContent(GAME2, meta.id)?.rounds ?? []);
+      } catch {
+      }
+    }
+    pool = pool.filter((q2) => !asked.has(q2.question));
+    if (!pool.length) pool = (this.set.fastMoney ?? []).filter((q2) => !used.includes(q2.question));
+    if (!pool.length) pool = [...this.set.rounds, ...this.set.fastMoney ?? []];
+    const q = pool[Math.floor((this.room.rng ?? Math.random)() * pool.length)];
+    return { question: q.question, answers: q.answers.map((a) => ({ text: a.text, points: a.points, aliases: a.aliases ?? [] })) };
   };
   leader_fn = function() {
     const [a, b] = __privateMethod(this, _FeudGame_instances, teams_fn).call(this);
@@ -3205,19 +3318,22 @@
     return slot;
   };
   /** An answer nobody gave scores 0 without the host having to say so (the host can still change it). */
-  zeroBlanks_fn = function() {
+  zeroBlanks_fn = function(slot) {
     const fm = this.run.fm;
-    for (const s of SLOTS) {
-      for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
-        if (fm.points[s][q] === null && !(fm.answers[s]?.[q] ?? "").trim()) {
-          fm.points[s][q] = 0;
-          fm.labels[s][q] = "No answer";
-        }
+    for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
+      if (fm.points[slot][q] === null && !(fm.answers[slot]?.[q] ?? "").trim()) {
+        fm.points[slot][q] = 0;
+        fm.labels[slot][q] = "No answer";
       }
     }
   };
   cleanAnswers_fn = function(list) {
     return Array.from({ length: FAST_MONEY_QUESTIONS }, (_, i) => cleanName(Array.isArray(list) ? list[i] : "", 40));
+  };
+  /** Remembers which of Player 2's answers were turned away, and counts the buzzer so the TV can sound it. */
+  noteDup_fn = function(fm, list) {
+    fm.rejected = [...list];
+    if (list.length) fm.dupBuzz = (fm.dupBuzz ?? 0) + 1;
   };
   /** Which of Player 2's answers repeat Player 1's (the same words, or the same survey answer): the questions' numbers, from 0. */
   repeatsOfPlayer1_fn = function(answersP2) {
@@ -3240,13 +3356,19 @@
   isBlank_fn = function(fm, slot, q) {
     return !(fm.answers[slot]?.[q] ?? "").trim();
   };
-  fmReveal_fn = function() {
+  fmReveal_fn = function(slot) {
     const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
-    if (!["reveal", "results"].includes(fm.step)) fail("Reveal the answers once both players are done");
+    if (!["reveal", "results"].includes(fm.step)) fail("Reveal the answers once a player is done");
+    if (fm.step === "reveal" && slot && fm.part !== "all" && fm.part !== slot) fail(`${slot === "p2" ? "Player 2 has not played yet" : "Player 1\u2019s answers are hidden now"}`);
     return fm;
   };
   afterReveal_fn2 = function(fm) {
-    if (fm.step === "reveal" && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = "results";
+    if (fm.step === "reveal" && fm.part !== "p1" && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = "results";
+  };
+  /** Whether every answer of the part being revealed is up with its points. */
+  partRevealed_fn = function(fm) {
+    const slots = fm.part === "all" ? SLOTS : [fm.part];
+    return slots.every((s) => fm.shown[s].every((v) => v === 2));
   };
   startTimer_fn = function(holder, seconds) {
     if (!(seconds > 0)) {
@@ -3312,6 +3434,8 @@
       multiplier: mult,
       question: q.question,
       step: run.step,
+      // Sudden death: one face-off, worth the winning answer times five or ten.
+      sudden: run.sudden ? { n: run.sudden.n, mult: run.sudden.mult } : null,
       strikes: run.strikes,
       maxStrikes: MAX_STRIKES,
       pot: this.pot(),
@@ -3332,9 +3456,14 @@
         turn: f.turn,
         winner: f.winner,
         attempts: f.attempts,
+        followup: !!f.followup,
         // Everyone who buzzed in the face-off, fastest first, with how long after the buzzers opened (ms).
         buzzes: (f.buzzes ?? []).slice().sort((a, b) => a.ms - b.ms).map((b) => ({ unitId: b.unitId, pid: b.pid, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, b.pid), ms: b.ms, won: !!b.won })),
-        reps: Object.entries(f.reps).map(([unitId, playerId]) => ({ unitId, playerId, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, playerId) }))
+        // Whoever answers next for each team: its face-off player, then (when both have missed) the players in line behind them.
+        reps: Object.keys(f.reps).map((unitId) => {
+          const p = f.winner ? { id: f.reps[unitId] } : __privateMethod(this, _FeudGame_instances, faceoffPlayer_fn).call(this, unitId) ?? { id: f.reps[unitId] };
+          return { unitId, playerId: p.id, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, p.id) };
+        })
       },
       // The steal was tried and failed: the TV puts the big X up (the pot stays with the team that was stolen from).
       stealMissed: run.step === "roundEnd" && !!run.stealMissed,
@@ -3350,13 +3479,15 @@
       for (const s of SLOTS) {
         const shown = fm.shown[s][q];
         const judged = shown === 2;
+        const covered = !host && !!fm.hidden?.[s];
         row[s] = {
           shown,
           judged,
-          points: judged ? fm.points[s][q] : null,
-          label: judged ? fm.labels[s][q] : null,
+          hidden: covered,
+          points: judged && !covered ? fm.points[s][q] : null,
+          label: judged && !covered ? fm.labels[s][q] : null,
           // What was said stays private until the host shows it (the host sees it all along).
-          typed: shown >= 1 || host ? fm.answers[s]?.[q] ?? "" : null,
+          typed: !covered && (shown >= 1 || host) ? fm.answers[s]?.[q] ?? "" : null,
           ...host && fm.answers[s] ? { suggest: this.fmSuggest(s, q), blank: __privateMethod(this, _FeudGame_instances, isBlank_fn).call(this, fm, s, q) } : {},
           ...host ? { choices: ranked(this.set.fastMoney[q]).map((a) => ({ text: a.text, points: a.points })) } : {}
         };
@@ -3371,6 +3502,13 @@
       stakes: __privateMethod(this, _FeudGame_instances, stakes_fn).call(this, fm),
       timer: __privateMethod(this, _FeudGame_instances, timerView_fn2).call(this, fm),
       goal: this.settings.fastMoneyGoal,
+      // Which player's answers are being revealed ('p1', 'p2', or 'all' in a game saved before the two-part reveal), and whether
+      // all of them are up. Player 2's answers that were turned away as repeats (the TV sounds a buzzer each time: dupBuzz counts them).
+      part: fm.part ?? null,
+      partDone: fm.step === "reveal" ? __privateMethod(this, _FeudGame_instances, partRevealed_fn).call(this, fm) : false,
+      hidden: !!fm.hidden?.p1,
+      rejected: [...fm.rejected ?? []],
+      dupBuzz: fm.dupBuzz ?? 0,
       players: SLOTS.map((s, i) => ({ slot: s, id: fm.players[i] ?? null, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, fm.players[i]) })),
       submitted: { p1: !!fm.answers.p1, p2: !!fm.answers.p2 },
       rows,

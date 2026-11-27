@@ -109,7 +109,9 @@ dealt onto them at random and the host can move anyone.
    change who). The host reads the question and opens the buzzers; only those two phones can buzz.
    The first one answers out loud and the host taps the matching survey answer, or **Not on the board**.
    The top answer wins the face-off outright; otherwise the other player gets a go and the better answer
-   wins. If both miss, replay it or pick a winner.
+   wins. **If both miss**, the next players in line answer: the team that buzzed first leads off with its
+   next player, then the other team's next player, and so on down both lines. The first answer on the board
+   wins the face-off. Only if everyone on both teams misses does the face-off start again.
 3. **Play or pass.** The winners choose (anyone on that team can tap **Play** or **Pass** on their phone). Their team then names answers; the host taps each one and it
    flips on the TV. A **strike** puts a big boxed X in the middle of the TV, which then slides down into
    the next empty strike box. Three **strikes** and the other team gets one **steal** guess: a good steal takes the
@@ -123,7 +125,11 @@ dealt onto them at random and the host can move anyone.
    **Buzz times.** In the face-off the TV and the host page show who buzzed and how fast, to the thousandth of a second.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
-   rounds. **The team ahead then has won the game**, and the TV crowns them before anything else.
+   rounds. **Sudden death.** If the last round ends and nobody has reached the winning score, one more
+   face-off is played (a new question) and the winning answer is worth **five times** its points, or **ten times**
+   when five is not enough to get there; a team that still hasn't made it after that plays another, until
+   somebody does. Switch it off under Settings → Rules and the game ends after the last round as before.
+   **The team ahead then has won the game**, and the TV crowns them before anything else.
    Fast Money is their **bonus round**, played for the jackpot: it cannot change who won (the host or
    the captain can also skip it). Only a **tie** leaves the winner open, and then Fast Money is the
    **tiebreaker**: the host picks the team that plays, reaching the goal wins them the game, and falling
@@ -135,21 +141,29 @@ strike. The captain's phone starts the game, picks the question set and moves on
 moves on when time is up and reveals itself. Every phone shows the question, big; the answer board stays on the TV
 (phones never show it).
 
-5. **Fast Money.** The winning team (or, after a tie, the team the host picks) chooses two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). **Player 2 cannot say what Player 1 said**: on a phone such an answer is not accepted (the phone says so and asks for another) and the host cannot enter it either. Each answers five questions in turn (40 and 45
-   seconds by default, since typing takes longer than talking; change them under Settings), typing on
-   their phone, or the host types what they say. On the phone the questions come one at a time with a big
-   answer box and a microphone button; **Skip** (or just saying "skip", or sending nothing) moves on, and
-   after the last question it goes back to any skipped ones while there is time, then shows a review with a
-   **Send my answers** button. Answers go to the host as you go, and whatever is there is sent when time runs
-   out. (The microphone button uses the browser's speech recognition. Browsers usually only allow that on a
-   secure `https` page, which the online site is, but a plain-`http` server is not, so there it may say
-   "Voice isn't allowed here"; the microphone on the phone's own keyboard always works and fills the box the same way.) The reveal then goes as on the show, one answer at a
-   time: the host reads the question, taps **Reveal what they said** (the TV types the answer out on the
-   board), says "survey says", then taps the points button (the TV shows the points). Each survey list is
-   shown on the host screen with a tag where each player's answer landed, so the rank is visible without
-   opening anything, and the points button already says what it will score (for example **#1 Apple ·
-   +34**; the game also scores a repeat of player 1's answer as zero). An answer left blank is a zero
-   that needs just one tap, and shows as NO ANSWER. Reach 200 points to win.
+5. **Fast Money.** The winning team (or, after a tie, the team the host picks) chooses two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). It goes as on the show:
+   1. **Player 1 plays.** Player 2 waits out of the room (or with headphones on). Player 1 answers five questions
+      (40 seconds by default; change it under Settings): typing on their phone, or the host enters what they say.
+   2. **Player 1's answers are revealed.** One answer at a time: the host taps **Reveal the next answer** (the TV types
+      out what they said), then again for the points ("survey says"). Player 1's total stays on the TV.
+   3. **They are hidden, and Player 2 comes in.** The host taps **Hide the answers. Player 2 is next**. The TV covers
+      Player 1's answers but keeps their score on screen, and Player 2 plays (45 seconds by default).
+   4. **Player 2's answers are revealed** the same way, with Player 1's back in view, and the TV shows the total against the goal.
+   **Player 2 cannot say what Player 1 said.** On a phone such an answer is not accepted (the phone says so and asks for
+   another) and when the host enters one it is turned away too, with a red note for that question. The TV sounds the
+   buzzer and says which question to try again.
+   **Getting the answers in.** On the phone the questions come one at a time with a big answer box and a microphone
+   button; **Skip** (or just saying "skip", or sending nothing) moves on, and after the last question it goes back to
+   any skipped ones while there is time, then shows a review with a **Send my answers** button. Answers go to the host
+   as you go, and whatever is there is sent when time runs out. (The microphone button uses the browser's speech
+   recognition. Browsers usually only allow that on a secure `https` page, which the online site is, but a plain-`http`
+   server is not, so there it may say "Voice isn't allowed here"; the microphone on the phone's own keyboard always works
+   and fills the box the same way.) When the host enters the answers, each question shows the survey answers as
+   **one-tap buttons**: tap the one they said, or type something else (Enter moves to the next box). The answers
+   Player 1 already used are greyed out for Player 2. Each survey list is shown on the host screen with a tag where each
+   player's answer landed, so the rank is visible without opening anything, and the points button already says what it
+   will score (for example **#1 Apple · +34**). An answer left blank is a zero that needs just one tap, and shows as
+   NO ANSWER. Reach 200 points to win.
 6. **Undo.** A mis-tap is easy on a phone, so **Undo** takes back the last reveal, strike or choice,
    including the points.
 

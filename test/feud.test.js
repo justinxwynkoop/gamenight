@@ -9,13 +9,14 @@ import { validateSet, matchAnswer, ranked } from '../games/feud/game.js';
 const dir = new URL('../data/feud/', import.meta.url);
 const set = JSON.parse(readFileSync(new URL('family-night-basics.json', dir)));
 
-function setup({ players = ['Ann', 'Bo', 'Cy', 'Di'], content = set } = {}) {
+function setup({ players = ['Ann', 'Bo', 'Cy', 'Di'], content = set, suddenDeath = false } = {}) {
   let t = 1000;
   const room = new Room({ games: GAMES, now: () => t, loadContent: () => content });
   room.chooseGame('feud');
   const ps = players.map((n) => room.join({ name: n }));
   const g = room.game;
   g.chooseSet('x');
+  g.setSettings({ suddenDeath });   // most tests end the rounds below the winning score; the sudden-death tests turn it on
   return { room, g, ps, clock: { advance: (ms) => { t += ms; } }, red: room.teams[0], blue: room.teams[1] };
 }
 const answersOf = (g) => ranked(g.set.rounds[g.run.round]);
@@ -288,7 +289,7 @@ test('the leader has won once the rounds end: Fast Money is a bonus that cannot 
   g.nextRound();
   assert.equal(g.publicView().champion, red.id, 'the champion is known before Fast Money starts');
   assert.equal(g.publicView().fm.stakes, 'bonus');
-  g.fmStart(); g.fmNext(); g.fmNext();
+  g.fmStart(); g.fmNext(); revealPart(g); g.fmNext(); g.fmNext();
   for (let i = 0; i < 20 && g.run.fm.step !== 'results'; i++) g.fmRevealNext();
   assert.equal(g.publicView().fm.won, false, 'nothing typed scores nothing');
   g.finishGame();
@@ -321,7 +322,7 @@ test('a tie: Fast Money decides it (reach the goal and win, fall short and the o
     g.fmStart();
     const [p1] = g.run.fm.players;
     g.fmAnswersFrom(p1, reach ? ['apple', 'dog', 'sneakers', 'kitchen', 'nap'] : ['zzz', 'zzz', 'zzz', 'zzz', 'zzz']);
-    g.fmNext(); g.fmNext();
+    g.fmNext(); revealPart(g); g.fmNext(); g.fmNext();
     for (let i = 0; i < 20 && g.run.fm.step !== 'results'; i++) g.fmRevealNext();
     assert.equal(g.publicView().fm.won, reach);
     assert.equal(g.publicView().champion, reach ? blue.id : red.id);
@@ -340,6 +341,9 @@ test('a tie with Fast Money switched off ends as a tie', () => {
   assert.equal(g.run.status, 'done');
   assert.equal(g.publicView().result.champion, null);
 });
+
+/** Reveal what is left of the part being revealed (Player 1's answers, then Player 2's), one tap at a time. */
+const revealPart = (g) => { for (let i = 0; i < 20 && g.run.fm.step === 'reveal' && !g.publicView().fm.partDone; i++) g.fmRevealNext(); };
 
 function toFastMoney(ctx) {
   const { g, red, blue } = ctx;
@@ -371,10 +375,31 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   assert.equal(g.publicView().fm.rows[0].p1.typed, null);
   assert.equal(g.hostView().fm.rows[0].p1.typed, 'apple');
   g.fmNext();
+  // Player 1 is done: their answers are revealed first, with Player 2 still out of the room.
+  assert.equal(fm.step, 'reveal');
+  assert.equal(fm.part, 'p1');
+  assert.throws(() => g.fmShowAnswer('p2', 0), /Player 2 has not played yet/);
+  assert.throws(() => g.fmNext(), /Reveal all of Player 1/);
+  revealPart(g);
+  const p1Total = g.fmTotals().p1;
+  assert.ok(p1Total > 0);
+  g.fmNext();
+  // Then they are hidden, and Player 2 comes in with Player 1's score still up.
   assert.equal(fm.step, 'p2');
+  const hiddenView = g.publicView().fm;
+  assert.equal(hiddenView.hidden, true);
+  assert.deepEqual([hiddenView.rows[0].p1.typed, hiddenView.rows[0].p1.points, hiddenView.rows[0].p1.label, hiddenView.rows[0].p1.hidden], [null, null, null, true]);
+  assert.equal(hiddenView.totals.p1, p1Total, 'Player 1’s total stays on the screen');
+  assert.equal(g.hostView().fm.rows[0].p1.typed, 'apple', 'the host still sees the answers');
   assert.deepEqual(g.fmAnswersFrom(second.id, ['Apple', 'cat', 'shoes', 'garage', 'bake']), [0, 2], 'player 2 cannot type what player 1 said ("shoes" is the same survey answer as "sneakers")');
+  assert.deepEqual(g.publicView().fm.rejected, [0, 2]);
+  assert.equal(g.publicView().fm.dupBuzz, 1, 'the TV sounds the buzzer once');
+  g.fmAnswersFrom(second.id, ['zzz1', 'cat', 'zzz2', 'garage', 'bake']);
+  assert.deepEqual(g.publicView().fm.rejected, []);
   g.fmNext();
   assert.equal(fm.step, 'reveal');
+  assert.equal(fm.part, 'p2');
+  assert.equal(g.publicView().fm.hidden, false, 'Player 1’s answers are back for the final reveal');
   g.fmSetAnswers('p2', ['Apple', 'cat', 'shoes', 'garage', 'bake']);   // at the reveal the host can still put one in, and it scores 0 as a repeat
 
   const h = g.hostView().fm.rows;
@@ -383,9 +408,9 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   assert.equal(h[0].p2.suggest.points, 0);
   assert.equal(h[1].p2.suggest.label, 'Cat');
 
-  for (let q = 0; q < 5; q++) for (const s of ['p1', 'p2']) {
-    g.fmShowAnswer(s, q);                                // what they said
-    g.fmShowPoints(s, q);                                // "survey says": the suggestion's points
+  for (let q = 0; q < 5; q++) {
+    g.fmShowAnswer('p2', q);                             // what they said
+    g.fmShowPoints('p2', q);                             // "survey says": the suggestion's points
   }
   assert.equal(fm.step, 'results');
   const v = g.publicView().fm;
@@ -393,6 +418,7 @@ test('Fast Money: two players on the leading team, answers from their phones, sc
   const t = g.fmTotals();
   assert.equal(t.total, t.p1 + t.p2);
   assert.equal(v.won, t.total >= 200);
+  assert.equal(t.p1, p1Total);
   assert.ok(t.p1 > 0 && t.p2 > 0);
   g.finishGame();
   assert.equal(g.publicView().result.fastMoney.total, t.total);
@@ -403,8 +429,6 @@ test('Fast Money: the host can type answers that were said out loud, and judge b
   toFastMoney(ctx);
   g.fmStart();
   g.fmSetAnswers('p1', ['grapes', 'hamster', 'boots', 'bathroom', 'read']);
-  g.fmNext();
-  g.fmSetAnswers('p2', ['pear', '', '', '', '']);
   g.fmNext();
   assert.throws(() => g.fmShowPoints('p1', 0, 16, 'Grapes'), /Show what they said first/);
   g.fmShowAnswer('p1', 0);
@@ -423,8 +447,7 @@ test('Fast Money: an answer nobody gave is a 0 that needs just one tap to show',
   toFastMoney(ctx);
   g.fmStart();
   g.fmSetAnswers('p1', ['apple', '', 'socks', '   ', 'nap']);
-  g.fmNext();                                       // player 2 never answers anything
-  g.fmNext();
+  g.fmNext();                                       // player 1 is done; player 2 will never answer anything
   const rows = () => g.publicView().fm.rows;
   assert.equal(rows()[1].p1.shown, 0, 'nothing is shown until the host reveals it');
   assert.equal(rows()[1].p1.judged, false);
@@ -438,6 +461,7 @@ test('Fast Money: an answer nobody gave is a 0 that needs just one tap to show',
   assert.equal(g.hostView().fm.rows[0].p1.suggest.rank, 1);
   assert.equal(g.hostView().fm.rows[1].p1.blank, true);
   for (const [s, q] of [['p1', 0], ['p1', 2], ['p1', 3], ['p1', 4]]) { g.fmShowAnswer(s, q); if (rows()[q][s].shown === 1) g.fmShowPoints(s, q); }
+  g.fmNext(); g.fmNext();                           // player 1's are hidden; player 2 plays (and says nothing)
   for (let q = 0; q < 5; q++) g.fmShowAnswer('p2', q);   // every one of player 2's is blank
   assert.equal(g.run.fm.step, 'results');
 });
@@ -447,7 +471,6 @@ test('Fast Money: the TV only gets what has been revealed, and the total counts 
   toFastMoney(ctx);
   g.fmStart();
   g.fmSetAnswers('p1', ['apple', 'dog', 'socks', 'kitchen', 'nap']); g.fmNext();
-  g.fmSetAnswers('p2', ['banana', 'cat', 'shoes', 'garage', 'read']); g.fmNext();
   const cell = () => g.publicView().fm.rows[0].p1;
   assert.deepEqual([cell().shown, cell().typed, cell().points, cell().label], [0, null, null, null]);
   g.fmShowAnswer('p1', 0);
@@ -464,9 +487,11 @@ test('Fast Money: the TV only gets what has been revealed, and the total counts 
 test('Fast Money: if nobody typed anything at all, the host still reveals the zeros one by one', () => {
   const ctx = setup(); const { g } = ctx;
   toFastMoney(ctx);
-  g.fmStart(); g.fmNext(); g.fmNext();
+  g.fmStart(); g.fmNext();
   assert.equal(g.run.fm.step, 'reveal');
-  for (let q = 0; q < 5; q++) for (const s of ['p1', 'p2']) g.fmShowAnswer(s, q);
+  for (let q = 0; q < 5; q++) g.fmShowAnswer('p1', q);
+  g.fmNext(); g.fmNext();
+  for (let q = 0; q < 5; q++) g.fmShowAnswer('p2', q);
   assert.equal(g.run.fm.step, 'results');
   assert.equal(g.fmTotals().total, 0);
   assert.equal(g.publicView().fm.won, false);
@@ -487,8 +512,10 @@ test('Fast Money wins at the goal', () => {
   g.setSettings({ fastMoneyGoal: 50 });
   g.fmStart();
   g.fmSetAnswers('p1', ['a', 'b', 'c', 'd', 'e']); g.fmNext();
+  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q, 10, 'x'); }
+  g.fmNext();
   g.fmSetAnswers('p2', ['f', 'g', 'h', 'i', 'j']); g.fmNext();
-  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q, 10, 'x'); g.fmShowAnswer('p2', q); g.fmShowPoints('p2', q, 0, null); }
+  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p2', q); g.fmShowPoints('p2', q, 0, null); }
   assert.equal(g.publicView().fm.totals.total, 50);
   assert.equal(g.publicView().fm.won, true);
 });
@@ -606,6 +633,14 @@ test('with nobody hosting, a double miss in the face-off replays by itself', () 
   g.startGame();
   const f = g.run.faceoff;
   g.buzz(f.reps[red.id]); g.guess(room.player(f.reps[red.id]), 'zzz'); g.guess(room.player(f.reps[blue.id]), 'qqq');
+  // Both missed: the next players in line answer, red (who buzzed first) leading off, then blue.
+  assert.equal(g.run.faceoff.turn, red.id);
+  assert.equal(g.run.faceoff.followup, true);
+  const next = (unit) => room.players.filter((p) => p.teamId === unit.id).map((p) => p.id).find((id) => id !== f.reps[unit.id]);
+  assert.equal(g.canGuess(room.player(next(red))), true);
+  assert.equal(g.canGuess(room.player(f.reps[red.id])), false);
+  g.guess(room.player(next(red)), 'zzz'); g.guess(room.player(next(blue)), 'qqq');
+  // Everybody has had a go and nobody had an answer: the face-off starts again by itself.
   assert.equal(g.run.faceoff.open, false);
   clock.advance(3000); g.tick();
   assert.equal(g.run.faceoff.open, true);
@@ -621,9 +656,14 @@ test('with nobody hosting, Fast Money moves on when time is up and reveals itsel
   clock.advance(41000); g.tick();
   assert.equal(fm.step, 'p1');                                      // a moment for the last answers to arrive
   clock.advance(2000); g.tick();
-  assert.equal(fm.step, 'p2');
+  assert.equal(fm.step, 'reveal');                                  // Player 1's answers are revealed...
+  assert.equal(fm.part, 'p1');
+  for (let i = 0; i < 40 && fm.step === 'reveal'; i++) { clock.advance(2500); g.tick(); }
+  assert.equal(fm.step, 'p2');                                      // ...then hidden, and Player 2 comes in
+  assert.ok(fm.shown.p1.every((v) => v === 2));
   clock.advance(46000); g.tick(); clock.advance(2000); g.tick();
   assert.equal(fm.step, 'reveal');
+  assert.equal(fm.part, 'p2');
   for (let i = 0; i < 40 && fm.step === 'reveal'; i++) { clock.advance(2500); g.tick(); }
   assert.equal(fm.step, 'results');
   assert.ok(fm.shown.p1.every((v) => v === 2) && fm.shown.p2.every((v) => v === 2));
@@ -743,13 +783,18 @@ test('Fast Money: the second player cannot repeat the first player’s answer, a
   g.fmStart();
   g.fmSetAnswers('p1', ['one', 'two', 'three', 'four', 'five']);
   g.fmNext();
+  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q); }
+  g.fmNext();
   assert.equal(g.run.fm.step, 'p2');
   const r = room.playerMessage(p2, { t: 'fm-answers', answers: ['ONE', 'different', 'three!', 'x', 'y'] });
   assert.deepEqual(r.rejected, [0, 2], 'the same words (any case or punctuation) are not taken');
   assert.deepEqual(g.run.fm.answers.p2.slice(0, 3), ['', 'different', '']);
   const ok = room.playerMessage(p2, { t: 'fm-answers', answers: ['uno', 'different', 'tres', 'x', 'y'] });
   assert.deepEqual(ok.rejected, []);
-  assert.throws(() => g.fmSetAnswers('p2', ['one', '', '', '', '']), /Question 1: Player 1 already said that/, 'nor can the host enter it');
+  // Nor can the host enter it: it is turned away like a phone's, the rest are kept, and the host is told which question.
+  g.fmSetAnswers('p2', ['one', 'kept', '', '', '']);
+  assert.deepEqual(g.run.fm.answers.p2.slice(0, 2), ['', 'kept']);
+  assert.deepEqual(g.hostView().fm.rejected, [0]);
   assert.ok(p1 && red);
 });
 
@@ -766,6 +811,160 @@ test('Fast Money: the host picks two different players, can swap them, and can c
   g.fmStart();
   g.fmPlayers([b, a]);                                  // still allowed while Player 1 is answering
   g.fmNext();
+  for (let q = 0; q < 5; q++) g.fmShowAnswer('p1', q);
+  g.fmNext();
   g.fmPlayers([b, a]);                                  // Player 2 can be changed while they are up
   assert.throws(() => g.fmPlayers([a, b]), /Player 1 has already answered/);
+});
+
+// ---------- face-off: when both players miss, the players behind them answer ----------
+
+test('face-off: if both players miss, the next players in line answer, the team that buzzed first leading off', () => {
+  const { g, room, red, blue } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'] });
+  g.startGame();
+  const line = (unit) => room.players.filter((p) => p.teamId === unit.id).map((p) => p.id);
+  const redLine = line(red); const blueLine = line(blue);
+  assert.equal(redLine.length, 3);
+  const f = g.run.faceoff;
+  const repIndex = (unit, l) => l.indexOf(f.reps[unit.id]);
+  const who = () => g.publicView().round.faceoff.reps.find((r) => r.unitId === g.run.faceoff.turn)?.playerId;
+
+  g.awardBuzz(blue.id);                                   // blue buzzed in first
+  assert.equal(who(), f.reps[blue.id]);
+  g.miss();                                               // blue's player is wrong
+  assert.equal(g.run.faceoff.turn, red.id);
+  assert.equal(who(), f.reps[red.id]);
+  g.miss();                                               // so is red's
+  // Both missed: now blue's next player, then red's next player, and so on down the lines.
+  assert.equal(g.run.faceoff.turn, blue.id);
+  assert.equal(g.run.faceoff.followup, true);
+  assert.equal(g.publicView().round.faceoff.followup, true);
+  assert.equal(who(), blueLine[(repIndex(blue, blueLine) + 1) % 3]);
+  g.miss();
+  assert.equal(g.run.faceoff.turn, red.id);
+  assert.equal(who(), redLine[(repIndex(red, redLine) + 1) % 3]);
+  g.miss();
+  assert.equal(g.run.faceoff.turn, blue.id);
+  assert.equal(who(), blueLine[(repIndex(blue, blueLine) + 2) % 3]);
+  const winner = who();
+  g.answer(2);                                            // the first answer on the board wins it, whatever its rank
+  assert.equal(g.run.step, 'choose');
+  assert.equal(g.run.faceoff.winner, blue.id);
+  assert.equal(g.run.faceoff.reps[blue.id], winner, 'the player who won it is the one the turns count on from');
+  g.choose(true);
+  assert.equal(g.publicView().round.up.playerId, blueLine[(blueLine.indexOf(winner) + 1) % 3], 'the next player after them is up');
+});
+
+test('face-off: once everybody on both teams has missed, the face-off starts again', () => {
+  const { g, red, blue } = setup();                       // two players a side
+  g.startGame();
+  g.awardBuzz(red.id);
+  for (let i = 0; i < 4; i++) g.miss();                   // red, blue, then red's and blue's second players
+  assert.equal(g.run.faceoff.turn, null);
+  assert.equal(g.run.faceoff.winner, null);
+  assert.equal(g.run.step, 'faceoff');
+  g.replayFaceoff();
+  assert.equal(g.run.faceoff.open, true);
+  assert.deepEqual(g.run.faceoff.attempts, []);
+  assert.ok(blue);
+});
+
+test('face-off: the top answer still wins at once, and the better of two answers still wins', () => {
+  const a = setup(); a.g.startGame(); a.g.awardBuzz(a.red.id); a.g.answer(0);
+  assert.equal(a.g.run.faceoff.winner, a.red.id);
+  const b = setup(); b.g.startGame(); b.g.awardBuzz(b.red.id); b.g.answer(3); b.g.answer(1);
+  assert.equal(b.g.run.faceoff.winner, b.blue.id);
+  const c = setup(); c.g.startGame(); c.g.awardBuzz(c.red.id); c.g.miss(); c.g.answer(4);
+  assert.equal(c.g.run.faceoff.winner, c.blue.id);
+});
+
+// ---------- sudden death ----------
+
+/** The last round has just ended with these scores. */
+function afterLastRound(ctx, red, blue) {
+  const { g } = ctx;
+  g.startGame(); ctx.red.score = red; ctx.blue.score = blue;
+  g.run.round = g.set.rounds.length - 1; g.run.step = 'roundEnd';
+  g.nextRound();
+}
+
+test('sudden death: after the last round, if nobody has the winning score, one face-off is worth five or ten times', () => {
+  const ctx = setup({ suddenDeath: true });
+  const { g, red, blue } = ctx;
+  afterLastRound(ctx, 120, 100);
+  assert.equal(g.run.status, 'round', 'not over: nobody reached 300');
+  const r = g.publicView().round;
+  assert.ok(r.sudden && [5, 10].includes(r.sudden.mult));
+  assert.equal(r.sudden.n, 1);
+  assert.equal(r.multiplier, r.sudden.mult);
+  assert.ok(!set.rounds.some((q) => q.question === r.question), 'a question nobody has played');
+  assert.equal(r.step, 'faceoff');
+  const top = Math.max(...g.hostView().round.answers.map((a) => a.points));
+  assert.equal(r.sudden.mult, 300 - 120 <= top * 5 ? 5 : 10, 'ten times when five is not enough to get there');
+  g.awardBuzz(blue.id); g.answer(0);                       // the top answer wins it outright
+  assert.equal(g.run.step, 'roundEnd');
+  assert.equal(g.run.winner, blue.id);
+  assert.equal(g.run.awarded, top * r.sudden.mult);
+  assert.equal(blue.score, 100 + top * r.sudden.mult);
+  assert.ok(red);
+});
+
+test('sudden death: it goes on until somebody reaches the winning score, then the usual end (Fast Money for the winners)', () => {
+  const ctx = setup({ suddenDeath: true });
+  const { g, red, blue } = ctx;
+  g.setSettings({ targetScore: 1000 });
+  afterLastRound(ctx, 100, 90);
+  assert.equal(g.run.sudden.n, 1);
+  const firstQuestion = g.run.sudden.question.question;
+  g.awardBuzz(red.id); g.answer(0);
+  assert.ok(red.score < 1000, 'one sudden death round is not enough this time');
+  g.nextRound();
+  assert.equal(g.run.status, 'round');
+  assert.equal(g.run.sudden.n, 2, 'another one');
+  assert.ok(g.run.faceoff.attempts.length === 0 && g.run.revealed.length === 0);
+  g.setSettings({ targetScore: 100 });                     // somebody is over it now
+  g.awardBuzz(blue.id); g.answer(0);
+  g.nextRound();
+  assert.equal(g.run.status, 'fastmoney');
+  assert.equal(g.publicView().champion, red.score > blue.score ? red.id : blue.id);
+  assert.ok(firstQuestion);
+});
+
+test('sudden death: the first answer on the board wins it even when the first players missed; the host cannot pick a winner with no answer', () => {
+  const ctx = setup({ suddenDeath: true, players: ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'] });
+  const { g, red, blue } = ctx;
+  afterLastRound(ctx, 100, 100);
+  g.awardBuzz(red.id);
+  g.miss(); g.miss();                                       // both missed
+  assert.equal(g.run.faceoff.followup, true);
+  assert.throws(() => g.faceoffWin(blue.id), /tap the one they gave/);
+  g.answer(2);                                              // red's next player
+  assert.equal(g.run.step, 'roundEnd');
+  assert.equal(g.run.winner, red.id);
+  assert.equal(g.run.awarded, g.run.sudden.pts * g.run.sudden.mult);
+  assert.ok(red.score > 100);
+  g.undo();
+  assert.equal(g.run.step, 'faceoff');
+  assert.equal(red.score, 100);
+});
+
+test('sudden death can be switched off: the game then ends after the last round, as it used to', () => {
+  const ctx = setup({ suddenDeath: false });
+  const { g } = ctx;
+  afterLastRound(ctx, 120, 100);
+  assert.equal(g.run.status, 'fastmoney');
+  const on = setup();
+  on.g.setSettings({ suddenDeath: true });
+  assert.equal(on.g.settings.suddenDeath, true);
+});
+
+test('sudden death: the public view shows it, and a saved game comes back as it was', () => {
+  const ctx = setup({ suddenDeath: true });
+  const { g, room } = ctx;
+  afterLastRound(ctx, 100, 100);
+  const saved = JSON.parse(JSON.stringify(g.toJSON()));
+  const g2 = room.game;
+  g2.restore(saved);
+  assert.equal(g2.publicView().round.sudden.n, 1);
+  assert.equal(g2.publicView().round.question, g.run.sudden.question.question);
 });

@@ -1,0 +1,171 @@
+{
+  "room": {
+    "mode": "teams",
+    "modeSetting": "auto",
+    "teamCount": 2,
+    "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
+    "individualMax": 5,
+    "teamSize": 5,
+    "teams": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444"
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6"
+      }
+    ],
+    "units": [
+      {
+        "id": "t5",
+        "name": "Red",
+        "color": "#ef4444",
+        "score": 800,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Ann",
+          "Ben"
+        ]
+      },
+      {
+        "id": "t6",
+        "name": "Blue",
+        "color": "#3b82f6",
+        "score": 0,
+        "connected": true,
+        "members": 2,
+        "memberNames": [
+          "Cat",
+          "Dev"
+        ]
+      }
+    ],
+    "gameId": "feud",
+    "inProgress": true,
+    "settings": {
+      "sound": true,
+      "volume": 70,
+      "lateJoin": false,
+      "ping": 0
+    }
+  },
+  "game": {
+    "game": "feud",
+    "scoreFormat": "points",
+    "lobbyTitle": "Family Night Basics",
+    "settings": {
+      "targetScore": 5000,
+      "multipliers": true,
+      "fastMoney": true,
+      "fastMoneyGoal": 200,
+      "fastMoneySeconds1": 40,
+      "fastMoneySeconds2": 45,
+      "typed": false,
+      "answerSeconds": 10,
+      "suddenDeath": true
+    },
+    "status": "round",
+    "title": "Family Night Basics",
+    "rounds": 5,
+    "hasFastMoney": true,
+    "round": {
+      "number": 6,
+      "multiplier": 10,
+      "question": "Name something you do on a rainy day",
+      "step": "faceoff",
+      "sudden": {
+        "n": 1,
+        "mult": 10
+      },
+      "strikes": 0,
+      "maxStrikes": 3,
+      "pot": 0,
+      "control": null,
+      "stealFrom": null,
+      "answers": [
+        {
+          "n": 1,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 2,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 3,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 4,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        },
+        {
+          "n": 5,
+          "revealed": false,
+          "late": false,
+          "text": null,
+          "points": null
+        }
+      ],
+      "up": null,
+      "timer": null,
+      "faceoff": {
+        "open": false,
+        "turn": "t6",
+        "winner": null,
+        "attempts": [
+          {
+            "unitId": "t6",
+            "rank": null,
+            "playerId": "p4"
+          },
+          {
+            "unitId": "t5",
+            "rank": null,
+            "playerId": "p2"
+          }
+        ],
+        "followup": true,
+        "buzzes": [],
+        "reps": [
+          {
+            "unitId": "t5",
+            "playerId": "p1",
+            "name": "Ann"
+          },
+          {
+            "unitId": "t6",
+            "playerId": "p3",
+            "name": "Cat"
+          }
+        ]
+      },
+      "stealMissed": false,
+      "result": null,
+      "target": 5000,
+      "said": null
+    },
+    "fm": null,
+    "captainId": null,
+    "hosted": true,
+    "champion": null
+  }
+}

@@ -131,11 +131,27 @@ try {
   await until(async () => (g.publicView().round.timer?.totalMs ?? 0) === 10000, 'the 10 second clock to start');
   await until(async () => /\d+s/.test(await text(host)), 'the clock on the host page');
   console.log('the host sees who is up and started the 10 second answer clock');
-  // Fast Money: the host chooses the two players, and can change them.
+  // Sudden death: the last round is over and nobody has the winning score, so one face-off decides it (worth ×5 or ×10).
   const [lead, other] = engine.room.teams;
   lead.score = 150; other.score = 50;
   g.run.round = 4; g.run.step = 'roundEnd';
   g.nextRound();
+  await until(async () => /Sudden death: the winning answer is worth ×\d+/.test(await text(host)), 'the host page to announce sudden death');
+  assert.equal(g.run.sudden.n, 1);
+  console.log(`sudden death: the host page announces it (×${g.run.sudden.mult})`);
+  // Both face-off players miss: the next players in line answer, and the first answer on the board wins it.
+  g.awardBuzz(lead.id); g.miss(); g.miss();
+  await until(async () => /Both missed, so next in line/i.test(await text(host)), 'the host page to say the next players answer');
+  const follow = g.publicView().round.faceoff.reps.find((r) => r.unitId === g.run.faceoff.turn);
+  assert.ok((await text(host)).includes(`${follow.name} is answering`), 'the host page names the player who is next in line');
+  console.log(`face-off: both missed, so ${follow.name}, next in line, is up`);
+  g.answer(0);
+  await until(() => g.run.step === 'roundEnd', 'the sudden death face-off to be decided');
+  await until(async () => /wins \d+ points/.test(await text(host)), 'the host page to show the sudden death result');
+  await host.getByRole('button', { name: /On to Fast Money/ }).click();
+  await until(() => g.run.status === 'fastmoney', 'Fast Money to begin');
+
+  // Fast Money: the host chooses the two players, and can change them.
   await host.getByRole('button', { name: /^Game/ }).first().click();
   await until(async () => /Choose the two players/i.test(await text(host)), 'the host page to ask for the two Fast Money players').catch(async (e) => { console.error(g.run.status, g.run.fm?.step, g.run.round); console.error((await text(host)).slice(0, 700)); throw e; });
   const names = engine.room.players.filter((p) => p.teamId === lead.id).map((p) => p.name);
@@ -147,6 +163,60 @@ try {
   await host.getByRole('button', { name: /Start Fast Money/ }).click();
   await until(() => g.run.fm.step === 'p1', 'Fast Money to start');
   console.log('Fast Money: the host picked the two players and started it');
+
+  // Player 1: the host taps the survey answers (one tap each) instead of typing them.
+  const fmState = () => g.run.fm;
+  const shownCount = (slot) => fmState().shown[slot].reduce((n, v) => n + v, 0);
+  const tapSurveyAnswers = async (which) => {
+    for (let q = 0; q < 5; q++) {
+      await host.locator('.fd-chips').nth(q).locator('.chip').nth(which).click();
+      await new Promise((r) => setTimeout(r, 120));
+    }
+  };
+  await until(async () => (await host.locator('.fd-chips').count()) === 5, 'the survey answer buttons for Player 1');
+  await tapSurveyAnswers(0);
+  await until(() => fmState().answers.p1?.every((a) => a), 'the five tapped answers to be saved');
+  await shot(host, 'fastmoney-p1-answers');
+  await host.getByRole('button', { name: /Reveal Player 1/ }).click();
+  await until(() => fmState().step === 'reveal' && fmState().part === 'p1', 'Player 1’s answers to be revealed first');
+  // Reveal them one tap at a time with the big button (what they said, then the points, as on the show).
+  for (let i = 0; i < 10; i++) {
+    const was = shownCount('p1');
+    await host.getByRole('button', { name: /Reveal the next answer/ }).click();
+    await until(() => shownCount('p1') > was, `reveal step ${i + 1}`);
+  }
+  await until(async () => (await host.getByRole('button', { name: /Hide the answers/ }).count()) > 0, 'the button to hide the answers and bring Player 2 in');
+  const p1Score = g.fmTotals().p1;
+  assert.ok(p1Score > 0);
+  await shot(host, 'fastmoney-p1-revealed');
+  await host.getByRole('button', { name: /Hide the answers/ }).click();
+  await until(() => fmState().step === 'p2', 'Player 2 to come in');
+  const hidden = g.publicView().fm;
+  assert.equal(hidden.hidden, true);
+  assert.equal(hidden.rows[0].p1.typed, null, 'Player 1’s answers are hidden from the TV and phones');
+  assert.equal(hidden.totals.p1, p1Score, 'but Player 1’s score stays up');
+  console.log(`Fast Money: Player 1 revealed (${p1Score} points), then hidden; Player 2 is in and the score stays`);
+
+  // Player 2 cannot repeat Player 1: those survey answers are greyed out, and typing one is turned away.
+  await until(async () => (await host.locator('.fd-chips .chip:disabled').count()) === 5, 'Player 1’s answers to be greyed out for Player 2');
+  const said = fmState().answers.p1[0];
+  const first = host.locator('input[data-k="fm-p2-0"]');
+  await first.fill(said); await first.press('Enter');
+  await until(async () => (await host.locator('.fd-dup').count()) > 0, 'the notice that Player 1 already said it');
+  assert.equal(fmState().answers.p2[0], '', 'the repeated answer was not taken');
+  await shot(host, 'fastmoney-p2-duplicate');
+  console.log('Fast Money: a repeat of Player 1’s answer is turned away');
+  await tapSurveyAnswers(1);
+  await until(() => fmState().answers.p2?.every((a) => a), 'the five tapped answers for Player 2');
+  await host.getByRole('button', { name: /Reveal Player 2/ }).click();
+  await until(() => fmState().step === 'reveal' && fmState().part === 'p2', 'Player 2’s answers to be revealed');
+  for (let i = 0; i < 10; i++) {
+    const was = shownCount('p2');
+    await host.getByRole('button', { name: /Reveal the next answer/ }).click();
+    await until(() => shownCount('p2') > was, `Player 2 reveal step ${i + 1}`);
+  }
+  await until(() => fmState().step === 'results', 'the Fast Money result');
+  console.log(`Fast Money: both players done, ${g.fmTotals().total} points`);
   // The tabs of the host page.
   for (const tab of ['Players', 'Scores', 'Settings', 'Game']) {
     await host.getByRole('button', { name: new RegExp(`^${tab}`) }).first().click();
