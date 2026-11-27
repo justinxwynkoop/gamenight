@@ -120,7 +120,11 @@ struct PieChaseScreen: View {
         case .choose:
             PieChooseCard(game: game).transition(.scale.combined(with: .opacity))
         case .gameover:
-            PieWinnerCard(game: game).transition(.scale.combined(with: .opacity))
+            ZStack {
+                CelebrationBurst(colors: (game.winners ?? []).compactMap { game.unit($0) }.map { Color(playerHex: $0.color) } + Pie.rainbow)
+                    .transition(.opacity)
+                PieWinnerCard(game: game).transition(.scale.combined(with: .opacity))
+            }
         default:
             EmptyView()
         }
@@ -873,8 +877,10 @@ private struct PieWinnerCard: View {
 
 /// Confetti in the category colours, falling over the winner.
 private struct PieConfetti: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: nil, paused: reduceMotion)) { timeline in
             Canvas { context, size in
                 let t = timeline.date.timeIntervalSinceReferenceDate
                 for i in 0..<70 {

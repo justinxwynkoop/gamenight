@@ -4,6 +4,7 @@
 // TV app draws the same screens in SwiftUI (tv-app/FamilyGameNight/Feud/Display/FeudScreens.swift).
 import { h, ink, unitById, qrImg } from '../../common.js';
 import { loadStyles, art } from './shared.js';
+import { celebrate } from '../../fireworks.js';
 
 // ---------- countdown (Fast Money) ----------
 let live = null; // { leftMs, totalMs, at, bar, num, ring, shown }
@@ -354,7 +355,8 @@ function fmScreen(v) {
 // Confetti lives outside the screen that is redrawn on every update, so it keeps falling.
 function confetti(colors) {
   const old = document.querySelector('.fd-confetti');
-  if (!colors) { old?.remove(); return; }
+  if (!colors) { old?.remove(); celebrate(null); return; }
+  celebrate('fd-winners', [...colors, '#5b72ff']);
   if (old) return;
   document.body.append(h('div', { class: 'fd-confetti', 'aria-hidden': 'true' }, Array.from({ length: 110 }, (_, i) => h('i', {
     style: { left: `${Math.random() * 100}vw`, background: colors[i % colors.length], animationDuration: `${3 + Math.random() * 4}s`, animationDelay: `${-Math.random() * 6}s` },

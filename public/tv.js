@@ -6,6 +6,7 @@
 import { h, ink, connect, unitById, qrImg, setQrKey, setQrSvg, setHostQrSvg, hostQrImg, keepAwake } from './common.js';
 import { audio } from './audio.js';
 import { menuScreen } from './menu.js';
+import { celebrate } from './fireworks.js';
 
 keepAwake();
 
@@ -169,6 +170,8 @@ async function render(v) {
   const ctx = { info, sound, qr: qrImg, hostQr: hosted ? hostQrImg : null, act: hosted ? (action, args) => hosted.act(action, args) : null };
   const id = v.game?.game ?? null;
   if (shownGame && shownGame !== id) loaded[shownGame]?.leave?.();
+  // A game's fireworks end with its game: another game, the menu, or back to the lobby.
+  if ((shownGame && shownGame !== id) || !v.game || !v.room.inProgress) celebrate(null);
   shownGame = id;
   if (!v.game) el = menuScreen(v, { info, qr: qrImg, music: audio.enabled, choose: hosted ? (gameId) => hosted.chooseGame(gameId) : null });
   else {

@@ -3,6 +3,7 @@
 // along the foot with the trophy on it. A trophy won and the winners take over the whole screen. The answer only reaches
 // the TV once the card has been judged.
 import { h } from '../../common.js';
+import { celebrate } from '../../fireworks.js';
 import { loadStyles, token, art, trophy, path, spaceLeft, deckOf, spaceDeck, pic, teamOf, nameOf, aboutText, LETTERS, otherSide, isRace, raceTrack, acrossText, pawnBin, pawnRow, raceSteps } from './shared.js';
 
 const LETTER_COLORS = ['#ffe14d', '#7cf0ff', '#b4ff6b', '#ffa7d8'];
@@ -329,6 +330,10 @@ export function render(v) {
   let over = null;
   if (g.phase === 'trophy') over = trophyScreen(g);
   else if (g.phase === 'gameover') over = winScreen(g);
+  // A trophy gets one blast of fireworks; the winners get the whole show.
+  const champs = g.phase === 'gameover' ? (g.winners ?? [])[0] : g.phase === 'trophy' ? g.trophyWon : null;
+  celebrate(champs ? `gv-${g.phase}-${champs}-${g.teams.map((x) => x.trophies).join('-')}` : null,
+    [teamOf(g, champs)?.color ?? '#ffd23f', '#ffe14d', '#4cc9f0', '#ffffff'], g.phase === 'trophy' ? 'moment' : 'finale');
   if (center) requestAnimationFrame(() => fitCard(center));
   if (race) return h('div', { class: `gv-tv gv-tv-board phase-${g.phase}` }, raceBoard(g, center), over, floats(g));
   return h('div', { class: `gv-tv phase-${g.phase}` }, bg(),

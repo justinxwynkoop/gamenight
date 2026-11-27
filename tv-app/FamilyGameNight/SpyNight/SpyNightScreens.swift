@@ -32,6 +32,10 @@ struct SpyNightScreen: View {
         ZStack {
             LinearGradient(colors: [Color(hex: 0x1A2550), Color(hex: 0x0B0F1A)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+            if game.phase == .gameover {
+                CelebrationBurst(colors: game.spiesWon ? [Spy.spy, Spy.gold, .white] : [Spy.resistance, Spy.gold, .white])
+                    .transition(.opacity)
+            }
             VStack(spacing: 28) {
                 header
                 SpyTrack(game: game)

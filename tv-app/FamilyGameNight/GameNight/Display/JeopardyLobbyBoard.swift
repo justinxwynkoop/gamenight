@@ -76,7 +76,9 @@ struct JeopardyContent: View {
         } else if game.phase == .gameover {
             ZStack {
                 RadialGradient(colors: [BW.gold.opacity(0.22), .clear], center: UnitPoint(x: 0.5, y: 0.2), startRadius: 0, endRadius: 760)
-                JeoConfetti(champion: game.players.max(by: { $0.score < $1.score }).map { Color(playerHex: $0.color) })
+                let champion = game.players.max(by: { $0.score < $1.score }).map { Color(playerHex: $0.color) }
+                CelebrationBurst(colors: [champion ?? BW.gold, BW.gold] + BW.confetti)
+                JeoConfetti(champion: champion)
             }
             .ignoresSafeArea()
         }
@@ -328,6 +330,10 @@ struct JeoPodium: View {
         let score = Text(BW.money(player.score))
             .font(BW.display(size == .many ? 28 : size == .mid ? 36 : 44))
             .foregroundColor(player.score < 0 ? BW.bad : BW.text)
+            .monospacedDigit()
+            // The digits roll to the new total instead of jumping.
+            .contentTransition(.numericText(value: Double(player.score)))
+            .animation(.snappy(duration: 0.6), value: player.score)
         let name = Text(player.name).font(BW.body(size == .many ? 24 : 28, .semibold))
         if size == .many {
             VStack(spacing: 4) {
