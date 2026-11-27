@@ -307,11 +307,13 @@ export class Room {
     this.changed();
   }
   removePlayer(id) {
-    this.player(id);
+    const gone = this.player(id);
+    const why = this.game?.removeBlocked?.();
+    if (why) fail(why);
     this.players = this.players.filter((p) => p.id !== id);
     this.connected.delete(id);
     this.#reconcile();
-    this.game?.playerRemoved?.(id);
+    this.game?.playerRemoved?.(id, gone);
     this.changed();
   }
   /** Lobby only: forget every player and team (a new party). */
@@ -405,6 +407,8 @@ export class Room {
       units: this.#unitViews(),
       gameId: this.gameId,
       inProgress: this.inProgress(),
+      // Why nobody can be removed right now (a game that cannot carry on without everyone it dealt), or null.
+      removeBlocked: this.game?.removeBlocked?.() ?? null,
       settings: { ...this.settings, ping: this.soundPing },
     };
   }

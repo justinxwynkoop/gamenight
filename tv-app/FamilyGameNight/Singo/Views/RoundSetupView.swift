@@ -20,6 +20,13 @@ struct RoundSetupView: View {
 
     private var settings: RoundSettings { store.settings }
 
+    /// The smallest playlist that makes a phone card (a 3×3 card needs 9 songs). Keep in step with cardSize() in games/singo/game.js.
+    private let minPhoneCardSongs = 9
+    /// Phone cards are on, but the playlist is too short to deal one: the round would run on the TV and no phone would get a card.
+    private var tooFewForPhoneCards: Bool {
+        !isLoading && errorMessage == nil && settings.phoneCards && songs.count < minPhoneCardSongs
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 90) {
             summary
@@ -104,7 +111,14 @@ struct RoundSetupView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .focused($startFocused)
-                .disabled(songs.isEmpty)
+                .disabled(songs.isEmpty || tooFewForPhoneCards)
+            }
+
+            if tooFewForPhoneCards {
+                Label("Phone cards need at least \(minPhoneCardSongs) songs. Add more songs to this playlist, or turn phone cards off below to play with printed sheets.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.yellow)
             }
 
             Label("Turn on Do Not Disturb first (hold the TV button) so the Now Playing pop-up doesn't show the song.",

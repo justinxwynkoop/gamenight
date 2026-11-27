@@ -246,6 +246,15 @@ export class GuysVsGalsGame {
       this.#changed();
     }
   }
+  /** The reader, the actor and the two teams are all dealt in, so nobody can be removed once the game has started. */
+  removeBlocked() { return this.phase === 'lobby' ? null : 'Players can only be removed before the game starts (end the game first, or skip the card)'; }
+  /** The card is waiting for someone who is not here (the reader and everyone who could stand in for them): then
+   *  anyone who is here may throw the card out and deal another. */
+  #stuck() {
+    const c = this.card;
+    if (this.phase !== 'card' || !c || !['read', 'secret', 'pick'].includes(c.stage)) return false;
+    return !this.#judges().some((id) => this.room.connected.has(id));
+  }
   playerRemoved(id) {
     delete this.picked[id];
     if (this.card) {
@@ -961,6 +970,10 @@ export class GuysVsGalsGame {
         if (!this.#starter(player.id)) fail('Only the host can do that');
         this.act({ start: 'start', advance: 'advance', 'play-again': 'playAgain' }[msg.t]);
         return undefined;
+      case 'new-card':
+        if (!this.#starter(player.id) && !this.#stuck()) fail('Only the host can do that');
+        this.newCard();
+        return undefined;
       case 'side': this.setSide(player, String(msg.side ?? '')); return undefined;
       case 'mode':
         if (!this.#starter(player.id)) fail('Only the host can do that');
@@ -1101,7 +1114,7 @@ export class GuysVsGalsGame {
     const v = this.publicView();
     const side = this.#sideOf(player);
     const c = this.card;
-    const me = { id: player.id, side, picked: !!this.picked[player.id], canStart: this.#starter(player.id), myTurn: !!side && side === this.turn };
+    const me = { id: player.id, side, picked: !!this.picked[player.id], canStart: this.#starter(player.id), stuck: this.#stuck(), myTurn: !!side && side === this.turn };
     if (c && this.phase === 'card') {
       const reading = c.about;
       me.reader = c.reader === player.id;

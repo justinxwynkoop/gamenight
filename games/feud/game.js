@@ -187,6 +187,29 @@ export class FeudGame {
   }
   typed() { return !!this.settings.typed; }
 
+  /** A player was removed from the room: whoever stood in for them (face-off player, Fast Money player) is replaced. */
+  playerRemoved(id, gone) {
+    const run = this.run;
+    if (run.status === 'round' && run.faceoff) {
+      for (const unitId of Object.keys(run.faceoff.reps)) {
+        if (run.faceoff.reps[unitId] === id) run.faceoff.reps[unitId] = this.#members(unitId)[0]?.id ?? null;
+      }
+    }
+    const fm = run.fm;
+    if (fm && Array.isArray(fm.players) && fm.players.includes(id)) {
+      // A player who has already had their go stays on the board under their own name; anyone still to play is replaced.
+      const finished = (slot) => (slot === 'p1' ? !['team', 'pick', 'p1'].includes(fm.step) : fm.step === 'results' || (fm.step === 'reveal' && fm.part === 'p2'));
+      SLOTS.forEach((slot, i) => {
+        if (fm.players[i] !== id) return;
+        if (finished(slot)) { fm.gone = { ...(fm.gone ?? {}), [id]: gone?.name ?? null }; return; }
+        const other = fm.players[1 - i];
+        const m = this.#members(fm.team).filter((p) => p.id !== id);
+        fm.players[i] = (m.find((p) => p.id !== other) ?? m[0])?.id ?? null;
+      });
+    }
+    this.#changed();
+  }
+
   /** Whose phone may type a guess right now: the face-off player whose turn it is, or anyone on the team playing or stealing. */
   canGuess(player) {
     const run = this.run;
@@ -937,7 +960,7 @@ export class FeudGame {
   }
 
   // ---------- views ----------
-  #playerName(id) { return this.room.players.find((p) => p.id === id)?.name ?? null; }
+  #playerName(id) { return this.room.players.find((p) => p.id === id)?.name ?? this.run.fm?.gone?.[id] ?? null; }
 
   publicView() { return this.#view(false); }
   /** A phone also learns what it may do now. */
@@ -949,6 +972,10 @@ export class FeudGame {
       canGuess: this.canGuess(player),
       canChoose: run.status === 'round' && run.step === 'choose' && player.teamId === run.faceoff.winner,
     };
+    // A Fast Money player's own saved answers, so a phone that reloads does not start from a blank form.
+    if (v.fm && run.fm && run.status === 'fastmoney' && ['p1', 'p2'].includes(run.fm.step) && run.fm.players[SLOTS.indexOf(run.fm.step)] === player.id) {
+      v.fm.mine = (run.fm.answers[run.fm.step] ?? []).slice();
+    }
     return v;
   }
   hostView() {

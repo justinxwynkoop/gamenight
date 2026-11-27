@@ -39,8 +39,8 @@ export function render(raw, ctx) {
     body.push(card(eyebrow('Now'), h('div', { class: 'card-title' }, g.line.text), h('p', { class: 'dim' }, g.line.next),
       g.phase === 'team' ? h('p', {}, `Leader: ${nameOf(g, g.leaderId)} · picking ${g.teamSize}`) : null,
       waitingFor().length ? h('p', { class: 'dim' }, `Waiting for: ${waitingFor().join(', ')}`) : null));
-    if (['roles', 'vote', 'mission', 'vote-result', 'mission-result'].includes(g.phase)) {
-      dock.push(button({ label: 'Move on without waiting', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+    if (['roles', 'team', 'vote', 'mission', 'vote-result', 'mission-result'].includes(g.phase)) {
+      dock.push(button({ label: g.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
     }
   }
   return {

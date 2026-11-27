@@ -187,9 +187,9 @@ export function mount(container, { send }) {
 
   /** The first player (with no host) can keep the game moving when someone has wandered off. */
   function helper(v) {
-    if (!me(v).canStart || ['lobby', 'gameover'].includes(v.phase)) return null;
-    return h('details', { class: 'pc-pcard' }, h('summary', {}, 'Someone gone quiet?'),
-      h('p', { class: 'dim' }, 'You started the game, so you can keep it moving.'),
+    if (!me(v).canNudge || ['lobby', 'gameover'].includes(v.phase)) return null;
+    return h('details', { class: 'pc-pcard', open: !me(v).canStart }, h('summary', {}, 'Someone gone quiet?'),
+      h('p', { class: 'dim' }, me(v).canStart ? 'You started the game, so you can keep it moving.' : 'Whoever it is waiting for has gone away, so you can keep it moving.'),
       ['rolloff', 'roll', 'move', 'choose', 'result'].includes(v.phase) ? btn(v.phase === 'rolloff' ? 'Roll for everyone left' : v.phase === 'roll' ? `Roll for ${nameOf(v, v.turn)}` : 'Move on', '', () => send({ t: 'advance' })) : null,
       ['roll', 'move', 'choose', 'question'].includes(v.phase) ? btn(`Skip ${nameOf(v, v.turn)}’s turn`, '', () => send({ t: 'skip' })) : null);
   }

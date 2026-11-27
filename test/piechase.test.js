@@ -383,3 +383,39 @@ test('the lobby: needs two, takes at most six, set choice and settings', () => {
   assert.deepEqual(v.categories.map((c) => c.color), CATEGORIES.map((c) => c.color));
   assert.equal(v.board.length, 73);
 });
+
+test('P1: nobody can be removed once the game has started', () => {
+  const s = setup({ n: 3 });
+  s.room.removePlayer(s.ps[2].id);                                    // lobby: fine
+  assert.equal(s.room.players.length, 2);
+  s.g.start();
+  assert.throws(() => s.room.removePlayer(s.ps[0].id), /before the game starts/);
+  assert.match(s.room.hostView().room.removeBlocked, /before the game starts/);
+  assert.equal(s.room.players.length, 2);
+});
+
+test('P1: with no host, anyone can skip past a player who has gone away; otherwise only the first player', () => {
+  const s = setup({ n: 3, dice: [1, 2, 3] });
+  s.g.start();
+  s.g.advance();                                                      // the who-goes-first roll: 1, 2, 3
+  s.wait(T.rolloffDone + 10);
+  assert.equal(s.g.phase, 'roll');
+  const turnPlayer = s.who();
+  const others = s.ps.filter((p) => p !== turnPlayer);
+  const first = s.ps[0];
+  const notFirst = others.find((p) => p !== first) ?? others[0];
+  // Everyone is here: only the first player may skip.
+  if (notFirst !== first) assert.throws(() => s.msg(notFirst, { t: 'skip' }), /first player/);
+  assert.equal(s.view(notFirst).me.canNudge, notFirst === first);
+  // The player whose turn it is goes away, and so does the first player.
+  s.room.connected.delete(turnPlayer.id);
+  const spare = s.ps.filter((p) => p !== turnPlayer && p !== first);
+  s.room.connected.delete(first.id);
+  const helper = spare[0] ?? others[0];
+  if (helper && helper !== first && helper !== turnPlayer) {
+    assert.equal(s.view(helper).me.canNudge, true);
+    const before = s.g.turn;
+    s.msg(helper, { t: 'skip' });
+    assert.notEqual(s.g.turn, before);
+  }
+});
