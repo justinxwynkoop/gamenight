@@ -151,6 +151,7 @@
       },
       "target": 300
     },
-    "fm": null
+    "fm": null,
+    "champion": null
   }
 }

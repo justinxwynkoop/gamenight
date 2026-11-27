@@ -279,6 +279,68 @@ test('reaching the winning score ends the rounds early; a tie lets the host pick
   assert.equal(g.run.fm.team, blue.id);
 });
 
+test('the leader has won once the rounds end: Fast Money is a bonus that cannot change the winner', () => {
+  const ctx = setup();
+  const { g, red, blue } = ctx;
+  g.startGame(); red.score = 150; blue.score = 50;
+  assert.equal(g.publicView().champion, null, 'no champion while the rounds are being played');
+  g.run.round = 4; g.run.step = 'roundEnd';
+  g.nextRound();
+  assert.equal(g.publicView().champion, red.id, 'the champion is known before Fast Money starts');
+  assert.equal(g.publicView().fm.stakes, 'bonus');
+  g.fmStart(); g.fmNext(); g.fmNext();
+  for (let i = 0; i < 20 && g.run.fm.step !== 'results'; i++) g.fmRevealNext();
+  assert.equal(g.publicView().fm.won, false, 'nothing typed scores nothing');
+  g.finishGame();
+  const r = g.publicView().result;
+  assert.equal(r.champion, red.id, 'missing the Fast Money goal does not take the win away');
+  assert.equal(r.fastMoney.stakes, 'bonus');
+  assert.equal(r.fastMoney.won, false);
+});
+
+test('the champions can skip the bonus round', () => {
+  const ctx = setup();
+  const { g, red } = ctx;
+  toFastMoney(ctx);
+  g.finishGame();
+  assert.equal(g.run.status, 'done');
+  assert.equal(g.publicView().result.champion, red.id);
+  assert.equal(g.publicView().result.fastMoney.played, false);
+});
+
+test('a tie: Fast Money decides it (reach the goal and win, fall short and the other team wins)', () => {
+  for (const reach of [true, false]) {
+    const { g, red, blue, room } = setup();
+    g.setSettings({ fastMoneyGoal: 50 });
+    g.startGame(); red.score = 100; blue.score = 100;
+    g.run.round = 4; g.run.step = 'roundEnd';
+    g.nextRound();
+    assert.equal(g.publicView().champion, null);
+    assert.equal(g.publicView().fm.stakes, 'tiebreak');
+    g.fmTeam(blue.id);
+    g.fmStart();
+    const [p1] = g.run.fm.players;
+    g.fmAnswersFrom(p1, reach ? ['apple', 'dog', 'sneakers', 'kitchen', 'nap'] : ['zzz', 'zzz', 'zzz', 'zzz', 'zzz']);
+    g.fmNext(); g.fmNext();
+    for (let i = 0; i < 20 && g.run.fm.step !== 'results'; i++) g.fmRevealNext();
+    assert.equal(g.publicView().fm.won, reach);
+    assert.equal(g.publicView().champion, reach ? blue.id : red.id);
+    g.finishGame();
+    assert.equal(g.publicView().result.champion, reach ? blue.id : red.id);
+    assert.ok(room.publicView());
+  }
+});
+
+test('a tie with Fast Money switched off ends as a tie', () => {
+  const { g, red, blue } = setup();
+  g.setSettings({ fastMoney: false });
+  g.startGame(); red.score = 80; blue.score = 80;
+  g.run.round = 4; g.run.step = 'roundEnd';
+  g.nextRound();
+  assert.equal(g.run.status, 'done');
+  assert.equal(g.publicView().result.champion, null);
+});
+
 function toFastMoney(ctx) {
   const { g, red, blue } = ctx;
   g.startGame(); red.score = 150; blue.score = 50;

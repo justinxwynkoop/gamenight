@@ -95,6 +95,18 @@ final class FeudDecodingTests: XCTestCase {
         XCTAssertNil(fm.won)
     }
 
+    func testTheWinnersAreKnownBeforeFastMoneyAndItIsTheirBonus() throws {
+        let pick = try Fixture.feud("feud-fm-pick")
+        XCTAssertEqual(pick.champion, "t5", "the leader has won once the survey rounds end")
+        XCTAssertEqual(pick.fm?.stakes, "bonus")
+        XCTAssertEqual(pick.fm?.isTiebreak, false)
+        let done = try Fixture.feud("feud-done")
+        XCTAssertEqual(done.result?.champion, "t5")
+        XCTAssertEqual(done.result?.fastMoney?.stakes, "bonus")
+        XCTAssertNil(try Fixture.feud("feud-play").champion, "nobody has won while the rounds are played")
+        XCTAssertEqual(try Fixture.feud("feud-lobby").settings?.targetScore, 300)
+    }
+
     func testFastMoneyResultsAndTheEnd() throws {
         let fm = try XCTUnwrap(try Fixture.feud("feud-fm-results").fm)
         XCTAssertEqual(fm.step, .results)

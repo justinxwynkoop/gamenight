@@ -111,7 +111,7 @@ function setupView() {
     card(eyebrow('Rules'),
       h('div', { class: 'field' }, h('span', {}, 'First team to reach'), seg([200, 300, 400, 500].map((n) => ({ value: n, label: `${n}` })), s.targetScore, (n) => act('setSettings', { targetScore: n }))),
       toggle({ label: 'Bigger rounds at the end', sub: 'Rounds 4 and 5 are worth double and triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) }),
-      toggle({ label: 'Play Fast Money', sub: fmOk || !g.setId ? 'The winning team plays the bonus round' : 'This set has no Fast Money questions', checked: s.fastMoney && (fmOk || !g.setId), onchange: (on) => act('setSettings', { fastMoney: on }) })),
+      toggle({ label: 'Play Fast Money', sub: fmOk || !g.setId ? 'The winning team plays a bonus round for the jackpot (a tie: it decides the winner)' : 'This set has no Fast Money questions', checked: s.fastMoney && (fmOk || !g.setId), onchange: (on) => act('setSettings', { fastMoney: on }) })),
   ];
   const dock = [
     !ready && h('div', { class: 'dock-note' }, problems[0]),
@@ -274,12 +274,17 @@ function fastMoneyView() {
   const at = Math.max(0, FM_STEPS.findIndex(([k]) => k === (fm.step === 'team' ? 'pick' : fm.step)));
   const tracker = h('div', { class: 'steps' }, FM_STEPS.map(([, label], i) => h('span', { class: i < at ? 'done' : i === at ? 'on' : '' }, label)));
   const team = unit(fm.team);
-  const head = card(tracker, h('div', { class: 'meta' }, 'Fast Money', team && [h('span', {}, '·'), teamBadge(fm.team, 12), team.name]),
-    h('p', { class: 'dim' }, `Two players answer five questions each. Reach ${fm.goal} points to win.`));
+  const bonus = fm.stakes !== 'tiebreak';
+  const champ = unit(g.champion);
+  const head = card(tracker, h('div', { class: 'meta' }, bonus ? 'Bonus round: Fast Money' : 'Tiebreaker: Fast Money', team && [h('span', {}, '·'), teamBadge(fm.team, 12), team.name]),
+    bonus && champ && h('div', { class: 'banner', style: { background: '#14532d' } }, icon('award', 22), h('div', { class: 'grow' }, `${champ.name} won the game`, h('small', {}, 'Fast Money is their bonus round. It cannot change who won.'))),
+    h('p', { class: 'dim' }, bonus
+      ? `Two players answer five questions each. ${fm.goal} points wins the jackpot.`
+      : `The teams are tied, so Fast Money decides it. ${fm.goal} points wins the game for the team that plays; fall short and the other team wins.`));
 
   if (fm.step === 'team') {
     return {
-      body: [head, card(eyebrow('Tied'), h('div', { class: 'card-title' }, 'Which team plays Fast Money?'),
+      body: [head, card(eyebrow('Tied'), h('div', { class: 'card-title' }, 'Which team plays Fast Money?'), h('p', { class: 'dim' }, 'Toss a coin, or let the team with the faster face-off buzz play.'),
         h('div', { class: 'list' }, room.units.map((u) => h('button', { type: 'button', class: 'pick', onclick: () => act('fmTeam', { id: u.id }) }, dot(u.color, 18), h('div', { class: 'grow t' }, u.name), h('span', { class: 'dim' }, String(u.score))))))],
       dock: null,
     };
@@ -317,7 +322,8 @@ function fmPick(fm, head) {
       card(eyebrow('Choose the two players'), h('p', { class: 'dim' }, `${unit(fm.team)?.name ?? 'The team'}: pick who plays Fast Money. Tap a name to choose them for that slot.`)),
       card(eyebrow('Player 1'), h('div', { class: 'list' }, memberList(0, fm))),
       card(eyebrow('Player 2'), h('p', { class: 'dim' }, 'Player 2 should not hear Player 1’s answers. Send them out of the room, or have them look away.'), h('div', { class: 'list' }, memberList(1, fm)))],
-    dock: [button({ label: 'Start Fast Money', icon: 'play', kind: 'ok', size: 'lg', block: true, disabled: !ready, onclick: () => act('fmStart') })],
+    dock: [button({ label: 'Start Fast Money', icon: 'play', kind: 'ok', size: 'lg', block: true, disabled: !ready, onclick: () => act('fmStart') }),
+      fm.stakes !== 'tiebreak' && button({ label: 'Skip the bonus round', size: 'sm', block: true, onclick: () => act('finishGame') })],
   };
 }
 
@@ -400,7 +406,7 @@ function fmReveal(fm, head) {
     ...fm.rows.map((row) => card(eyebrow(`Question ${row.q + 1}`), h('div', { class: 'card-title' }, row.question), survey(row), slotRow(row, 'p1', names[0]), slotRow(row, 'p2', names[1]))),
     card(eyebrow('Total'), h('div', { class: 'fd-total' }, h('b', {}, String(fm.totals.total)), h('span', { class: 'dim' }, ` of ${fm.goal}`)),
       h('div', { class: 'progress' }, h('i', { style: { width: `${Math.min(100, (fm.totals.total / fm.goal) * 100)}%` } })),
-      fm.step === 'results' && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, fm.won ? 'They did it!' : 'So close', h('small', {}, fm.won ? `${fm.totals.total} points` : `${fm.goal - fm.totals.total} short`))))];
+      fm.step === 'results' && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, fm.won ? (fm.stakes === 'tiebreak' ? `${unit(fm.team)?.name} win the tiebreaker!` : 'Jackpot!') : (fm.stakes === 'tiebreak' ? `${nameOf(g.champion)} win the tiebreaker` : 'So close'), h('small', {}, fm.won ? `${fm.totals.total} points` : `${fm.goal - fm.totals.total} short`))))];
   return {
     body,
     dock: [fm.step === 'results'
@@ -411,13 +417,13 @@ function fmReveal(fm, head) {
 
 // ---------- the end ----------
 function doneView() {
-  const ranked = [...room.units].sort((a, b) => b.score - a.score);
-  const tie = ranked[0] && ranked[1] && ranked[0].score === ranked[1].score;
+  const champ = unit(g.result?.champion ?? g.champion);
+  const ranked = [...room.units].sort((a, b) => (b.id === champ?.id) - (a.id === champ?.id) || b.score - a.score);
   const fm = g.result?.fastMoney;
   return {
-    body: [card(eyebrow('Game over'), h('div', { class: 'card-title' }, tie ? 'A tie!' : `${ranked[0]?.name ?? 'Nobody'} wins`),
+    body: [card(eyebrow('Game over'), h('div', { class: 'card-title' }, champ ? `${champ.name} win the game` : 'A tie!'),
       h('div', { class: 'list' }, ranked.map((u, i) => h('div', { class: 'rowi' }, h('span', { class: 'rank' }, String(i + 1)), dot(u.color, 16), h('div', { class: 'grow t' }, u.name), h('span', { class: 'pts' }, String(u.score))))),
-      fm?.played && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, `Fast Money: ${fm.total} of ${fm.goal}`, h('small', {}, `${nameOf(fm.team)} ${fm.won ? 'won the bonus round' : 'fell short'}`))),
+      fm?.played && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, `Fast Money: ${fm.total} of ${fm.goal}`, h('small', {}, fm.stakes === 'tiebreak' ? `${nameOf(fm.team)} ${fm.won ? 'broke the tie' : 'fell short, so the tie went the other way'}` : `${nameOf(fm.team)} ${fm.won ? 'won the jackpot' : 'fell short of the jackpot'}`))),
       h('p', { class: 'dim' }, 'Starting again resets the scores. Everyone stays in the game.'))],
     dock: [button({ label: 'Back to setup', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('endGame') })],
   };
@@ -439,7 +445,7 @@ function settingsCards() {
       toggle({ label: 'Bigger rounds at the end', sub: 'Round 4 is worth double and round 5 triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) }),
       h('div', { class: 'field' }, h('span', {}, 'Answer clock (you start it when a player is up)'), presets([5, 10, 15, 20, 30], s.answerSeconds ?? 10, 'answerSeconds', (n) => `${n}s`))),
     card(eyebrow('Fast Money'),
-      toggle({ label: 'Play Fast Money', sub: 'The leading team plays the bonus round', checked: s.fastMoney, onchange: (on) => act('setSettings', { fastMoney: on }) }),
+      toggle({ label: 'Play Fast Money', sub: 'The winning team plays a bonus round for the jackpot (a tie: it decides the winner)', checked: s.fastMoney, onchange: (on) => act('setSettings', { fastMoney: on }) }),
       h('div', { class: 'field' }, h('span', {}, 'Points to win'), presets([100, 150, 200, 250], s.fastMoneyGoal, 'fastMoneyGoal')),
       h('p', { class: 'dim' }, 'Longer times suit players typing on a phone; shorter ones suit answers said out loud.'),
       h('div', { class: 'field' }, h('span', {}, 'Player 1’s time'), presets([20, 30, 40, 60], s.fastMoneySeconds1, 'fastMoneySeconds1', (n) => `${n}s`)),

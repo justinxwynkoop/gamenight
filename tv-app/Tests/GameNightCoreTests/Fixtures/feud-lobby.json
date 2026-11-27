@@ -69,6 +69,7 @@
     "rounds": 5,
     "hasFastMoney": true,
     "round": null,
-    "fm": null
+    "fm": null,
+    "champion": null
   }
 }

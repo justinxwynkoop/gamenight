@@ -1,24 +1,30 @@
 // Family Feud on the TV: the face-off, the survey board, strikes and the steal, Fast Money and the winner.
+// The look is a prime-time survey stage: a gold-framed board ringed with chasing bulbs, glossy blue answer panels
+// that flip to lit ones, team podiums with lit score windows, and the pot in a gold "bank" between them. The Apple
+// TV app draws the same screens in SwiftUI (tv-app/FamilyGameNight/Feud/Display/FeudScreens.swift).
 import { h, ink, unitById, qrImg } from '../../common.js';
+import { loadStyles, art } from './shared.js';
 
 // ---------- countdown (Fast Money) ----------
-let live = null; // { leftMs, totalMs, at, bar, num, shown }
+let live = null; // { leftMs, totalMs, at, bar, num, ring, shown }
 let play = () => {};
 setInterval(() => {
   if (!live) return;
   const left = Math.max(0, live.leftMs - (performance.now() - live.at));
   if (live.bar) { live.bar.firstChild.style.width = `${(left / live.totalMs) * 100}%`; live.bar.classList.toggle('low', left <= 5000); }
+  if (live.ring) { live.ring.style.setProperty('--p', String(left / live.totalMs)); live.ring.classList.toggle('low', left <= 5000); }
   const secs = Math.ceil(left / 1000);
   if (live.num) live.num.textContent = String(secs);
   if (secs !== live.shown) { live.shown = secs; if (secs > 0 && secs <= 5 && left < live.totalMs) play('tick'); }
 }, 100);
 function timerParts(timer) {
-  if (!timer || timer.timedOut) { live = null; return { bar: null, num: null }; }
+  if (!timer || timer.timedOut) { live = null; return { bar: null, num: null, ring: null }; }
   const bar = h('div', { class: 'fd-timer' }, h('i'));
   const num = h('span', { class: 'fd-tnum' }, String(Math.ceil(timer.leftMs / 1000)));
-  live = { leftMs: timer.leftMs, totalMs: timer.totalMs, at: performance.now(), bar, num, shown: Math.ceil(timer.leftMs / 1000) };
+  const ring = h('div', { class: 'fd-ring', style: { '--p': String(timer.leftMs / timer.totalMs) } }, num);
+  live = { leftMs: timer.leftMs, totalMs: timer.totalMs, at: performance.now(), bar, num, ring, shown: Math.ceil(timer.leftMs / 1000) };
   bar.firstChild.style.width = `${(timer.leftMs / timer.totalMs) * 100}%`;
-  return { bar, num };
+  return { bar, num, ring };
 }
 
 // ---------- the big X ----------
@@ -29,7 +35,7 @@ const fxElapsed = (r) => (strikeFx && strikeFx.round === r.number && strikeFx.n 
 const fxActive = (r) => r.strikes > 0 && fxElapsed(r) < FX_MS;
 
 function bigX(r) {
-  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, '✕');
+  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, h('span', {}, '✕'));
   requestAnimationFrame(() => {
     if (!el.isConnected) return;
     const slots = document.querySelectorAll('.fd-strikes .x');
@@ -56,7 +62,7 @@ const MISS_MS = FX_MS + 800;
 let stealFx = null; // { round, at }
 const missElapsed = (r) => (stealFx && stealFx.round === r.number ? performance.now() - stealFx.at : Infinity);
 function missX(r) {
-  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, '✕');
+  const el = h('div', { class: 'fd-bigx', 'aria-hidden': 'true' }, h('span', {}, '✕'));
   requestAnimationFrame(() => {
     if (!el.isConnected) return;
     const anim = el.animate([
@@ -149,13 +155,56 @@ export function onChange(prev, view, sound) {
 const colorOf = (v, id) => unitById({ units: v.room.units }, id)?.color ?? '#fff';
 const unitOf = (v, id) => v.room.units.find((u) => u.id === id) ?? null;
 const nameOf = (v, id) => unitOf(v, id)?.name ?? '';
+const plural = (u) => u?.name ?? '';
 
-function teamBox(v, u, r) {
+// ---------- the stage, the lobby ----------
+/** Every Feud screen sits on the same stage: spotlights from above, a glow on the floor. */
+const stage = (cls, ...kids) => h('div', { class: `fd-stage ${cls}` }, h('div', { class: 'fd-beams', 'aria-hidden': 'true' }), ...kids);
+const logo = (small) => h('div', { class: `fd-logo ${small ? 'sm' : ''}` }, h('span', { class: 'a' }, 'Family'), h('span', { class: 'b' }, 'Feud'));
+
+export function lobby(v, ctx) {
+  loadStyles();
+  const g = v.game;
+  const info = ctx?.info ?? {};
+  const units = v.room.units;
+  const step = (pic, title, text) => h('div', { class: 'fd-how' }, art(pic), h('div', {}, h('b', {}, title), h('span', {}, text)));
+  return stage('fd-lobby',
+    h('div', { class: 'fd-lb-top' },
+      h('div', { class: 'fd-lb-brand' }, logo(),
+        h('div', { class: 'fd-lb-set' }, g.title ?? 'Pick a question set on the host page'),
+        h('div', { class: 'fd-lb-rules' }, `${g.rounds || 5} survey rounds · first to ${g.settings?.targetScore ?? 300} wins${g.settings?.fastMoney && g.hasFastMoney ? ' · then Fast Money for the jackpot' : ''}`)),
+      h('div', { class: 'fd-lb-join' },
+        h('div', { class: 'qr' }, ctx?.qr ? ctx.qr() : qrImg()),
+        h('div', { class: 'how' }, h('b', {}, 'Scan to join'),
+          info.code ? h('span', {}, 'or open ', h('b', {}, info.site), ' and type ', h('b', { class: 'roomcode fd-code' }, info.code))
+            : info.joinUrl ? h('span', {}, `or open ${info.joinUrl.replace(/^https?:\/\//, '')}`) : null))),
+    h('div', { class: 'fd-lb-teams' }, units.map((u, i) => h('div', { class: 'fd-lb-team', style: { '--c': u.color, '--ink': ink(u.color) } },
+      h('div', { class: 'nm' }, u.name),
+      h('div', { class: 'who' }, u.memberNames?.length ? u.memberNames.map((n) => h('span', {}, n)) : h('em', {}, 'Nobody yet: pick this team on your phone')),
+      i === 0 && units.length > 1 && h('div', { class: 'vs' }, 'VS')))),
+    h('div', { class: 'fd-lb-steps' },
+      step('microphone', 'Face-off', 'Buzz first and name the top answer'),
+      step('clipboard', 'Survey says', 'Find every answer before three strikes'),
+      step('money-bag', 'Fast Money', 'The winners play a bonus round for the jackpot')),
+    h('div', { class: 'fd-lb-foot' }, g.hosted ? 'The host starts the game.' : 'The captain (the first player to join) starts the game on their phone.'));
+}
+
+// ---------- a round ----------
+function podium(v, u, r) {
   const playing = r && r.control === u.id;
-  return h('div', { class: `fd-score ${playing ? 'on' : ''}`, style: { '--c': u.color, background: u.color, color: ink(u.color) } },
-    h('div', { class: 'n' }, u.name),
-    h('div', { class: 'p' }, String(u.score)),
-    h('div', { class: 's' }, playing ? (r.step === 'steal' ? 'STEAL' : r.step === 'roundEnd' ? 'WINS' : 'PLAYING') : ' '));
+  const tag = playing ? (r.step === 'steal' ? 'STEALING' : r.step === 'roundEnd' ? 'WINS THE ROUND' : 'PLAYING') : '';
+  return h('div', { class: `fd-podium ${playing ? 'on' : ''} ${r?.control && !playing ? 'off' : ''}`, style: { '--c': u.color, '--ink': ink(u.color) } },
+    h('div', { class: 'nm' }, u.name),
+    h('div', { class: 'led' }, String(u.score)),
+    h('div', { class: 'tag' }, tag || ' '));
+}
+
+function bank(r) {
+  const label = r.multiplier === 2 ? 'DOUBLE POINTS' : r.multiplier === 3 ? 'TRIPLE POINTS' : null;
+  return h('div', { class: 'fd-bank' },
+    h('div', { class: 'rd' }, `Round ${r.number}`),
+    h('div', { class: 'coin' }, h('div', { class: 'in' }, h('b', {}, String(r.pot)), h('small', {}, r.step === 'roundEnd' ? 'won' : 'in the bank'))),
+    label && h('div', { class: 'mult' }, label));
 }
 
 function strikes(r) {
@@ -176,12 +225,19 @@ function slot(a, round) {
       h('div', { class: 'face back' }, h('div', { class: 'num' }, String(a.n)), h('div', { class: 'txt' }, a.text ?? ''), h('div', { class: 'pt' }, a.points !== null ? String(a.points) : ''))));
 }
 
+/** The board: a gold frame ringed with chasing bulbs, the answers 1 to n/2 down the left and the rest down the right. */
+function board(r) {
+  const rows = Math.max(3, Math.ceil(r.answers.length / 2));
+  return h('div', { class: 'fd-frame' }, h('div', { class: 'fd-bulbs', 'aria-hidden': 'true' }),
+    h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map((a) => slot(a, r.number))));
+}
+
 /** Who buzzed in the face-off and how fast (to the thousandth), fastest first: it stays up until the team has played on. */
 function faceoffTimes(v, r) {
   const list = r.faceoff.buzzes ?? [];
   if (!list.length || !['faceoff', 'choose'].includes(r.step)) return null;
   const best = list[0].ms;
-  return h('div', { class: 'fd-buzzes' }, h('span', { class: 'lbl' }, 'BUZZ TIMES'),
+  return h('div', { class: 'fd-buzzes' }, h('span', { class: 'lbl' }, 'Buzz times'),
     list.map((b, i) => h('span', { class: `rb ${i === 0 ? 'first' : ''}`, style: { '--c': colorOf(v, b.unitId) } },
       h('i', {}, String(i + 1)), b.name ?? nameOf(v, b.unitId), h('b', {}, `${(b.ms / 1000).toFixed(3)}s`), i ? h('small', {}, `+${((b.ms - best) / 1000).toFixed(3)}`) : null)));
 }
@@ -189,32 +245,31 @@ function faceoffTimes(v, r) {
 function banner(v, r) {
   const f = r.faceoff;
   const cls = []; let text = ''; let sub = null; let color = null;
+  const vs = f.reps.map((p) => p.name).filter(Boolean).join('  vs  ');
   if (r.step === 'faceoff') {
-    if (f.open) { cls.push('open'); text = 'Face-off — buzz in!'; sub = f.reps.map((p) => p.name).filter(Boolean).join('  vs  '); }
+    if (f.open) { cls.push('open'); text = 'Face-off! Buzz in!'; sub = vs; }
     else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); }
     else if (f.attempts.length >= 2) { text = 'Nobody got it. Face-off again!'; }
-    else { text = 'Face-off'; sub = f.reps.map((p) => p.name).filter(Boolean).join('  vs  '); }
+    else { text = 'Face-off'; sub = vs; }
   } else if (r.step === 'choose') { text = `${nameOf(v, f.winner)} won the face-off!`; color = colorOf(v, f.winner); sub = 'Play or pass?'; }
-  else if (r.step === 'play') { text = `${nameOf(v, r.control)} — name an answer`; color = colorOf(v, r.control); if (r.up) sub = `${r.up.name} is up`; }
+  else if (r.step === 'play') { text = `${nameOf(v, r.control)}: name an answer`; color = colorOf(v, r.control); if (r.up) sub = `${r.up.name} is up`; }
   else if (r.step === 'steal') { cls.push('steal'); text = `Steal! ${nameOf(v, r.control)}, one guess`; if (r.up) sub = `${r.up.name} is up`; }
-  else if (r.step === 'roundEnd') { text = `${nameOf(v, r.result?.winner)} wins ${r.result?.awarded ?? 0}${r.multiplier > 1 ? ` (×${r.multiplier})` : ''}`; color = colorOf(v, r.result?.winner); cls.push('win'); }
+  else if (r.step === 'roundEnd') { text = `${nameOf(v, r.result?.winner)} win ${r.result?.awarded ?? 0} points${r.multiplier > 1 ? ` (×${r.multiplier})` : ''}`; color = colorOf(v, r.result?.winner); cls.push('win'); }
   // With nobody hosting, the last typed guess shows under the banner, so the room sees what was said.
   if (!sub && r.said && r.step !== 'choose') sub = `${r.said.name}: “${r.said.text}”${r.said.index === -1 ? '  ✕' : ''}`;
   // The answer clock the host started: the seconds left, or TIME'S UP.
   const clock = r.timer && ['play', 'steal'].includes(r.step) ? (r.timer.timedOut ? h('b', { class: 'fd-aclock out' }, 'TIME’S UP') : h('b', { class: 'fd-aclock' }, timerParts(r.timer).num)) : null;
-  return h('div', { class: `fd-banner ${cls.join(' ')}`, style: color ? { background: color, color: ink(color) } : {} }, h('span', {}, text), sub && h('small', {}, sub), clock);
+  return h('div', { class: `fd-banner ${cls.join(' ')} ${color ? 'team' : ''}`, style: color ? { '--c': color, '--ink': ink(color) } : {} },
+    h('div', { class: 'txt' }, h('span', {}, text), sub && h('small', {}, sub)), clock);
 }
 
 function roundScreen(v) {
   const g = v.game; const r = g.round;
   const [a, b] = v.room.units;
-  const rows = Math.ceil(r.answers.length / 2);
-  return h('div', { class: 'fd-screen' },
-    h('div', { class: 'fd-top' }, a && teamBox(v, a, r),
-      h('div', { class: 'fd-mid' }, h('div', { class: 'rd' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''}`), h('div', { class: 'pot' }, String(r.pot)), h('div', { class: 'pl' }, r.step === 'roundEnd' ? 'points won' : 'points on the board')),
-      b && teamBox(v, b, r)),
-    h('div', { class: 'fd-question' }, r.question),
-    h('div', { class: 'fd-board', style: { gridTemplateRows: `repeat(${rows}, 1fr)` } }, r.answers.map((a) => slot(a, r.number))),
+  return stage('fd-round',
+    h('div', { class: 'fd-top' }, a && podium(v, a, r), bank(r), b && podium(v, b, r)),
+    h('div', { class: 'fd-question' }, h('span', {}, r.question)),
+    board(r),
     faceoffTimes(v, r),
     h('div', { class: 'fd-foot' }, strikes(r), banner(v, r), h('div', { class: 'fd-join' }, qrImg())),
     fxActive(r) && bigX(r),
@@ -222,22 +277,50 @@ function roundScreen(v) {
 }
 
 // ---------- Fast Money ----------
+function fmHead(v, f) {
+  const team = unitOf(v, f.team);
+  return h('div', { class: 'fd-fmhead' }, art('money-bag', 'bag'), h('div', { class: 't' }, 'Fast Money'),
+    team && h('div', { class: 'tm', style: { background: team.color, color: ink(team.color) } }, team.name),
+    h('div', { class: `stakes ${f.stakes === 'tiebreak' ? 'tie' : ''}` }, f.stakes === 'tiebreak' ? 'Tiebreaker' : 'Bonus round'));
+}
+
 function fmScreen(v) {
   const g = v.game; const f = g.fm;
   const team = unitOf(v, f.team);
-  const head = h('div', { class: 'fd-fmhead' }, h('div', { class: 't' }, 'Fast Money'), team && h('div', { class: 'tm', style: { background: team.color, color: ink(team.color) } }, team.name));
-  if (f.step === 'team' || f.step === 'pick') {
-    return h('div', { class: 'fd-screen center' }, head, h('div', { class: 'fd-big' }, f.step === 'team' ? 'Tied! Who plays Fast Money?' : `${f.players.map((p) => p.name ?? '…').join(' & ')}`),
-      h('p', { class: 'fd-sub' }, `Reach ${f.goal} points to win`));
+  const champ = unitOf(v, g.champion);
+  if (f.step === 'team') {
+    return stage('fd-center fd-intro', art('money-bag', 'hero'),
+      h('div', { class: 'fd-kicker' }, 'It’s a tie!'),
+      h('div', { class: 'fd-big' }, 'Fast Money decides it'),
+      h('p', { class: 'fd-sub' }, `The team that plays wins with ${f.goal} points. Fall short, and the other team wins.`),
+      h('div', { class: 'fd-vs' }, v.room.units.map((u) => h('span', { style: { background: u.color, color: ink(u.color) } }, `${u.name} · ${u.score}`))));
+  }
+  if (f.step === 'pick') {
+    const pair = f.players.map((p) => p.name ?? '…').join(' & ');
+    if (f.stakes === 'tiebreak') {
+      return stage('fd-center fd-intro', art('money-bag', 'hero'),
+        h('div', { class: 'fd-kicker' }, 'Tiebreaker: Fast Money'),
+        h('div', { class: 'fd-big', style: { color: team?.color } }, pair),
+        h('p', { class: 'fd-sub' }, `${plural(team)} need ${f.goal} points to win the game.`));
+    }
+    return stage('fd-center fd-intro fd-crowned',
+      h('div', { class: 'fd-crown' }, art('trophy', 'hero')),
+      h('div', { class: 'fd-kicker' }, 'Winners of the Feud'),
+      h('div', { class: 'fd-champ', style: { '--c': champ?.color ?? team?.color ?? '#ffd45a' } }, champ?.name ?? team?.name ?? ''),
+      h('div', { class: 'fd-next' }, art('money-bag'), h('div', {},
+        h('b', {}, 'Bonus round: Fast Money'),
+        h('span', {}, `${pair} play for the jackpot: ${f.goal} points wins it`))));
   }
   if (f.step === 'p1' || f.step === 'p2') {
     const who = f.players[f.step === 'p1' ? 0 : 1];
-    const { bar, num } = timerParts(f.timer);
-    return h('div', { class: 'fd-screen center' }, head,
-      h('div', { class: 'fd-big' }, `${who.name ?? 'Player'}, you’re up!`),
-      f.step === 'p2' && h('p', { class: 'fd-sub' }, 'Don’t repeat your partner’s answers'),
-      h('div', { class: 'fd-qs' }, f.rows.map((row, i) => h('div', { class: 'q' }, h('span', { class: 'n' }, String(i + 1)), row.question))),
-      h('div', { class: 'fd-clock' }, f.timer?.timedOut ? 'TIME’S UP' : num), bar);
+    const { ring } = timerParts(f.timer);
+    return stage('fd-fmplay', fmHead(v, f),
+      h('div', { class: 'fd-fmbody' },
+        h('div', { class: 'fd-fmleft' },
+          h('div', { class: 'fd-big' }, `${who.name ?? 'Player'}, you’re up!`),
+          h('p', { class: 'fd-sub' }, f.step === 'p2' ? 'Don’t repeat your partner’s answers' : 'Five questions. Answer fast!'),
+          h('div', { class: 'fd-qs' }, f.rows.map((row, i) => h('div', { class: 'q' }, h('span', { class: 'n' }, String(i + 1)), h('span', {}, row.question))))),
+        h('div', { class: 'fd-fmclock' }, art('stopwatch', 'watch'), f.timer?.timedOut ? h('div', { class: 'fd-ring out' }, h('span', { class: 'fd-tnum' }, 'TIME')) : ring)));
   }
   // reveal & results
   // Three stages, driven by the host: nothing, what the player said (typed out), then the points ("survey says").
@@ -249,11 +332,19 @@ function fmScreen(v) {
       said ? typed(`say:${slotName}:${q}`, c.typed || c.label || 'No answer') : h('span', { class: 'a' }),
       h('span', { class: 'p' }, done ? String(c.points) : ''));
   };
-  return h('div', { class: 'fd-screen' }, head,
-    h('div', { class: 'fd-fm' }, f.rows.map((row) => h('div', { class: 'row' }, cell(row.p1, 'p1', row.q), h('div', { class: 'q' }, row.question), cell(row.p2, 'p2', row.q)))),
+  const pct = Math.min(100, (f.totals.total / f.goal) * 100);
+  const won = f.step === 'results' && f.won;
+  const verdict = f.step !== 'results' ? null
+    : f.stakes === 'tiebreak' ? (f.won ? `${plural(team)} win the game!` : `${nameOf(v, g.champion)} win the game!`)
+      : (f.won ? 'Jackpot!' : 'So close!');
+  return stage(`fd-fmreveal ${won ? 'won' : ''}`, fmHead(v, f),
+    h('div', { class: 'fd-fmnames' }, f.players.map((p) => h('span', {}, p.name ?? ''))),
+    h('div', { class: 'fd-frame' }, h('div', { class: 'fd-bulbs', 'aria-hidden': 'true' }),
+      h('div', { class: 'fd-fm' }, f.rows.map((row) => h('div', { class: 'row' }, cell(row.p1, 'p1', row.q), h('div', { class: 'q' }, row.question), cell(row.p2, 'p2', row.q))))),
     h('div', { class: 'fd-fmfoot' },
-      h('div', { class: 'tot' }, h('b', {}, String(f.totals.total)), h('span', {}, ` / ${f.goal}`)),
-      f.step === 'results' && h('div', { class: `fd-banner ${f.won ? 'win' : ''}`, style: f.won ? { background: '#15803d' } : {} }, f.won ? 'You did it!' : 'So close!')));
+      h('div', { class: 'tot' }, h('b', {}, String(f.totals.total)), h('span', {}, 'points')),
+      h('div', { class: 'meter' }, h('div', { class: 'fill', style: { width: `${pct}%` } }), h('div', { class: 'goal' }, `${f.goal} wins ${f.stakes === 'tiebreak' ? 'the game' : 'the jackpot'}`)),
+      verdict && h('div', { class: `fd-verdict ${f.won ? 'yes' : 'no'}` }, f.won && art('money-bag'), verdict)));
 }
 
 // Confetti lives outside the screen that is redrawn on every update, so it keeps falling.
@@ -261,7 +352,7 @@ function confetti(colors) {
   const old = document.querySelector('.fd-confetti');
   if (!colors) { old?.remove(); return; }
   if (old) return;
-  document.body.append(h('div', { class: 'fd-confetti', 'aria-hidden': 'true' }, Array.from({ length: 90 }, (_, i) => h('i', {
+  document.body.append(h('div', { class: 'fd-confetti', 'aria-hidden': 'true' }, Array.from({ length: 110 }, (_, i) => h('i', {
     style: { left: `${Math.random() * 100}vw`, background: colors[i % colors.length], animationDuration: `${3 + Math.random() * 4}s`, animationDelay: `${-Math.random() * 6}s` },
   }))));
 }
@@ -269,24 +360,27 @@ export function leave() { live = null; confetti(null); }
 
 function doneScreen(v) {
   const g = v.game;
-  const sorted = [...v.room.units].sort((a, b) => b.score - a.score);
-  const tie = sorted[0] && sorted[1] && sorted[0].score === sorted[1].score;
+  const champ = unitOf(v, g.result?.champion ?? g.champion);
   const fm = g.result?.fastMoney;
-  const w = sorted[0];
-  confetti(tie || !w ? ['#ffd24a', '#ffffff', '#5b72ff'] : [w.color, '#ffd24a', '#ffffff']);
-  const fmLine = fm?.played && (fm.won ? `${unitOf(v, fm.team)?.name ?? 'They'} won Fast Money with ${fm.total} points!` : `Fast Money: ${fm.total} of ${fm.goal}, so close!`);
-  return h('div', { class: 'fd-screen center' },
-    h('div', { class: 'fd-big' }, tie ? 'It’s a tie!' : 'The winner is'),
-    !tie && w && h('div', { class: 'fd-winner', style: { color: w.color } }, w.name),
-    !tie && w?.memberNames?.length && h('div', { class: 'fd-members' }, w.memberNames.join(' · ')),
-    h('div', { class: 'fd-final' }, sorted.map((u, i) => h('div', { class: `r ${i === 0 && !tie ? 'top' : ''}`, style: { borderColor: u.color } },
-      h('span', {}, i === 0 && !tie ? `🏆 ${u.name}` : u.name), h('b', {}, String(u.score))))),
-    fmLine && h('p', { class: 'fd-sub' }, fmLine),
-    h('p', { class: 'fd-sub dim' }, 'Thanks for playing! Play again from the host or the captain’s phone.'));
+  const sorted = [...v.room.units].sort((a, b) => (b.id === champ?.id) - (a.id === champ?.id) || b.score - a.score);
+  confetti(champ ? [champ.color, '#ffd45a', '#ffffff'] : ['#ffd45a', '#ffffff', '#5b72ff']);
+  const fmLine = !fm?.played ? null
+    : fm.stakes === 'tiebreak' ? `Fast Money broke the tie: ${fm.total} of ${fm.goal}`
+      : fm.won ? `Fast Money jackpot! ${fm.total} points` : `Fast Money: ${fm.total} of ${fm.goal}, just short of the jackpot`;
+  return stage('fd-center fd-done',
+    h('div', { class: 'fd-crown' }, art('trophy', 'hero')),
+    h('div', { class: 'fd-kicker' }, champ ? 'Winners of the Feud' : 'It’s a tie!'),
+    champ && h('div', { class: 'fd-champ', style: { '--c': champ.color } }, champ.name),
+    champ?.memberNames?.length && h('div', { class: 'fd-members' }, champ.memberNames.join(' · ')),
+    h('div', { class: 'fd-final' }, sorted.map((u) => h('div', { class: `r ${u.id === champ?.id ? 'top' : ''}`, style: { '--c': u.color, '--ink': ink(u.color) } },
+      h('span', { class: 'nm' }, u.name), h('b', {}, String(u.score))))),
+    fmLine && h('div', { class: `fd-fmline ${fm.won ? 'won' : ''}` }, art('money-bag'), fmLine),
+    h('p', { class: 'fd-thanks' }, 'Thanks for playing! Play again from the host or the captain’s phone.'));
 }
 
 /** Returns the element to show for the current state. The TV page swaps it in. */
 export function render(view, ctx) {
+  loadStyles();
   if (ctx?.sound) play = ctx.sound.play;
   live = null; // each screen sets up its own countdown, if it has one
   const g = view.game;
@@ -294,5 +388,5 @@ export function render(view, ctx) {
   confetti(null);
   if (g.status === 'fastmoney' && g.fm) return fmScreen(view);
   if (g.status === 'round' && g.round) return roundScreen(view);
-  return h('div', { class: 'fd-screen center' }, h('div', { class: 'fd-big' }, 'Family Feud'));
+  return stage('fd-center', logo());
 }

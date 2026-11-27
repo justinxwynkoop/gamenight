@@ -206,7 +206,7 @@ try {
   await until(async () => (await tv2.evaluate(async () => (await import('/audio.js')).audio.musicOwner)) === 'lobby:', 'the theme music on the main menu', 15000);
   console.log('the main menu plays the theme');
   await tv2.getByRole('button', { name: 'Family Feud' }).click();
-  await until(async () => (await tv2.locator('.gamepick').count()) === 0 && /team/i.test(await tv2.locator('.lobby').innerText()), 'the Family Feud lobby (pick a team)');
+  await until(async () => (await tv2.locator('.gamepick').count()) === 0 && (await tv2.locator('.fd-lobby .fd-lb-team').count()) === 2 && /scan to join/i.test(await tv2.locator('.fd-lobby').textContent()), 'the Family Feud lobby (two teams, how to join)');
   await shot(tv2, 'feud-lobby');
   console.log('a fresh TV offered the games and switched to Family Feud');
 } catch (e) { if (!problems.length) fail(e.message); }

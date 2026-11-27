@@ -2432,7 +2432,7 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, endRound_fn, leader_fn, stakes_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var _FeudGame = class _FeudGame {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
@@ -2806,13 +2806,14 @@
       const run = this.run;
       if (run.status !== "round") fail("No round is being played");
       this.history = [];
-      const [a, b] = __privateMethod(this, _FeudGame_instances, teams_fn).call(this);
-      const leader = a.score === b.score ? null : a.score > b.score ? a : b;
+      const leader = __privateMethod(this, _FeudGame_instances, leader_fn).call(this);
+      run.champion = leader?.id ?? null;
       if (this.settings.fastMoney && this.set.fastMoney?.length === FAST_MONEY_QUESTIONS) {
         run.status = "fastmoney";
         run.fm = {
           team: leader?.id ?? null,
           step: leader ? "pick" : "team",
+          stakes: leader ? "bonus" : "tiebreak",
           players: [],
           answers: { p1: null, p2: null },
           points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
@@ -2826,6 +2827,18 @@
         run.status = "done";
       }
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+    }
+    /** The team that won the game, or null for a tie (or before the rounds are over). */
+    champion() {
+      const run = this.run;
+      if (!["fastmoney", "done"].includes(run.status)) return null;
+      const leader = run.champion === void 0 ? __privateMethod(this, _FeudGame_instances, leader_fn).call(this)?.id ?? null : run.champion;
+      if (leader) return leader;
+      const fm = run.fm;
+      if (fm?.team && fm.step === "results" && __privateMethod(this, _FeudGame_instances, stakes_fn).call(this, fm) === "tiebreak") {
+        return this.fmTotals().total >= this.settings.fastMoneyGoal ? fm.team : __privateMethod(this, _FeudGame_instances, other_fn).call(this, fm.team)?.id ?? null;
+      }
+      return null;
     }
     fmTeam(id) {
       const fm = __privateMethod(this, _FeudGame_instances, fm_fn).call(this);
@@ -3167,6 +3180,16 @@
     unit.score += run.awarded;
     run.step = "roundEnd";
   };
+  leader_fn = function() {
+    const [a, b] = __privateMethod(this, _FeudGame_instances, teams_fn).call(this);
+    return !a || !b || a.score === b.score ? null : a.score > b.score ? a : b;
+  };
+  /** What Fast Money is played for: 'bonus' (the team already won the game) or 'tiebreak' (it decides the winner). */
+  stakes_fn = function(fm = this.run.fm) {
+    if (fm?.stakes) return fm.stakes;
+    const leader = this.run.champion === void 0 ? __privateMethod(this, _FeudGame_instances, leader_fn).call(this)?.id : this.run.champion;
+    return leader ? "bonus" : "tiebreak";
+  };
   // ---------- Fast Money ----------
   fm_fn = function() {
     if (this.run.status !== "fastmoney") fail("Fast Money is not being played");
@@ -3267,7 +3290,9 @@
       round: null,
       fm: null,
       captainId: this.captain(),
-      hosted: this.hosted()
+      hosted: this.hosted(),
+      champion: this.champion()
+      // the team that won the game, once the rounds are over (null for a tie)
     };
     if (run.status === "lobby") view.sets = this.room.listContent(GAME2).map((x) => ({ id: x.id, title: x.title })).slice(0, 40);
     if (run.status === "lobby") view.setId = this.setId;
@@ -3343,6 +3368,7 @@
     return {
       team: fm.team,
       step: fm.step,
+      stakes: __privateMethod(this, _FeudGame_instances, stakes_fn).call(this, fm),
       timer: __privateMethod(this, _FeudGame_instances, timerView_fn2).call(this, fm),
       goal: this.settings.fastMoneyGoal,
       players: SLOTS.map((s, i) => ({ slot: s, id: fm.players[i] ?? null, name: __privateMethod(this, _FeudGame_instances, playerName_fn).call(this, fm.players[i]) })),
@@ -3354,10 +3380,10 @@
   };
   doneView_fn = function() {
     const run = this.run;
-    const out = { fastMoney: null };
+    const out = { champion: this.champion(), fastMoney: null };
     if (run.fm) {
       const t = this.fmTotals();
-      out.fastMoney = { team: run.fm.team, total: t.total, goal: this.settings.fastMoneyGoal, won: t.total >= this.settings.fastMoneyGoal, played: run.fm.step === "results" };
+      out.fastMoney = { team: run.fm.team, total: t.total, goal: this.settings.fastMoneyGoal, won: t.total >= this.settings.fastMoneyGoal, played: run.fm.step === "results", stakes: __privateMethod(this, _FeudGame_instances, stakes_fn).call(this, run.fm) };
     }
     return out;
   };

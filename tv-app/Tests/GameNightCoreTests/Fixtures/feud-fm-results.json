@@ -187,7 +187,9 @@
         "p2": 124,
         "total": 286
       },
-      "won": true
-    }
+      "won": true,
+      "stakes": "bonus"
+    },
+    "champion": "t5"
   }
 }
