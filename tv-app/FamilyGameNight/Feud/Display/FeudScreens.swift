@@ -579,7 +579,7 @@ struct FeudBank: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Text("ROUND \(round.number)")
+            Text(round.sudden != nil ? "SUDDEN DEATH" : "ROUND \(round.number)")
                 .font(FD.show(26))
                 .tracking(5)
                 .foregroundStyle(FD.soft)
@@ -604,7 +604,7 @@ struct FeudBank: View {
             .frame(width: 170, height: 170)
             .shadow(color: FD.gold.opacity(0.35), radius: 30)
             if round.multiplier > 1 {
-                Text(round.multiplier == 2 ? "DOUBLE POINTS" : "TRIPLE POINTS")
+                Text(round.sudden != nil ? "SUDDEN DEATH ×\(round.multiplier)" : round.multiplier == 2 ? "DOUBLE POINTS" : "TRIPLE POINTS")
                     .font(FD.show(20))
                     .tracking(2)
                     .foregroundStyle(.white)
@@ -855,7 +855,9 @@ struct FeudBanner: View {
             if faceoff.open { return ("Face-off! Buzz in!", names, .open) }
             if let turn = faceoff.turn {
                 let rep = faceoff.reps.first { $0.unitId == turn }?.name ?? name(turn)
-                return ("\(rep), your answer?", nil, teamLook(turn))
+                let sub: String? = faceoff.followup == true ? "Both missed: next in line"
+                    : round.sudden.map { "Sudden death: the winning answer is worth ×\($0.mult)" }
+                return ("\(rep), your answer?", sub, teamLook(turn))
             }
             if faceoff.attempts.count >= 2 { return ("Nobody got it. Face-off again!", nil, .plain) }
             return ("Face-off", names, .plain)
@@ -1039,6 +1041,26 @@ struct FeudFastMoneyScreen: View {
                 Text(fm.step == .p2 ? "Don’t repeat your partner’s answers" : "Five questions. Answer fast!")
                     .font(FD.text(40, .semibold))
                     .foregroundStyle(FD.soft)
+                // Player 2 plays with Player 1's answers hidden, but their score stays up.
+                if fm.step == .p2 {
+                    HStack(spacing: 20) {
+                        Text("\((fm.players.first?.name ?? "Player 1").uppercased()) SCORED")
+                            .font(FD.text(30, .semibold))
+                            .foregroundStyle(FD.soft)
+                        Text("\(fm.totals.p1)")
+                            .font(FD.show(90))
+                            .monospacedDigit()
+                            .foregroundStyle(FD.gold)
+                    }
+                    if let first = fm.rejected?.first {
+                        Text("Question \(first + 1): that answer was already given. Try another!")
+                            .font(FD.text(34, .bold))
+                            .foregroundStyle(Color(hex: 0xFECACA))
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: 0x7F1D1D)))
+                    }
+                }
                 VStack(spacing: 14) {
                     ForEach(fm.rows, id: \.q) { row in
                         HStack(spacing: 24) {

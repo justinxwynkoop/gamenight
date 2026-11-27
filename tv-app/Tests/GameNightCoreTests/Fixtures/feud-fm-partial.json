@@ -4,6 +4,8 @@
     "modeSetting": "auto",
     "teamCount": 2,
     "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [
@@ -27,8 +29,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Cat",
-          "Dev"
+          "Ann",
+          "Ben"
         ]
       },
       {
@@ -39,8 +41,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Ann",
-          "Ben"
+          "Cat",
+          "Dev"
         ]
       }
     ],
@@ -49,6 +51,7 @@
     "settings": {
       "sound": true,
       "volume": 70,
+      "lateJoin": false,
       "ping": 0
     }
   },
@@ -62,7 +65,10 @@
       "fastMoney": true,
       "fastMoneyGoal": 200,
       "fastMoneySeconds1": 40,
-      "fastMoneySeconds2": 45
+      "fastMoneySeconds2": 45,
+      "typed": false,
+      "answerSeconds": 10,
+      "suddenDeath": true
     },
     "status": "fastmoney",
     "title": "Family Night Basics",
@@ -72,23 +78,29 @@
     "fm": {
       "team": "t5",
       "step": "reveal",
+      "stakes": "bonus",
       "timer": null,
       "goal": 200,
+      "part": "p1",
+      "partDone": false,
+      "hidden": false,
+      "rejected": [],
+      "dupBuzz": 0,
       "players": [
         {
           "slot": "p1",
-          "id": "p3",
-          "name": "Cat"
+          "id": "p1",
+          "name": "Ann"
         },
         {
           "slot": "p2",
-          "id": "p4",
-          "name": "Dev"
+          "id": "p2",
+          "name": "Ben"
         }
       ],
       "submitted": {
         "p1": true,
-        "p2": true
+        "p2": false
       },
       "rows": [
         {
@@ -97,16 +109,18 @@
           "p1": {
             "shown": 2,
             "judged": true,
+            "hidden": false,
             "points": 34,
             "label": "Apple",
             "typed": "apple"
           },
           "p2": {
-            "shown": 2,
-            "judged": true,
-            "points": 30,
-            "label": "Banana",
-            "typed": "banana"
+            "shown": 0,
+            "judged": false,
+            "hidden": false,
+            "points": null,
+            "label": null,
+            "typed": null
           }
         },
         {
@@ -115,6 +129,7 @@
           "p1": {
             "shown": 2,
             "judged": true,
+            "hidden": false,
             "points": 46,
             "label": "Dog",
             "typed": "dog"
@@ -122,6 +137,7 @@
           "p2": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -133,6 +149,7 @@
           "p1": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -140,6 +157,7 @@
           "p2": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -151,6 +169,7 @@
           "p1": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -158,6 +177,7 @@
           "p2": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -169,6 +189,7 @@
           "p1": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -176,6 +197,7 @@
           "p2": {
             "shown": 0,
             "judged": false,
+            "hidden": false,
             "points": null,
             "label": null,
             "typed": null
@@ -184,12 +206,13 @@
       ],
       "totals": {
         "p1": 80,
-        "p2": 30,
-        "total": 110
+        "p2": 0,
+        "total": 80
       },
-      "won": null,
-      "stakes": "bonus"
+      "won": null
     },
+    "captainId": null,
+    "hosted": true,
     "champion": "t5"
   }
 }

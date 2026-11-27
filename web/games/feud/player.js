@@ -56,11 +56,14 @@ export function mount(container, { send, flash }) {
     const f = r.faceoff;
     const iAmRep = f.reps.some((p) => p.playerId === me.id);
     if (r.step === 'faceoff') {
-      if (!iAmRep) return { label: 'WATCH', cls: 'out', line: f.reps.length ? `Face-off: ${f.reps.map((p) => p.name).join(' vs ')}` : 'Face-off!' };
-      if (f.open) return { label: 'BUZZ', cls: 'live', line: 'You’re up for the face-off. Go!', color: mine.color };
-      if (f.turn === me.unitId) return { label: 'YOU!', cls: 'won', line: g.settings.typed ? 'Type your answer below!' : 'Answer out loud!', color: mine.color };
-      if (f.turn) return { label: 'WAIT', cls: 'out', line: `${unit(v, f.turn)?.name ?? 'The other team'} is answering` };
-      return { label: 'READY', cls: 'out', line: f.attempts.length >= 2 ? 'Both missed. The buzzers open again in a moment.' : 'You’re up for the face-off. Wait for the host to open buzzers.', color: mine.color };
+      // Whoever is answering now: the face-off players first and, when both miss, the next players in line on each team.
+      const answerer = f.turn ? f.reps.find((p) => p.unitId === f.turn) : null;
+      const sudden = r.sudden ? ` Sudden death: the winning answer is worth ×${r.multiplier}!` : '';
+      if (!iAmRep) return { label: 'WATCH', cls: 'out', line: answerer ? `${answerer.name} is answering${f.followup ? ' (both missed: next in line)' : ''}` : f.reps.length ? `Face-off: ${f.reps.map((p) => p.name).join(' vs ')}` : 'Face-off!' };
+      if (f.open) return { label: 'BUZZ', cls: 'live', line: `You’re up for the face-off. Go!${sudden}`, color: mine.color };
+      if (answerer?.playerId === me.id) return { label: 'YOU!', cls: 'won', line: `${f.followup ? 'Both missed, so you’re next in line! ' : ''}${g.settings.typed ? 'Type your answer below!' : 'Answer out loud!'}`, color: mine.color };
+      if (f.turn) return { label: 'WAIT', cls: 'out', line: `${answerer?.name ?? unit(v, f.turn)?.name ?? 'The other team'} is answering` };
+      return { label: 'READY', cls: 'out', line: f.attempts.length >= 2 ? 'Nobody had an answer. The face-off starts again.' : `You’re up for the face-off. Wait for the host to open buzzers.${sudden}`, color: mine.color };
     }
     if (r.step === 'choose') return { label: f.winner === me.unitId ? 'YOU WON' : 'WAIT', cls: f.winner === me.unitId ? 'won' : 'out', line: f.winner === me.unitId ? 'Your team won the face-off. Play or pass?' : `${unit(v, f.winner)?.name} won the face-off`, color: f.winner === me.unitId ? mine.color : null };
     if (r.step === 'play') {
@@ -91,7 +94,7 @@ export function mount(container, { send, flash }) {
       peek.classList.remove('hidden');
       const said = r.said && h('div', { class: `fd-said ${r.said.index === -1 ? 'miss' : 'hit'}` }, `${r.said.name}: “${r.said.text}” `, r.said.index === -1 ? '✕' : '✓');
       // The question, big, so everyone can read it on their own phone. The answer board is for the TV: it is not shown here.
-      peek.replaceChildren(h('div', { class: 'tag' }, `Round ${r.number}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''} · ${r.pot} on the board`),
+      peek.replaceChildren(h('div', { class: 'tag' }, `${r.sudden ? 'Sudden death' : `Round ${r.number}`}${r.multiplier > 1 ? ` · ×${r.multiplier}` : ''} · ${r.pot} on the board`),
         h('div', { class: 'q fd-question-phone' }, r.question), ...(said ? [said] : []),
         h('div', { class: 'pm-x' }, Array.from({ length: r.maxStrikes }, (_, i) => h('span', { class: i < r.strikes ? 'on' : '' }, '✕'))));
       boardEl.classList.add('hidden');
@@ -154,15 +157,16 @@ export function mount(container, { send, flash }) {
       const bonus = f.stakes !== 'tiebreak';
       const line = f.step === 'team' ? 'It’s a tie! Fast Money decides the winner.'
         : f.step === 'pick' ? (bonus && champ ? `${champ.name} won the game! Now ${f.players.map((p) => p.name).join(' and ')} play Fast Money for the jackpot.` : 'Fast Money is about to start. Reach the goal to win the game!')
-        : playing ? (f.step === 'reveal' || f.step === 'results' ? 'Eyes on the TV for the reveal!' : 'Wait for your turn. Don’t listen to your partner’s answers!')
+        : playing ? (f.players[1].id === me.id && (f.step === 'p1' || (f.step === 'reveal' && f.part === 'p1')) ? 'Stay out of the room until the host calls you back in. Don’t listen to your partner’s answers!'
+          : f.step === 'reveal' || f.step === 'results' ? 'Eyes on the TV for the reveal!' : 'Wait for your turn. Don’t listen to your partner’s answers!')
           : `${f.players.find((p) => (p.slot === 'p1' ? f.step === 'p1' : f.step === 'p2'))?.name ?? 'Two players'} are playing Fast Money. Watch the TV!`;
       const captain = v.game.me?.captain;
       const btn = (label, onclick) => h('button', { type: 'button', class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick }, label);
       const extra = !captain ? null
         : f.step === 'team' ? h('div', {}, v.room.units.map((u) => btn(`${u.name} plays`, () => cap('fmTeam', { id: u.id }))))
           : f.step === 'pick' ? h('div', {}, btn(`Start Fast Money (${f.players.map((p) => p.name).join(' then ')})`, () => cap('fmStart')), bonus && h('button', { type: 'button', class: 'btn', style: { width: '100%', marginTop: '10px' }, onclick: () => cap('finishGame') }, 'Skip the bonus round'))
-            : (f.step === 'p1' || f.step === 'p2') && f.timer?.timedOut && !v.game.settings.typed ? btn(f.step === 'p1' ? 'Player 2 is next' : 'Reveal the answers', () => cap('fmNext'))
-              : f.step === 'reveal' && !v.game.settings.typed ? btn('Reveal the next answer', () => cap('fmRevealNext'))
+            : (f.step === 'p1' || f.step === 'p2') && f.timer?.timedOut && !v.game.settings.typed ? btn(f.step === 'p1' ? 'Reveal Player 1’s answers' : 'Reveal Player 2’s answers', () => cap('fmNext'))
+              : f.step === 'reveal' && !v.game.settings.typed ? (f.part === 'p1' && f.partDone ? btn('Hide the answers. Player 2 is next', () => cap('fmNext')) : btn('Reveal the next answer', () => cap('fmRevealNext')))
                 : f.step === 'results' ? btn('Show the winner', () => cap('finishGame')) : null;
       return { key: `fm-wait-${f.step}-${captain}-${f.timer?.timedOut ?? ''}`, node: h('div', { class: 'card' }, h('img', { class: 'fdp-art', src: '/games/feud/art/money-bag.png', alt: '' }), h('h2', {}, bonus ? 'Bonus round: Fast Money' : 'Tiebreaker: Fast Money'), h('p', {}, line), extra) };
     }

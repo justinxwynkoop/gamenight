@@ -4,6 +4,8 @@
     "modeSetting": "auto",
     "teamCount": 2,
     "fixedTeams": 2,
+    "individualsOnly": false,
+    "maxPlayers": 30,
     "individualMax": 5,
     "teamSize": 5,
     "teams": [
@@ -27,8 +29,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Cat",
-          "Dev"
+          "Ann",
+          "Ben"
         ]
       },
       {
@@ -39,8 +41,8 @@
         "connected": true,
         "members": 2,
         "memberNames": [
-          "Ann",
-          "Ben"
+          "Cat",
+          "Dev"
         ]
       }
     ],
@@ -49,6 +51,7 @@
     "settings": {
       "sound": true,
       "volume": 70,
+      "lateJoin": false,
       "ping": 0
     }
   },
@@ -62,7 +65,10 @@
       "fastMoney": true,
       "fastMoneyGoal": 200,
       "fastMoneySeconds1": 40,
-      "fastMoneySeconds2": 45
+      "fastMoneySeconds2": 45,
+      "typed": false,
+      "answerSeconds": 10,
+      "suddenDeath": true
     },
     "status": "done",
     "title": "Family Night Basics",
@@ -70,7 +76,11 @@
     "hasFastMoney": true,
     "round": null,
     "fm": null,
+    "captainId": null,
+    "hosted": true,
+    "champion": "t5",
     "result": {
+      "champion": "t5",
       "fastMoney": {
         "team": "t5",
         "total": 286,
@@ -78,9 +88,7 @@
         "won": true,
         "played": true,
         "stakes": "bonus"
-      },
-      "champion": "t5"
-    },
-    "champion": "t5"
+      }
+    }
   }
 }

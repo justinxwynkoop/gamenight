@@ -78,10 +78,7 @@ await snap('feud-fm-pick');
 await act('fmStart');
 await snap('feud-fm-p1');
 await act('fmSetAnswers', { slot: 'p1', answers: ['apple', 'dog', 'sneakers', 'kitchen', 'nap'] });
-await act('fmNext');
-await snap('feud-fm-p2');
-await act('fmSetAnswers', { slot: 'p2', answers: ['banana', 'cat', 'socks', 'garage', 'read'] });
-await act('fmNext');
+await act('fmNext');                               // player 1 is done: their answers are revealed first (player 2 is out of the room)
 await snap('feud-fm-reveal');
 const rows = () => host.last.game.fm.rows;
 // Each answer is revealed in two taps: what they said, then the points ("survey says").
@@ -89,13 +86,17 @@ const reveal = async (slot, q, { stop = false } = {}) => { await act('fmShowAnsw
 await reveal('p1', 0, { stop: true });
 await snap('feud-fm-said');
 await act('fmShowPoints', { slot: 'p1', q: 0 });
-await reveal('p2', 0);
 await reveal('p1', 1);
 await snap('feud-fm-partial');
-for (let q = 0; q < 5; q++) for (const slot of ['p1', 'p2']) {
-  if (rows()[q][slot].judged) continue;
-  await reveal(slot, q);
-}
+for (let q = 2; q < 5; q++) await reveal('p1', q);
+await snap('feud-fm-p1-done');                     // all of player 1's answers are up; the host hides them next
+await act('fmNext');                               // hidden, and player 2 comes in with player 1's score still up
+await act('fmSetAnswers', { slot: 'p2', answers: ['Apple', 'cat', 'socks', 'garage', 'read'] });   // "Apple" repeats player 1: turned away
+await snap('feud-fm-p2');
+await act('fmSetAnswers', { slot: 'p2', answers: ['banana', 'cat', 'socks', 'garage', 'read'] });
+await act('fmNext');                               // player 2 is done: their answers are revealed
+await snap('feud-fm-p2-reveal');
+for (let q = 0; q < 5; q++) await reveal('p2', q);
 await snap('feud-fm-results');
 await act('finishGame');
 await snap('feud-done');
@@ -107,9 +108,24 @@ await act('adjustScore', { id: red, delta: 100 });
 await act('endRounds');
 await act('fmStart');
 await act('fmSetAnswers', { slot: 'p1', answers: ['apple', '', 'sneakers', '', 'nap'] });
-await act('fmNext');
-await act('fmNext');                               // player 2 sent nothing
+await act('fmNext');                               // player 1 is done: their answers are revealed
 await act('fmShowAnswer', { slot: 'p1', q: 1 });   // a blank goes straight to its 0
 await snap('feud-fm-blanks');
+
+// Sudden death: the last round ends with nobody at the winning score, so one face-off worth five or ten times decides it.
+await act('endGame');
+await act('startGame');
+await act('setSettings', { targetScore: 5000 });
+for (let round = 0; round < 5; round++) {
+  await clear(red);
+  if (round < 4) await act('nextRound');
+}
+await act('nextRound');                            // the questions have run out and 5000 has not been reached
+await snap('feud-sudden');
+await act('awardBuzz', { id: blue });
+await act('miss'); await act('miss');              // both face-off players miss: the next players in line answer
+await snap('feud-sudden-followup');
+await act('answer', { index: 0 });                 // the first answer on the board wins it
+await snap('feud-sudden-end');
 server.kill();
 process.exit(0);

@@ -42,6 +42,10 @@ extension SoundPlanner {
                 if (fm.timer?.timedOut ?? false) && !(was.timer?.timedOut ?? false) {
                     plan.cues.append(.timeup)
                 }
+                // Player 2 said what Player 1 said: the buzzer.
+                if (fm.dupBuzz ?? 0) > (was.dupBuzz ?? 0) {
+                    plan.cues.append(.strike)
+                }
                 if feudJudgedCount(fm) > feudJudgedCount(was) {
                     plan.cues.append(feudPointsTotal(fm) > feudPointsTotal(was) ? .fmpoints : .zero)
                 }

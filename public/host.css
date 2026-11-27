@@ -250,3 +250,11 @@ body.host .toast.err { background: #7f1d1d; }
 .fd-judge .who .s { color: var(--dim); font-size: .85rem; }
 .fd-judge .btns { display: flex; gap: 8px; }
 .fd-judge .btns .b:first-child { flex: 1; }
+
+/* Fast Money, the host typing the answers: the survey answers as one-tap buttons, and the notice for a repeated answer. */
+.fd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.fd-chips .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line, #3b4a9a); background: var(--s2); color: inherit; font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer; }
+.fd-chips .chip .n { color: var(--dim); font-weight: 800; }
+.fd-chips .chip:active { transform: scale(.97); }
+.fd-chips .chip:disabled, .fd-chips .chip.taken { opacity: .35; text-decoration: line-through; cursor: not-allowed; }
+.fd-dup { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 12px; border-radius: 12px; background: #7f1d1d; color: #fee2e2; font-weight: 700; }

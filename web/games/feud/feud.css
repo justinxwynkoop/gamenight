@@ -301,3 +301,9 @@ body.fdp #fd-board .item .pts { font-family: var(--fd-show); font-weight: 400; c
 body.fdp .fdp-art { display: block; width: 84px; margin: 0 auto 6px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
 body.fdp .fm-dot.now { background: var(--fd-blue); border-color: var(--fd-gold); }
 body.fdp .fm-q { font-weight: 800; }
+
+/* Fast Money, Player 2 playing: Player 1's answers are hidden but their score stays on the TV; a repeated answer gets the buzzer. */
+.fd-p1score { display: inline-flex; align-items: baseline; gap: 2vmin; padding: 1.2vmin 3vmin; border-radius: 2vmin; background: rgba(0,0,0,.35); border: .4vmin solid rgba(255,212,90,.6); font-size: 3.2vmin; font-weight: 700; color: #cdd6ff; width: fit-content; }
+.fd-p1score b { font-size: 7vmin; line-height: 1; color: #ffd45a; font-variant-numeric: tabular-nums; }
+.fd-dupnote { margin: 0; padding: 1vmin 2.4vmin; border-radius: 1.6vmin; background: #7f1d1d; color: #fee2e2; font-size: 3vmin; font-weight: 800; width: fit-content; animation: fd-shake .4s; }
+@keyframes fd-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1vmin); } 75% { transform: translateX(1vmin); } }

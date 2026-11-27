@@ -81,6 +81,13 @@ struct FeudRound: Decodable, Equatable {
     var target: Int
     /// The last guess typed on a phone when nobody is hosting; nil with a host.
     var said: FeudSaid?
+    /// Sudden death (after the last round, nobody at the winning score): one face-off worth the winning answer times `mult`.
+    var sudden: FeudSudden?
+}
+
+struct FeudSudden: Decodable, Equatable {
+    var n: Int
+    var mult: Int
 }
 
 struct FeudSaid: Decodable, Equatable {
@@ -111,6 +118,8 @@ struct FeudFaceoff: Decodable, Equatable {
     var reps: [FeudRep]
     /// Everyone who buzzed in the face-off, fastest first.
     var buzzes: [FeudBuzz]?
+    /// Both face-off players missed, so the next players in line are answering (`reps` names them).
+    var followup: Bool?
 }
 
 /// A face-off buzz: who, and how long after the buzzers opened (ms).
@@ -160,6 +169,16 @@ struct FastMoneyState: Decodable, Equatable {
     var won: Bool?
     /// "bonus" (the team already won the game and plays for the jackpot) or "tiebreak" (a tie: Fast Money decides it).
     var stakes: String?
+    /// While answers are being revealed, whose: "p1" (Player 2 is still out of the room) or "p2".
+    var part: String?
+    /// Every answer of the part being revealed is up.
+    var partDone: Bool?
+    /// Player 1's answers are hidden while Player 2 plays (their score, `totals.p1`, stays up).
+    var hidden: Bool?
+    /// Player 2's answers that were turned away because Player 1 had said them (question numbers from 0).
+    var rejected: [Int]?
+    /// How many times Player 2 has been buzzed for repeating Player 1 (the TV sounds a buzzer each time).
+    var dupBuzz: Int?
 
     /// Fast Money is a tiebreaker (a tie when the rounds ended), not the champions' bonus round.
     var isTiebreak: Bool { stakes == "tiebreak" }
@@ -189,6 +208,8 @@ struct FastMoneyCell: Decodable, Equatable {
     var label: String?
     /// What was typed; only sent once it has been scored.
     var typed: String?
+    /// Player 1's answers are covered while Player 2 plays: nothing about them is sent (`judged` stays true).
+    var hidden: Bool?
 }
 
 struct FastMoneyTotals: Decodable, Equatable {
