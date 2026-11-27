@@ -14,7 +14,7 @@ export { GameError };
 export const MAX_STRIKES = 3;
 export const FAST_MONEY_QUESTIONS = 5;
 /** How long things wait when nobody is hosting (settings.typed). */
-export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500 };
+export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500, fmWin: 5000 };
 const GAME = 'feud';
 const SLOTS = ['p1', 'p2'];
 
@@ -80,7 +80,7 @@ export class FeudGame {
   #blankRun(status) {
     return {
       status, round: 0, step: 'faceoff', revealed: [], strikes: 0, control: null, stealFrom: null, showAll: false,
-      faceoff: this.#blankFaceoff(), winner: null, awarded: 0, fm: null,
+      faceoff: this.#blankFaceoff(), winner: null, awarded: 0, fm: null, shownLate: [],
       sudden: null, // sudden death (after the last round, nobody at the winning score): { n, mult, question, pts }
       said: null,   // the last typed guess: { unitId, name, text, index } (index -1 when it was not on the board)
       autoAt: null, // typed mode: when the next automatic step happens (a face-off replay, Fast Money moving on)
@@ -110,6 +110,7 @@ export class FeudGame {
     if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => (v === null ? 0 : 2)), p2: fm0.points.p2.map((v) => (v === null ? 0 : 2)) };
     if (fm0 && fm0.part === undefined) { fm0.part = ['reveal', 'results'].includes(fm0.step) ? 'all' : null; fm0.hidden = { p1: false }; }   // a game saved before the two-part reveal
     if (this.run.answerTimer) this.run.answerTimer = null;   // an answer clock does not carry over a restart
+    if (this.run.fmWinAt != null) this.run.fmWinAt = this.room.now() + 1000;   // the jackpot moment carries on after a restart
     const tm = this.run.fm?.timer;
     if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;   // the clock restarted with the server
   }
@@ -133,6 +134,7 @@ export class FeudGame {
       case 'answer': return this.answer(int(a.index));
       case 'miss': return this.miss();
       case 'revealRest': return this.revealRest();
+      case 'showAnswer': return this.showAnswer(a.index === undefined ? undefined : int(a.index));
       case 'nextRound': return this.nextRound();
       case 'endRounds': return this.finishRounds();
       // Fast Money
@@ -143,6 +145,7 @@ export class FeudGame {
       case 'fmNext': return this.fmNext();
       case 'fmShowAnswer': return this.fmShowAnswer(a.slot, int(a.q));
       case 'fmShowPoints': return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
+      case 'fmEdit': return this.fmEdit(a.slot, int(a.q), a);
       case 'startAnswerTimer': return this.startAnswerTimer();
       case 'fmRestartTimer': return this.fmRestartTimer();
       case 'finishGame': return this.finishGame();
@@ -151,7 +154,7 @@ export class FeudGame {
     }
   }
   /** What the captain's phone may do: run the game when nobody is hosting. Judging stays with the host or the survey. */
-  static CAPTAIN_ACTIONS = new Set(['setSettings', 'chooseSet', 'startGame', 'endGame', 'nextRound', 'revealRest', 'endRounds',
+  static CAPTAIN_ACTIONS = new Set(['setSettings', 'chooseSet', 'startGame', 'endGame', 'nextRound', 'revealRest', 'showAnswer', 'endRounds',
     'openBuzzers', 'replayFaceoff', 'startAnswerTimer', 'fmTeam', 'fmPlayers', 'fmStart', 'fmNext', 'fmRestartTimer', 'fmRevealNext', 'finishGame']);
 
   onPlayer(player, msg) {
@@ -300,7 +303,7 @@ export class FeudGame {
   #beginRound(i) {
     const run = this.run;
     run.status = 'round'; run.round = i; run.step = 'faceoff'; run.sudden = null;
-    run.revealed = []; run.strikes = 0; run.control = null; run.stealFrom = null; run.showAll = false;
+    run.revealed = []; run.strikes = 0; run.control = null; run.stealFrom = null; run.showAll = false; run.shownLate = [];
     run.winner = null; run.awarded = 0; run.said = null; run.autoAt = null; run.stealMissed = false; run.answerTimer = null;
     run.faceoff = this.#blankFaceoff();
     if (this.typed()) this.#openFaceoff(run.faceoff);   // nobody is hosting: the face-off buzzers open at once
@@ -532,6 +535,18 @@ export class FeudGame {
     run.showAll = true;
     this.#changed();
   }
+  /** After the round, turn over one answer that was not guessed (as on the show), without scoring it. With no index, the best one left. */
+  showAnswer(i) {
+    const run = this.#inRound('roundEnd');
+    const total = this.#answers().length;
+    const hidden = (n) => !run.revealed.includes(n) && !(run.shownLate ?? []).includes(n) && !run.showAll;
+    const index = i === undefined ? Array.from({ length: total }, (_, n) => n).find(hidden) : i;
+    if (index === undefined) fail('Every answer is already up');
+    if (!(index >= 0 && index < total)) fail('There is no such answer');
+    if (!hidden(index)) fail('That answer is already up');
+    (run.shownLate ??= []).push(index);
+    this.#changed();
+  }
   nextRound() {
     const run = this.#inRound('roundEnd');
     const top = Math.max(...this.#teams().map((t) => t.score));
@@ -624,6 +639,11 @@ export class FeudGame {
 
   // ---------- Fast Money ----------
   #fm() { if (this.run.status !== 'fastmoney') fail('Fast Money is not being played'); return this.run.fm; }
+  /** Fast Money's answers, also after the game is over (the host can still put a mistake right). */
+  #fmOrDone() {
+    if (!['fastmoney', 'done'].includes(this.run.status) || !this.run.fm) fail('Fast Money was not played');
+    return this.run.fm;
+  }
   #defaultFmPlayers() {
     const fm = this.run.fm;
     const m = this.#members(fm.team);
@@ -800,11 +820,49 @@ export class FeudGame {
   #afterReveal(fm) {
     // After Player 1 the host moves on (fmNext) to hide the answers and bring in Player 2; after Player 2 it is the result.
     if (fm.step === 'reveal' && fm.part !== 'p1' && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = 'results';
+    this.#goalReached(fm);
+  }
+  /** The goal is reached the moment the points are up (even with answers still hidden): the team wins right there. The TV
+   *  shows the jackpot for a moment and then the winners of the Feud; the host still has every answer on their screen. */
+  #goalReached(fm) {
+    if (this.run.status !== 'fastmoney' || fm.reached || !['reveal', 'results'].includes(fm.step)) return;
+    if (this.fmTotals().total < this.settings.fastMoneyGoal) return;
+    fm.reached = true;
+    fm.step = 'results';
+    this.run.autoAt = null;
+    this.run.fmWinAt = this.room.now() + AUTO.fmWin;
   }
   /** Whether every answer of the part being revealed is up with its points. */
   #partRevealed(fm) {
     const slots = fm.part === 'all' ? SLOTS : [fm.part];
     return slots.every((s) => fm.shown[s].every((v) => v === 2));
+  }
+  /** The host puts a mistake right, at any point (also after the result and after the game is over): what the player said
+   *  (`text`) and, for an answer whose points are up, its points (`points` 0 to 100) and the survey answer it matched (`label`). */
+  fmEdit(slot, q, { text, points, label } = {}) {
+    const fm = this.#fmOrDone();
+    this.#fmSlot(slot);
+    this.#fmQuestion(q);
+    if (['team', 'pick'].includes(fm.step)) fail('Answers can be changed once Fast Money has started');
+    if (text !== undefined) {
+      const clean = cleanName(text, 40);
+      const list = fm.answers[slot] ?? Array(FAST_MONEY_QUESTIONS).fill('');
+      if (slot === 'p2' && fm.step === 'p2' && clean) {
+        const probe = list.slice(); probe[q] = clean;
+        if (this.#repeatsOfPlayer1(probe).includes(q)) { this.#noteDup(fm, [q]); this.#changed(); fail('Player 1 already said that. Ask for a different answer.'); }
+      }
+      list[q] = clean;
+      fm.answers[slot] = list;
+    }
+    if (points !== undefined && points !== null && points !== '') {
+      if (fm.shown[slot][q] < 2) fail('Show the points first');
+      const pts = int(points);
+      if (!(pts >= 0 && pts <= 100)) fail('Points must be 0 to 100');
+      fm.points[slot][q] = pts;
+      fm.labels[slot][q] = cleanName(label, 40) || null;
+    }
+    this.#goalReached(fm);
+    this.#changed();
   }
   /** The next step of the reveal, in the show's order (player 1's five answers, then player 2's): what was said, then the points the survey gives. */
   fmRevealNext() {
@@ -825,6 +883,7 @@ export class FeudGame {
   finishGame() {
     if (!['round', 'fastmoney'].includes(this.run.status)) fail('The game is not running');
     this.run.status = 'done';
+    this.run.fmWinAt = null;
     this.#changed();
   }
 
@@ -846,6 +905,11 @@ export class FeudGame {
       fm.timer.timedOut = true;
       if (this.typed()) run.autoAt = now + AUTO.fmGrace;   // a moment for the phone's last answers to arrive
       this.#changed();
+    }
+    // The goal was reached: after a moment for the jackpot, the TV goes to the winners of the Feud.
+    if (run.fmWinAt != null && now >= run.fmWinAt) {
+      run.fmWinAt = null;
+      if (run.status === 'fastmoney') this.finishGame();
     }
     if (!this.typed() || run.autoAt === null || now < run.autoAt) return;
     run.autoAt = null;
@@ -891,6 +955,8 @@ export class FeudGame {
     const v = this.#view(true);
     v.setId = this.setId;
     if (this.run.status === 'round') v.canUndo = this.history.length > 0;
+    // After the game is over the host still has every Fast Money question, answer and #1 answer (to read out what was left, or put a mistake right).
+    if (this.run.status === 'done' && this.run.fm && !['team', 'pick'].includes(this.run.fm.step)) v.fm = this.#fmView(true);
     return v;
   }
   #view(host) {
@@ -924,7 +990,7 @@ export class FeudGame {
       control: run.step === 'roundEnd' ? run.winner : run.control, stealFrom: run.stealFrom,
       answers: answers.map((a, i) => {
         const up = run.revealed.includes(i);
-        const shown = up || run.showAll;
+        const shown = up || run.showAll || (run.shownLate ?? []).includes(i);
         return { n: i + 1, revealed: up, late: shown && !up, text: shown || host ? a.text : null, points: shown || host ? a.points : null };
       }),
       // The player whose turn it is on the team playing or stealing (the host and the phones show it).
@@ -970,7 +1036,7 @@ export class FeudGame {
       team: fm.team, step: fm.step, stakes: this.#stakes(fm), timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
       // Which player's answers are being revealed ('p1', 'p2', or 'all' in a game saved before the two-part reveal), and whether
       // all of them are up. Player 2's answers that were turned away as repeats (the TV sounds a buzzer each time: dupBuzz counts them).
-      part: fm.part ?? null, partDone: fm.step === 'reveal' ? this.#partRevealed(fm) : false, hidden: !!fm.hidden?.p1, rejected: [...(fm.rejected ?? [])], dupBuzz: fm.dupBuzz ?? 0,
+      reached: !!fm.reached, part: fm.part ?? null, partDone: fm.step === 'reveal' ? this.#partRevealed(fm) : false, hidden: !!fm.hidden?.p1, rejected: [...(fm.rejected ?? [])], dupBuzz: fm.dupBuzz ?? 0,
       players: SLOTS.map((s, i) => ({ slot: s, id: fm.players[i] ?? null, name: this.#playerName(fm.players[i]) })),
       submitted: { p1: !!fm.answers.p1, p2: !!fm.answers.p2 },
       rows, totals, won: finished ? totals.total >= this.settings.fastMoneyGoal : null,

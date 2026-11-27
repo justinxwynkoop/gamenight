@@ -2386,7 +2386,7 @@
   // games/feud/game.js
   var MAX_STRIKES = 3;
   var FAST_MONEY_QUESTIONS = 5;
-  var AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500 };
+  var AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500, fmWin: 5e3 };
   var GAME2 = "feud";
   var SLOTS = ["p1", "p2"];
   var unique = (list) => new Set(list.map((x) => x.toLowerCase())).size === list.length;
@@ -2432,7 +2432,7 @@
     });
     return best;
   }
-  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffPlayer_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, faceoffFollowup_fn, faceoffDecided_fn, endRound_fn, beginSuddenDeath_fn, suddenQuestion_fn, leader_fn, stakes_fn, fm_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, noteDup_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, partRevealed_fn, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
+  var _FeudGame_instances, blankRun_fn, blankFaceoff_fn, openFaceoff_fn, changed_fn2, teams_fn, members_fn, other_fn, unit_fn, remember_fn, question_fn, answers_fn, beginRound_fn, inRound_fn, allRevealed_fn, reveal_fn, faceoffPlayer_fn, faceoffAnswer_fn, faceoffMiss_fn, judgeFaceoff_fn, faceoffFollowup_fn, faceoffDecided_fn, endRound_fn, beginSuddenDeath_fn, suddenQuestion_fn, leader_fn, stakes_fn, fm_fn, fmOrDone_fn, defaultFmPlayers_fn, fmSlot_fn, zeroBlanks_fn, cleanAnswers_fn, noteDup_fn, repeatsOfPlayer1_fn, fmQuestion_fn, isBlank_fn, fmReveal_fn, afterReveal_fn2, goalReached_fn, partRevealed_fn, startTimer_fn, timerView_fn2, up_fn, playerName_fn, view_fn, roundView_fn, fmView_fn, doneView_fn;
   var _FeudGame = class _FeudGame {
     constructor(room) {
       __privateAdd(this, _FeudGame_instances);
@@ -2475,6 +2475,7 @@
         fm0.hidden = { p1: false };
       }
       if (this.run.answerTimer) this.run.answerTimer = null;
+      if (this.run.fmWinAt != null) this.run.fmWinAt = this.room.now() + 1e3;
       const tm = this.run.fm?.timer;
       if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;
     }
@@ -2511,6 +2512,8 @@
           return this.miss();
         case "revealRest":
           return this.revealRest();
+        case "showAnswer":
+          return this.showAnswer(a.index === void 0 ? void 0 : int(a.index));
         case "nextRound":
           return this.nextRound();
         case "endRounds":
@@ -2530,6 +2533,8 @@
           return this.fmShowAnswer(a.slot, int(a.q));
         case "fmShowPoints":
           return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
+        case "fmEdit":
+          return this.fmEdit(a.slot, int(a.q), a);
         case "startAnswerTimer":
           return this.startAnswerTimer();
         case "fmRestartTimer":
@@ -2798,6 +2803,18 @@
       run.showAll = true;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
+    /** After the round, turn over one answer that was not guessed (as on the show), without scoring it. With no index, the best one left. */
+    showAnswer(i) {
+      const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "roundEnd");
+      const total = __privateMethod(this, _FeudGame_instances, answers_fn).call(this).length;
+      const hidden = (n) => !run.revealed.includes(n) && !(run.shownLate ?? []).includes(n) && !run.showAll;
+      const index = i === void 0 ? Array.from({ length: total }, (_, n) => n).find(hidden) : i;
+      if (index === void 0) fail("Every answer is already up");
+      if (!(index >= 0 && index < total)) fail("There is no such answer");
+      if (!hidden(index)) fail("That answer is already up");
+      (run.shownLate ?? (run.shownLate = [])).push(index);
+      __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+    }
     nextRound() {
       const run = __privateMethod(this, _FeudGame_instances, inRound_fn).call(this, "roundEnd");
       const top = Math.max(...__privateMethod(this, _FeudGame_instances, teams_fn).call(this).map((t) => t.score));
@@ -2998,6 +3015,38 @@
       __privateMethod(this, _FeudGame_instances, afterReveal_fn2).call(this, fm);
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
+    /** The host puts a mistake right, at any point (also after the result and after the game is over): what the player said
+     *  (`text`) and, for an answer whose points are up, its points (`points` 0 to 100) and the survey answer it matched (`label`). */
+    fmEdit(slot, q, { text: text2, points, label } = {}) {
+      const fm = __privateMethod(this, _FeudGame_instances, fmOrDone_fn).call(this);
+      __privateMethod(this, _FeudGame_instances, fmSlot_fn).call(this, slot);
+      __privateMethod(this, _FeudGame_instances, fmQuestion_fn).call(this, q);
+      if (["team", "pick"].includes(fm.step)) fail("Answers can be changed once Fast Money has started");
+      if (text2 !== void 0) {
+        const clean2 = cleanName(text2, 40);
+        const list = fm.answers[slot] ?? Array(FAST_MONEY_QUESTIONS).fill("");
+        if (slot === "p2" && fm.step === "p2" && clean2) {
+          const probe = list.slice();
+          probe[q] = clean2;
+          if (__privateMethod(this, _FeudGame_instances, repeatsOfPlayer1_fn).call(this, probe).includes(q)) {
+            __privateMethod(this, _FeudGame_instances, noteDup_fn).call(this, fm, [q]);
+            __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+            fail("Player 1 already said that. Ask for a different answer.");
+          }
+        }
+        list[q] = clean2;
+        fm.answers[slot] = list;
+      }
+      if (points !== void 0 && points !== null && points !== "") {
+        if (fm.shown[slot][q] < 2) fail("Show the points first");
+        const pts = int(points);
+        if (!(pts >= 0 && pts <= 100)) fail("Points must be 0 to 100");
+        fm.points[slot][q] = pts;
+        fm.labels[slot][q] = cleanName(label, 40) || null;
+      }
+      __privateMethod(this, _FeudGame_instances, goalReached_fn).call(this, fm);
+      __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+    }
     /** The next step of the reveal, in the show's order (player 1's five answers, then player 2's): what was said, then the points the survey gives. */
     fmRevealNext() {
       const fm = __privateMethod(this, _FeudGame_instances, fmReveal_fn).call(this);
@@ -3017,6 +3066,7 @@
     finishGame() {
       if (!["round", "fastmoney"].includes(this.run.status)) fail("The game is not running");
       this.run.status = "done";
+      this.run.fmWinAt = null;
       __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
     }
     tick() {
@@ -3031,6 +3081,10 @@
         fm.timer.timedOut = true;
         if (this.typed()) run.autoAt = now + AUTO.fmGrace;
         __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+      }
+      if (run.fmWinAt != null && now >= run.fmWinAt) {
+        run.fmWinAt = null;
+        if (run.status === "fastmoney") this.finishGame();
       }
       if (!this.typed() || run.autoAt === null || now < run.autoAt) return;
       run.autoAt = null;
@@ -3064,6 +3118,7 @@
       const v = __privateMethod(this, _FeudGame_instances, view_fn).call(this, true);
       v.setId = this.setId;
       if (this.run.status === "round") v.canUndo = this.history.length > 0;
+      if (this.run.status === "done" && this.run.fm && !["team", "pick"].includes(this.run.fm.step)) v.fm = __privateMethod(this, _FeudGame_instances, fmView_fn).call(this, true);
       return v;
     }
   };
@@ -3082,6 +3137,7 @@
       winner: null,
       awarded: 0,
       fm: null,
+      shownLate: [],
       sudden: null,
       // sudden death (after the last round, nobody at the winning score): { n, mult, question, pts }
       said: null,
@@ -3140,6 +3196,7 @@
     run.control = null;
     run.stealFrom = null;
     run.showAll = false;
+    run.shownLate = [];
     run.winner = null;
     run.awarded = 0;
     run.said = null;
@@ -3308,6 +3365,11 @@
     if (this.run.status !== "fastmoney") fail("Fast Money is not being played");
     return this.run.fm;
   };
+  /** Fast Money's answers, also after the game is over (the host can still put a mistake right). */
+  fmOrDone_fn = function() {
+    if (!["fastmoney", "done"].includes(this.run.status) || !this.run.fm) fail("Fast Money was not played");
+    return this.run.fm;
+  };
   defaultFmPlayers_fn = function() {
     const fm = this.run.fm;
     const m = __privateMethod(this, _FeudGame_instances, members_fn).call(this, fm.team);
@@ -3364,6 +3426,17 @@
   };
   afterReveal_fn2 = function(fm) {
     if (fm.step === "reveal" && fm.part !== "p1" && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = "results";
+    __privateMethod(this, _FeudGame_instances, goalReached_fn).call(this, fm);
+  };
+  /** The goal is reached the moment the points are up (even with answers still hidden): the team wins right there. The TV
+   *  shows the jackpot for a moment and then the winners of the Feud; the host still has every answer on their screen. */
+  goalReached_fn = function(fm) {
+    if (this.run.status !== "fastmoney" || fm.reached || !["reveal", "results"].includes(fm.step)) return;
+    if (this.fmTotals().total < this.settings.fastMoneyGoal) return;
+    fm.reached = true;
+    fm.step = "results";
+    this.run.autoAt = null;
+    this.run.fmWinAt = this.room.now() + AUTO.fmWin;
   };
   /** Whether every answer of the part being revealed is up with its points. */
   partRevealed_fn = function(fm) {
@@ -3444,7 +3517,7 @@
       stealFrom: run.stealFrom,
       answers: answers.map((a, i) => {
         const up = run.revealed.includes(i);
-        const shown = up || run.showAll;
+        const shown = up || run.showAll || (run.shownLate ?? []).includes(i);
         return { n: i + 1, revealed: up, late: shown && !up, text: shown || host ? a.text : null, points: shown || host ? a.points : null };
       }),
       // The player whose turn it is on the team playing or stealing (the host and the phones show it).
@@ -3504,6 +3577,7 @@
       goal: this.settings.fastMoneyGoal,
       // Which player's answers are being revealed ('p1', 'p2', or 'all' in a game saved before the two-part reveal), and whether
       // all of them are up. Player 2's answers that were turned away as repeats (the TV sounds a buzzer each time: dupBuzz counts them).
+      reached: !!fm.reached,
       part: fm.part ?? null,
       partDone: fm.step === "reveal" ? __privateMethod(this, _FeudGame_instances, partRevealed_fn).call(this, fm) : false,
       hidden: !!fm.hidden?.p1,
@@ -3533,6 +3607,7 @@
     "endGame",
     "nextRound",
     "revealRest",
+    "showAnswer",
     "endRounds",
     "openBuzzers",
     "replayFaceoff",
@@ -6547,6 +6622,22 @@
       this.changed();
       return player;
     }
+    /** A player fixes their own name (a typo) or changes their colour, any time. Teams own the colour in team play, so only the name changes there. */
+    updateProfile(playerId, { name, color } = {}) {
+      const p = this.player(playerId);
+      if (name !== void 0) {
+        const n = cleanName(name);
+        if (!n) fail("Enter a name");
+        if (this.players.some((x) => x.id !== p.id && x.name.toLowerCase() === n.toLowerCase())) fail("That name is taken");
+        p.name = n;
+      }
+      if (color !== void 0 && color !== null && this.mode !== "teams") {
+        if (!COLORS.includes(color)) fail("Pick one of the colours");
+        p.color = color;
+      }
+      this.changed();
+      return p;
+    }
     /**
      * Someone whose phone lost its place (a new phone, a different browser, cleared data) takes their own seat back:
      * only a player who is away, never one who is still playing on another phone.
@@ -6942,6 +7033,12 @@
           const p = msg.reclaim ? room.reclaim(String(msg.reclaim)) : room.join({ name: msg.name, color: msg.color, teamId: msg.teamId, kind: msg.kind === "buzzer" ? "buzzer" : "phone" });
           attachPlayer(client, p);
           send(id, { t: "joined", token: p.token });
+          return;
+        }
+        case "profile": {
+          if (client.role !== "player" || !client.playerId) return;
+          room.updateProfile(client.playerId, { name: msg.name, color: msg.color });
+          send(id, { t: "profile-ok" });
           return;
         }
         case "act": {

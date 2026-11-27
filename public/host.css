@@ -258,3 +258,4 @@ body.host .toast.err { background: #7f1d1d; }
 .fd-chips .chip:active { transform: scale(.97); }
 .fd-chips .chip:disabled, .fd-chips .chip.taken { opacity: .35; text-decoration: line-through; cursor: not-allowed; }
 .fd-dup { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 12px; border-radius: 12px; background: #7f1d1d; color: #fee2e2; font-weight: 700; }
+.fd-recap { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, .12); }

@@ -148,6 +148,12 @@ try {
   g.answer(0);
   await until(() => g.run.step === 'roundEnd', 'the sudden death face-off to be decided');
   await until(async () => /wins \d+ points/.test(await text(host)), 'the host page to show the sudden death result');
+  // After the round the host turns the answers they did not guess over one at a time, as on the show.
+  const turned = () => g.publicView().round.answers.filter((a) => a.late).length;
+  assert.equal(turned(), 0);
+  await host.locator('.fd-ans:not([disabled])').first().click();
+  await until(() => turned() === 1, 'one answer to be turned over');
+  console.log('after the round the host turned one answer over (not all of them)');
   await host.getByRole('button', { name: /On to Fast Money/ }).click();
   await until(() => g.run.status === 'fastmoney', 'Fast Money to begin');
 
@@ -210,13 +216,28 @@ try {
   await until(() => fmState().answers.p2?.every((a) => a), 'the five tapped answers for Player 2');
   await host.getByRole('button', { name: /Reveal Player 2/ }).click();
   await until(() => fmState().step === 'reveal' && fmState().part === 'p2', 'Player 2’s answers to be revealed');
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 10 && fmState().step === 'reveal'; i++) {
     const was = shownCount('p2');
     await host.getByRole('button', { name: /Reveal the next answer/ }).click();
-    await until(() => shownCount('p2') > was, `Player 2 reveal step ${i + 1}`);
+    await until(() => shownCount('p2') > was || fmState().step !== 'reveal', `Player 2 reveal step ${i + 1}`);
   }
   await until(() => fmState().step === 'results', 'the Fast Money result');
   console.log(`Fast Money: both players done, ${g.fmTotals().total} points`);
+  // The goal (200) was reached while Player 2's answers were being turned over: they win right there, and the TV goes to the winners.
+  assert.equal(fmState().reached, true);
+  await until(() => g.run.status === 'done', 'the winners of the Feud after the jackpot moment', 15000);
+  assert.equal(g.publicView().result.fastMoney.won, true);
+  console.log('Fast Money: the goal was reached, so the TV went on to the winners of the Feud');
+  // The host still has every question, answer and #1 answer on their screen, and can put a mistake right.
+  await until(async () => /Fast Money: every answer/i.test(await text(host)), 'the Fast Money recap on the host page');
+  await shot(host, 'fastmoney-recap');
+  const p2Before = g.fmTotals().p2;
+  await host.locator('.fd-recap').first().getByRole('button', { name: 'Edit' }).nth(1).click();
+  await until(async () => (await host.locator('input[aria-label="Points"]').count()) > 0, 'the edit box');
+  await host.locator('input[aria-label="Points"]').fill('1');
+  await host.getByRole('button', { name: 'Set these points' }).click();
+  await until(() => g.fmTotals().p2 !== p2Before, 'the corrected points to count');
+  console.log('Fast Money: the host corrected an answer\'s points after the game');
   // The tabs of the host page.
   for (const tab of ['Players', 'Scores', 'Settings', 'Game']) {
     await host.getByRole('button', { name: new RegExp(`^${tab}`) }).first().click();

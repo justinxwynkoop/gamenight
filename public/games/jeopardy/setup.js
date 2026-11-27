@@ -158,9 +158,9 @@ export function lobbyControls(v, run, opts = {}) {
  *   onSelect  (ci, ri) => void      onOpen (ci, ri) => void
  *   dd        optional [[bool]]: where the Daily Doubles are (only the host sees them)
  */
-export function cluePicker(board, { sel, onSelect, onOpen, dd = null, grid = false }) {
+export function cluePicker(board, { sel, onSelect, onOpen, dd = null, grid = false, hint = null }) {
   const money = (n) => `$${Number(n).toLocaleString('en-US')}`;
-  if (grid) return clueGrid(board, { sel, onSelect, onOpen, dd, money });
+  if (grid) return clueGrid(board, { sel, onSelect, onOpen, dd, money, hint });
   const rows = board.map((c, ci) => {
     const left = c.clues.filter((cl) => !cl.used).length;
     const icon = { video: '🎬 ', audio: '🔊 ', image: '🖼️ ' }[c.media] ?? '';
@@ -187,7 +187,7 @@ export function cluePicker(board, { sel, onSelect, onOpen, dd = null, grid = fal
  * down). Tap a value to light it up on the TV; its category note and the Open button show under the board.
  */
 const longWord = (s) => Math.max(0, ...String(s).split(/\s+/).map((w) => w.length));
-function clueGrid(board, { sel, onSelect, onOpen, dd, money }) {
+function clueGrid(board, { sel, onSelect, onOpen, dd, money, hint = null }) {
   const cols = board.map((c, ci) => {
     const left = c.clues.filter((cl) => !cl.used).length;
     const icon = { video: '🎬 ', audio: '🔊 ', image: '🖼️ ' }[c.media] ?? '';
@@ -206,6 +206,6 @@ function clueGrid(board, { sel, onSelect, onOpen, dd, money }) {
   const foot = chosen
     ? [cat.about ? h('div', { class: 'jp-gnote' }, h('b', {}, `${cat.name}: `), cat.about) : null,
       h('button', { type: 'button', class: 'jp-btn huge jp-go', onclick: () => onOpen(chosen.ci, chosen.ri) }, `Open ${cat.name} · ${money(cat.clues[chosen.ri].value)}`)]
-    : h('div', { class: 'jp-small jp-muted jp-center-t jp-gohint' }, 'Tap the value they say, then open it');
+    : h('div', { class: 'jp-small jp-muted jp-center-t jp-gohint' }, hint ?? 'Tap the value they say, then open it');
   return h('div', { class: 'jp-picker jp-gridpick' }, h('div', { class: 'jp-grid', style: { '--n': String(board.length || 6) } }, cols), h('div', { class: 'jp-gfoot' }, foot));
 }

@@ -39,7 +39,8 @@ const net = connect({
   onMessage: (m) => {
     if (m.t === 'need-join') { needJoin = true; update(); }
     else if (m.t === 'joined') { store(TOKEN, m.token); needJoin = false; joinError = ''; }
-    else if (m.t === 'error') { if (needJoin) { joinError = m.message; update(true); } else flash(m.message); }
+    else if (m.t === 'profile-ok') { closeProfile(true); }
+    else if (m.t === 'error') { if (needJoin) { joinError = m.message; update(true); } else if (profileErr) profileErr(m.message); else flash(m.message); }
     else instance?.onMessage?.(m);
   },
 });
@@ -95,10 +96,54 @@ function joinScreen() {
     }, 'Join'));
 }
 
+// ---------- fix your name, or change your colour (in every game) ----------
+let profileBox = null;
+let profileErr = null;
+let profileSaved = null;   // what was sent, remembered on this phone once the room accepts it
+function closeProfile(saved = false) {
+  profileBox?.remove(); profileBox = null; profileErr = null;
+  if (saved && profileSaved) {
+    if (!seat) { store('gn-name', profileSaved.name); if (profileSaved.color) store('gn-color', profileSaved.color); }
+    flash('Saved', 'ok');
+  }
+  profileSaved = null;
+}
+function openProfile() {
+  const me = view?.room.me;
+  if (!me || profileBox) return;
+  const teams = view.room.mode === 'teams';
+  let color = me.color;
+  const nameIn = h('input', { value: me.name, maxLength: 20, placeholder: 'Your name', autocomplete: 'off', 'aria-label': 'Your name' });
+  const err = h('div', { class: 'err', role: 'alert' });
+  profileErr = (message) => { err.textContent = message; };
+  const swatches = COLORS.map((c) => h('button', {
+    type: 'button', class: c === color ? 'sel' : '', style: { background: c }, 'aria-label': c,
+    onclick: () => { color = c; swatches.forEach((b, i) => b.classList.toggle('sel', COLORS[i] === c)); },
+  }));
+  const save = () => { err.textContent = ''; profileSaved = { name: nameIn.value.trim(), color: teams ? null : color }; net.send({ t: 'profile', name: nameIn.value, color: teams ? undefined : color }); };
+  nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+  profileBox = h('div', { class: 'profile-overlay', onclick: (e) => { if (e.target === profileBox) closeProfile(); } },
+    h('div', { class: 'card profile', role: 'dialog', 'aria-label': 'Your name and colour' },
+      h('h2', {}, 'Your name'),
+      h('label', {}, 'Name'), nameIn,
+      !teams && [h('label', {}, 'Colour'), h('div', { class: 'colors' }, swatches)],
+      teams && h('p', { class: 'tag' }, 'Your team’s colour stays the same.'),
+      err,
+      h('button', { class: 'btn primary', style: { width: '100%', marginTop: '14px' }, onclick: save }, 'Save'),
+      h('button', { class: 'btn', style: { width: '100%', marginTop: '8px' }, onclick: () => closeProfile() }, 'Cancel')));
+  document.body.append(profileBox);
+  nameIn.focus();
+  nameIn.select();
+}
+you.addEventListener('click', () => { if (view?.room.me) openProfile(); });
+you.setAttribute('role', 'button');
+you.setAttribute('tabindex', '0');
+you.addEventListener('keydown', (e) => { if (e.key === 'Enter' && view?.room.me) openProfile(); });
+
 function updateHeader() {
   const me = view.room.me;
   const mine = unitById(view.room, me.unitId);
-  you.replaceChildren(h('span', { class: 'swatch', style: { background: mine?.color ?? me.color } }), ' ', me.name);
+  you.replaceChildren(h('span', { class: 'swatch', style: { background: mine?.color ?? me.color } }), ' ', me.name, h('span', { class: 'edit-hint', 'aria-hidden': 'true' }, ' ✎'));
   if (view.room.mode === 'teams' && mine) you.append(h('span', { class: 'tag' }, ` · ${mine.name}`));
   scoreEl.textContent = mine ? scoreText(view, mine.score) : '';
   showTeam(view.room.mode === 'teams' ? mine : null);
