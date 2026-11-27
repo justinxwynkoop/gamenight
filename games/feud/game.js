@@ -497,11 +497,14 @@ export class FeudGame {
     const run = this.run;
     if (run.status !== 'round') fail('No round is being played');
     this.history = [];
-    const [a, b] = this.#teams();
-    const leader = a.score === b.score ? null : (a.score > b.score ? a : b);
+    // Whoever leads now has won the game. Fast Money is then a bonus round for them: it cannot change the result,
+    // it is played for the jackpot. Only a tie leaves the winner open, and then Fast Money decides it: the team that
+    // plays wins by reaching the goal, and the other team wins if they fall short.
+    const leader = this.#leader();
+    run.champion = leader?.id ?? null;
     if (this.settings.fastMoney && this.set.fastMoney?.length === FAST_MONEY_QUESTIONS) {
       run.status = 'fastmoney';
-      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', players: [], answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
+      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', stakes: leader ? 'bonus' : 'tiebreak', players: [], answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
         // How much of each answer the TV has shown: 0 nothing, 1 what was said, 2 the points too ("survey says").
         shown: { p1: Array(FAST_MONEY_QUESTIONS).fill(0), p2: Array(FAST_MONEY_QUESTIONS).fill(0) }, timer: null };
       if (leader) this.#defaultFmPlayers();
@@ -509,6 +512,30 @@ export class FeudGame {
       run.status = 'done';
     }
     this.#changed();
+  }
+
+  #leader() {
+    const [a, b] = this.#teams();
+    return !a || !b || a.score === b.score ? null : (a.score > b.score ? a : b);
+  }
+  /** What Fast Money is played for: 'bonus' (the team already won the game) or 'tiebreak' (it decides the winner). */
+  #stakes(fm = this.run.fm) {
+    if (fm?.stakes) return fm.stakes;
+    const leader = this.run.champion === undefined ? this.#leader()?.id : this.run.champion;
+    return leader ? 'bonus' : 'tiebreak';
+  }
+  /** The team that won the game, or null for a tie (or before the rounds are over). */
+  champion() {
+    const run = this.run;
+    if (!['fastmoney', 'done'].includes(run.status)) return null;
+    // A game saved before champions were kept: the leader when the rounds ended is the best guess.
+    const leader = run.champion === undefined ? this.#leader()?.id ?? null : run.champion;
+    if (leader) return leader;
+    const fm = run.fm;
+    if (fm?.team && fm.step === 'results' && this.#stakes(fm) === 'tiebreak') {
+      return this.fmTotals().total >= this.settings.fastMoneyGoal ? fm.team : this.#other(fm.team)?.id ?? null;
+    }
+    return null;
   }
 
   // ---------- Fast Money ----------
@@ -762,6 +789,7 @@ export class FeudGame {
       game: GAME, scoreFormat: 'points', lobbyTitle: set?.title ?? 'Family Feud', settings: this.settings, status: run.status,
       title: set?.title ?? null, rounds: set?.rounds.length ?? 0, hasFastMoney: !!set?.fastMoney?.length,
       round: null, fm: null, captainId: this.captain(), hosted: this.hosted(),
+      champion: this.champion(),   // the team that won the game, once the rounds are over (null for a tie)
     };
     if (run.status === 'lobby') view.sets = this.room.listContent(GAME).map((x) => ({ id: x.id, title: x.title })).slice(0, 40);
     if (run.status === 'lobby') view.setId = this.setId;
@@ -823,7 +851,7 @@ export class FeudGame {
     const totals = this.fmTotals();
     const finished = fm.step === 'results';
     return {
-      team: fm.team, step: fm.step, timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
+      team: fm.team, step: fm.step, stakes: this.#stakes(fm), timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
       players: SLOTS.map((s, i) => ({ slot: s, id: fm.players[i] ?? null, name: this.#playerName(fm.players[i]) })),
       submitted: { p1: !!fm.answers.p1, p2: !!fm.answers.p2 },
       rows, totals, won: finished ? totals.total >= this.settings.fastMoneyGoal : null,
@@ -831,8 +859,8 @@ export class FeudGame {
   }
   #doneView() {
     const run = this.run;
-    const out = { fastMoney: null };
-    if (run.fm) { const t = this.fmTotals(); out.fastMoney = { team: run.fm.team, total: t.total, goal: this.settings.fastMoneyGoal, won: t.total >= this.settings.fastMoneyGoal, played: run.fm.step === 'results' }; }
+    const out = { champion: this.champion(), fastMoney: null };
+    if (run.fm) { const t = this.fmTotals(); out.fastMoney = { team: run.fm.team, total: t.total, goal: this.settings.fastMoneyGoal, won: t.total >= this.settings.fastMoneyGoal, played: run.fm.step === 'results', stakes: this.#stakes(run.fm) }; }
     return out;
   }
 }

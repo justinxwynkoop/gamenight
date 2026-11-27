@@ -123,7 +123,11 @@ dealt onto them at random and the host can move anyone.
    **Buzz times.** In the face-off the TV and the host page show who buzzed and how fast, to the thousandth of a second.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
-   rounds.
+   rounds. **The team ahead then has won the game**, and the TV crowns them before anything else.
+   Fast Money is their **bonus round**, played for the jackpot: it cannot change who won (the host or
+   the captain can also skip it). Only a **tie** leaves the winner open, and then Fast Money is the
+   **tiebreaker**: the host picks the team that plays, reaching the goal wins them the game, and falling
+   short gives it to the other team. With Fast Money switched off a tie stays a tie.
 **No host?** Switch on **No host: type answers on phones** (the first player to join, the captain, sees it on
 their phone; it is also on the host page). Then the buzzers open by themselves, whoever's turn it is types the
 guess, and the survey checks it (each answer's aliases count too). A guess that is already on the board is not a
@@ -131,7 +135,7 @@ strike. The captain's phone starts the game, picks the question set and moves on
 moves on when time is up and reveals itself. Every phone shows the question, big; the answer board stays on the TV
 (phones never show it).
 
-5. **Fast Money.** The leading team picks two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). **Player 2 cannot say what Player 1 said**: on a phone such an answer is not accepted (the phone says so and asks for another) and the host cannot enter it either. Each answers five questions in turn (40 and 45
+5. **Fast Money.** The winning team (or, after a tie, the team the host picks) chooses two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). **Player 2 cannot say what Player 1 said**: on a phone such an answer is not accepted (the phone says so and asks for another) and the host cannot enter it either. Each answers five questions in turn (40 and 45
    seconds by default, since typing takes longer than talking; change them under Settings), typing on
    their phone, or the host types what they say. On the phone the questions come one at a time with a big
    answer box and a microphone button; **Skip** (or just saying "skip", or sending nothing) moves on, and

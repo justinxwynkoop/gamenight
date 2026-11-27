@@ -42,6 +42,17 @@ struct FeudState: Decodable, Equatable {
     var round: FeudRound?
     var fm: FastMoneyState?
     var result: FeudResult?
+    /// The team that won the game, once the survey rounds are over (nil while they are played, and for a tie).
+    var champion: String?
+    /// A host page is connected (it starts the game; otherwise the captain's phone does).
+    var hosted: Bool?
+    var settings: FeudSettings?
+}
+
+/// The host's settings that the lobby shows.
+struct FeudSettings: Decodable, Equatable {
+    var targetScore: Int?
+    var fastMoney: Bool?
 }
 
 struct FeudRound: Decodable, Equatable {
@@ -147,6 +158,11 @@ struct FastMoneyState: Decodable, Equatable {
     var totals: FastMoneyTotals
     /// Known once the results are in.
     var won: Bool?
+    /// "bonus" (the team already won the game and plays for the jackpot) or "tiebreak" (a tie: Fast Money decides it).
+    var stakes: String?
+
+    /// Fast Money is a tiebreaker (a tie when the rounds ended), not the champions' bonus round.
+    var isTiebreak: Bool { stakes == "tiebreak" }
 }
 
 struct FastMoneyPlayer: Decodable, Equatable {
@@ -182,6 +198,8 @@ struct FastMoneyTotals: Decodable, Equatable {
 }
 
 struct FeudResult: Decodable, Equatable {
+    /// The team that won the game (nil for a tie).
+    var champion: String?
     var fastMoney: FeudFastMoneyResult?
 }
 
@@ -191,6 +209,8 @@ struct FeudFastMoneyResult: Decodable, Equatable {
     var goal: Int
     var won: Bool
     var played: Bool
+    /// "bonus" or "tiebreak", as in FastMoneyState.
+    var stakes: String?
 }
 
 extension FastMoneyCell {

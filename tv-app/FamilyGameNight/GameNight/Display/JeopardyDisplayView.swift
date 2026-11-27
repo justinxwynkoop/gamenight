@@ -175,7 +175,11 @@ struct JeopardyDisplayView: View {
     private func screen(for state: ServerState) -> some View {
         switch DisplayScreen.screen(for: state) {
         case .lobby:
-            LobbyScreen(state: state, joinURL: client.joinURL)
+            if state.feud != nil {
+                FeudLobbyScreen(state: state, joinURL: client.joinURL, roomCode: client.roomCode)   // Feud/Display/FeudScreens.swift
+            } else {
+                LobbyScreen(state: state, joinURL: client.joinURL)
+            }
         case .feudRound, .feudFastMoney, .feudWinner:
             FeudContent(state: state, joinURL: client.joinURL, receivedAt: client.stateReceivedAt)   // Feud/Display/FeudScreens.swift
         case .spyNight:

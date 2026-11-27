@@ -3,8 +3,11 @@
 // The page (play.js) handles joining and the header; this fills the rest.
 import { h, ink } from '../../common.js';
 import { buildFastMoneyForm } from './fmform.js';
+import { loadStyles } from './shared.js';
 
 export function mount(container, { send, flash }) {
+  loadStyles();
+  document.body.classList.add('fdp');   // the Feud look for the phone (feud.css)
   let view = null;
   let receivedAt = 0;
   let screenKey = '';
@@ -38,11 +41,15 @@ export function mount(container, { send, flash }) {
     if (!me?.unitId) return { label: 'NO TEAM', cls: 'out', line: 'Ask the host to put you on a team.' };
     if (g.status === 'lobby') return { label: 'WAIT', cls: 'out', line: g.me?.captain ? 'You’re the captain: start the game below when everyone is in.' : g.hosted ? 'The host starts the game when everyone is in' : g.title ? `${g.title} starts soon` : 'Waiting for the host' };
     if (g.status === 'done') {
+      const champ = unit(v, g.result?.champion ?? g.champion);
+      const fm = g.result?.fastMoney;
+      const won = champ?.id === me.unitId;
       const [top, next] = [...v.room.units].sort((a, b) => b.score - a.score);
-      const tie = top && next && top.score === next.score;
-      const won = !tie && top?.id === me.unitId;
-      return { label: tie ? 'TIE!' : won ? 'WE WON!' : 'GOOD GAME', cls: won ? 'won' : 'out', color: won ? mine.color : null,
-        line: tie ? `A tie at ${top.score}! Thanks for playing.` : `${top?.name} won, ${top?.score} to ${next?.score ?? 0}. Thanks for playing!` };
+      const bonus = fm?.played && fm.stakes !== 'tiebreak' ? (fm.won ? ' And they hit the Fast Money jackpot!' : '') : '';
+      return { label: !champ ? 'TIE!' : won ? 'WE WON!' : 'GOOD GAME', cls: won ? 'won' : 'out', color: won ? mine.color : null,
+        line: !champ ? `A tie at ${top?.score ?? 0}! Thanks for playing.`
+          : fm?.played && fm.stakes === 'tiebreak' ? `${champ.name} won the Fast Money tiebreaker. Thanks for playing!`
+            : `${champ.name} won, ${top?.score} to ${next?.score ?? 0}.${bonus} Thanks for playing!` };
     }
     const r = g.round;
     if (!r) return { label: 'WAIT', cls: 'out', line: '' };
@@ -143,18 +150,21 @@ export function mount(container, { send, flash }) {
     if (!slot) {
       fmBox = null;
       const playing = f.players.some((p) => p.id === me.id);
-      const line = f.step === 'pick' || f.step === 'team' ? 'Fast Money is about to start.'
+      const champ = unit(v, v.game.champion);
+      const bonus = f.stakes !== 'tiebreak';
+      const line = f.step === 'team' ? 'It’s a tie! Fast Money decides the winner.'
+        : f.step === 'pick' ? (bonus && champ ? `${champ.name} won the game! Now ${f.players.map((p) => p.name).join(' and ')} play Fast Money for the jackpot.` : 'Fast Money is about to start. Reach the goal to win the game!')
         : playing ? (f.step === 'reveal' || f.step === 'results' ? 'Eyes on the TV for the reveal!' : 'Wait for your turn. Don’t listen to your partner’s answers!')
           : `${f.players.find((p) => (p.slot === 'p1' ? f.step === 'p1' : f.step === 'p2'))?.name ?? 'Two players'} are playing Fast Money. Watch the TV!`;
       const captain = v.game.me?.captain;
       const btn = (label, onclick) => h('button', { type: 'button', class: 'btn primary', style: { width: '100%', marginTop: '12px' }, onclick }, label);
       const extra = !captain ? null
         : f.step === 'team' ? h('div', {}, v.room.units.map((u) => btn(`${u.name} plays`, () => cap('fmTeam', { id: u.id }))))
-          : f.step === 'pick' ? btn(`Start Fast Money (${f.players.map((p) => p.name).join(' then ')})`, () => cap('fmStart'))
+          : f.step === 'pick' ? h('div', {}, btn(`Start Fast Money (${f.players.map((p) => p.name).join(' then ')})`, () => cap('fmStart')), bonus && h('button', { type: 'button', class: 'btn', style: { width: '100%', marginTop: '10px' }, onclick: () => cap('finishGame') }, 'Skip the bonus round'))
             : (f.step === 'p1' || f.step === 'p2') && f.timer?.timedOut && !v.game.settings.typed ? btn(f.step === 'p1' ? 'Player 2 is next' : 'Reveal the answers', () => cap('fmNext'))
               : f.step === 'reveal' && !v.game.settings.typed ? btn('Reveal the next answer', () => cap('fmRevealNext'))
                 : f.step === 'results' ? btn('Show the winner', () => cap('finishGame')) : null;
-      return { key: `fm-wait-${f.step}-${captain}-${f.timer?.timedOut ?? ''}`, node: h('div', { class: 'card' }, h('h2', {}, 'Fast Money'), h('p', {}, line), extra) };
+      return { key: `fm-wait-${f.step}-${captain}-${f.timer?.timedOut ?? ''}`, node: h('div', { class: 'card' }, h('img', { class: 'fdp-art', src: '/games/feud/art/money-bag.png', alt: '' }), h('h2', {}, bonus ? 'Bonus round: Fast Money' : 'Tiebreaker: Fast Money'), h('p', {}, line), extra) };
     }
     const key = `fm-${slot}`;
     if (fmBox?.key === key) { fmBox.form.setNote(f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : ''); return { key, node: fmBox.node }; }
@@ -207,6 +217,6 @@ export function mount(container, { send, flash }) {
         if (quiet > 0) quiet -= 1; else flash('Answers saved', 'ok');
       }
     },
-    destroy() { clearInterval(timer); },
+    destroy() { clearInterval(timer); document.body.classList.remove('fdp'); },
   };
 }

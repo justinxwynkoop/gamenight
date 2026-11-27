@@ -76,8 +76,11 @@
         "total": 286,
         "goal": 200,
         "won": true,
-        "played": true
-      }
-    }
+        "played": true,
+        "stakes": "bonus"
+      },
+      "champion": "t5"
+    },
+    "champion": "t5"
   }
 }
