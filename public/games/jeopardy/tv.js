@@ -658,7 +658,7 @@ function recentBuzzes() {
 
 // ---------- a clue ----------
 /** Everyone who buzzed on this clue, fastest first: a ranked list (two columns once there are more than four), to the thousandth. */
-function buzzChips(c, { label = false, open = null } = {}) {
+function buzzChips(c, { label = false, open = null, panel = false } = {}) {
   // One opening at a time: after a miss the buzzers open again and everyone is timed afresh. The newest opening that
   // has any buzzes is shown, so the times stay up through the whole clue (before anyone has buzzed in a reopening, it is
   // still the last one's).
@@ -667,22 +667,24 @@ function buzzChips(c, { label = false, open = null } = {}) {
   const list = all.filter((b) => (b.open ?? 1) === showing);
   if (!list.length) return null;
   const best = list[0].ms;
-  return h('div', { class: `buzzes ${list.length > 4 ? 'two' : ''}` }, label && h('div', { class: 'lbl' }, 'BUZZ TIMES'),
+  return h('div', { class: `buzzes ${list.length > 4 && !panel ? 'two' : ''} ${panel && list.length > 6 ? 'dense' : ''}` }, label && h('div', { class: 'lbl' }, 'BUZZ TIMES'),
     h('div', { class: 'brows' }, list.map((b, i) => h('div', { class: `brow ${i === 0 ? 'first' : ''}`, style: { '--c': player(b.pid)?.color ?? '#AEB3D6' } },
       h('span', { class: 'rk' }, String(i + 1)), av(player(b.pid), 40), h('span', { class: 'nm' }, nameOf(b.pid)),
       h('b', {}, `${secs(b.ms)}s`), h('small', {}, i ? `+${secs(b.ms - best)}` : '')))));
 }
 
-/** The buzz times along the bottom of a clue, once anyone has buzzed (they stay for the whole clue). */
-const buzzFoot = (c) => ((c.buzzes ?? []).length && !c.dd ? h('div', { class: 'foot' }, buzzChips(c, { label: true })) : null);
+/** The buzz times, once anyone has buzzed, in a semi-transparent panel down the side of the clue (they stay for the whole clue).
+ *  A vertical list: a long name wraps inside its own row instead of stretching a box along the bottom. */
+const buzzSide = (c) => ((c.buzzes ?? []).length && !c.dd ? h('aside', { class: 'buzzpanel' }, buzzChips(c, { label: true, panel: true })) : null);
 
-function card(c, { q, band, edge = null, cls = '', foot = null }) {
+function card(c, { q, band, edge = null, cls = '', side = null, foot = null }) {
   const value = c.dd ? `DAILY DOUBLE · ${money(c.wager ?? 0)}` : money(c.value);
-  return h('div', { class: `card ${cls}${enterOnce(`${g.round}:${clueKey(c)}`)}`, style: edge ? { '--c': edge } : {} },
+  return h('div', { class: `card ${cls}${side ? ' sided' : ''}${enterOnce(`${g.round}:${clueKey(c)}`)}`, style: edge ? { '--c': edge } : {} },
     h('div', { class: 'rail' }, h('div', { class: 'cn' }, c.cat), h('div', { class: 'val' }, value)),
     q,
     band,
-    foot);
+    foot,
+    side);
 }
 
 /** The clue's text, with its picture beside it (or a note that a sound or video goes with it). */
@@ -710,7 +712,7 @@ function clue() {
     const band = h('div', { class: 'band' },
       h('div', { class: 'go' }, icon(BELL, { size: 48, stroke: '#0A0C1C' }), again ? 'ANYONE ELSE? BUZZ IN' : 'BUZZ IN NOW'),
       ring(g.timer));
-    return frame(card(c, { q, band, edge: '#FFC940', cls: 'open', foot: buzzFoot(c) }));
+    return frame(card(c, { q, band, edge: '#FFC940', cls: 'open', side: buzzSide(c) }));
   }
   if (g.phase === 'answering' || g.phase === 'dd-answer') {
     const dd = g.phase === 'dd-answer';
@@ -722,7 +724,7 @@ function clue() {
         h('div', { class: 'buzzer' }, h('span', { class: 'big', style: { color: p?.color } }, (p?.name ?? 'Someone').toUpperCase()), h('span', {}, doing)),
         null),
       ring(g.timer, g.hostJudges ? 'TIME' : '0'));
-    const el = frame(card(c, { q: clueText(c, 'small'), band, edge: p?.color ?? '#FFC940', foot: buzzFoot(c) }));
+    const el = frame(card(c, { q: clueText(c, 'small'), band, edge: p?.color ?? '#FFC940', side: buzzSide(c) }));
     // The bet, full screen, for a moment before the clue.
     if (dd) el.querySelector('main').append(ddSplash(c, c.wager, true));
     return el;
@@ -755,7 +757,7 @@ function ruling(c) {
         stamp(!!r?.correct, r?.correct ? `RIGHT · ${signed(delta)}` : `${spoken ? 'WRONG' : blank ? 'TIME’S UP' : 'NOT QUITE'} · −${money(delta)}`)),
       h('div', { class: 'foot' }, next),
     ],
-    foot: buzzFoot(c),
+    side: buzzSide(c),
   }));
 }
 
@@ -772,11 +774,12 @@ function reveal(c) {
       h('b', {}, `−${money(Math.abs(r.delta ?? 0))}`), r.overridden ? h('small', {}, 'ruling flipped') : null);
   }
   const streak = r && r.correct && hot(r.streak ?? 0) ? h('div', { class: 'hot' }, `🔥 ${nameOf(r.pid)} is on fire! ${r.streak} in a row`) : null;
-  return frame(h('div', { class: `card reveal${enterOnce(`${g.round}:${clueKey(c)}`)}` },
+  const side = (c.buzzes ?? []).length ? h('aside', { class: 'buzzpanel' }, buzzChips(c, { label: true, panel: true })) : null;
+  return frame(h('div', { class: `card reveal${side ? ' sided' : ''}${enterOnce(`${g.round}:${clueKey(c)}`)}` },
     h('div', { class: 'rail' }, h('div', { class: 'cn' }, c.cat), h('div', { class: 'val' }, c.dd ? 'DAILY DOUBLE' : money(c.value))),
     h('div', { class: 'q faint' }, c.q ?? ''),
     h('div', { class: 'answer' }, h('div', { class: 'eyebrow' }, 'THE ANSWER'), h('div', { class: 'ans' }, c.answer ?? ''), line, streak),
-    (c.buzzes ?? []).length ? h('div', { class: 'foot' }, buzzChips(c, { label: true })) : null));
+    side));
 }
 
 /** The Daily Double: full screen, the board's blue in rays. With a bet, "Maya bets $1,000". */

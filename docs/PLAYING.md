@@ -48,7 +48,7 @@ says.
    they like (no clock on the clue or on a Daily Double bet) and taps **Open buzzers**. Without a host, the clue is
    shown and read, then the buzzers open with a **7-second countdown** on the TV and the
    phone. Every phone turns gold at the same instant as the TV, and **the fastest thumb wins, not the fastest Wi-Fi**
-   (see Fair buzzing below). A press before the buzzers open locks that player out for a quarter second. Everyone
+   (see Fair buzzing below). A press before the buzzers open locks that player out for a quarter second (the buzzer screen warns about it while you wait). Everyone
    who pressed is timed, and the times are shown after the clue.
 4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
    articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
@@ -66,7 +66,7 @@ says.
 7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).
    **Play again** deals new categories.
 
-**Buzz times.** Everyone's buzz times, ranked and to the thousandth of a second, stay along the bottom of the TV for the whole
+**Buzz times.** Everyone's buzz times, ranked and to the thousandth of a second, stay in a semi-transparent panel down the side of the TV (one player to a row, a long name wraps inside its row) for the whole
 clue (also after a wrong answer, when the buzzers open again), and for ten seconds on the board after it ends.
 
 Also: streaks (**on fire** after three right in a row), emoji reactions that float up the TV from phones, and
