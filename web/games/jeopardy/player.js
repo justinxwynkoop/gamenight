@@ -293,8 +293,9 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     const now = performance.now();
     const live = isLive(now);
     const locked = now < lockedUntil;
-    let cls = 'wait'; let label = 'WAIT'; let sub = 'Eyes on the TV. Buzz when the bar fills and the button turns gold.';
-    if (v.hostJudges && ph === 'reading') sub = 'The host is reading. Buzz when the button turns gold.';
+    // The warning comes before it can happen: buzz before the button turns gold and you are locked out for a moment.
+    let cls = 'wait'; let label = 'WAIT'; let sub = 'Eyes on the TV. Buzz when the bar fills and the button turns gold. Buzz too early and you are locked out for a quarter of a second!';
+    if (v.hostJudges && ph === 'reading') sub = 'The host is reading. Buzz when the button turns gold. Too early and you are locked out for a quarter of a second!';
     if (live) { cls = 'live'; label = 'BUZZ!'; sub = ''; }
     if (pressed && live) { cls = 'sent'; label = 'BUZZED'; sub = 'In! Waiting for the TV…'; }
     if (tried) { cls = 'out'; label = 'OUT'; sub = 'You already took a shot at this one.'; }

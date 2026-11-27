@@ -93,6 +93,8 @@ struct JeoCard<Content: View>: View {
     var edge: Color?
     var edgeWidth: CGFloat = 6
     var glow = false
+    /// The buzz times, in a panel down the right side of the card (nil: no panel).
+    var buzz: JeoBuzzSide? = nil
     @ViewBuilder let content: () -> Content
     @State private var pulse = false
 
@@ -111,7 +113,11 @@ struct JeoCard<Content: View>: View {
                     .shadow(color: .black.opacity(0.4), radius: 0, y: 3)
                     .lineLimit(1)
             }
-            content()
+            HStack(alignment: .top, spacing: 28) {
+                VStack(spacing: 0) { content() }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let buzz { JeoBuzzPanel(game: buzz.game, clue: buzz.clue) }
+            }
         }
         .padding(EdgeInsets(top: 36, leading: 56, bottom: 32, trailing: 56))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -367,6 +373,60 @@ struct JeoBuzzChips: View {
     }
 }
 
+/// What a card needs to show the buzz times beside it.
+struct JeoBuzzSide {
+    let game: JeopardyState
+    let clue: JeoClue
+}
+
+/// The buzz times as a semi-transparent panel down the side of the clue, one player to a row, newest opening of the
+/// buzzers only: the name gets two lines (so a long one does not make the panel grow), then the time, and how far behind
+/// the fastest it was.
+struct JeoBuzzPanel: View {
+    let game: JeopardyState
+    let clue: JeoClue
+
+    var body: some View {
+        let all = clue.buzzes ?? []
+        let showing = all.map { $0.open ?? 1 }.max() ?? 1
+        let list = all.filter { ($0.open ?? 1) == showing }
+        if !list.isEmpty {
+            let best = list[0].ms
+            VStack(alignment: .leading, spacing: 8) {
+                Text("BUZZ TIMES").font(BW.body(22, .heavy)).kerning(3.5).foregroundColor(BW.soft)
+                ForEach(Array(list.prefix(8).enumerated()), id: \.element.id) { index, buzz in
+                    let player = game.player(buzz.pid)
+                    HStack(spacing: 10) {
+                        Text("\(index + 1)").font(BW.title(20)).frame(width: 26)
+                        BWAvatar(name: player?.name ?? "?", color: Color(playerHex: player?.color ?? "#AEB3D6"), size: 38)
+                        Text(player?.name ?? "Someone")
+                            .font(BW.body(26, .semibold))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.75)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: 4)
+                        VStack(alignment: .trailing, spacing: 0) {
+                            Text(BW.seconds(buzz.ms)).font(BW.title(24)).monospacedDigit()
+                            if index > 0 {
+                                Text("+" + String(format: "%.3f", (buzz.ms - best).rounded() / 1000))
+                                    .font(BW.body(20, .semibold)).monospacedDigit()
+                            }
+                        }
+                    }
+                    .foregroundColor(index == 0 ? BW.ink : BW.text)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(index == 0 ? BW.gold : Color.black.opacity(0.3)))
+                    .bwRise()
+                }
+            }
+            .padding(16)
+            .frame(width: 500, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 26).fill(Color(red: 0.02, green: 0.05, blue: 0.22).opacity(0.6)))
+            .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Color.white.opacity(0.14), lineWidth: 1))
+        }
+    }
+}
+
 // MARK: - A clue, step by step
 
 struct JeoClueScreen: View {
@@ -393,13 +453,11 @@ struct JeoClueScreen: View {
         let player = answering ? game.player(dd ? game.controllerId : clue.buzzedId) : nil
         let color = player.map { Color(playerHex: $0.color) }
         let edge: Color? = game.phase == .open ? BW.gold : answering ? (color ?? BW.gold) : nil
-        return JeoCard(category: clue.cat, value: value, edge: edge, glow: game.phase == .open) {
+        // Everyone's buzz times stay in a panel down the side for the whole clue.
+        let side: JeoBuzzSide? = !dd && !(clue.buzzes ?? []).isEmpty ? JeoBuzzSide(game: game, clue: clue) : nil
+        return JeoCard(category: clue.cat, value: value, edge: edge, glow: game.phase == .open, buzz: side) {
             JeoClueBody(clue: clue, size: answering ? 72 : 84, opacity: answering ? 0.9 : 1)
             JeoBand { band(clue, player: player, color: color, dd: dd) }
-            // Everyone's buzz times stay along the bottom for the whole clue.
-            if !dd, !(clue.buzzes ?? []).isEmpty {
-                JeoCardFoot { JeoBuzzChips(game: game, clue: clue, label: true) }
-            }
         }
     }
 
@@ -457,7 +515,8 @@ struct JeoRulingCard: View {
             if clue.dd || !others { return "Here\u{2019}s the answer." }
             return "Everyone else can buzz in again in a moment."
         }()
-        JeoCard(category: clue.cat, value: clue.dd ? "DAILY DOUBLE \u{00B7} \(BW.money(clue.wager ?? 0))" : BW.money(clue.value)) {
+        JeoCard(category: clue.cat, value: clue.dd ? "DAILY DOUBLE \u{00B7} \(BW.money(clue.wager ?? 0))" : BW.money(clue.value),
+                buzz: !clue.dd && !(clue.buzzes ?? []).isEmpty ? JeoBuzzSide(game: game, clue: clue) : nil) {
             JeoQuestion(text: clue.q ?? "", size: 48, faint: true, opacity: 0.6)
             VStack(spacing: 26) {
                 HStack(spacing: 16) {
@@ -479,9 +538,6 @@ struct JeoRulingCard: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             JeoCardFoot { Text(next) }
-            if !clue.dd, !(clue.buzzes ?? []).isEmpty {
-                JeoCardFoot { JeoBuzzChips(game: game, clue: clue, label: true) }
-            }
         }
     }
 }
@@ -492,7 +548,8 @@ struct JeoRevealCard: View {
     let clue: JeoClue
 
     var body: some View {
-        JeoCard(category: clue.cat, value: clue.dd ? "DAILY DOUBLE" : BW.money(clue.value), edge: BW.gold.opacity(0.55), edgeWidth: 2) {
+        JeoCard(category: clue.cat, value: clue.dd ? "DAILY DOUBLE" : BW.money(clue.value), edge: BW.gold.opacity(0.55), edgeWidth: 2,
+                buzz: !(clue.buzzes ?? []).isEmpty ? JeoBuzzSide(game: game, clue: clue) : nil) {
             JeoQuestion(text: clue.q ?? "", size: 50, faint: true, opacity: 0.85)
             VStack(spacing: 18) {
                 BWEyebrow(text: "The answer", color: BW.soft, size: 26)
@@ -514,9 +571,6 @@ struct JeoRevealCard: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            if !(clue.buzzes ?? []).isEmpty {
-                JeoCardFoot { JeoBuzzChips(game: game, clue: clue, label: true) }
-            }
         }
     }
 
