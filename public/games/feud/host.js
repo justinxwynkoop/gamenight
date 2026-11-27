@@ -30,7 +30,7 @@ export function render(raw, ctx) {
 function subtitle() {
   switch (g.status) {
     case 'lobby': return `Setting up · ${room.players.length} ${room.players.length === 1 ? 'player' : 'players'}`;
-    case 'round': return `Round ${g.round.number} of ${g.rounds}${g.round.multiplier > 1 ? ` · ×${g.round.multiplier}` : ''}`;
+    case 'round': return `${g.round.sudden ? 'Sudden death' : `Round ${g.round.number} of ${g.rounds}`}${g.round.multiplier > 1 ? ` · ×${g.round.multiplier}` : ''}`;
     case 'fastmoney': return 'Fast Money';
     default: return 'Finished';
   }
@@ -154,7 +154,7 @@ function roundView() {
   const body = [
     scoreStrip(r),
     card(tracker,
-      h('div', { class: 'meta' }, `Round ${r.number} of ${g.rounds}`, r.multiplier > 1 && pill(`×${r.multiplier}`, 'warn'), h('span', { class: 'grow' }), `Pot ${r.pot}`, r.multiplier > 1 && h('span', { class: 'dim' }, `= ${r.pot * r.multiplier}`)),
+      h('div', { class: 'meta' }, r.sudden ? `Sudden death${r.sudden.n > 1 ? ` ${r.sudden.n}` : ''}` : `Round ${r.number} of ${g.rounds}`, r.multiplier > 1 && pill(`×${r.multiplier}`, 'warn'), h('span', { class: 'grow' }), `Pot ${r.pot}`, r.multiplier > 1 && h('span', { class: 'dim' }, `= ${r.pot * r.multiplier}`)),
       h('div', { class: 'clue-text' }, r.question),
       strikeBoxes(r)),
   ];
@@ -192,9 +192,11 @@ function stepBanner(r) {
     if (f.open) out.push(h('div', { class: 'banner' }, icon('clock', 22), h('div', { class: 'grow' }, 'Buzzers are live', h('small', {}, 'First of the two players to press goes first.'))));
     else if (f.turn) {
       const rep = f.reps.find((p) => p.unitId === f.turn);
-      out.push(h('div', { class: 'banner', style: { background: unit(f.turn)?.color } }, teamBadge(f.turn, 14), h('div', { class: 'grow' }, `${rep?.name ?? nameOf(f.turn)} is answering`, h('small', {}, nameOf(f.turn)))));
-    } else if (f.attempts.length >= 2) out.push(h('div', { class: 'banner' }, icon('x', 22), h('div', { class: 'grow' }, 'Both missed', h('small', {}, 'Replay the face-off, or pick a winner.'))));
+      out.push(h('div', { class: 'banner', style: { background: unit(f.turn)?.color } }, teamBadge(f.turn, 14), h('div', { class: 'grow' }, `${rep?.name ?? nameOf(f.turn)} is answering`,
+        h('small', {}, f.followup ? `Both missed, so next in line on ${nameOf(f.turn)} answers. The first answer on the board wins it.` : nameOf(f.turn)))));
+    } else if (f.attempts.length >= 2) out.push(h('div', { class: 'banner' }, icon('x', 22), h('div', { class: 'grow' }, 'Everyone missed', h('small', {}, r.sudden ? 'Replay the face-off.' : 'Replay the face-off, or pick a winner.'))));
     else out.push(h('div', { class: 'note' }, icon('user', 16), h('span', {}, 'One player from each team comes up. Read the question, then open the buzzers.')));
+    if (r.sudden) out.unshift(h('div', { class: 'banner', style: { background: '#7c2d12' } }, icon('flag', 22), h('div', { class: 'grow' }, `Sudden death: the winning answer is worth ×${r.sudden.mult}`, h('small', {}, 'Nobody has reached the winning score. The face-off decides it: tap the answer they give.'))));
     return [...out, buzzTimes(f), reps];
   }
   if (r.step === 'choose') {
@@ -213,7 +215,7 @@ function stepBanner(r) {
   if (r.step === 'roundEnd') {
     const w = unit(r.result?.winner);
     return [h('div', { class: 'banner', style: { background: w?.color } }, icon('award', 24),
-      h('div', { class: 'grow' }, `${w?.name ?? '?'} wins ${r.result?.awarded ?? 0} points`, r.multiplier > 1 && h('small', {}, `${r.pot} × ${r.multiplier}`)))];
+      h('div', { class: 'grow' }, `${w?.name ?? '?'} wins ${r.result?.awarded ?? 0} points`, r.multiplier > 1 && h('small', {}, `${r.pot} × ${r.multiplier}${r.sudden ? ' (sudden death)' : ''}`)))];
   }
   return [];
 }
@@ -228,9 +230,12 @@ function openRepSheet(unitId) {
   });
 }
 
-function lastRound(r) {
+/** What the "next" button does after a round: 'next' round, 'sudden' death, or 'finish' (Fast Money or the winner). */
+function nextStep(r) {
   const top = Math.max(...room.units.map((u) => u.score));
-  return r.number >= g.rounds || top >= g.settings.targetScore;
+  if (top >= g.settings.targetScore) return 'finish';
+  if (r.sudden || r.number >= g.rounds) return g.settings.suddenDeath === false ? 'finish' : 'sudden';
+  return 'next';
 }
 
 function roundDock(r) {
@@ -245,7 +250,7 @@ function roundDock(r) {
     if (f.turn) return [button({ label: 'Not on the board', icon: 'x', kind: 'bad', size: 'lg', block: true, onclick: () => act('miss') }), dockRow(undo)];
     if (f.attempts.length >= 2) {
       return [button({ label: 'Replay the face-off', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('replayFaceoff') }),
-        dockRow(...room.units.map((u) => button({ label: `${u.name} wins it`, size: 'sm', onclick: () => act('faceoffWin', { id: u.id }) })), undo)];
+        dockRow(...(r.sudden ? [] : room.units.map((u) => button({ label: `${u.name} wins it`, size: 'sm', onclick: () => act('faceoffWin', { id: u.id }) }))), undo)];
     }
     return [button({ label: 'Open buzzers', icon: 'play', kind: 'ok', size: 'lg', block: true, onclick: () => act('openBuzzers') }),
       dockRow(a && button({ label: `${a.name} starts`, size: 'sm', onclick: () => act('awardBuzz', { id: a.id }) }), b && button({ label: `${b.name} starts`, size: 'sm', onclick: () => act('awardBuzz', { id: b.id }) }), undo)];
@@ -259,19 +264,21 @@ function roundDock(r) {
     return [button({ label: r.step === 'steal' ? 'Wrong: show the X (steal failed)' : `Strike ${r.strikes + 1}`, icon: 'x', kind: 'bad', size: 'lg', block: true, onclick: () => act('miss') }),
       dockRow(button({ label: r.timer && !r.timer.timedOut ? `Restart the ${g.settings.answerSeconds ?? 10}s clock` : `Start the ${g.settings.answerSeconds ?? 10}s clock`, icon: 'clock', size: 'sm', onclick: () => act('startAnswerTimer') }), undo)];
   }
-  const finishing = lastRound(r);
+  const next = nextStep(r);
   const fm = g.settings.fastMoney && g.hasFastMoney;
   return [button({
-    label: finishing ? (fm ? 'On to Fast Money' : 'Finish the game') : 'Next round', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('nextRound'),
+    label: next === 'sudden' ? 'Sudden death: one more face-off' : next === 'finish' ? (fm ? 'On to Fast Money' : 'Finish the game') : 'Next round', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('nextRound'),
   }), dockRow(button({ label: 'Show the other answers', size: 'sm', disabled: r.answers.every((x) => x.revealed || x.late), onclick: () => act('revealRest') }), undo)];
 }
 
 // ---------- Fast Money ----------
-const FM_STEPS = [['pick', 'Players'], ['p1', 'Player 1'], ['p2', 'Player 2'], ['reveal', 'Reveal'], ['results', 'Result']];
+const FM_STEPS = [['pick', 'Players'], ['p1', 'Player 1'], ['reveal1', 'Reveal'], ['p2', 'Player 2'], ['reveal2', 'Reveal'], ['results', 'Result']];
+/** Where Fast Money is, as one of FM_STEPS: the reveal comes twice (Player 1's answers, then Player 2's). */
+const fmStepKey = (fm) => (fm.step === 'team' ? 'pick' : fm.step === 'reveal' ? (fm.part === 'p1' ? 'reveal1' : 'reveal2') : fm.step);
 
 function fastMoneyView() {
   const fm = g.fm;
-  const at = Math.max(0, FM_STEPS.findIndex(([k]) => k === (fm.step === 'team' ? 'pick' : fm.step)));
+  const at = Math.max(0, FM_STEPS.findIndex(([k]) => k === fmStepKey(fm)));
   const tracker = h('div', { class: 'steps' }, FM_STEPS.map(([, label], i) => h('span', { class: i < at ? 'done' : i === at ? 'on' : '' }, label)));
   const team = unit(fm.team);
   const bonus = fm.stakes !== 'tiebreak';
@@ -321,7 +328,7 @@ function fmPick(fm, head) {
     body: [head,
       card(eyebrow('Choose the two players'), h('p', { class: 'dim' }, `${unit(fm.team)?.name ?? 'The team'}: pick who plays Fast Money. Tap a name to choose them for that slot.`)),
       card(eyebrow('Player 1'), h('div', { class: 'list' }, memberList(0, fm))),
-      card(eyebrow('Player 2'), h('p', { class: 'dim' }, 'Player 2 should not hear Player 1’s answers. Send them out of the room, or have them look away.'), h('div', { class: 'list' }, memberList(1, fm)))],
+      card(eyebrow('Player 2'), h('p', { class: 'dim' }, 'Player 2 waits out of the room (or with headphones on, facing away) until Player 1’s answers have been revealed and hidden. Then they are called back in.'), h('div', { class: 'list' }, memberList(1, fm)))],
     dock: [button({ label: 'Start Fast Money', icon: 'play', kind: 'ok', size: 'lg', block: true, disabled: !ready, onclick: () => act('fmStart') }),
       fm.stakes !== 'tiebreak' && button({ label: 'Skip the bonus round', size: 'sm', block: true, onclick: () => act('finishGame') })],
   };
@@ -330,16 +337,28 @@ function fmPick(fm, head) {
 function fmAnswering(fm, head) {
   const slot = fm.step;
   const who = fm.players[slot === 'p1' ? 0 : 1];
-  const inputs = fm.rows.map((row) => h('input', {
-    type: 'text', placeholder: row.question, 'data-k': `fm-${slot}-${row.q}`, value: row[slot].typed ?? '', maxLength: 40, 'aria-label': `Answer to: ${row.question}`, autocomplete: 'off',
-  }));
   const save = () => act('fmSetAnswers', { slot, answers: inputs.map((i) => i.value) });
+  const inputs = fm.rows.map((row, i) => h('input', {
+    type: 'text', placeholder: 'Type what they say', 'data-k': `fm-${slot}-${row.q}`, value: row[slot].typed ?? '', maxLength: 40, 'aria-label': `Answer to: ${row.question}`, autocomplete: 'off', enterKeyHint: 'next',
+    onchange: save,   // saved as you go, on Enter or when you move to the next box
+    onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); inputs[i + 1]?.focus(); } },
+  }));
+  // A one-tap way in: the survey answers, as buttons. Tap the one they said, or type something else. (Player 2 cannot repeat Player 1.)
+  const chips = (row) => {
+    const taken = slot === 'p2' ? row.p1.suggest?.index ?? -1 : -1;
+    return h('div', { class: 'fd-chips' }, row[slot].choices.map((c, i) => h('button', {
+      type: 'button', class: `chip ${i === taken ? 'taken' : ''}`, disabled: i === taken, 'aria-label': i === taken ? `${c.text}: Player 1 already said it` : c.text,
+      onclick: () => { inputs[row.q].value = c.text; save(); },
+    }, h('span', { class: 'n' }, String(i + 1)), c.text)));
+  };
+  const dup = (row) => slot === 'p2' && fm.rejected?.includes(row.q) && h('div', { class: 'fd-dup', role: 'alert' }, icon('x', 16), h('span', {}, 'Player 1 already said that. Ask for a different answer.'));
   return {
     body: [head,
-      h('div', { class: 'banner' }, icon('clock', 22), h('div', { class: 'grow' }, `${who.name ?? 'Player'} is answering`, h('small', {}, fm.submitted[slot] ? 'Answers received from their phone.' : 'They type on their phone. Or enter what they say below.')), timerPill(fm.timer)),
-      card(eyebrow('Questions'), h('div', { class: 'list' }, fm.rows.map((row, i) => h('div', { class: 'field' }, h('span', {}, `${i + 1}. ${row.question}`), inputs[i]))),
-        button({ label: 'Save these answers', icon: 'check', onclick: save }))],
-    dock: [button({ label: slot === 'p1' ? 'Time’s up. Player 2 is next' : 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => { save(); act('fmNext'); } }),
+      h('div', { class: 'banner' }, icon('clock', 22), h('div', { class: 'grow' }, `${who.name ?? 'Player'} is answering`, h('small', {}, fm.submitted[slot] ? 'Answers received from their phone.' : 'They type on their phone, or tap or type what they say below.')), timerPill(fm.timer)),
+      slot === 'p2' && card(eyebrow(`${fm.players[0].name ?? 'Player 1'} scored`), h('div', { class: 'fd-total' }, h('b', {}, String(fm.totals.p1)), h('span', { class: 'dim' }, ' points. Their answers are hidden on the TV.'))),
+      ...fm.rows.map((row, i) => card(eyebrow(`Question ${i + 1}`), h('div', { class: 'card-title' }, row.question), inputs[i], dup(row), chips(row))),
+      card(button({ label: 'Save these answers', icon: 'check', onclick: save }))].filter(Boolean),
+    dock: [button({ label: slot === 'p1' ? 'Time’s up. Reveal Player 1’s answers' : 'Time’s up. Reveal Player 2’s answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => { save(); act('fmNext'); } }),
       dockRow(button({ label: 'Restart the timer', icon: 'refresh', size: 'sm', onclick: () => act('fmRestartTimer') }),
         button({ label: `Change ${slot === 'p1' ? 'Player 1' : 'Player 2'}`, icon: 'swap', size: 'sm', onclick: () => openChangePlayerSheet(slot === 'p1' ? 0 : 1) }))],
   };
@@ -373,7 +392,6 @@ function rankOf(row, slot) {
 
 function fmReveal(fm, head) {
   const names = fm.players.map((p) => p.name ?? 'Player');
-  const done = fm.rows.reduce((n, r) => n + (r.p1.judged ? 1 : 0) + (r.p2.judged ? 1 : 0), 0);
   // Each answer is revealed in two taps, as on the show: what the player said (the TV types it out), then "survey says" and the points.
   const slotRow = (row, slot, who) => {
     const c = row[slot];
@@ -402,16 +420,24 @@ function fmReveal(fm, head) {
   const survey = (row) => h('div', { class: 'fd-ref' }, row.p1.choices.map((ch, i) => h('div', { class: `r ${[1, 2].some((k) => rankOf(row, `p${k}`) === i + 1) ? 'hit' : ''}` },
     h('span', { class: 'n' }, String(i + 1)), h('span', { class: 't' }, ch.text), h('span', { class: 'p' }, String(ch.points)),
     ['p1', 'p2'].map((slot, k) => rankOf(row, slot) === i + 1 && h('span', { class: `tag ${slot}` }, names[k])))));
+  // Player 1's answers are revealed first (Player 2 is still out of the room), then hidden; Player 2's come after they have played.
+  const slots = fm.step === 'results' || fm.part === 'all' ? ['p1', 'p2'] : [fm.part];
+  const left = slots.length * 5 - slots.reduce((n, sl) => n + fm.rows.filter((r) => r[sl].judged).length, 0);
   const body = [head,
-    ...fm.rows.map((row) => card(eyebrow(`Question ${row.q + 1}`), h('div', { class: 'card-title' }, row.question), survey(row), slotRow(row, 'p1', names[0]), slotRow(row, 'p2', names[1]))),
+    fm.part === 'p1' && fm.step === 'reveal' && h('div', { class: 'banner' }, icon('tv', 22), h('div', { class: 'grow' }, `Revealing ${names[0]}’s answers`, h('small', {}, `${names[1]} stays out of the room. When these are all up, hide them and bring ${names[1]} in.`))),
+    ...fm.rows.map((row) => card(eyebrow(`Question ${row.q + 1}`), h('div', { class: 'card-title' }, row.question), survey(row), ...slots.map((sl) => slotRow(row, sl, names[sl === 'p1' ? 0 : 1])))),
     card(eyebrow('Total'), h('div', { class: 'fd-total' }, h('b', {}, String(fm.totals.total)), h('span', { class: 'dim' }, ` of ${fm.goal}`)),
+      h('div', { class: 'dim' }, `${names[0]} ${fm.totals.p1} · ${names[1]} ${fm.totals.p2}`),
       h('div', { class: 'progress' }, h('i', { style: { width: `${Math.min(100, (fm.totals.total / fm.goal) * 100)}%` } })),
-      fm.step === 'results' && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, fm.won ? (fm.stakes === 'tiebreak' ? `${unit(fm.team)?.name} win the tiebreaker!` : 'Jackpot!') : (fm.stakes === 'tiebreak' ? `${nameOf(g.champion)} win the tiebreaker` : 'So close'), h('small', {}, fm.won ? `${fm.totals.total} points` : `${fm.goal - fm.totals.total} short`))))];
+      fm.step === 'results' && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, fm.won ? (fm.stakes === 'tiebreak' ? `${unit(fm.team)?.name} win the tiebreaker!` : 'Jackpot!') : (fm.stakes === 'tiebreak' ? `${nameOf(g.champion)} win the tiebreaker` : 'So close'), h('small', {}, fm.won ? `${fm.totals.total} points` : `${fm.goal - fm.totals.total} short`))))].filter(Boolean);
+  const next = fm.part === 'p1' && fm.partDone
+    ? button({ label: `Hide the answers. ${names[1]} is next`, icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('fmNext') })
+    : button({ label: 'Reveal the next answer', icon: 'play', kind: 'primary', size: 'lg', block: true, onclick: () => act('fmRevealNext') });
   return {
     body,
-    dock: [fm.step === 'results'
-      ? button({ label: 'Show the winner', icon: 'award', kind: 'ok', size: 'lg', block: true, onclick: () => act('finishGame') })
-      : h('div', { class: 'dock-note' }, `${done} of 10 answers revealed`)],
+    dock: fm.step === 'results'
+      ? [button({ label: 'Show the winner', icon: 'award', kind: 'ok', size: 'lg', block: true, onclick: () => act('finishGame') })]
+      : [next, h('div', { class: 'dock-note' }, fm.part === 'p1' && fm.partDone ? `${names[0]} scored ${fm.totals.p1}. That stays on the TV.` : `${left} answer${left === 1 ? '' : 's'} left to reveal`)],
   };
 }
 
@@ -443,6 +469,7 @@ function settingsCards() {
     card(eyebrow('Rules'),
       h('div', { class: 'field' }, h('span', {}, 'First team to reach (points)'), presets([200, 300, 400, 500], s.targetScore, 'targetScore')),
       toggle({ label: 'Bigger rounds at the end', sub: 'Round 4 is worth double and round 5 triple', checked: s.multipliers, onchange: (on) => act('setSettings', { multipliers: on }) }),
+      toggle({ label: 'Sudden death', sub: 'If nobody has the winning score after the last round, face-offs worth 5× or 10× until a team gets there', checked: s.suddenDeath !== false, onchange: (on) => act('setSettings', { suddenDeath: on }) }),
       h('div', { class: 'field' }, h('span', {}, 'Answer clock (you start it when a player is up)'), presets([5, 10, 15, 20, 30], s.answerSeconds ?? 10, 'answerSeconds', (n) => `${n}s`))),
     card(eyebrow('Fast Money'),
       toggle({ label: 'Play Fast Money', sub: 'The winning team plays a bonus round for the jackpot (a tie: it decides the winner)', checked: s.fastMoney, onchange: (on) => act('setSettings', { fastMoney: on }) }),

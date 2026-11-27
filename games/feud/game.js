@@ -14,7 +14,7 @@ export { GameError };
 export const MAX_STRIKES = 3;
 export const FAST_MONEY_QUESTIONS = 5;
 /** How long things wait when nobody is hosting (settings.typed). */
-export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200 };
+export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500 };
 const GAME = 'feud';
 const SLOTS = ['p1', 'p2'];
 
@@ -70,7 +70,7 @@ export function matchAnswer(answers, typed) {
 export class FeudGame {
   constructor(room) {
     this.room = room;
-    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false, answerSeconds: 10 };   // typing five answers on a phone takes longer than saying them
+    this.settings = { targetScore: 300, multipliers: true, fastMoney: true, fastMoneyGoal: 200, fastMoneySeconds1: 40, fastMoneySeconds2: 45, typed: false, answerSeconds: 10, suddenDeath: true };   // typing five answers on a phone takes longer than saying them
     this.setId = null;
     this.set = null;
     this.run = this.#blankRun('lobby');
@@ -81,13 +81,14 @@ export class FeudGame {
     return {
       status, round: 0, step: 'faceoff', revealed: [], strikes: 0, control: null, stealFrom: null, showAll: false,
       faceoff: this.#blankFaceoff(), winner: null, awarded: 0, fm: null,
+      sudden: null, // sudden death (after the last round, nobody at the winning score): { n, mult, question, pts }
       said: null,   // the last typed guess: { unitId, name, text, index } (index -1 when it was not on the board)
       autoAt: null, // typed mode: when the next automatic step happens (a face-off replay, Fast Money moving on)
     };
   }
-  #blankFaceoff() { return { reps: {}, open: false, turn: null, attempts: [], winner: null, buzzes: [], openedAt: null }; }
+  #blankFaceoff() { return { reps: {}, open: false, turn: null, attempts: [], winner: null, buzzes: [], openedAt: null, followup: false }; }
   /** Opens the face-off buzzers and starts the clock: each press is timed against this moment. */
-  #openFaceoff(f) { f.open = true; f.turn = null; f.attempts = []; f.openedAt = this.room.now(); f.buzzes = []; }
+  #openFaceoff(f) { f.open = true; f.turn = null; f.attempts = []; f.followup = false; f.openedAt = this.room.now(); f.buzzes = []; }
   #changed() { this.room.changed(); }
 
   init() {
@@ -107,6 +108,7 @@ export class FeudGame {
     if (this.run.status !== 'lobby' && !this.set) this.run = this.#blankRun('lobby');
     const fm0 = this.run.fm;
     if (fm0 && !fm0.shown) fm0.shown = { p1: fm0.points.p1.map((v) => (v === null ? 0 : 2)), p2: fm0.points.p2.map((v) => (v === null ? 0 : 2)) };
+    if (fm0 && fm0.part === undefined) { fm0.part = ['reveal', 'results'].includes(fm0.step) ? 'all' : null; fm0.hidden = { p1: false }; }   // a game saved before the two-part reveal
     if (this.run.answerTimer) this.run.answerTimer = null;   // an answer clock does not carry over a restart
     const tm = this.run.fm?.timer;
     if (tm && !tm.timedOut) tm.deadline = this.room.now() + tm.totalMs;   // the clock restarted with the server
@@ -188,7 +190,7 @@ export class FeudGame {
     if (!this.typed() || run.status !== 'round' || !player) return false;
     if (run.step === 'faceoff') {
       const f = run.faceoff;
-      return !!f.turn && f.reps[f.turn] === player.id;
+      return !!f.turn && this.#faceoffPlayer(f.turn)?.id === player.id;
     }
     if (run.step === 'play' || run.step === 'steal') return player.teamId === run.control;
     return false;
@@ -210,7 +212,7 @@ export class FeudGame {
   }
 
   // ---------- setup ----------
-  setSettings({ targetScore, multipliers, fastMoney, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed, answerSeconds }) {
+  setSettings({ targetScore, multipliers, fastMoney, suddenDeath, fastMoneyGoal, fastMoneySeconds1, fastMoneySeconds2, typed, answerSeconds }) {
     const inRange = (v, lo, hi, what) => {
       const n = int(v);
       if (!(n >= lo && n <= hi)) fail(`${what} must be ${lo} to ${hi}`);
@@ -219,6 +221,7 @@ export class FeudGame {
     if (targetScore !== undefined) this.settings.targetScore = inRange(targetScore, 50, 5000, 'Winning score');
     if (typeof multipliers === 'boolean') this.settings.multipliers = multipliers;
     if (typeof fastMoney === 'boolean') this.settings.fastMoney = fastMoney;
+    if (typeof suddenDeath === 'boolean') this.settings.suddenDeath = suddenDeath;
     if (typeof typed === 'boolean') {
       this.settings.typed = typed;
       const f = this.run.status === 'round' && this.run.step === 'faceoff' ? this.run.faceoff : null;
@@ -281,19 +284,22 @@ export class FeudGame {
   }
 
   // ---------- rounds ----------
-  #question() { return this.set.rounds[this.run.round]; }
+  #question() { return this.run.sudden?.question ?? this.set.rounds[this.run.round]; }
   #answers() { return ranked(this.#question()); }
   multiplier(i = this.run.round) {
+    if (this.run.sudden) return this.run.sudden.mult;   // sudden death is worth five or ten times, whatever the settings
     if (!this.settings.multipliers) return 1;
     return i < 3 ? 1 : i === 3 ? 2 : 3;
   }
   pot() {
+    // Sudden death: once it is decided, the pot is the winning answer.
+    if (this.run.sudden?.pts != null) return this.run.sudden.pts;
     const answers = this.#answers();
     return this.run.revealed.reduce((sum, i) => sum + (answers[i]?.points ?? 0), 0);
   }
   #beginRound(i) {
     const run = this.run;
-    run.status = 'round'; run.round = i; run.step = 'faceoff';
+    run.status = 'round'; run.round = i; run.step = 'faceoff'; run.sudden = null;
     run.revealed = []; run.strikes = 0; run.control = null; run.stealFrom = null; run.showAll = false;
     run.winner = null; run.awarded = 0; run.said = null; run.autoAt = null; run.stealMissed = false; run.answerTimer = null;
     run.faceoff = this.#blankFaceoff();
@@ -364,9 +370,10 @@ export class FeudGame {
   faceoffWin(id) {
     const run = this.#inRound('faceoff');
     this.#unit(id);
+    if (run.sudden && !run.faceoff.attempts.some((a) => a.unitId === id && a.rank !== null)) fail('Sudden death is decided by an answer on the board: tap the one they gave');
     this.#remember();
-    run.faceoff.winner = id; run.faceoff.open = false; run.faceoff.turn = null;
-    run.step = 'choose';
+    run.faceoff.open = false;
+    this.#faceoffDecided(id);
     this.#changed();
   }
   /** The host starts the answer clock (10 seconds by default) when it is a player's turn on the team that is playing or stealing.
@@ -433,12 +440,21 @@ export class FeudGame {
     }
     this.#changed();
   }
+  /** Who answers for a team in the face-off: its face-off player first and, when both of those have missed, the next
+   *  players in line behind them (the team's players in order, wrapping round). */
+  #faceoffPlayer(unitId, f = this.run.faceoff) {
+    const members = this.#members(unitId);
+    if (!members.length) return null;
+    const rep = Math.max(0, members.findIndex((p) => p.id === f.reps[unitId]));
+    const went = f.attempts.filter((a) => a.unitId === unitId).length;
+    return members[(rep + went) % members.length];
+  }
   #faceoffAnswer(i) {
     const f = this.run.faceoff;
     if (!f.turn) fail('Open the buzzers (or give the turn to a team) first');
     this.#remember();
     this.#reveal(i);
-    f.attempts.push({ unitId: f.turn, rank: i });
+    f.attempts.push({ unitId: f.turn, rank: i, playerId: this.#faceoffPlayer(f.turn)?.id ?? null });
     this.#judgeFaceoff();
     this.#changed();
   }
@@ -446,28 +462,61 @@ export class FeudGame {
     const f = this.run.faceoff;
     if (!f.turn) fail('Open the buzzers (or give the turn to a team) first');
     this.#remember();
-    f.attempts.push({ unitId: f.turn, rank: null });
+    f.attempts.push({ unitId: f.turn, rank: null, playerId: this.#faceoffPlayer(f.turn)?.id ?? null });
     this.#judgeFaceoff();
     this.#changed();
   }
-  /** The face-off rules: the top answer wins at once; otherwise the other player gets a go, and the better answer wins. */
+  /** The face-off rules: the top answer wins at once; otherwise the other player gets a go, and the better answer wins.
+   *  If both miss, the next players in line answer, the team that buzzed first leading off, then the other team, and so on
+   *  down both lines: the first answer on the board wins it. */
   #judgeFaceoff() {
     const run = this.run;
     const f = run.faceoff;
-    const [first, second] = f.attempts;
-    const finish = (unitId) => { f.winner = unitId; f.turn = null; run.step = 'choose'; };
-    if (!second) {
-      if (first.rank === 0) finish(first.unitId); else f.turn = this.#other(first.unitId).id;
+    const n = f.attempts.length;
+    const last = f.attempts[n - 1];
+    if (n === 1) {
+      if (last.rank === 0) this.#faceoffDecided(last.unitId); else f.turn = this.#other(last.unitId).id;
       return;
     }
-    if (first.rank === null && second.rank === null) {   // both missed: replay or award (with nobody hosting, it replays by itself)
-      f.turn = null; f.open = false;
-      if (this.typed()) run.autoAt = this.room.now() + AUTO.faceoffReplay;
+    if (n === 2) {
+      const [first, second] = f.attempts;
+      if (first.rank === null && second.rank === null) return this.#faceoffFollowup();
+      if (first.rank === null) return this.#faceoffDecided(second.unitId);
+      if (second.rank === null) return this.#faceoffDecided(first.unitId);
+      return this.#faceoffDecided(second.rank < first.rank ? second.unitId : first.unitId);
+    }
+    if (last.rank !== null) return this.#faceoffDecided(last.unitId);
+    this.#faceoffFollowup();
+  }
+  /** Both face-off players missed: on to the next player in line, alternating teams, the first buzz leading off. */
+  #faceoffFollowup() {
+    const run = this.run;
+    const f = run.faceoff;
+    const first = f.attempts[0].unitId;
+    const second = this.#other(first).id;
+    const order = f.attempts.length % 2 === 0 ? [first, second] : [second, first];
+    for (const unitId of order) {
+      if (f.attempts.filter((a) => a.unitId === unitId).length < this.#members(unitId).length) { f.turn = unitId; f.followup = true; return; }
+    }
+    // Everybody has had a go and nobody had an answer: the face-off starts again (with nobody hosting, by itself).
+    f.turn = null; f.open = false; f.followup = false;
+    if (this.typed()) run.autoAt = this.room.now() + AUTO.faceoffReplay;
+  }
+  /** The face-off has a winner. In a normal round they choose to play or pass; in sudden death it is all over. */
+  #faceoffDecided(unitId) {
+    const run = this.run;
+    const f = run.faceoff;
+    f.winner = unitId; f.turn = null; f.followup = false;
+    // The player who won it is the one the team's turns count on from.
+    const win = f.attempts.filter((a) => a.unitId === unitId && a.rank !== null).sort((x, y) => x.rank - y.rank)[0];
+    if (win?.playerId) f.reps[unitId] = win.playerId;
+    if (run.sudden) {
+      if (!win) fail('Tap the answer they gave first');
+      run.sudden.pts = this.#answers()[win.rank].points;
+      this.#endRound(unitId);
       return;
     }
-    if (first.rank === null) return finish(second.unitId);
-    if (second.rank === null) return finish(first.unitId);
-    finish(second.rank < first.rank ? second.unitId : first.unitId);
+    run.step = 'choose';
   }
 
   #endRound(winnerId) {
@@ -487,10 +536,45 @@ export class FeudGame {
     const run = this.#inRound('roundEnd');
     const top = Math.max(...this.#teams().map((t) => t.score));
     const last = run.round >= this.set.rounds.length - 1;
-    if (last || top >= this.settings.targetScore) return this.finishRounds();
+    if (top >= this.settings.targetScore) return this.finishRounds();
+    if (run.sudden || last) {
+      // The questions have run out and nobody has reached the winning score: sudden death, if it is on, until somebody does.
+      if (this.settings.suddenDeath === false) return this.finishRounds();
+      return this.#beginSuddenDeath(top);
+    }
     this.history = [];
     this.#beginRound(run.round + 1);
     this.#changed();
+  }
+  /** One face-off question, worth five times its answer (ten when the gap to the winning score is too big for five). */
+  #beginSuddenDeath(top) {
+    const run = this.run;
+    const used = run.suddenUsed ?? [];
+    const question = this.#suddenQuestion(used);
+    used.push(question.question);
+    const best = Math.max(...question.answers.map((a) => int(a.points)));
+    const need = this.settings.targetScore - top;
+    const mult = need <= best * 5 ? 5 : 10;
+    const n = (run.sudden?.n ?? 0) + 1;
+    this.history = [];
+    this.#beginRound(run.round + 1);
+    run.suddenUsed = used;
+    run.sudden = { n, mult, question, pts: null };
+    this.#changed();
+  }
+  /** A question nobody has seen this game: from the other question sets, else this set's Fast Money questions or its rounds. */
+  #suddenQuestion(used) {
+    const asked = new Set([...this.set.rounds.map((q) => q.question), ...used]);
+    let pool = [];
+    for (const meta of this.room.listContent(GAME)) {
+      if (meta.id === this.setId) continue;
+      try { pool.push(...(this.room.loadContent(GAME, meta.id)?.rounds ?? [])); } catch { /* an unreadable set is skipped */ }
+    }
+    pool = pool.filter((q) => !asked.has(q.question));
+    if (!pool.length) pool = (this.set.fastMoney ?? []).filter((q) => !used.includes(q.question));
+    if (!pool.length) pool = [...this.set.rounds, ...(this.set.fastMoney ?? [])];
+    const q = pool[Math.floor((this.room.rng ?? Math.random)() * pool.length)];
+    return { question: q.question, answers: q.answers.map((a) => ({ text: a.text, points: a.points, aliases: a.aliases ?? [] })) };
   }
   /** The regular rounds are over (a team reached the target, the questions ran out, or the host ended them). */
   finishRounds() {
@@ -504,7 +588,7 @@ export class FeudGame {
     run.champion = leader?.id ?? null;
     if (this.settings.fastMoney && this.set.fastMoney?.length === FAST_MONEY_QUESTIONS) {
       run.status = 'fastmoney';
-      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', stakes: leader ? 'bonus' : 'tiebreak', players: [], answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
+      run.fm = { team: leader?.id ?? null, step: leader ? 'pick' : 'team', stakes: leader ? 'bonus' : 'tiebreak', players: [], part: null, hidden: { p1: false }, rejected: [], dupBuzz: 0, answers: { p1: null, p2: null }, points: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) }, labels: { p1: Array(FAST_MONEY_QUESTIONS).fill(null), p2: Array(FAST_MONEY_QUESTIONS).fill(null) },
         // How much of each answer the TV has shown: 0 nothing, 1 what was said, 2 the points too ("survey says").
         shown: { p1: Array(FAST_MONEY_QUESTIONS).fill(0), p2: Array(FAST_MONEY_QUESTIONS).fill(0) }, timer: null };
       if (leader) this.#defaultFmPlayers();
@@ -580,22 +664,31 @@ export class FeudGame {
     else fail('There is nothing to time right now');
     this.#changed();
   }
+  /** Moves Fast Money on: Player 1 is done, so their answers are revealed; once they have been (and the host says so) they are
+   *  hidden and Player 2 comes in with Player 1's score still up; Player 2 is done, so theirs are revealed. */
   fmNext() {
     this.run.autoAt = null;
     const fm = this.#fm();
-    if (fm.step === 'p1') { fm.step = 'p2'; this.#startTimer(fm, this.settings.fastMoneySeconds2); } else if (fm.step === 'p2') {
-      fm.step = 'reveal'; fm.timer = null; this.#zeroBlanks();
+    if (fm.step === 'p1') {
+      this.#zeroBlanks('p1');
+      fm.step = 'reveal'; fm.part = 'p1'; fm.timer = null; fm.rejected = [];
+      if (this.typed()) this.run.autoAt = this.room.now() + AUTO.fmReveal;
+    } else if (fm.step === 'reveal' && fm.part === 'p1') {
+      if (!fm.shown.p1.every((v) => v === 2)) fail('Reveal all of Player 1’s answers first');
+      fm.step = 'p2'; fm.hidden.p1 = true; fm.rejected = [];
+      this.#startTimer(fm, this.settings.fastMoneySeconds2);
+    } else if (fm.step === 'p2') {
+      this.#zeroBlanks('p2');
+      fm.step = 'reveal'; fm.part = 'p2'; fm.hidden.p1 = false; fm.timer = null; fm.rejected = [];
       if (this.typed()) this.run.autoAt = this.room.now() + AUTO.fmReveal;
     } else fail('Nothing further');
     this.#changed();
   }
   /** An answer nobody gave scores 0 without the host having to say so (the host can still change it). */
-  #zeroBlanks() {
+  #zeroBlanks(slot) {
     const fm = this.run.fm;
-    for (const s of SLOTS) {
-      for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
-        if (fm.points[s][q] === null && !(fm.answers[s]?.[q] ?? '').trim()) { fm.points[s][q] = 0; fm.labels[s][q] = 'No answer'; }
-      }
+    for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
+      if (fm.points[slot][q] === null && !(fm.answers[slot]?.[q] ?? '').trim()) { fm.points[slot][q] = 0; fm.labels[slot][q] = 'No answer'; }
     }
   }
   #cleanAnswers(list) {
@@ -607,12 +700,20 @@ export class FeudGame {
     this.#fmSlot(slot);
     if (!['p1', 'p2', 'reveal'].includes(fm.step)) fail('Answers can be entered once Fast Money has started');
     const clean = this.#cleanAnswers(answers);
-    if (slot === 'p2' && fm.step !== 'reveal') {
+    // Player 2 may not repeat Player 1: an answer that does is not taken (it is blanked, the TV gives the buzzer and the host is
+    // told which question), and the rest are kept. At the reveal the host can still put anything in; a repeat then scores 0.
+    if (slot === 'p2' && fm.step === 'p2') {
       const dup = this.#repeatsOfPlayer1(clean);
-      if (dup.length) fail(`Question ${dup[0] + 1}: Player 1 already said that. Ask for a different answer.`);
+      for (const q of dup) clean[q] = '';
+      this.#noteDup(fm, dup);
     }
     fm.answers[slot] = clean;
     this.#changed();
+  }
+  /** Remembers which of Player 2's answers were turned away, and counts the buzzer so the TV can sound it. */
+  #noteDup(fm, list) {
+    fm.rejected = [...list];
+    if (list.length) fm.dupBuzz = (fm.dupBuzz ?? 0) + 1;
   }
   /** Which of Player 2's answers repeat Player 1's (the same words, or the same survey answer): the questions' numbers, from 0. */
   #repeatsOfPlayer1(answersP2) {
@@ -639,6 +740,7 @@ export class FeudGame {
     if (fm.step === 'p2') {
       rejected = this.#repeatsOfPlayer1(clean);
       for (const q of rejected) clean[q] = '';
+      this.#noteDup(fm, rejected);
     }
     fm.answers[fm.step] = clean;
     this.#changed();
@@ -660,15 +762,17 @@ export class FeudGame {
     return { index, rank: index === -1 ? null : index + 1, points: index === -1 || dup ? 0 : answers[index].points, label: index === -1 ? null : answers[index].text, dup };
   }
   #isBlank(fm, slot, q) { return !(fm.answers[slot]?.[q] ?? '').trim(); }
-  #fmReveal() {
+  #fmReveal(slot) {
     const fm = this.#fm();
-    if (!['reveal', 'results'].includes(fm.step)) fail('Reveal the answers once both players are done');
+    if (!['reveal', 'results'].includes(fm.step)) fail('Reveal the answers once a player is done');
+    // While Player 1's answers are being revealed, Player 2 has not played yet (and the other way round: never before the end).
+    if (fm.step === 'reveal' && slot && fm.part !== 'all' && fm.part !== slot) fail(`${slot === 'p2' ? 'Player 2 has not played yet' : 'Player 1’s answers are hidden now'}`);
     return fm;
   }
   /** First tap: the TV types out what the player said. An answer nobody gave goes straight to its 0. */
   fmShowAnswer(slot, q) {
-    const fm = this.#fmReveal();
     this.#fmSlot(slot);
+    const fm = this.#fmReveal(slot);
     this.#fmQuestion(q);
     if (fm.shown[slot][q] >= 1) fail('That answer is already up');
     if (this.#isBlank(fm, slot, q)) { fm.points[slot][q] = 0; fm.labels[slot][q] = 'No answer'; fm.shown[slot][q] = 2; } else fm.shown[slot][q] = 1;
@@ -677,8 +781,8 @@ export class FeudGame {
   }
   /** Second tap ("survey says"): the TV shows the points. The host can give the points and the matching answer, or leave them to the suggestion. Can be used again to correct a score. */
   fmShowPoints(slot, q, points, label) {
-    const fm = this.#fmReveal();
     this.#fmSlot(slot);
+    const fm = this.#fmReveal(slot);
     this.#fmQuestion(q);
     if (fm.shown[slot][q] < 1) fail('Show what they said first');
     let pts; let name;
@@ -694,12 +798,18 @@ export class FeudGame {
     this.#changed();
   }
   #afterReveal(fm) {
-    if (fm.step === 'reveal' && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = 'results';
+    // After Player 1 the host moves on (fmNext) to hide the answers and bring in Player 2; after Player 2 it is the result.
+    if (fm.step === 'reveal' && fm.part !== 'p1' && SLOTS.every((s) => fm.shown[s].every((v) => v === 2))) fm.step = 'results';
+  }
+  /** Whether every answer of the part being revealed is up with its points. */
+  #partRevealed(fm) {
+    const slots = fm.part === 'all' ? SLOTS : [fm.part];
+    return slots.every((s) => fm.shown[s].every((v) => v === 2));
   }
   /** The next step of the reveal, in the show's order (player 1's five answers, then player 2's): what was said, then the points the survey gives. */
   fmRevealNext() {
     const fm = this.#fmReveal();
-    for (const s of SLOTS) {
+    for (const s of fm.step === 'results' || fm.part === 'all' ? SLOTS : [fm.part]) {
       for (let q = 0; q < FAST_MONEY_QUESTIONS; q++) {
         if (fm.shown[s][q] === 0) return this.fmShowAnswer(s, q);
         if (fm.shown[s][q] === 1) return this.fmShowPoints(s, q);
@@ -743,8 +853,9 @@ export class FeudGame {
       if (run.status === 'round' && run.step === 'faceoff' && !run.faceoff.open && !run.faceoff.turn && !run.faceoff.winner) this.replayFaceoff();
       else if (fm && (fm.step === 'p1' || fm.step === 'p2') && fm.timer?.timedOut) this.fmNext();
       else if (fm && fm.step === 'reveal') {
-        this.fmRevealNext();
-        if (fm.step === 'reveal') run.autoAt = now + AUTO.fmReveal;
+        // Reveal one answer at a time; once Player 1's are all up, a moment to read the score, then Player 2 comes in.
+        if (this.#partRevealed(fm)) { if (fm.part === 'p1') this.fmNext(); } else this.fmRevealNext();
+        if (fm.step === 'reveal') run.autoAt = now + (this.#partRevealed(fm) ? AUTO.fmHold : AUTO.fmReveal);
       }
     } catch { /* the host moved things on first */ }
   }
@@ -806,6 +917,8 @@ export class FeudGame {
     const mult = this.multiplier();
     return {
       number: run.round + 1, multiplier: mult, question: q.question, step: run.step,
+      // Sudden death: one face-off, worth the winning answer times five or ten.
+      sudden: run.sudden ? { n: run.sudden.n, mult: run.sudden.mult } : null,
       strikes: run.strikes, maxStrikes: MAX_STRIKES, pot: this.pot(),
       // Once the round is over the team that won the points is the one lit up (after a failed steal that is not the stealer).
       control: run.step === 'roundEnd' ? run.winner : run.control, stealFrom: run.stealFrom,
@@ -819,10 +932,11 @@ export class FeudGame {
       // The answer clock the host started for the team that is playing or stealing.
       timer: this.#timerView({ timer: run.answerTimer }),
       faceoff: {
-        open: f.open, turn: f.turn, winner: f.winner, attempts: f.attempts,
+        open: f.open, turn: f.turn, winner: f.winner, attempts: f.attempts, followup: !!f.followup,
         // Everyone who buzzed in the face-off, fastest first, with how long after the buzzers opened (ms).
         buzzes: (f.buzzes ?? []).slice().sort((a, b) => a.ms - b.ms).map((b) => ({ unitId: b.unitId, pid: b.pid, name: this.#playerName(b.pid), ms: b.ms, won: !!b.won })),
-        reps: Object.entries(f.reps).map(([unitId, playerId]) => ({ unitId, playerId, name: this.#playerName(playerId) })),
+        // Whoever answers next for each team: its face-off player, then (when both have missed) the players in line behind them.
+        reps: Object.keys(f.reps).map((unitId) => { const p = f.winner ? { id: f.reps[unitId] } : this.#faceoffPlayer(unitId) ?? { id: f.reps[unitId] }; return { unitId, playerId: p.id, name: this.#playerName(p.id) }; }),
       },
       // The steal was tried and failed: the TV puts the big X up (the pot stays with the team that was stolen from).
       stealMissed: run.step === 'roundEnd' && !!run.stealMissed,
@@ -838,10 +952,12 @@ export class FeudGame {
       for (const s of SLOTS) {
         const shown = fm.shown[s][q];
         const judged = shown === 2;
+        // Player 1's answers are hidden while Player 2 plays (the score stays up): only the host still sees them.
+        const covered = !host && !!fm.hidden?.[s];
         row[s] = {
-          shown, judged, points: judged ? fm.points[s][q] : null, label: judged ? fm.labels[s][q] : null,
+          shown, judged, hidden: covered, points: judged && !covered ? fm.points[s][q] : null, label: judged && !covered ? fm.labels[s][q] : null,
           // What was said stays private until the host shows it (the host sees it all along).
-          typed: shown >= 1 || host ? fm.answers[s]?.[q] ?? '' : null,
+          typed: !covered && (shown >= 1 || host) ? fm.answers[s]?.[q] ?? '' : null,
           ...(host && fm.answers[s] ? { suggest: this.fmSuggest(s, q), blank: this.#isBlank(fm, s, q) } : {}),
           ...(host ? { choices: ranked(this.set.fastMoney[q]).map((a) => ({ text: a.text, points: a.points })) } : {}),
         };
@@ -852,6 +968,9 @@ export class FeudGame {
     const finished = fm.step === 'results';
     return {
       team: fm.team, step: fm.step, stakes: this.#stakes(fm), timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
+      // Which player's answers are being revealed ('p1', 'p2', or 'all' in a game saved before the two-part reveal), and whether
+      // all of them are up. Player 2's answers that were turned away as repeats (the TV sounds a buzzer each time: dupBuzz counts them).
+      part: fm.part ?? null, partDone: fm.step === 'reveal' ? this.#partRevealed(fm) : false, hidden: !!fm.hidden?.p1, rejected: [...(fm.rejected ?? [])], dupBuzz: fm.dupBuzz ?? 0,
       players: SLOTS.map((s, i) => ({ slot: s, id: fm.players[i] ?? null, name: this.#playerName(fm.players[i]) })),
       submitted: { p1: !!fm.answers.p1, p2: !!fm.answers.p2 },
       rows, totals, won: finished ? totals.total >= this.settings.fastMoneyGoal : null,

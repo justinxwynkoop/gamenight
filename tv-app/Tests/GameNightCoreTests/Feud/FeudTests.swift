@@ -84,15 +84,46 @@ final class FeudDecodingTests: XCTestCase {
     }
 
     func testFastMoneyReveal() throws {
+        // Player 1's answers are revealed first, while Player 2 is still out of the room.
         let fm = try XCTUnwrap(try Fixture.feud("feud-fm-partial").fm)
         XCTAssertEqual(fm.step, .reveal)
+        XCTAssertEqual(fm.part, "p1")
+        XCTAssertEqual(fm.partDone, false)
         XCTAssertEqual(fm.rows[0].p1.points, 34)
         XCTAssertEqual(fm.rows[0].p1.label, "Apple")
-        XCTAssertEqual(fm.rows[0].p2.points, 30)
-        XCTAssertEqual(fm.rows[0].p2.label, "Banana")
         XCTAssertEqual(fm.rows[1].p1.points, 46)
+        XCTAssertFalse(fm.rows[0].p2.judged)
         XCTAssertFalse(fm.rows[1].p2.judged)
         XCTAssertNil(fm.won)
+    }
+
+    func testFastMoneyHidesPlayerOnesAnswersButKeepsTheirScore() throws {
+        let done = try XCTUnwrap(try Fixture.feud("feud-fm-p1-done").fm)
+        XCTAssertEqual(done.step, .reveal)
+        XCTAssertEqual(done.partDone, true, "all of Player 1's answers are up: the host hides them next")
+        XCTAssertEqual(done.totals.p1, 162)
+
+        // Player 2 comes in: Player 1's answers are covered, their total stays, and a repeated answer was turned away.
+        let fm = try XCTUnwrap(try Fixture.feud("feud-fm-p2").fm)
+        XCTAssertEqual(fm.step, .p2)
+        XCTAssertEqual(fm.hidden, true)
+        XCTAssertEqual(fm.totals.p1, 162)
+        XCTAssertEqual(fm.totals.total, 162)
+        XCTAssertEqual(fm.rejected, [0])
+        XCTAssertEqual(fm.dupBuzz, 1)
+        for row in fm.rows {
+            XCTAssertEqual(row.p1.hidden, true)
+            XCTAssertNil(row.p1.typed)
+            XCTAssertNil(row.p1.points)
+            XCTAssertNil(row.p1.label)
+        }
+
+        // Then Player 2's answers are revealed, with Player 1's back in view.
+        let reveal = try XCTUnwrap(try Fixture.feud("feud-fm-p2-reveal").fm)
+        XCTAssertEqual(reveal.step, .reveal)
+        XCTAssertEqual(reveal.part, "p2")
+        XCTAssertEqual(reveal.hidden, false)
+        XCTAssertEqual(reveal.rows[0].p1.typed, "apple")
     }
 
     func testTheWinnersAreKnownBeforeFastMoneyAndItIsTheirBonus() throws {
@@ -151,7 +182,28 @@ final class FeudDecodingTests: XCTestCase {
         let partial = try XCTUnwrap(try Fixture.feud("feud-fm-partial").fm)
         XCTAssertEqual(partial.rows[0].p1.shown, 2)
         XCTAssertEqual(partial.rows[0].p1.points, 34)
-        XCTAssertEqual(partial.totals.total, 110, "only points that are up count")
+        XCTAssertEqual(partial.totals.total, 80, "only points that are up count")
+    }
+
+    func testSuddenDeathAndTheNextPlayersInLine() throws {
+        let start = try XCTUnwrap(try Fixture.feud("feud-sudden").round)
+        XCTAssertEqual(start.sudden?.n, 1)
+        XCTAssertEqual(start.sudden?.mult, 10)
+        XCTAssertEqual(start.multiplier, 10)
+        XCTAssertEqual(start.step, .faceoff)
+        XCTAssertNotEqual(start.faceoff.followup, true)
+
+        // Both face-off players missed: the next players in line answer, and the view names them.
+        let follow = try XCTUnwrap(try Fixture.feud("feud-sudden-followup").round)
+        XCTAssertEqual(follow.faceoff.followup, true)
+        XCTAssertEqual(follow.faceoff.attempts.count, 2)
+        XCTAssertEqual(follow.faceoff.reps.compactMap(\.name), ["Ann", "Cat"])
+
+        // The first answer on the board wins it: the winning answer times ten.
+        let end = try XCTUnwrap(try Fixture.feud("feud-sudden-end").round)
+        XCTAssertEqual(end.step, .roundEnd)
+        XCTAssertEqual(end.result?.awarded, end.pot * 10)
+        XCTAssertEqual(end.result?.awarded, 320)
     }
 
     func testUnknownValuesDoNotBreakDecoding() throws {
@@ -205,11 +257,20 @@ final class FeudSoundTests: XCTestCase {
     func testFastMoney() throws {
         XCTAssertEqual(try cues("feud-round4-done", "feud-fm-pick"), [.fastmoney])
         XCTAssertEqual(try cues("feud-fm-pick", "feud-fm-p1"), [])
-        XCTAssertEqual(try cues("feud-fm-p1", "feud-fm-p2"), [])
+        XCTAssertEqual(try cues("feud-fm-p1", "feud-fm-reveal"), [], "Player 1 is done: nothing is up yet")
         XCTAssertEqual(try cues("feud-fm-reveal", "feud-fm-said"), [], "what they said makes no sound; the points do")
         XCTAssertEqual(try cues("feud-fm-said", "feud-fm-partial"), [.fmpoints])
-        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-results"), [.fmpoints, .winner])
+        XCTAssertEqual(try cues("feud-fm-partial", "feud-fm-p1-done"), [.fmpoints])
+        // Player 2 comes in and says what Player 1 said: the buzzer.
+        XCTAssertEqual(try cues("feud-fm-p1-done", "feud-fm-p2"), [.strike])
+        XCTAssertEqual(try cues("feud-fm-p2", "feud-fm-p2-reveal"), [], "Player 1's answers coming back into view make no sound")
+        XCTAssertEqual(try cues("feud-fm-p2-reveal", "feud-fm-results"), [.fmpoints, .winner])
         XCTAssertEqual(try cues("feud-fm-results", "feud-done"), [.winner])
+    }
+
+    func testSuddenDeath() throws {
+        XCTAssertEqual(try cues("feud-sudden", "feud-sudden-followup"), [.strike], "both face-off players missed")
+        XCTAssertEqual(try cues("feud-sudden-followup", "feud-sudden-end"), [.ding, .correct])
     }
 
     func testTheFirstStateMakesNoSound() throws {

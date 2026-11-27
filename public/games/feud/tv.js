@@ -141,6 +141,7 @@ export function onChange(prev, view, sound) {
         }
       }
       if (f.timer?.timedOut && !pf.timer?.timedOut) sound.play('timeup');
+      if ((f.dupBuzz ?? 0) > (pf.dupBuzz ?? 0)) sound.play('strike');   // Player 2 said what Player 1 said: the buzzer
       const judged = (x) => x.rows.reduce((n, row) => n + (row.p1.judged ? 1 : 0) + (row.p2.judged ? 1 : 0), 0);
       if (judged(f) > judged(pf)) {
         const pts = (x) => x.rows.reduce((n, row) => n + (row.p1.points ?? 0) + (row.p2.points ?? 0), 0);
@@ -200,9 +201,9 @@ function podium(v, u, r) {
 }
 
 function bank(r) {
-  const label = r.multiplier === 2 ? 'DOUBLE POINTS' : r.multiplier === 3 ? 'TRIPLE POINTS' : null;
+  const label = r.sudden ? `SUDDEN DEATH ×${r.multiplier}` : r.multiplier === 2 ? 'DOUBLE POINTS' : r.multiplier === 3 ? 'TRIPLE POINTS' : null;
   return h('div', { class: 'fd-bank' },
-    h('div', { class: 'rd' }, `Round ${r.number}`),
+    h('div', { class: 'rd' }, r.sudden ? 'Sudden death' : `Round ${r.number}`),
     h('div', { class: 'coin' }, h('div', { class: 'in' }, h('b', {}, String(r.pot)), h('small', {}, r.step === 'roundEnd' ? 'won' : 'in the bank'))),
     label && h('div', { class: 'mult' }, label));
 }
@@ -248,7 +249,7 @@ function banner(v, r) {
   const vs = f.reps.map((p) => p.name).filter(Boolean).join('  vs  ');
   if (r.step === 'faceoff') {
     if (f.open) { cls.push('open'); text = 'Face-off! Buzz in!'; sub = vs; }
-    else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); }
+    else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); if (f.followup) sub = 'Both missed: next in line'; else if (r.sudden) sub = `Sudden death: the winning answer is worth ×${r.multiplier}`; }
     else if (f.attempts.length >= 2) { text = 'Nobody got it. Face-off again!'; }
     else { text = 'Face-off'; sub = vs; }
   } else if (r.step === 'choose') { text = `${nameOf(v, f.winner)} won the face-off!`; color = colorOf(v, f.winner); sub = 'Play or pass?'; }
@@ -319,6 +320,9 @@ function fmScreen(v) {
         h('div', { class: 'fd-fmleft' },
           h('div', { class: 'fd-big' }, `${who.name ?? 'Player'}, you’re up!`),
           h('p', { class: 'fd-sub' }, f.step === 'p2' ? 'Don’t repeat your partner’s answers' : 'Five questions. Answer fast!'),
+          // Player 2 plays with Player 1's answers hidden, but their score stays up.
+          f.step === 'p2' && h('div', { class: 'fd-p1score' }, h('span', {}, `${f.players[0]?.name ?? 'Player 1'} scored`), h('b', {}, String(f.totals.p1))),
+          f.step === 'p2' && f.rejected?.length ? h('p', { class: 'fd-dupnote' }, `Question ${f.rejected[0] + 1}: that answer was already given. Try another!`) : null,
           h('div', { class: 'fd-qs' }, f.rows.map((row, i) => h('div', { class: 'q' }, h('span', { class: 'n' }, String(i + 1)), h('span', {}, row.question))))),
         h('div', { class: 'fd-fmclock' }, art('stopwatch', 'watch'), f.timer?.timedOut ? h('div', { class: 'fd-ring out' }, h('span', { class: 'fd-tnum' }, 'TIME')) : ring)));
   }
