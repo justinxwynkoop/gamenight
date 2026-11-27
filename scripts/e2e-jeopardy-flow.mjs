@@ -386,7 +386,32 @@ try {
   }
   await phase('final-reveal', 'the Final reveal');
   await shot(host, 'host-final-reveal');
-  for (let i = 0; i < 12 && hostView.phase === 'final-reveal'; i++) { await tap('Next reveal'); await sleep(400); }
+  // With the host in, Final is turned over by hand: turn over the response, rule on it, then on to the next player.
+  if (hostView.final.manual !== true) fail('the Final reveal should be by hand while a host is in');
+  const ruled = [];
+  for (let i = 0; i < 20 && hostView.phase === 'final-reveal'; i++) {
+    const st = hostView.final.stage;
+    if (st === 'hidden') {
+      const cur = hostView.secret.finalCurrent;
+      if (!cur || cur.id !== hostView.final.order[hostView.final.revealIndex]) fail('the host page does not show who is up');
+      const tvText = await tv.locator('.bw-stage').innerText().catch(() => '');
+      if (cur.answer && cur.answer !== '(no answer)' && tvText.includes(cur.answer)) fail('the TV shows a response before the host turned it over');
+      if (i === 0) { await sleep(1000); await shot(tv, 'tv-final-covered'); await shot(host, 'host-final-hidden'); }
+      await tap('Turn over the response');
+    } else if (st === 'answer') {
+      const cur = hostView.secret.finalCurrent;
+      const name = hostView.players.find((p) => p.id === cur.id)?.name;
+      ruled.push(name);
+      if (ruled.length === 1) { await sleep(1000); await shot(tv, 'tv-final-answer'); await shot(host, 'host-final-answer-up'); }
+      await tap(name === 'Ann' ? 'Right' : 'Wrong');
+    } else {
+      const next = host.locator('.dock button', { hasText: /Next player|Show the correct response|Crown the champion/ }).first();
+      await until(async () => (await next.count()) > 0 && await next.isEnabled(), `the host's next step after "${st}"; the bar shows: ${await dock()}`);
+      await next.click();
+    }
+    await sleep(350);
+  }
+  if (ruled.length !== Object.keys(phones).length) fail(`the host ruled on ${ruled.length} responses, expected ${Object.keys(phones).length}`);
   await phase('gameover', 'the champion');
   await shot(host, 'host-gameover');
   await shot(tv, 'tv-champion');
