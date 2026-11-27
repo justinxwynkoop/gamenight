@@ -64,6 +64,8 @@ advance(2500);
 snap('steal', { focus: focusOf(blue) });
 g.answer(2);
 snap('round-end', { focus: focusOf(blue) });
+g.showAnswer();                                    // the host turns the answers over one at a time
+snap('round-end-one', { focus: focusOf(blue) });
 g.revealRest();
 snap('round-end-all', { focus: focusOf(blue) });
 // Skip on to round 4 (double points).
@@ -80,9 +82,17 @@ advance(9000);
 snap('fm-player1', { focus: focusOf(red) });
 const [p1, p2] = g.run.fm.players.map((id) => room.player(id));
 g.fmAnswersFrom(p1.id, ['Apple', 'Dog', 'Sneakers', 'Kitchen', 'Nap']);
-g.fmNext();
+g.fmNext();                                        // Player 1 is done: their answers are revealed first
+snap('fm-p1-reveal-start', { focus: p1.name });
+for (let i = 0; i < 6; i++) g.fmRevealNext();
+snap('fm-p1-reveal', { focus: p1.name });
+while (!g.publicView().fm.partDone) g.fmRevealNext();
+snap('fm-p1-done', { focus: p1.name });
+g.fmNext();                                        // hidden, and Player 2 comes in with Player 1's score still up
 advance(12000);
 snap('fm-player2', { focus: p2.name });
+g.fmAnswersFrom(p2.id, ['Apple', 'Cat', 'Boots', 'Garage', 'Read']);   // "Apple" repeats Player 1: turned away
+snap('fm-player2-repeat', { focus: p2.name });
 g.fmAnswersFrom(p2.id, ['Banana', 'Cat', 'Boots', 'Garage', 'Read']);
 g.fmNext();
 snap('fm-reveal-start', { focus: p1.name });

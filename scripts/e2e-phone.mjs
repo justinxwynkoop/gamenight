@@ -97,6 +97,26 @@ try {
   await until(() => engine.room.game.phase === 'board', 'the board after the round\'s titles');
   console.log('captain started Jeopardy from the phone; Ann and Bo are the players');
   const g = engine.room.game;
+  // Fix a typo in your name, or change your colour, any time: tap your name at the top of the phone.
+  await player.locator('#you').click();
+  await until(async () => (await player.locator('.profile-overlay input').count()) > 0, 'the name and colour box');
+  await player.locator('.profile-overlay input').fill('bo');
+  await player.getByRole('button', { name: 'Save' }).click();
+  await until(async () => /taken/i.test(await player.locator('.profile-overlay .err').innerText()), 'the notice that the name is taken');
+  await player.locator('.profile-overlay input').fill('Annie');
+  const before = engine.room.players.find((p) => p.name === 'Ann').color;
+  const other = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7'].find((c) => c !== before);
+  await player.locator(`.profile-overlay .colors button[aria-label="${other}"]`).click().catch(() => {});
+  await player.getByRole('button', { name: 'Save' }).click();
+  await until(() => engine.room.players.some((p) => p.name === 'Annie'), 'the name change to reach the room');
+  await until(async () => /Annie/.test(await player.locator('#you').innerText()), 'the new name in the header');
+  if ((await player.locator('.profile-overlay').count()) !== 0) fail('the name box stayed open after saving');
+  // (and back, since the rest of the run knows her as Ann)
+  await player.locator('#you').click();
+  await player.locator('.profile-overlay input').fill('Ann');
+  await player.getByRole('button', { name: 'Save' }).click();
+  await until(() => engine.room.players.some((p) => p.name === 'Ann'), 'the name to be put back');
+  console.log('a player fixed their name (a taken name is refused) and changed their colour from the phone');
   const phones = { [engine.room.players.find((p) => p.name === 'Ann').id]: player, [engine.room.players.find((p) => p.name === 'Bo').id]: bo };
   const ctl = phones[g.controllerId];
   await until(async () => (await ctl.locator('button.jp-pval').count()) === 30, 'the clue picker on the picker\'s phone');

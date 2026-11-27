@@ -131,7 +131,7 @@ export function mount(container, { send, flash }) {
             sets.map((x) => h('option', { value: x.id, selected: x.id === g.setId }, x.title)))),
           btn('Start the game', () => cap('startGame'), 'ok'));
       } else if (g.status === 'round' && g.round.step === 'roundEnd') {
-        out.push(btn('Next round', () => cap('nextRound')), g.round.answers.some((a) => !a.revealed && !a.late) && btn('Show the other answers', () => cap('revealRest'), ''));
+        out.push(btn('Next round', () => cap('nextRound')), g.round.answers.some((a) => !a.revealed && !a.late) && btn('Turn the next answer', () => cap('showAnswer'), ''));
       } else if (g.status === 'round' && g.round.step === 'faceoff' && !g.settings.typed && !g.round.faceoff.open && !g.round.faceoff.turn && !g.round.faceoff.winner) {
         out.push(btn('Open the buzzers', () => cap('openBuzzers'), 'ok'));
       } else if (g.status === 'done') {

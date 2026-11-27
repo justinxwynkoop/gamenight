@@ -148,7 +148,7 @@ const strikeBoxes = (r) => h('div', { class: 'fd-strikes', 'aria-label': `${r.st
 function roundView() {
   const r = g.round;
   const at = stepIndex(r.step);
-  const tapOk = r.step === 'play' || r.step === 'steal' || (r.step === 'faceoff' && !!r.faceoff.turn);
+  const tapOk = r.step === 'play' || r.step === 'steal' || (r.step === 'faceoff' && !!r.faceoff.turn) || r.step === 'roundEnd';   // after the round, a tap turns an answer over (unscored)
   const tracker = h('div', { class: 'steps', 'aria-label': 'Progress' }, STEPS.map(([, label], i) => h('span', { class: i < at ? 'done' : i === at ? 'on' : '' }, label)));
 
   const body = [
@@ -161,10 +161,11 @@ function roundView() {
   body.push(...stepBanner(r));
   body.push(h('div', { class: 'fd-answers' }, r.answers.map((a, i) => h('button', {
     type: 'button', class: `fd-ans ${a.revealed ? 'up' : ''} ${a.late ? 'late' : ''}`, disabled: a.revealed || a.late || !tapOk,
-    'aria-label': `${a.text}, ${a.points} points${a.revealed ? ', already up' : ''}`, onclick: () => act('answer', { index: i }),
+    'aria-label': `${a.text}, ${a.points} points${a.revealed ? ', already up' : ''}`, onclick: () => act(r.step === 'roundEnd' ? 'showAnswer' : 'answer', { index: i }),
   }, h('span', { class: 'n' }, String(a.n)), h('span', { class: 't' }, a.text), h('span', { class: 'p' }, String(a.points)), a.revealed && icon('check', 18)))));
   if (r.said) body.push(h('div', { class: 'note' }, icon(r.said.index === -1 ? 'x' : 'check', 16), h('span', {}, `${r.said.name} typed “${r.said.text}”${r.said.index === -1 ? ': not on the board' : ''}`)));
-  if (tapOk) body.push(h('div', { class: 'note' }, icon('star', 16), h('span', {}, g.settings.typed ? 'Players type their answers. Tap one here only to correct the survey.' : 'Tap the answer they gave. It flips on the TV.')));
+  if (tapOk) body.push(h('div', { class: 'note' }, icon('star', 16), h('span', {}, r.step === 'roundEnd' ? 'Tap an answer to turn it over on the TV, one at a time, as on the show. It is not scored.'
+    : g.settings.typed ? 'Players type their answers. Tap one here only to correct the survey.' : 'Tap the answer they gave. It flips on the TV.')));
   if (r.step !== 'roundEnd') {
     body.push(button({
       label: 'End the rounds early', kind: 'ghost', size: 'sm', block: true,
@@ -268,7 +269,7 @@ function roundDock(r) {
   const fm = g.settings.fastMoney && g.hasFastMoney;
   return [button({
     label: next === 'sudden' ? 'Sudden death: one more face-off' : next === 'finish' ? (fm ? 'On to Fast Money' : 'Finish the game') : 'Next round', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('nextRound'),
-  }), dockRow(button({ label: 'Show the other answers', size: 'sm', disabled: r.answers.every((x) => x.revealed || x.late), onclick: () => act('revealRest') }), undo)];
+  }), dockRow(button({ label: 'Turn the next answer', size: 'sm', disabled: r.answers.every((x) => x.revealed || x.late), onclick: () => act('showAnswer') }), undo)];
 }
 
 // ---------- Fast Money ----------
@@ -364,6 +365,7 @@ function fmAnswering(fm, head) {
   };
 }
 
+/** Score or fix one answer: what they said (the words can be put right at any time), then the survey answer it was, or any points. */
 function openJudgeSheet(row, slot) {
   C.openSheet({
     title: `${row.question}`,
@@ -371,13 +373,28 @@ function openJudgeSheet(row, slot) {
       const r = g.fm.rows[row.q];
       const cell = r[slot];
       const sg = cell.suggest;
-      const pick = (points, label) => { act('fmShowPoints', { slot, q: row.q, points, label }); C.closeSheet(); };
+      const who = g.fm.players[slot === 'p1' ? 0 : 1].name ?? 'Player';
+      const input = h('input', { type: 'text', value: cell.typed ?? '', maxLength: 40, autocomplete: 'off', 'aria-label': 'What they said', enterKeyHint: 'done' });
+      const words = () => (input.value.trim() !== (cell.typed ?? '') ? { text: input.value } : null);
+      // Up already ("survey says"): the points are corrected. Not yet: they are given for the first time.
+      const give = (points, label) => {
+        const fix = words();
+        if (cell.judged) act('fmEdit', { slot, q: row.q, text: input.value, points, label });
+        else { if (fix) act('fmEdit', { slot, q: row.q, ...fix }); act('fmShowPoints', { slot, q: row.q, points, label }); }
+        C.closeSheet();
+      };
+      const pts = h('input', { type: 'number', inputMode: 'numeric', min: 0, max: 100, placeholder: 'Points', value: cell.judged ? String(cell.points) : '', 'aria-label': 'Points' });
       return [
-        h('p', { class: 'dim' }, `${g.fm.players[slot === 'p1' ? 0 : 1].name ?? 'Player'} said: “${cell.typed || '—'}”`),
-        h('div', { class: 'list' },
-          r[slot].choices.map((c, i) => h('button', { type: 'button', class: 'pick', 'aria-pressed': String(sg?.index === i && !sg.dup), onclick: () => pick(c.points, c.text) },
-            h('span', { class: 'rank' }, String(i + 1)), h('div', { class: 'grow t' }, c.text), h('span', { class: 'pts' }, String(c.points)))),
-          h('button', { type: 'button', class: 'pick', 'aria-pressed': String(!!sg?.dup), onclick: () => pick(0, sg?.dup ? 'Repeated answer' : null) }, icon('x', 18), h('div', { class: 'grow t' }, sg?.dup ? 'Repeated Player 1’s answer' : 'Not on the board'), h('span', { class: 'pts' }, '0'))),
+        h('label', { class: 'field' }, h('span', {}, `What ${who} said`), input),
+        button({ label: 'Save the words', icon: 'check', onclick: () => { act('fmEdit', { slot, q: row.q, text: input.value }); C.closeSheet(); } }),
+        cell.shown >= 1 && [
+          h('div', { class: 'eyebrow' }, cell.judged ? 'Change the points' : 'Which survey answer?'),
+          h('div', { class: 'list' },
+            r[slot].choices.map((c, i) => h('button', { type: 'button', class: 'pick', 'aria-pressed': String(cell.judged ? cell.label === c.text : sg?.index === i && !sg.dup), onclick: () => give(c.points, c.text) },
+              h('span', { class: 'rank' }, String(i + 1)), h('div', { class: 'grow t' }, c.text), h('span', { class: 'pts' }, String(c.points)))),
+            h('button', { type: 'button', class: 'pick', 'aria-pressed': String(cell.judged ? cell.points === 0 && !cell.label : !!sg?.dup), onclick: () => give(0, sg?.dup ? 'Repeated answer' : null) }, icon('x', 18), h('div', { class: 'grow t' }, sg?.dup ? 'Repeated Player 1’s answer' : 'Not on the board'), h('span', { class: 'pts' }, '0'))),
+          h('div', { class: 'inline' }, pts, button({ label: 'Set these points', size: 'sm', onclick: () => { if (pts.value !== '') give(Number(pts.value), cell.judged ? cell.label : null); } })),
+        ],
       ];
     },
   });
@@ -407,7 +424,8 @@ function fmReveal(fm, head) {
     if (c.shown === 0) {
       return h('div', { class: 'fd-judge' },
         h('div', { class: 'who' }, icon('clock', 18), h('div', { class: 'grow' }, h('div', { class: 't' }, who), h('div', { class: 's' }, c.blank ? 'no answer' : `“${c.typed}” ${hint}`))),
-        h('div', { class: 'btns' }, button({ label: c.blank ? 'Reveal (no answer · 0)' : 'Reveal what they said', icon: 'play', kind: 'primary', onclick: () => act('fmShowAnswer', { slot, q: row.q }) })));
+        h('div', { class: 'btns' }, button({ label: c.blank ? 'Reveal (no answer · 0)' : 'Reveal what they said', icon: 'play', kind: 'primary', onclick: () => act('fmShowAnswer', { slot, q: row.q }) }),
+          button({ label: 'Edit', size: 'sm', onclick: () => openJudgeSheet(row, slot) })));
     }
     const label = sg?.dup ? 'Survey says… Repeat · 0' : sg && sg.index !== -1 ? `Survey says… #${sg.rank} ${sg.label} · +${sg.points}` : 'Survey says… not on the board · 0';
     return h('div', { class: 'fd-judge' },
@@ -450,9 +468,31 @@ function doneView() {
     body: [card(eyebrow('Game over'), h('div', { class: 'card-title' }, champ ? `${champ.name} win the game` : 'A tie!'),
       h('div', { class: 'list' }, ranked.map((u, i) => h('div', { class: 'rowi' }, h('span', { class: 'rank' }, String(i + 1)), dot(u.color, 16), h('div', { class: 'grow t' }, u.name), h('span', { class: 'pts' }, String(u.score))))),
       fm?.played && h('div', { class: 'banner', style: { background: fm.won ? '#14532d' : '' } }, icon(fm.won ? 'award' : 'flag', 22), h('div', { class: 'grow' }, `Fast Money: ${fm.total} of ${fm.goal}`, h('small', {}, fm.stakes === 'tiebreak' ? `${nameOf(fm.team)} ${fm.won ? 'broke the tie' : 'fell short, so the tie went the other way'}` : `${nameOf(fm.team)} ${fm.won ? 'won the jackpot' : 'fell short of the jackpot'}`))),
-      h('p', { class: 'dim' }, 'Starting again resets the scores. Everyone stays in the game.'))],
+      h('p', { class: 'dim' }, 'Starting again resets the scores. Everyone stays in the game.')), fmRecap()].filter(Boolean),
     dock: [button({ label: 'Back to setup', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('endGame') })],
   };
+}
+
+/** After the game, every Fast Money question with all its survey answers (#1 first) and what each player said, for reading out what was
+ *  never turned over, and to put a mistake right (the score and the winner follow). */
+function fmRecap() {
+  const fm = g.fm;
+  if (!fm) return null;
+  const names = fm.players.map((p) => p.name ?? 'Player');
+  const line = (row, slot, k) => {
+    const c = row[slot];
+    const said = c.typed ? `“${c.typed}”` : 'no answer';
+    const result = c.judged ? ` · ${c.points} point${c.points === 1 ? '' : 's'}${c.label ? ` · ${c.label}` : ''}` : ' · not turned over on the TV';
+    return h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, names[k]), h('div', { class: 's' }, `${said}${result}`)),
+      button({ label: 'Edit', size: 'sm', onclick: () => openJudgeSheet(row, slot) }));
+  };
+  return card(eyebrow('Fast Money: every answer'),
+    h('p', { class: 'dim' }, `${fm.totals.total} of ${fm.goal} points (${names[0]} ${fm.totals.p1} · ${names[1]} ${fm.totals.p2}). Read out any answers that were left, or tap Edit to put a mistake right; the score and the winner follow.`),
+    ...fm.rows.map((row) => h('div', { class: 'fd-recap' },
+      h('div', { class: 'card-title' }, `${row.q + 1}. ${row.question}`),
+      h('div', { class: 'fd-ref' }, row.p1.choices.map((ch, i) => h('div', { class: `r ${i === 0 ? 'hit' : ''}` },
+        h('span', { class: 'n' }, String(i + 1)), h('span', { class: 't' }, ch.text), h('span', { class: 'p' }, String(ch.points))))),
+      line(row, 'p1', 0), line(row, 'p2', 1))));
 }
 
 // ---------- Settings tab cards, and the danger zone ----------

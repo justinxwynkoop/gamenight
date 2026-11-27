@@ -142,3 +142,34 @@ test('a player on a new phone takes their own seat back, but never one still in 
   assert.equal(room.connected.has(ann.id), true);
   assert.equal(room.players.length, 1, 'no second Ann');
 });
+
+test('a player can fix their name or change their colour any time, but not take someone else\'s name', async () => {
+  const { hub, room, last, to, tick } = setup();
+  hub.receive('p1', { t: 'hello', role: 'player' });
+  hub.receive('p1', { t: 'join', name: 'Ann' });
+  hub.receive('p2', { t: 'hello', role: 'player' });
+  hub.receive('p2', { t: 'join', name: 'Bo' });
+  const ann = room.players.find((p) => p.name === 'Ann');
+  const before = ann.color;
+  hub.receive('p1', { t: 'profile', name: 'Anna', color: '#22c55e' });
+  assert.deepEqual(last('p1', 'profile-ok'), { t: 'profile-ok' });
+  assert.equal(ann.name, 'Anna');
+  await tick();
+  assert.ok(JSON.stringify(last('p2', 'state').view).includes('Anna'), 'everyone sees the new name');
+  // (in a game of teams the team owns the colour, so only the name changes there)
+  const teams = room.mode === 'teams';
+  assert.equal(ann.color, teams ? before : '#22c55e');
+  hub.receive('p1', { t: 'profile', name: 'bo' });
+  assert.match(to('p1').at(-1).message ?? '', /taken/);
+  assert.equal(ann.name, 'Anna', 'a name that is taken is not changed');
+  hub.receive('p1', { t: 'profile', name: '   ' });
+  assert.match(to('p1').at(-1).message ?? '', /Enter a name/);
+  hub.receive('p1', { t: 'profile', name: 'Anna', color: 'not-a-colour' });
+  assert.equal(ann.name, 'Anna');
+  // Keeping your own name (just changing the colour) is fine.
+  hub.receive('p1', { t: 'profile', name: 'ANNA' });
+  assert.equal(ann.name, 'ANNA');
+  hub.receive('tv', { t: 'hello', role: 'tv' });
+  hub.receive('tv', { t: 'profile', name: 'Mallory' });
+  assert.equal(room.players.some((p) => p.name === 'Mallory'), false, 'only a joined player can change a name');
+});

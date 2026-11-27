@@ -322,7 +322,8 @@ test('a tie: Fast Money decides it (reach the goal and win, fall short and the o
     g.fmStart();
     const [p1] = g.run.fm.players;
     g.fmAnswersFrom(p1, reach ? ['apple', 'dog', 'sneakers', 'kitchen', 'nap'] : ['zzz', 'zzz', 'zzz', 'zzz', 'zzz']);
-    g.fmNext(); revealPart(g); g.fmNext(); g.fmNext();
+    g.fmNext(); revealPart(g);
+    if (g.run.fm.step !== 'results') { g.fmNext(); g.fmNext(); }   // (reaching the goal ends it right there)
     for (let i = 0; i < 20 && g.run.fm.step !== 'results'; i++) g.fmRevealNext();
     assert.equal(g.publicView().fm.won, reach);
     assert.equal(g.publicView().champion, reach ? blue.id : red.id);
@@ -513,11 +514,9 @@ test('Fast Money wins at the goal', () => {
   g.fmStart();
   g.fmSetAnswers('p1', ['a', 'b', 'c', 'd', 'e']); g.fmNext();
   for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q, 10, 'x'); }
-  g.fmNext();
-  g.fmSetAnswers('p2', ['f', 'g', 'h', 'i', 'j']); g.fmNext();
-  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p2', q); g.fmShowPoints('p2', q, 0, null); }
   assert.equal(g.publicView().fm.totals.total, 50);
   assert.equal(g.publicView().fm.won, true);
+  assert.equal(g.run.fm.step, 'results', 'the goal is reached: they win right there');
 });
 
 test('the Fast Money timer expires on tick, and phones may still send answers until the host moves on', () => {
@@ -967,4 +966,101 @@ test('sudden death: the public view shows it, and a saved game comes back as it 
   g2.restore(saved);
   assert.equal(g2.publicView().round.sudden.n, 1);
   assert.equal(g2.publicView().round.question, g.run.sudden.question.question);
+});
+
+// ---------- turning the answers over one at a time ----------
+
+test('after a round the host turns the unguessed answers over one at a time, without scoring', () => {
+  const { g, red } = setup();
+  startAndWinFaceoff(g, red);
+  g.miss(); g.miss(); g.miss(); g.miss();                   // three strikes, the steal fails
+  assert.equal(g.run.step, 'roundEnd');
+  const score = red.score;
+  const answers = () => g.publicView().round.answers;
+  assert.ok(answers().filter((a) => !a.revealed && !a.late).every((a) => a.text === null), 'hidden until turned');
+  g.showAnswer(3);
+  assert.equal(answers()[3].late, true);
+  assert.equal(answers()[3].text, g.hostView().round.answers[3].text);
+  assert.equal(answers()[1].text === null || answers()[1].revealed, true, 'only that one turned');
+  assert.throws(() => g.showAnswer(3), /already up/);
+  assert.throws(() => g.showAnswer(99), /no such answer/);
+  g.showAnswer();                                           // no index: the best one left
+  const turned = answers().filter((a) => a.late).length;
+  assert.equal(turned, 2);
+  assert.equal(red.score, score, 'turning answers over does not score');
+  while (answers().some((a) => !a.revealed && !a.late)) g.showAnswer();
+  assert.throws(() => g.showAnswer(), /already up/);
+  assert.throws(() => setup().g.showAnswer(), /No round/);
+});
+
+// ---------- Fast Money: corrections, and winning at the goal ----------
+
+test('Fast Money: reaching the goal wins right there, then the winners; the host still has every answer', () => {
+  const ctx = setup(); const { g, red, clock } = ctx;
+  toFastMoney(ctx);
+  g.setSettings({ fastMoneyGoal: 60 });
+  g.fmStart();
+  g.fmSetAnswers('p1', ['apple', 'dog', 'sneakers', 'kitchen', 'nap']);
+  g.fmNext();
+  g.fmShowAnswer('p1', 0); g.fmShowPoints('p1', 0, 30, 'Apple');
+  assert.equal(g.run.fm.step, 'reveal', 'not there yet');
+  g.fmShowAnswer('p1', 1); g.fmShowPoints('p1', 1, 31, 'Dog');   // 61 of 60
+  assert.equal(g.run.fm.step, 'results');
+  assert.equal(g.publicView().fm.won, true);
+  assert.equal(g.publicView().fm.reached, true);
+  clock.advance(1000); g.tick();
+  assert.equal(g.run.status, 'fastmoney', 'a moment for the jackpot');
+  clock.advance(5000); g.tick();
+  assert.equal(g.run.status, 'done', 'then the winners of the Feud');
+  assert.equal(g.publicView().result.fastMoney.won, true);
+  assert.equal(g.publicView().result.champion, red.id);
+  assert.equal(g.publicView().fm, null, 'the TV and phones only get the result');
+  // The host still sees every question, answer and what was said, including what was never turned over.
+  const fm = g.hostView().fm;
+  assert.equal(fm.rows.length, 5);
+  assert.equal(fm.rows[4].p1.typed, 'nap');
+  assert.equal(fm.rows[4].p1.shown, 0, 'never turned over on the TV');
+  assert.ok(fm.rows[4].p1.choices.length >= 3 && fm.rows[4].p1.choices[0].points >= fm.rows[4].p1.choices[1].points, 'the survey answers, #1 first');
+});
+
+test('Fast Money: the host can put a mistake right at any time, even after the game is over', () => {
+  const ctx = setup(); const { g, clock } = ctx;
+  toFastMoney(ctx);
+  g.setSettings({ fastMoneyGoal: 100 });
+  g.fmStart();
+  g.fmSetAnswers('p1', ['aple', 'dog', '', '', '']);
+  g.fmNext();
+  g.fmShowAnswer('p1', 0); g.fmShowPoints('p1', 0, 0, null);             // "aple" was scored 0: a typo
+  g.fmEdit('p1', 0, { text: 'apple', points: 34, label: 'Apple' });       // fix the answer and its points
+  assert.equal(g.publicView().fm.rows[0].p1.typed, 'apple');
+  assert.equal(g.publicView().fm.rows[0].p1.points, 34);
+  assert.equal(g.fmTotals().p1, 34);
+  g.fmEdit('p1', 1, { text: 'puppy' });                                    // not up yet: only the words change
+  assert.equal(g.hostView().fm.rows[1].p1.typed, 'puppy');
+  assert.throws(() => g.fmEdit('p1', 1, { points: 10 }), /Show the points first/);
+  assert.throws(() => g.fmEdit('p1', 0, { points: 500 }), /0 to 100/);
+  assert.throws(() => g.fmEdit('p9', 0, { text: 'x' }), /Unknown/);
+  // After the result, and after the game is over, a score can still be corrected, and the winner follows.
+  g.setSettings({ fastMoneyGoal: 30 });
+  g.fmEdit('p1', 0, { points: 36, label: 'Apple' });
+  assert.equal(g.run.fm.step, 'results', 'a correction that reaches the goal wins it');
+  g.finishGame();
+  assert.equal(g.publicView().result.fastMoney.won, true);
+  g.fmEdit('p1', 0, { points: 10, label: 'Apple' });
+  assert.equal(g.publicView().result.fastMoney.won, false, 'taking points away takes the jackpot away');
+  assert.equal(g.hostView().fm.rows[0].p1.points, 10);
+  assert.ok(clock);
+});
+
+test('Fast Money: Player 2 still cannot be given Player 1’s answer while they are answering, even by an edit', () => {
+  const ctx = setup(); const { g } = ctx;
+  toFastMoney(ctx);
+  g.fmStart();
+  g.fmSetAnswers('p1', ['one', 'two', 'three', 'four', 'five']);
+  g.fmNext();
+  for (let q = 0; q < 5; q++) { g.fmShowAnswer('p1', q); g.fmShowPoints('p1', q, 0, null); }
+  g.fmNext();
+  assert.throws(() => g.fmEdit('p2', 0, { text: 'ONE' }), /already said that/);
+  g.fmEdit('p2', 0, { text: 'uno' });
+  assert.equal(g.run.fm.answers.p2[0], 'uno');
 });

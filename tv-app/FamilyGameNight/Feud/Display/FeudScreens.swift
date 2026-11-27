@@ -598,9 +598,11 @@ struct FeudBank: View {
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .shadow(color: Color(hex: 0x7896FF).opacity(0.7), radius: 12)
-                    Text(round.step == .roundEnd ? "WON" : "IN THE BANK")
-                        .font(FD.text(16, .heavy))
-                        .tracking(2)
+                    // "IN THE / BANK" on two lines so it sits inside the circle.
+                    Text(round.step == .roundEnd ? "WON" : "IN THE\nBANK")
+                        .font(FD.text(15, .heavy))
+                        .tracking(1.5)
+                        .multilineTextAlignment(.center)
                         .foregroundStyle(FD.gold)
                 }
             }

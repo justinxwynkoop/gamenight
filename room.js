@@ -131,6 +131,22 @@ export class Room {
     this.changed();
     return player;
   }
+  /** A player fixes their own name (a typo) or changes their colour, any time. Teams own the colour in team play, so only the name changes there. */
+  updateProfile(playerId, { name, color } = {}) {
+    const p = this.player(playerId);
+    if (name !== undefined) {
+      const n = cleanName(name);
+      if (!n) fail('Enter a name');
+      if (this.players.some((x) => x.id !== p.id && x.name.toLowerCase() === n.toLowerCase())) fail('That name is taken');
+      p.name = n;
+    }
+    if (color !== undefined && color !== null && this.mode !== 'teams') {
+      if (!COLORS.includes(color)) fail('Pick one of the colours');
+      p.color = color;
+    }
+    this.changed();
+    return p;
+  }
   /**
    * Someone whose phone lost its place (a new phone, a different browser, cleared data) takes their own seat back:
    * only a player who is away, never one who is still playing on another phone.

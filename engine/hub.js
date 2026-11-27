@@ -77,6 +77,13 @@ export function createHub({ room, pinOk, send, rpc = null, trustedTv = () => fal
         send(id, { t: 'joined', token: p.token });
         return;
       }
+      case 'profile': {
+        // A player fixes their own name or changes their colour.
+        if (client.role !== 'player' || !client.playerId) return;
+        room.updateProfile(client.playerId, { name: msg.name, color: msg.color });
+        send(id, { t: 'profile-ok' });
+        return;
+      }
       case 'act': {
         // The host, or the TV itself (never a client that merely claimed to be the TV).
         if (client.role !== 'host' && !(client.role === 'tv' && trustedTv(id))) return;

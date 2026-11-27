@@ -95,7 +95,7 @@
 .fd-bank .coin .in { display: grid; place-content: center; justify-items: center; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #18217a, #05061a 75%);
   box-shadow: inset 0 .8vmin 1.6vmin rgba(0, 0, 0, .8); }
 .fd-bank .coin b { font-family: var(--fd-show); font-size: 8vmin; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 2vmin rgba(120, 150, 255, .7); }
-.fd-bank .coin small { font-size: 1.8vmin; font-weight: 800; letter-spacing: .14em; color: var(--fd-gold); text-transform: uppercase; }
+.fd-bank .coin small { max-width: 10vmin; text-align: center; line-height: 1.1; font-size: 1.7vmin; font-weight: 800; letter-spacing: .1em; color: var(--fd-gold); text-transform: uppercase; }   /* "IN THE / BANK" on two lines, so it sits inside the circle */
 .fd-bank .mult { font-family: var(--fd-show); font-size: 2.2vmin; padding: .4vmin 1.6vmin; border-radius: 99vmin; background: var(--fd-red); color: #fff; letter-spacing: .1em; box-shadow: 0 0 2.4vmin rgba(225, 29, 46, .6); animation: fd-blinky 1.2s steps(1) infinite; }
 
 .fd-question { text-align: center; }

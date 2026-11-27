@@ -9,6 +9,10 @@ This is what the host and players do in each game. Setup and running are in the 
 signed in (the PIN is built into the code and removed from the address bar at once), so there is nothing to type and no menu
 to open. Anyone who scans it becomes a host, the same as typing the PIN. The PIN is also in the Play/Pause menu.
 
+**Fixing your name or colour.** In every game, tap your name at the top of your phone (it has a small pencil) to fix a typo in
+your name or pick another colour (in team games only the name changes: the team owns the colour). A name someone else already
+has is refused. It changes for everyone straight away.
+
 Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. It runs on the Apple TV, and the
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
 touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host page
@@ -125,7 +129,9 @@ dealt onto them at random and the host can move anyone.
    **Buzz times.** In the face-off the TV and the host page show who buzzed and how fast, to the thousandth of a second.
 4. **Scoring.** Points on the board are banked when the round ends. Rounds 4 and 5 are worth double and
    triple (switch off under Settings). First team to the winning score, or the last round, ends the
-   rounds. **Sudden death.** If the last round ends and nobody has reached the winning score, one more
+   rounds. **The answers nobody guessed** are turned over by the host one at a time, as on the show: after the round, tap an
+   answer on the host page (or **Turn the next answer**; the captain's phone has the same button) and it flips on the TV. Nothing is scored.
+   **Sudden death.** If the last round ends and nobody has reached the winning score, one more
    face-off is played (a new question) and the winning answer is worth **five times** its points, or **ten times**
    when five is not enough to get there; a team that still hasn't made it after that plays another, until
    somebody does. Switch it off under Settings → Rules and the game ends after the last round as before.
@@ -163,7 +169,10 @@ moves on when time is up and reveals itself. Every phone shows the question, big
    Player 1 already used are greyed out for Player 2. Each survey list is shown on the host screen with a tag where each
    player's answer landed, so the rank is visible without opening anything, and the points button already says what it
    will score (for example **#1 Apple · +34**). An answer left blank is a zero that needs just one tap, and shows as
-   NO ANSWER. Reach 200 points to win.
+   NO ANSWER. **Reach 200 points and they win right there**: the TV shows the jackpot for a moment and then the winners of the
+   Feud, whatever answers are left. The host page still has every Fast Money question, all its survey answers (#1 first) and what
+   each player said, so the host can read out what was never turned over. **Mistakes can be put right at any time**, even after
+   the game is over: tap **Edit** on any answer to change what was said and its points (the score and the winner follow).
 6. **Undo.** A mis-tap is easy on a phone, so **Undo** takes back the last reveal, strike or choice,
    including the points.
 
