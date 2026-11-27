@@ -64,6 +64,8 @@ const base = `http://127.0.0.1:${site.address().port}`;
 
 const t0 = Date.now();
 const log = (text) => console.log(`${((Date.now() - t0) / 1000).toFixed(1).padStart(6)}  ${text}`);
+// PHONE_VIEWPORT=1280x800 plays the phone and host pages in a desktop browser window (to see how they look there).
+const PHONE = (() => { const m = /^(\d+)x(\d+)$/.exec(process.env.PHONE_VIEWPORT ?? ''); return m ? { width: +m[1], height: +m[2] } : { width: 390, height: 844 }; })();
 const problems = [];
 const fail = (m) => { problems.push(m); log(`FAIL: ${m}`); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -89,7 +91,7 @@ try {
 
   const phones = {};
   for (const name of ['Ann', 'Bo', 'Cy']) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } }); watch(page, name);
+    const page = await browser.newPage({ viewport: PHONE }); watch(page, name);
     await page.goto(`${base}/?r=${code}`);
     await until(async () => (await page.locator('input').count()) > 0, `${name}'s join form`);
     await page.locator('input').first().fill(name);
@@ -206,7 +208,7 @@ try {
     await ph('lobby', 'the lobby again');
   }
 
-  const host = await browser.newPage({ viewport: { width: 390, height: 844 } }); watch(host, 'host');
+  const host = await browser.newPage({ viewport: PHONE }); watch(host, 'host');
   await host.goto(`${base}/host?r=${code}`);
   await until(async () => (await host.locator('input').count()) > 0, 'the host PIN form');
   await host.locator('input').first().fill(pin); await host.keyboard.press('Enter');

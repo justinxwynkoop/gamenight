@@ -41,6 +41,8 @@ enum JeoRemote {
         case .roundIntro:
             return [Item(id: "intro", title: "Show the board", action: "advance", icon: "square.grid.3x2.fill")]
         case .reading where game.hostJudges:
+            // Opening the buzzers from the remote or a captain's phone starts a short countdown: no second tap needed.
+            if game.timer?.kind == "reading" { return [] }
             return [Item(id: "open", title: "Open buzzers", action: "openNow", icon: "bell.fill")]
         case .answering where game.hostJudges, .ddAnswer where game.hostJudges:
             return [

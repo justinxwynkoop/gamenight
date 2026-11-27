@@ -466,9 +466,13 @@ struct JeoClueScreen: View {
         switch game.phase {
         case .reading:
             VStack(alignment: .leading, spacing: 12) {
-                Text(game.hostJudges ? "The host is reading the clue. Thumbs ready." : "Listen up. Buzzers open when the bar fills.")
+                // With a host the clue is read aloud and the buzzers open when the host says; when the host has opened them
+                // there is a short countdown (the bar) first, so every phone turns gold together.
+                let counting = game.hostJudges && game.timer?.kind == "reading"
+                Text(counting ? "Get ready! Buzzers open when the bar fills."
+                     : game.hostJudges ? "The host is reading the clue. Thumbs ready." : "Listen up. Buzzers open when the bar fills.")
                     .font(BW.body(30, .semibold)).foregroundColor(BW.soft)
-                if !game.hostJudges { JeoReadingBar(timer: game.timer) }
+                if !game.hostJudges || counting { JeoReadingBar(timer: game.timer) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         case .open:

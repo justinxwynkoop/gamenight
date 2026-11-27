@@ -316,7 +316,9 @@ test('host judges mode: players say the answer out loud and the host rules', () 
   const b = g.board();
   g.pick(0, b[0].clues.findIndex((c) => !c.dd));
   assert.equal(g.phase, 'reading');
-  g.openNow();                                            // the host finished reading
+  g.openNow();                                            // the host finished reading (a captain hosting from a phone: a countdown first)
+  assert.equal(g.phase, 'reading');
+  clock.advance(T.openCountdown + 10);
   assert.equal(g.phase, 'open');
   g.buzz(ps[0].id);
   assert.equal(g.publicView().timer.totalMs, 10000);
@@ -342,7 +344,7 @@ test('with a host the buzzers never open by themselves, and there is no clock wh
   g.readDone(g.clue.ci, g.clue.ri);                        // the TV finished a picture or a voice: still the host's call
   clock.advance(5000);
   assert.equal(g.phase, 'reading');
-  g.openNow();
+  g.openNow(); clock.advance(T.openCountdown + 10);
   assert.equal(g.phase, 'open');
   // A Daily Double bet has no clock either.
   g.buzz(ps[0].id); g.act('judge', { correct: true }); rule(clock);
@@ -367,7 +369,7 @@ test('with a host the buzzers never open by themselves, and there is no clock wh
   assert.equal(v.hostJudges, true);
   assert.equal(v.me.isCaptain, true, 'the captain stands in');
   assert.throws(() => g.onPlayer(ps[1], { t: 'cap', action: 'openNow' }), GameError);
-  g.onPlayer(ps[0], { t: 'cap', action: 'openNow' });
+  g.onPlayer(ps[0], { t: 'cap', action: 'openNow' }); clock.advance(T.openCountdown + 10);
   assert.equal(g.phase, 'open');
   g.buzz(ps[1].id);
   assert.equal(g.phase, 'answering');
@@ -386,7 +388,7 @@ test('host mode answer clock runs out, then the host still has a few seconds to 
   const { g, ps, clock } = setup();
   g.setHostJudges(true);
   g.setAnswerTime(5);
-  begin(g); g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd)); g.openNow();
+  begin(g); g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd)); g.openNow(); clock.advance(T.openCountdown + 10);
   g.buzz(ps[0].id);
   clock.advance(5100);
   assert.equal(g.publicView().timer.leftMs, 0);
@@ -399,7 +401,7 @@ test('host mode answer clock runs out, then the host still has a few seconds to 
 test('with a host a wrong answer still shows the answer when nobody is left, and a Daily Double can be bet at $0', () => {
   const { g, ps, clock } = setup({ players: ['Ann'] });
   g.setHostJudges(true);
-  begin(g); g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd)); g.openNow();
+  begin(g); g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd)); g.openNow(); clock.advance(T.openCountdown + 10);
   g.buzz(ps[0].id);
   g.act('judge', { correct: false });
   rule(clock);
@@ -428,7 +430,7 @@ test('a host judging out loud with no host page: the captain is the host, with O
   const b = g.board(); const ri = b[0].clues.findIndex((c) => !c.dd);
   g.onPlayer(cap, { t: 'cap', action: 'pick', args: { ci: 0, ri } });
   assert.equal(g.phase, 'reading');
-  g.onPlayer(cap, { t: 'cap', action: 'openNow' });
+  g.onPlayer(cap, { t: 'cap', action: 'openNow' }); clock.advance(T.openCountdown + 10);
   assert.equal(g.phase, 'open');
   g.buzz(ps[1].id);
   assert.equal(g.phase, 'answering');
@@ -1416,7 +1418,7 @@ test('a spoken answer the host rules on has no typed words, and is not a time-ou
   room.hosts = 1;
   begin(g);
   g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd));
-  g.openNow(); g.buzz(ps[1].id); g.act('judge', { correct: false });
+  g.openNow(); clock.advance(T.openCountdown + 10); g.buzz(ps[1].id); g.act('judge', { correct: false });
   assert.equal(g.lastResult.answer, null);
   assert.equal(g.lastResult.timedOut, false);
   clock.advance(10);
@@ -1544,4 +1546,40 @@ test('flipping the last ruling does nothing once the game is over (a final score
   const before = ps.map((p) => p.score);
   g.override();
   assert.deepEqual(ps.map((p) => p.score), before);
+});
+
+test('a captain hosting from a phone: Open buzzers starts a 5 second countdown every phone is told, then they open together', () => {
+  const { room, g, ps, clock } = setup();
+  g.setHostJudges(true);
+  begin(g);
+  g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd));
+  assert.equal(g.phase, 'reading');
+  assert.equal(g.publicView().clue.liveAt, null, 'nothing opens by itself while the host reads');
+  assert.equal(g.publicView().timer, null);
+  g.onPlayer(ps[0], { t: 'cap', action: 'openNow' });
+  assert.equal(g.phase, 'reading', 'not yet: a countdown first');
+  let v = g.playerView(ps[1]);
+  assert.equal(v.timer.kind, 'reading');
+  assert.equal(v.timer.totalMs, T.openCountdown);
+  assert.equal(v.clue.liveAt, clock.now() + T.openCountdown, 'every phone is told when');
+  assert.match(g.publicView().guide.text, /Get ready/);
+  g.onPlayer(ps[0], { t: 'cap', action: 'openNow' });         // a second tap changes nothing
+  assert.equal(g.publicView().clue.liveAt, clock.now() + T.openCountdown);
+  // Buzzing before it ends is too early; after it, the buzzers are open.
+  assert.equal(g.buzz(ps[1].id).result, 'early');
+  clock.advance(T.openCountdown - 1000);
+  assert.equal(g.phase, 'reading');
+  clock.advance(1100);
+  assert.equal(g.phase, 'open');
+  assert.equal(g.publicView().clue.open, 1);
+  assert.equal(g.buzz(ps[2].id).result === 'early', false);
+});
+
+test('with a host page connected the buzzers open at once, and a restart forgets a countdown', () => {
+  const { room, g, ps, clock } = setup();
+  room.setHosts(1);
+  begin(g);
+  g.pick(0, g.board()[0].clues.findIndex((c) => !c.dd));
+  g.act('openNow');
+  assert.equal(g.phase, 'open', 'a host page opens the buzzers straight away');
 });

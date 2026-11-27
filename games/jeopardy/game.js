@@ -49,6 +49,7 @@ export const T = {
   finalAnswerShow: 5000, // final reveal: the correct answer, after everyone
   hostAnswer: 30000,    // host mode: Daily Double fallback for the host to judge a spoken answer
   hostGrace: 8000,      // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
+  openCountdown: 5000,  // the captain (hosting from a phone) opens the buzzers: they open this long after the tap, a time every phone is told
   captainGone: 15000,   // how long the captain may be away before someone else takes over
 };
 
@@ -812,7 +813,26 @@ export class JeopardyGame {
     const at = this.#now() + ms;
     this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
   }
-  openNow() { if (this.phase === 'reading') this.#openBuzzers(T.buzzWindow); }
+  /**
+   * The host opens the buzzers. A host page (or the TV's remote) opens them at once. A captain hosting from a phone starts a
+   * countdown instead: the buzzers open {openCountdown} from now, a moment every phone is told, so all of them turn gold
+   * together (a phone that is a little slow to hear about it has time to) and nobody is caught by surprise.
+   */
+  openNow() {
+    if (this.phase !== 'reading') return;
+    if (this.#countdownBeforeOpening()) {
+      if (this.#liveAt() != null) return;   // already counting down
+      const ms = T.openCountdown;
+      const at = this.#now() + ms;
+      this.clue.counting = true;
+      this.#setTimer(ms, () => this.#openBuzzers(T.buzzWindow, at), 'reading');
+      this.#changed();
+      return;
+    }
+    this.#openBuzzers(T.buzzWindow);
+  }
+  /** Hosting from the captain's phone (no host page connected): the buzzers open after a countdown. */
+  #countdownBeforeOpening() { return this.hostJudges() && !this.hosted(); }
   /** The TV reads clues out loud (never with a host, who reads them). */
   readsAloud() { return !!this.settings.readAloud && !this.hostJudges(); }
   setReadAloud(on) { this.#lobbyOnly(); this.settings.readAloud = !!on; this.#changed(); }
@@ -830,6 +850,7 @@ export class JeopardyGame {
   /** Opens the buzzers. `at` is when they were due to open (the timer may be checked a moment later). */
   #openBuzzers(window, at = this.#now()) {
     this.phase = 'open';
+    this.clue.counting = false;
     this.clue.buzzedId = null;
     this.collecting = null;
     // Each opening has a number: a press the phone sent for an earlier one (mashing through someone's answer) is too early.
@@ -844,7 +865,7 @@ export class JeopardyGame {
     const t = this.timer;
     if (!this.clue) return null;
     if (this.phase === 'open') return this.openedAt;
-    if (this.phase === 'reading' && t?.kind === 'reading' && !this.hostJudges()) return t.at;
+    if (this.phase === 'reading' && t?.kind === 'reading' && (!this.hostJudges() || this.clue.counting)) return t.at;
     if (this.phase === 'ruling' && t?.kind === 'ruling' && this.#reopens()) return t.at;
     return null;
   }
@@ -1517,7 +1538,7 @@ export class JeopardyGame {
   #timerView() {
     const t = this.timer;
     if (!t || !['buzz', 'answer', 'final', 'wager', 'reading', 'intro'].includes(t.kind)) return null;
-    if (t.kind === 'reading' && this.hostJudges()) return null;   // the host reads aloud at their own pace
+    if (t.kind === 'reading' && this.hostJudges() && !this.clue?.counting) return null;   // the host reads aloud at their own pace (until they start the countdown)
     const left = Math.max(0, Math.round(t.shownEnd - this.#now()));
     return { kind: t.kind, totalMs: t.totalMs, leftMs: left };
   }
@@ -1564,6 +1585,7 @@ export class JeopardyGame {
         return { pid: ctrl, text, next };
       }
       case 'reading':
+        if (c?.counting) return { pid: null, text: 'Get ready…', next: 'Buzzers open when the bar fills. Buzz too early and you’re locked out a moment' };
         return { pid: null, text: host ? `${judge === 'the host' ? 'The host' : judge} reads the clue out loud` : 'Read the clue', next: host ? `Buzzers open when ${judge} says go` : 'Buzzers open when the bar fills. Buzz too early and you’re locked out a moment' };
       case 'open':
         return { pid: null, text: 'Buzzers are open!', next: r && !r.correct ? `${name(r.pid)} missed it. Anyone else?` : 'First to buzz on their phone answers' };
@@ -1786,6 +1808,7 @@ export class JeopardyGame {
     this.final = data.final ?? null;
     this.lastResult = data.lastResult ?? null;
     this.clue = data.clue ?? null;
+    if (this.clue) this.clue.counting = false;   // a countdown to opening the buzzers does not survive a restart: the host opens them again
     this.stats = new Map(data.stats ?? []);
     this.timer = null;
     this.#refreshPacks();
