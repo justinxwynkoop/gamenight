@@ -245,8 +245,13 @@ test('people who are away do not hold the game up', () => {
   const s = setup(5);
   toTeam(s);
   s.room.connected.delete(s.ps[4].id);
+  s.wait(10);                                                        // the room notices the phone has gone
   pickTeam(s, [s.ps[0].id, s.ps[1].id]);
   for (const p of s.ps.slice(0, 4)) s.msg(p, { t: 'vote', approve: true });
+  assert.equal(s.g.phase, 'vote', 'a phone that blinks off is given a moment');
+  s.wait(T.awayGrace - 1000);
+  assert.equal(s.g.phase, 'vote');
+  s.wait(2000);
   assert.equal(s.g.phase, 'vote-result');
   assert.equal(s.g.votes[s.ps[4].id], false);                        // the absent player counts as a reject: 4 to 1 still passes
   assert.equal(s.g.approved, true);
@@ -255,11 +260,14 @@ test('people who are away do not hold the game up', () => {
 test('the host or TV can move a stuck stage along', () => {
   const s = setup(5);
   s.g.start();
+  s.wait(T.moveOnGuard + 1);
   s.g.act('advance');
   assert.equal(s.g.phase, 'team');
   pickTeam(s, s.ps.slice(0, 2).map((p) => p.id));
+  s.wait(T.moveOnGuard + 1);
   s.g.act('advance');
   assert.equal(s.g.phase, 'vote-result');
+  s.wait(T.moveOnGuard + 1);
   s.g.act('advance');
   assert.equal(s.g.phase, 'team');                                    // everyone was away: the team is rejected
 });
@@ -344,12 +352,14 @@ test('P1: skipping the leader by hand (host Move on, or the first player on thei
   const s = setup(5);
   toTeam(s);
   const first = s.g.leaderId;
+  s.wait(T.moveOnGuard + 1);
   s.g.act('advance');
   assert.equal(s.g.phase, 'team');
   assert.notEqual(s.g.leaderId, first);
   // No host page: the first player.
   const second = s.g.leaderId;
   assert.throws(() => s.msg(s.ps[1], { t: 'advance' }), /Only the host/);
+  s.wait(T.moveOnGuard + 1);
   s.msg(s.ps[0], { t: 'advance' });
   assert.notEqual(s.g.leaderId, second);
   assert.throws(() => s.msg(s.ps[1], { t: 'end-game' }), /Only the host/);
@@ -365,4 +375,53 @@ test('a whole room that is away (a restart) does not cycle the leaders', () => {
   for (const p of s.ps) s.room.connected.delete(p.id);
   s.wait(T.leaderAway * 3);
   assert.equal(s.g.leaderId, first);
+});
+
+test('P2: a double tap on Move on does not skip the screen that has just come up', () => {
+  const s = setup(5);
+  toTeam(s);
+  s.wait(T.moveOnGuard + 1);
+  pickTeam(s, s.ps.slice(0, 2).map((p) => p.id));
+  s.wait(T.moveOnGuard + 1);
+  s.g.act('advance');                                                // the vote is called early: everyone's vote is revealed
+  assert.equal(s.g.phase, 'vote-result');
+  s.g.act('advance');                                                // the second tap of a double tap: nothing
+  assert.equal(s.g.phase, 'vote-result');
+  s.wait(T.moveOnGuard + 1);
+  s.g.act('advance');                                                // a real one, after the result has been up a moment
+  assert.notEqual(s.g.phase, 'vote-result');
+});
+
+test('P2: a phone that is away for a moment keeps its say; one away for good is counted out', () => {
+  const s = setup(5);
+  toTeam(s);
+  pickTeam(s, s.ps.slice(0, 2).map((p) => p.id));
+  for (const p of s.ps.slice(0, 4)) s.msg(p, { t: 'vote', approve: true });
+  s.room.connected.delete(s.ps[4].id);
+  s.wait(3000);
+  s.room.connected.add(s.ps[4].id);                                  // back before the grace period ends
+  s.wait(T.awayGrace);
+  assert.equal(s.g.phase, 'vote', 'still waiting for them');
+  s.msg(s.ps[4], { t: 'vote', approve: false });
+  assert.equal(s.g.phase, 'vote-result');
+  assert.equal(s.g.votes[s.ps[4].id], false);
+});
+
+test('P2: someone who joins after the roles are dealt watches: not a voter, not in the counts', () => {
+  const s = setup(5);
+  toTeam(s);
+  s.room.setRoomSettings({ lateJoin: true });
+  const late = s.room.join({ name: 'Late' });
+  s.room.setConnected(late.id, true);
+  const v = s.view(s.ps[0]);
+  assert.equal(v.players.length, 5, 'only the dealt players');
+  assert.ok(!v.players.some((p) => p.id === late.id));
+  assert.equal(s.view(late).me.watching, true);
+  assert.equal(s.view(late).me.role, null);
+  pickTeam(s, s.ps.slice(0, 2).map((p) => p.id));
+  s.msg(late, { t: 'vote', approve: true });                         // does nothing
+  assert.equal(s.g.votedIds?.length ?? Object.keys(s.g.votes).length, 0);
+  everyoneVotes(s, true);
+  assert.equal(s.g.phase, 'vote-result', 'the late joiner is not waited for');
+  assert.ok(!(late.id in s.g.votes));
 });

@@ -461,6 +461,9 @@ struct JeoFinal: Decodable, Equatable {
     /// (the correct answer, after everyone).
     var stage: String?
     var answerShown: Bool?
+    /// A host turns each response over and rules on it by hand. Stages are then "hidden" (face down), "answer",
+    /// "verdict" and "done"; nobody hosting: the game reveals on a timer.
+    var manual: Bool?
     /// Everyone who plays the final, in reveal order (lowest score first).
     var order: [String]?
     var reveals: [JeoReveal]
@@ -474,6 +477,8 @@ struct JeoReveal: Decodable, Equatable, Identifiable {
     var wager: Int
     /// Their response is up but right or wrong is not shown yet.
     var pending: Bool?
+    /// Not turned over yet (the response is not even sent): the card is face down.
+    var hidden: Bool?
 }
 
 /// A countdown the engine is running: how long it started with and how long is left when the view was made.

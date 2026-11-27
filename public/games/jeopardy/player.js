@@ -506,7 +506,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
         h('div', { class: `jp-stamp ${r.correct ? 'good' : 'bad'}` }, r.correct ? 'RIGHT' : 'WRONG'),
         h('div', { class: 'jp-msg' }, r.wager ? (r.correct ? signed(r.wager) : `−${money(r.wager)}`) : 'You bet $0', ' · now ', minus(me().score))) };
     }
-    if (upNow) return { key: `fr-up-${f.revealIndex}`, nodes: center(eyebrow('YOU’RE UP'), h('div', { class: 'jp-logo' }, r?.answer ?? ''), h('div', { class: 'jp-muted' }, 'Right or wrong? Watch the TV…')) };
+    if (upNow) return { key: `fr-up-${f.revealIndex}`, nodes: center(eyebrow('YOU’RE UP'), h('div', { class: 'jp-logo' }, r?.hidden ? '…' : r?.answer ?? ''), h('div', { class: 'jp-muted' }, 'Right or wrong? Watch the TV…')) };
     const cur = player(f.order?.[f.revealIndex]);
     return { key: `fr-wait-${f.revealIndex}`, nodes: center(h('div', { class: 'jp-logo' }, 'THE REVEAL'), cur && h('div', { class: 'jp-msg' }, ['Now: ', named(cur)]), h('div', { class: 'jp-muted' }, 'Lowest score first. Watch the TV…')) };
   }
@@ -580,7 +580,14 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     if (ph === 'round-intro') items.push(['Skip intro', () => cap('advance'), 'ghost']);
     if (['reading', 'open', 'answering', 'dd-wager', 'dd-answer'].includes(ph)) items.push(['Skip clue', () => { if (confirm('Skip this clue? Nobody wins or loses money on it.')) cap('skip'); }, 'ghost']);
     if (v.lastResult && ['ruling', 'reveal', 'board'].includes(ph)) items.push(['Flip last ruling', () => cap('override'), 'ghost']);
-    if (['reveal', 'round-end', 'final-reveal'].includes(ph)) items.push(['Continue', () => cap('advance'), '']);
+    if (ph === 'final-reveal' && v.final?.manual && v.final.stage !== 'done') {
+      // The host (the captain, judging out loud) turns each response over and rules on it by hand.
+      const cur = me().finalCurrent;
+      if (cur && v.final.stage !== 'verdict') items.push([`${player(cur.id)?.name ?? 'Player'} wrote “${cur.answer}”, bet ${money(cur.wager)}`, () => {}, 'ghost wide']);
+      if (v.final.stage === 'hidden') items.push(['Turn over the response', () => cap('finalReveal'), '']);
+      else if (v.final.stage === 'answer') items.push(['✓ Right', () => cap('finalRule', { correct: true }), 'good judge'], ['✗ Wrong', () => cap('finalRule', { correct: false }), 'bad judge']);
+      else items.push(['Next', () => cap('advance'), '']);
+    } else if (['reveal', 'round-end', 'final-reveal'].includes(ph)) items.push(['Continue', () => cap('advance'), '']);
     if (['final-wager', 'final-answer'].includes(ph)) items.push(['Continue', carryOn, 'ghost']);
     if (ph === 'board') items.push(['End round early', () => { if (confirm('End this round now?')) cap('endRound'); }, 'ghost']);
     if (ph === 'gameover') items.push(['Play again', () => cap('playAgain'), '']);

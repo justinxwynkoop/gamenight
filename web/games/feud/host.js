@@ -167,9 +167,20 @@ function roundView() {
   if (tapOk) body.push(h('div', { class: 'note' }, icon('star', 16), h('span', {}, r.step === 'roundEnd' ? 'Tap an answer to turn it over on the TV, one at a time, as on the show. It is not scored.'
     : g.settings.typed ? 'Players type their answers. Tap one here only to correct the survey.' : 'Tap the answer they gave. It flips on the TV.')));
   if (r.step !== 'roundEnd') {
+    // The points on the board belong to nobody yet: say so, and offer to give them to the team that has the board.
+    const owner = r.control ? unit(r.control) : null;
+    const pot = (r.pot ?? 0) * (r.multiplier ?? 1);
     body.push(button({
       label: 'End the rounds early', kind: 'ghost', size: 'sm', block: true,
-      onclick: () => C.confirm({ title: 'End the rounds?', message: 'The game moves on to Fast Money (or the winner) now.', confirmLabel: 'End the rounds', kind: 'primary', onConfirm: () => act('endRounds') }),
+      onclick: () => C.openSheet({
+        title: 'End the rounds?',
+        build: () => [
+          h('p', { class: 'dim' }, pot > 0 ? `The game moves on to Fast Money (or the winner) now. The ${pot} points on the board have not been won by anyone yet.` : 'The game moves on to Fast Money (or the winner) now.'),
+          h('div', { class: 'dock-row' },
+            button({ label: 'Cancel', onclick: () => C.closeSheet() }),
+            button({ label: pot > 0 ? 'End, no points' : 'End the rounds', kind: pot > 0 ? 'ghost' : 'primary', onclick: () => { C.closeSheet(); act('endRounds'); } })),
+          pot > 0 && owner ? button({ label: `End and give ${pot} points to ${owner.name}`, kind: 'primary', block: true, onclick: () => { C.closeSheet(); act('endRounds', { bank: true }); } }) : null],
+      }),
     }));
   }
   return { body, dock: roundDock(r) };

@@ -53,6 +53,20 @@ enum JeoRemote {
             let title = game.round >= game.rounds ? "Start Final Jeopardy" : "Start round \(game.round + 1)"
             return [Item(id: "round", title: title, action: "advance", icon: "play.fill")]
         case .finalReveal:
+            // By hand (a host is running the game): turn the response over, rule on it, then move on.
+            if let final = game.finalRound, final.manual == true, final.stage != "done" {
+                switch final.stage {
+                case "hidden":
+                    return [Item(id: "turn", title: "Turn over the response", action: "finalReveal", icon: "rectangle.on.rectangle")]
+                case "answer":
+                    return [
+                        Item(id: "right", title: "Right", action: "finalRule", args: ["correct": true], icon: "checkmark", look: .good),
+                        Item(id: "wrong", title: "Wrong", action: "finalRule", args: ["correct": false], icon: "xmark", look: .bad),
+                    ]
+                default:
+                    return [Item(id: "reveal", title: "Next", action: "advance", icon: "forward.fill")]
+                }
+            }
             return [Item(id: "reveal", title: "Next", action: "advance", icon: "forward.fill")]
         case .gameover:
             return [Item(id: "again", title: "Play again", action: "playAgain", icon: "arrow.counterclockwise")]
@@ -338,8 +352,8 @@ struct JeoGameMenu: View {
                 if item.confirm != nil { page = .confirm(item.id) } else { act(item.action, item.args); onClose() }
             }
         }
-        if !game.players.isEmpty && !game.hostJudges {   // with a host there is no captain
-            row("captain", "Change the captain", detail: captain.map { "\u{2605} \($0.name)" }, icon: "star.fill") { page = .captain }
+        if !game.players.isEmpty && game.hosted != true {   // with a host page connected there is no captain
+            row("captain", game.hostJudges ? "Change the host" : "Change the captain", detail: captain.map { "\u{2605} \($0.name)" }, icon: "star.fill") { page = .captain }
         }
         Divider().overlay(BW.line).padding(.vertical, 6)
         if let onNewRoom {
@@ -353,9 +367,9 @@ struct JeoGameMenu: View {
 
     @ViewBuilder private var captainPage: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Who\u{2019}s the captain?").font(BW.title(40))
+            Text(game.hostJudges ? "Who\u{2019}s the host?" : "Who\u{2019}s the captain?").font(BW.title(40))
             Text(game.hostJudges
-                 ? "The captain can set things up and press Continue from their phone."
+                 ? "The host sets things up, runs the game and rules on answers from their phone."
                  : "The captain picks the packs, starts the game and presses Continue from their phone.")
                 .font(BW.body(22, .semibold)).foregroundColor(BW.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -421,6 +435,10 @@ struct JeoGameMenu: View {
 struct JeoPlayerSheet: View {
     let player: JeoPlayer
     let isCaptain: Bool
+    /// A host page is connected: there is no captain to choose.
+    var hosted = false
+    /// A host judges out loud from a phone: that player is the host, not a captain.
+    var hostJudges = false
     let act: JeoAct
     let onClose: () -> Void
     @FocusState private var focus: String?
@@ -432,12 +450,13 @@ struct JeoPlayerSheet: View {
             VStack(spacing: 30) {
                 BWAvatar(name: player.name, color: color, size: 140)
                 Text(player.name).font(BW.display(72)).foregroundColor(color)
-                Text(isCaptain ? "\u{2605} Captain. They can start the game and press Continue from their phone."
+                Text(isCaptain ? (hostJudges ? "\u{2605} Host. They run the game and rule on answers from their phone."
+                                                : "\u{2605} Captain. They can start the game and press Continue from their phone.")
                                : player.connected ? "Ready to play" : "Reconnecting\u{2026}")
                     .font(BW.body(28, .semibold)).foregroundColor(BW.muted)
                 VStack(spacing: 16) {
-                    if !isCaptain {
-                        button("captain", "Make \(player.name) captain", icon: "star.fill", fill: BW.gold, text: BW.ink) {
+                    if !isCaptain && !hosted {
+                        button("captain", "Make \(player.name) \(hostJudges ? "the host" : "captain")", icon: "star.fill", fill: BW.gold, text: BW.ink) {
                             act("setCaptain", ["pid": player.id]); onClose()
                         }
                     }
@@ -456,7 +475,7 @@ struct JeoPlayerSheet: View {
         }
         .foregroundColor(BW.text)
         .onAppear {
-            let target = isCaptain ? "cancel" : "captain"
+            let target = (isCaptain || hosted) ? "cancel" : "captain"
             focus = target
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { if focus == nil { focus = target } }
         }

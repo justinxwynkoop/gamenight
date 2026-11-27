@@ -1104,3 +1104,41 @@ test('P1: a Fast Money phone that reloads gets its saved answers back (and only 
   assert.equal(room.playerView(m[1].id).game.fm.mine, undefined, 'not Player 2');
   assert.equal(room.playerView(ps.find((p) => p.teamId !== red.id).id).game.fm.mine, undefined);
 });
+
+test('P2: a typed guess matches whole words only (no "ant" in "restaurant"), and plurals still match', () => {
+  const answers = [{ text: 'Ant', points: 30, aliases: [] }, { text: 'Fly', points: 20, aliases: [] }, { text: 'Fried chicken', points: 10, aliases: [] }, { text: 'Cookie', points: 5, aliases: [] }, { text: 'Not tired', points: 3, aliases: [] }, { text: 'Horse', points: 2, aliases: [] }];
+  for (const wrong of ['elephant', 'restaurant', 'santa claus', 'butterfly', 'kitchen', 'red', 'weather']) assert.equal(matchAnswer(answers, wrong), -1, wrong);
+  assert.equal(matchAnswer(answers, 'ant'), 0);
+  assert.equal(matchAnswer(answers, 'Ants'), 0);
+  assert.equal(matchAnswer(answers, 'chicken'), 2, 'a whole word of a longer answer');
+  assert.equal(matchAnswer(answers, 'fried chicken please'), 2);
+  assert.equal(matchAnswer(answers, 'cookies'), 3);
+  assert.equal(matchAnswer(answers, 'horses'), 5);
+  assert.equal(matchAnswer(answers, 'not tired'), 4);
+});
+
+test('P2: ending the rounds early says what happens to the pot, and can give it to the team with the board', () => {
+  const { g, red, blue } = setup();
+  startAndWinFaceoff(g, red, true);
+  g.answer(1);                                           // a second answer is up: points on the board, not yet anyone's
+  const pot = g.pot() * g.multiplier();
+  assert.ok(pot > 0);
+  const before = { red: red.score, blue: blue.score };
+  const { g: g2, red: red2, blue: blue2 } = setup();
+  startAndWinFaceoff(g2, red2, true);
+  g2.answer(1);
+  g2.finishRounds();                                     // no points for anybody
+  assert.equal(red2.score + blue2.score, 0);
+  g.finishRounds(true);                                  // banked for the team with the board
+  assert.equal(red.score, before.red + pot);
+  assert.equal(blue.score, before.blue);
+});
+
+test('P2: once Feud has started nobody changes teams (a face-off seat or a Fast Money turn would go to the wrong person)', () => {
+  const { room, g, ps, red, blue } = setup();
+  room.setPlayerTeam(ps[0].id, blue.id);                     // the lobby: fine
+  room.setPlayerTeam(ps[0].id, red.id);
+  g.startGame();
+  assert.throws(() => room.setPlayerTeam(ps[0].id, blue.id), /change teams once the game has started/);
+  assert.throws(() => room.act('setPlayerTeam', { playerId: ps[0].id, teamId: blue.id }), /change teams/);
+});

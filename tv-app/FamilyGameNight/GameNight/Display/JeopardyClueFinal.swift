@@ -813,7 +813,7 @@ struct JeoFinalReveal: View {
             if final.stage == "done" || order.isEmpty {
                 correctResponse(final).id("final-done")
             } else if let reveal = final.reveals.last {
-                JeoFinalPlayer(game: game, reveal: reveal).id("final-\(reveal.id)")
+                JeoFinalPlayer(game: game, reveal: reveal).id("final-\(reveal.id)-\(reveal.hidden == true)")
             }
         }
     }
@@ -859,15 +859,16 @@ struct JeoFinalPlayer: View {
         let color = player.map { Color(playerHex: $0.color) } ?? BW.gold
         let name = player?.name ?? "Someone"
         let verdict = reveal.pending != true
-        let said = reveal.answer.isEmpty || reveal.answer == "(no answer)" ? "(nothing)" : reveal.answer
-        let steps = [("Their answer", true), ("Right or wrong", verdict), ("The wager", verdict)]
+        let covered = reveal.hidden == true
+        let said = covered ? "?" : reveal.answer.isEmpty || reveal.answer == "(no answer)" ? "(nothing)" : reveal.answer
+        let steps = [("Their answer", !covered), ("Right or wrong", verdict), ("The wager", verdict)]
         VStack(spacing: 24) {
             HStack(spacing: 22) {
                 BWAvatar(name: name, color: color, size: 110)
                 Text(name.uppercased()).font(BW.display(84)).foregroundColor(color).lineLimit(1).minimumScaleFactor(0.5)
             }
             .bwRise()
-            Text("wrote").font(BW.body(32, .semibold)).foregroundColor(BW.soft)
+            Text(covered ? "is ready to reveal\u{2026}" : "wrote").font(BW.body(32, .semibold)).foregroundColor(BW.soft)
             Text(said)
                 .font(BW.display(92))
                 .multilineTextAlignment(.center)

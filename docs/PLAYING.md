@@ -17,7 +17,7 @@ Jeopardy is played by **individuals, up to ten**, with every phone as a buzzer. 
 Siri Remote can do everything the players can (pick a clue, start, continue), so a game can start with nobody
 touching the host page. The first player to join is the **captain**, unless someone is hosting: with a host page
 connected there is **no captain** (in Jeopardy and in Family Feud alike), and the topics are the host's to choose on the host page. The TV lobby
-then shows only who has joined. With **A host judges out loud** on and no host page, the captain is the host: their
+then shows only who has joined. With **A host judges out loud** on and no host page, the first player is the host (not a captain): their
 phone gets **Open buzzers**, **Correct** and **Wrong** (and can peek at the answer), and taps the clue the player in control
 says.
 
@@ -55,7 +55,11 @@ says.
    (see Fair buzzing below). A press before the buzzers open locks that player out for a quarter second (the buzzer screen warns about it while you wait). Everyone
    who pressed is timed, and the times are shown after the clue.
 4. **Answer.** The winner has **15 seconds** to **type** the answer on their phone. The game checks it, forgiving case,
-   articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. **Right** scores and
+   articles ("the"), punctuation and small typos, and any "also accept" words on your own clues. It is strict where a slip makes
+   a different word: words of four letters or fewer must be exact (plurals aside), five letters may have a letter too many or
+   too few, six and seven may also have two neighbouring letters swapped, longer words one slip, and long ones two. So
+   "Pars" is Paris, but "Athena" is not Athens and "South America" is not "South Africa". Two guesses in one ("London Paris")
+   are never right. **Right** scores and
    gives that player control, and the game goes straight back to the board, as on the show (no answer screen; the score
    count-up carries on in the podiums along the bottom). With a host, the answer is said out loud and the host taps
    Correct or Wrong. **Wrong** (or no answer) deducts the value and opens the buzzers again, for 6 seconds,
@@ -63,10 +67,17 @@ says.
 5. **Daily Doubles.** The clue stays hidden until the player in control wagers on their phone (with a host, they tell the
    host, who types it in). The wager is from **$0** up to their
    score or the round's top value, whichever is higher: quick buttons for $0, half and all in, and a box to type any amount.
-6. **Final Jeopardy.** Players with a positive score wager. **The clue is never shown by the last wager coming in:** when
-   everyone is locked in the host (or the captain, or the TV remote's **Show the clue** button) starts it. (If the 60-second
-   wager clock runs out first, whoever has not bet bets nothing, and it still waits to be started.) Then everyone types an
-   answer in 35 seconds. The answers are shown one at a time on the TV, lowest score first.
+6. **Final Jeopardy.** Everyone plays by default and may bet up to $1,000 (or their score, if more); switch on **Only players
+   with money play** and only players with a positive score wager. **The clue is never shown by the last wager coming in:**
+   when everyone is locked in the host (or the captain, or the TV remote's **Show the clue** button) starts it. (If the
+   60-second wager clock runs out first, whoever has not bet bets nothing, and it still waits to be started.) Then everyone
+   types an answer in 35 seconds, and the answers are shown one at a time on the TV, lowest score first.
+   **With a host** (a host page, or a host judging out loud) the host turns each answer over **by hand**: the TV shows the
+   player's name and a blank card; the host taps **Turn over the response**, says what they wrote and whether it is right,
+   and taps **Right** or **Wrong**: only then do the wager and the new score appear. (The host page shows the host what each
+   player wrote, what they bet and what the game thinks before it is turned over; on the Apple TV the remote's bar has the
+   same buttons, and on the website's TV N, C and W do the same.) **Without a host** the game turns the answers over on a
+   timer and checks them itself.
 7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).
    **Play again** deals new categories.
 
@@ -78,7 +89,8 @@ Also: streaks (**on fire** after three right in a row), emoji reactions that flo
 round, fix any score, remove a player (before the game), play again, or hand the captain to someone else. If the
 captain stays away, someone else takes over. **Changing the captain:** on the Apple TV, select a player's seat in the
 lobby, or open the game menu (Play/Pause) at any time and pick **Change the captain**; on the website's TV, click a
-seat in the lobby; on the host page, **Make captain** in the Players tab.
+seat in the lobby. (With a host page connected there is no captain and none of this shows. With **A host judges out loud**
+that player is called the host, not the captain.)
 
 **What's going on:** a strip along the bottom of the TV says whose moment it is and what happens next (whose pick and
 why, who buzzed, who has to press Continue). On the Apple TV the remote always lands on the one button that moves the
@@ -106,7 +118,7 @@ is tucked away at the bottom of Settings behind a confirmation.
 ## Family Feud
 
 Pick **Family Feud** in the game picker. It is always **two teams** (Red and Blue); players are
-dealt onto them at random and the host can move anyone.
+dealt onto them at random and the host can move anyone **before the game starts** (nobody changes teams once it is under way).
 
 1. **Setup.** Choose a question set, the winning score (200 to 500) and whether to play Fast Money.
 2. **Face-off.** One player from each team steps up (a different player each round; the host can
@@ -135,6 +147,10 @@ dealt onto them at random and the host can move anyone.
    face-off is played (a new question) and the winning answer is worth **five times** its points, or **ten times**
    when five is not enough to get there; a team that still hasn't made it after that plays another, until
    somebody does. Switch it off under Settings → Rules and the game ends after the last round as before.
+   **End the rounds early** (host page, mid-round) asks first and says how many points are on the board: ending gives them to
+   nobody, or **End and give the points** hands them to the team that has the board.
+   **Typed answers** (no host) are matched on whole words: "chicken" matches "Fried chicken", but "ant" is not found inside
+   "restaurant"; plurals match ("cookies" for "cookie").
    **The team ahead then has won the game**, and the TV crowns them before anything else.
    Fast Money is their **bonus round**, played for the jackpot: it cannot change who won (the host or
    the captain can also skip it). Only a **tie** leaves the winner open, and then Fast Money is the
@@ -213,10 +229,13 @@ went on that mission. When the game ends, each name also shows whether they play
 game is over.
 
 **Who starts it.** With a host page open, the host presses **Deal the roles**. Without one, the first player to join
-does, from their phone. Anyone who goes away does not hold things up: their vote counts as Reject, and their mission
-card as Success. A leader who stays away for about 25 seconds loses the pick: the next player leads (that is not a
+does, from their phone. A phone that goes away does not hold things up for long: after about 12 seconds its vote counts as
+Reject and its mission card as Success (a phone that comes back sooner keeps its say; and while nobody at all is connected
+nothing is counted). Someone who joins after the roles are dealt (when the host lets people in) watches that game and is
+dealt in the next one. A leader who stays away for about 25 seconds loses the pick: the next player leads (that is not a
 rejected team). The host (or, with no host, the first player, from their phone) can also **Move on without waiting**,
-**Skip the leader** at once, or end the game. Nobody can be removed once the roles are dealt. Past votes are public, so the
+**Skip the leader** at once, or end the game. (A second tap on **Move on** straight after the first is ignored, and the host
+is asked first when it would count someone's missing vote or card.) Nobody can be removed once the roles are dealt. Past votes are public, so the
 phones keep a "Who voted for what" list to argue over. When the game ends everyone's role is shown.
 
 ## Pie Chase
@@ -324,6 +343,10 @@ and you draw one of theirs (wild cards help the side they belong to: move ahead,
 sit out a turn). Once a game, a team that ends its turn on the other team's pawn takes it prisoner, while the other
 team still has a pawn waiting; the prisoner is freed back to START when their other pawn gets across. The first team
 with every pawn across wins. There are no challenges in the race.
+
+**Sides are fixed.** Players choose the Guys or the Gals in the lobby (nothing shuffles them) and nobody changes sides once the game
+has started, so the reader of a card can never be moved over to the side that is answering it. If the reader's phone goes away,
+their teammates do **not** get the answer: anyone still here can skip the card.
 
 **Reactions.** Once the game is under way, the phones have a row of emoji. They float up the sender's side of the TV.
 

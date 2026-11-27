@@ -335,8 +335,19 @@ export class GuysVsGalsGame {
       const options = ['facts', 'stuff', 'pics', 'lives'].filter((d) => piles[d].length);
       want = options[Math.floor(this.room.rng() * options.length)] ?? 'facts';
     }
+    // A small deck (the Grown-Ups set has only 15 or 13 Our Pics) must not come round again while the big ones still have cards
+    // nobody has seen: when this deck has run out of unseen cards, a spoken deck that has some is dealt instead.
+    if (['pics', 'stuff'].includes(want) && piles[want]?.length && !this.#unseen(want, piles[want])) {
+      const other = ['facts', 'stuff', 'pics'].find((d) => d !== want && piles[d]?.length && this.#unseen(d, piles[d]));
+      if (other) return other;
+    }
     for (const d of [want, 'facts', 'stuff']) if (piles[d]?.length) return d;
     return 'facts';
+  }
+  /** True when this deck has a card the room has not seen yet. */
+  #unseen(deckName, pool) {
+    const seen = new Set((this.room.memory.load(GAME) ?? {}).seen ?? []);
+    return pool.some((x) => !seen.has(cardKey(deckName, x)));
   }
 
   // ---------- the path ----------
@@ -447,7 +458,9 @@ export class GuysVsGalsGame {
     const c = this.card;
     if (!c) return [];
     if (c.reader && this.room.connected.has(c.reader)) return [c.reader];
-    return this.#members(c.challenged ? this.turn : c.about).map((p) => p.id);
+    // The reader is away: on a challenge the challengers (who never saw the answer) judge; otherwise nobody does, because the
+    // reader's teammates must not see the answer before a challenge. Anyone here can skip the card (see #stuck).
+    return c.challenged ? this.#members(this.turn).map((p) => p.id) : [];
   }
   #judgeSide() { return this.card?.challenged && !this.room.connected.has(this.card.reader) ? this.turn : this.card?.about; }
   #mayJudge(by) { return by === 'host' || (!!by?.id && this.#judges().includes(by.id)); }
@@ -1128,7 +1141,7 @@ export class GuysVsGalsGame {
         me.canGuess = this.#guessers().includes(player.id);
         if (player.id in c.votes) me.vote = c.votes[player.id];
         // Only the reader knows what they picked, so a challenge can throw it back at their own team.
-        if (me.reader || (side === reading && !this.room.connected.has(c.reader) && !c.challenged)) me.secret = c.secret;
+        if (me.reader) me.secret = c.secret;
       }
       if (c.stage === 'pick') {
         me.canPickActor = side === reading;

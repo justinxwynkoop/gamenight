@@ -243,6 +243,11 @@
 .bw .splash .title { font-size: 110px; animation: bw-zoom .5s ease backwards; }
 .bw .standings { display: flex; flex-direction: column; gap: 14px; min-width: 1000px; }
 .bw .standings .row { flex-wrap: nowrap; display: flex; align-items: center; gap: 22px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--panel)) var(--w), var(--panel) var(--w)); padding: 14px 36px 14px 20px; border-radius: 24px; font-size: 34px; font-weight: 600; border-left: 6px solid var(--c); animation: bw-rise .4s ease backwards; animation-delay: calc(var(--i) * 120ms + 300ms); }
+.bw .standings.two { display: grid; grid-template-columns: repeat(2, 780px); gap: 14px 16px; min-width: 0; }
+.bw .standings.two .row { padding: 10px 28px 10px 16px; font-size: 32px; min-width: 0; }
+.bw .standings.tight { gap: 10px 16px; }
+.bw .standings.tight .row { padding: 6px 24px 6px 14px; font-size: 28px; }
+.bw .standings .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bw .standings .rank { color: var(--muted); font-family: var(--display); font-weight: 700; width: 40px; }
 .bw .standings .row b { font-family: var(--display); font-weight: 900; margin-left: auto; }
 .bw .standings .row b.neg { color: var(--bad); }
@@ -261,6 +266,7 @@
 .bw .freveal .response { position: relative; width: 1180px; padding: 46px 60px; border-radius: 40px; font-family: var(--display); font-weight: 900; font-size: 92px; line-height: 1.05; overflow-wrap: anywhere;
   background: radial-gradient(120% 90% at 50% 40%, var(--blue-hi) 0%, var(--blue) 45%, var(--blue-lo) 100%); box-shadow: 0 30px 80px rgba(0, 0, 0, .45); animation: bw-flipin .6s ease .3s backwards; }
 @keyframes bw-flipin { from { transform: rotateX(90deg); opacity: 0; } }
+.bw .freveal .response.covered { opacity: .55; text-align: center; }
 .bw .freveal .response .stamp { position: absolute; right: -30px; top: -34px; font-size: 40px; transform: rotate(4deg); }
 .bw .freveal .money { display: flex; align-items: center; gap: 40px; margin-top: 10px; text-align: left; transition: opacity .4s; }
 .bw .freveal .money.wait { opacity: .35; }

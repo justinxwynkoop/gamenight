@@ -238,6 +238,22 @@ function finalView() {
     const got = s.finalAnswers ?? {};
     body.push(card(eyebrow(`Final Jeopardy · ${f.category}`), h('div', { class: 'card-title' }, f.q), aboutNote(f.about), clockPill(), answerBox(s.finalAnswer),
       h('div', { class: 'list' }, f.eligible.map((id) => h('div', { class: 'rowi' }, h('div', { class: 'grow t' }, nameOf(id)), h('span', { class: 's' }, id in got ? `🔒 ${got[id] || '(blank)'}` : 'typing…'))))));
+  } else if (ph === 'final-reveal' && f.manual) {
+    // By hand: turn the response over, say right or wrong, then the wager and score show on the TV.
+    const cur = s.finalCurrent;
+    const gone = f.reveals.filter((r) => !(cur && r.id === cur.id && f.stage !== 'verdict'));
+    if (cur) {
+      body.push(card(eyebrow(`Final Jeopardy · ${cur.index + 1} of ${cur.of}`), h('div', { class: 'card-title' }, nameOf(cur.id)),
+        h('p', {}, h('span', { class: 'dim' }, 'Wrote: '), h('b', {}, cur.answer)),
+        h('p', {}, h('span', { class: 'dim' }, 'Bet: '), h('b', {}, money(cur.wager)), h('span', { class: 'dim' }, ` · the game thinks it is ${cur.suggested ? 'right' : 'wrong'}`)),
+        answerBox(s.finalAnswer),
+        h('p', { class: 'dim' }, f.stage === 'hidden' ? 'The TV shows their name and a blank card. Turn it over when you are ready.'
+          : f.stage === 'answer' ? 'Their response is on the TV. Say whether it was right or wrong: the bet and new score show then.' : 'Their bet and new score are on the TV.')));
+    }
+    if (gone.length) {
+      body.push(card(eyebrow('Done so far'), h('div', { class: 'list' }, gone.map((r) => h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, nameOf(r.id)), h('div', { class: 's' }, `“${r.answer}” · bet ${money(r.wager)}`)),
+        pill(r.correct ? 'right' : 'wrong', r.correct ? 'ok' : 'bad'), button({ label: 'Flip', size: 'sm', onclick: () => act('finalOverride', { pid: r.id }) }))))));
+    }
   } else {
     body.push(card(eyebrow('Final Jeopardy results'), h('p', { class: 'dim' }, `The answer: ${f.answer ?? s.finalAnswer}. Typed answers are checked automatically. Flip one if it was judged wrong.`),
       h('div', { class: 'list' }, f.reveals.map((r) => h('div', { class: 'rowi' }, h('div', { class: 'grow' }, h('div', { class: 't' }, nameOf(r.id)), h('div', { class: 's' }, `“${r.answer}” · bet ${money(r.wager)}`)),
@@ -253,7 +269,11 @@ function finalView() {
       button({ label: waiting.length ? `${f.wagered.length} of ${f.eligible.length} locked in` : 'Everyone is locked in. Show the clue', icon: 'tv', kind: 'ok', size: 'lg', block: true, disabled: waiting.length > 0, onclick: () => act('advance') }));
   }
   if (ph === 'final-answer') dock.push(button({ label: 'Time’s up. Reveal the answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: early(f.answered.length < f.eligible.length, 'Reveal now?', 'Not everyone has locked in an answer. Anything they typed still counts.', 'Reveal') }));
-  if (ph === 'final-reveal') dock.push(button({ label: 'Next reveal', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+  if (ph === 'final-reveal' && f.manual) {
+    if (f.stage === 'hidden') dock.push(button({ label: 'Turn over the response', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('finalReveal') }));
+    else if (f.stage === 'answer') dock.push(dockRow(button({ label: 'Right', icon: 'check', kind: 'ok', size: 'lg', onclick: () => act('finalRule', { correct: true }) }), button({ label: 'Wrong', icon: 'x', kind: 'bad', size: 'lg', onclick: () => act('finalRule', { correct: false }) })));
+    else dock.push(button({ label: f.stage === 'done' ? 'Crown the champion' : f.revealIndex + 1 < f.order.length ? 'Next player' : 'Show the correct response', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+  } else if (ph === 'final-reveal') dock.push(button({ label: 'Next reveal', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
   return { body, dock: dock.filter(Boolean) };
 }
 

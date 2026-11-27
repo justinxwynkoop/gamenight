@@ -164,8 +164,22 @@ export function mount(container, { send }) {
     const inTurn = !['roles'].includes(v.phase);
     return h('div', { class: 'sn-card' },
       h('p', { class: 'dim' }, 'You started the game, so you can get it going again if someone has gone quiet.'),
-      inTurn && btn(v.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', 'ghost', () => send({ t: 'advance' })),
+      inTurn && btn(v.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', 'ghost', () => {
+        // A vote or a mission is waiting for someone: a missing vote counts as Reject, a missing card as Success.
+        const waiting = v.phase === 'vote' ? v.players.filter((p) => !v.votedIds.includes(p.id)) : v.phase === 'mission' ? v.team.filter((id) => !v.playedIds.includes(id)).map((id) => nameOf(v, id)) : [];
+        const names = waiting.map((w) => w.name ?? w);
+        if (names.length && !confirm(`${names.join(', ')} ${names.length === 1 ? 'has' : 'have'} not ${v.phase === 'vote' ? 'voted (a missing vote counts as Reject)' : 'played a card (a missing card counts as Success)'}. Move on anyway?`)) return;
+        send({ t: 'advance' });
+      }),
       btn(confirmEnd ? 'Tap again to end the game for everyone' : 'End the game', 'ghost', () => { if (confirmEnd) { confirmEnd = false; send({ t: 'end-game' }); } else { confirmEnd = true; refresh(); } }));
+  }
+
+  /** Joined after the roles were dealt: not in this game, watching it, and dealt in the next one. */
+  function watching(v) {
+    return [header(v), h('div', { class: 'sn-card' },
+      h('h2', {}, 'You are watching this one'),
+      h('p', {}, 'The roles were dealt before you joined. You will be dealt in the next game.'),
+      h('p', { class: 'dim' }, v.line?.text ?? ''))];
   }
 
   function history(v) {
@@ -181,9 +195,9 @@ export function mount(container, { send }) {
     const v = view?.game;
     if (!v || !view.room?.me) return;
     if (v.phase !== lastPhase) { confirmEnd = false; if (lastPhase === 'lobby' || v.phase === 'lobby') showRole = false; lastPhase = v.phase; }
-    const body = {
+    const body = (v.me?.watching ? watching : {
       lobby, roles, team, vote, 'vote-result': voteResult, mission, 'mission-result': missionResult, gameover,
-    }[v.phase]?.(v) ?? h('p', {}, 'Waiting…');
+    }[v.phase])?.(v) ?? h('p', {}, 'Waiting…');
     const me = v.me;
     const showPeek = me?.role && !['lobby', 'roles', 'gameover'].includes(v.phase);
     setKids(container, h('div', { class: 'sn' }, body, starterTools(v), v.phase !== 'lobby' && v.phase !== 'roles' && history(v), v.phase === 'lobby' ? null : rules()),
