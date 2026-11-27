@@ -2,6 +2,7 @@
 // who is on the team, who has voted (and, once everyone has, how), never a role and never a card.
 import { h, ink } from '../../common.js';
 import { loadStyles, nameOf, track, rejectsLine } from './shared.js';
+import { celebrate } from '../../fireworks.js';
 
 const seat = (p, v, cls = '', tick = '') => h('div', { class: `sn-seat ${cls} ${p.connected ? '' : 'off'}`, style: {} },
   h('span', { class: 'sn-dot', style: { background: p.color, width: '3vmin', height: '3vmin' } }), p.name, tick && h('span', { class: 'tick' }, tick));
@@ -30,6 +31,8 @@ export function render(v, ctx) {
   loadStyles();
   const g = v.game;
   if (ctx?.sound) playMusic(g, ctx.sound);   // a TV page opened in the middle of a game starts the music too
+  celebrate(g.phase === 'gameover' ? `sn-${g.winner}` : null,
+    g.winner === 'spies' ? ['#ff4d5e', '#ffd24a', '#ffffff'] : ['#38d6c4', '#ffd24a', '#ffffff']);
   const id = g.leaderId;
   let stage;
   switch (g.phase) {

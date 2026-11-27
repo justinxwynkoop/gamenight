@@ -113,6 +113,8 @@ struct ScoreRow: View {
             Text(Money.format(unit.score))
                 .font(JP.display(compact ? 34 : 42))
                 .monospacedDigit()
+                .contentTransition(.numericText(value: Double(unit.score)))
+                .animation(.snappy(duration: 0.6), value: unit.score)
                 .foregroundStyle(unit.score < 0 ? JP.pink : Color.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

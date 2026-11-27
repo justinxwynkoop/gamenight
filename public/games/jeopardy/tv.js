@@ -9,6 +9,7 @@
 // page runs the game itself) the TV also has its own controls: buttons in the corner, keyboard shortcuts and clickable
 // tiles and packs.
 import { h, money } from '../../common.js';
+import { celebrate } from '../../fireworks.js';
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Outfit:wght@400;600;800&display=swap';
 function loadStyles() {
@@ -397,7 +398,8 @@ function showReactions() {
 }
 function confetti(on) {
   const old = document.querySelector('.bw-confetti');
-  if (!on) { old?.remove(); return; }
+  if (!on) { old?.remove(); celebrate(null); return; }
+  celebrate('jp-champion', [byScore()[0]?.color ?? CONFETTI[0], '#FFC940', ...CONFETTI]);
   if (old) return;
   document.body.append(h('div', { class: 'bw-confetti' }, Array.from({ length: 90 }, (_, i) => h('i', {
     style: { left: `${Math.random() * 100}vw`, background: i % 7 === 0 ? (byScore()[0]?.color ?? CONFETTI[0]) : CONFETTI[i % CONFETTI.length], animationDuration: `${3 + Math.random() * 4}s`, animationDelay: `${-Math.random() * 6}s` },

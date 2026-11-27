@@ -32,6 +32,11 @@ struct RoundView: View {
                 stage
             }
             if let claim = controller.phones?.announcement {
+                if claim.ok {
+                    CelebrationBurst(colors: [claim.color.map { Color(playerHex: $0) } ?? .pink, .yellow, .white], kind: .moment)
+                        .id(claim.n)
+                        .transition(.opacity)
+                }
                 SingoClaimBanner(claim: claim)
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
             }

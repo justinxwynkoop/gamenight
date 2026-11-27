@@ -930,9 +930,10 @@ struct JeoFinalPlayer: View {
 /// Falling paper for the champion screen, now and then in the champion's colour.
 struct JeoConfetti: View {
     var champion: Color?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: nil, paused: reduceMotion)) { context in
             Canvas { graphics, size in
                 let time = context.date.timeIntervalSinceReferenceDate
                 for index in 0..<90 {

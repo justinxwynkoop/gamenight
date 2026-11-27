@@ -546,6 +546,9 @@ struct FeudPodium: View {
             Text("\(unit.score)")
                 .font(FD.show(92))
                 .monospacedDigit()
+                // The bank's points roll into the team's total.
+                .contentTransition(.numericText(value: Double(unit.score)))
+                .animation(.snappy(duration: 0.8), value: unit.score)
                 .foregroundStyle(FD.gold)
                 .shadow(color: FD.gold.opacity(0.75), radius: 14)
                 .frame(minWidth: 320)
@@ -1359,6 +1362,7 @@ struct FeudWinnerScreen: View {
         }
 
         ZStack {
+            CelebrationBurst(colors: [champion.map { Color(playerHex: $0.color) } ?? FD.gold, FD.gold, FD.goldHi, FD.blueHi, .white])
             Confetti()
             VStack(spacing: 22) {
                 FeudTrophy(size: 260)

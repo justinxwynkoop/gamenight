@@ -3,6 +3,7 @@
 // answer is only on the TV once it has been judged.
 import { h, ink } from '../../common.js';
 import { loadStyles, board, pie, die, nameOf, catOf, unitOf, legend, spaceName, spaceOf, logo, icon, confetti } from './shared.js';
+import { celebrate } from '../../fireworks.js';
 
 const HOP_MS = 170;   // a token takes this long per space when it moves
 let seenDie = null;   // the roll the TV has already tumbled (the screen is redrawn on every change)
@@ -116,6 +117,8 @@ export function render(v) {
   else if (g.phase === 'question' || g.phase === 'result') overlay = questionCard(g);
   else if (g.phase === 'choose') overlay = chooseCard(g);
   else if (g.phase === 'gameover') overlay = winnerCard(g);
+  celebrate(g.phase === 'gameover' ? 'pc-winner' : null,
+    [...(g.winners ?? []).map((id) => unitOf(g, id)?.color).filter(Boolean), '#3B82F6', '#EC4899', '#FACC15', '#A855F7', '#22C55E', '#F97316']);
   // The card waits for the token to finish hopping.
   if (overlay && hops) overlay.style.animationDelay = `${hops * HOP_MS + 150}ms`;
   const boardEl = board(g, { highlight: g.phase === 'move' ? g.options : [], focus: g.turn, labels: g.phase === 'move' && g.options.length > 1 });

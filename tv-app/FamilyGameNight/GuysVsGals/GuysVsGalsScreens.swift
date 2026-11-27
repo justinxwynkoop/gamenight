@@ -1066,6 +1066,7 @@ private struct GvgTrophyScreen: View {
         let side = game.trophyWon ?? "gals"
         ZStack {
             Splash(color: GV.color(game, side))
+            CelebrationBurst(colors: [GV.color(game, side), GV.yellow, .white], kind: .moment)
             GvgConfetti()
             VStack(spacing: 30) {
                 HStack(alignment: .bottom, spacing: 40) {
@@ -1091,6 +1092,7 @@ private struct GvgWinScreen: View {
         let first = game.winners?.first ?? "gals"
         ZStack {
             Splash(color: GV.color(game, first))
+            CelebrationBurst(colors: [GV.color(game, first), GV.yellow, GV.cyan, GV.green, .white])
             GvgConfetti()
             VStack(spacing: 26) {
                 ZStack(alignment: .top) {
@@ -1114,6 +1116,7 @@ private struct GvgWinScreen: View {
 /// Confetti falling over a splash page.
 private struct GvgConfetti: View {
     @State private var fall = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let colors: [Color] = [GV.blue, GV.pink, GV.yellow, GV.green, .white, GV.cyan]
@@ -1131,7 +1134,7 @@ private struct GvgConfetti: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
-        .onAppear { fall = true }
+        .onAppear { fall = !reduceMotion }
     }
 }
 
