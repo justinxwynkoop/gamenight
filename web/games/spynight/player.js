@@ -10,6 +10,7 @@ export function mount(container, { send }) {
   let peeking = false;       // the "My role" overlay is open
   let showMates = false;     // a Spy has asked to see the other Spies (they are hidden behind a button)
   let lastPhase = '';
+  let confirmEnd = false;    // the first player has tapped End game once
 
   const btn = (label, cls, onclick, extra = {}) => h('button', { type: 'button', class: `sn-btn ${cls}`, onclick, ...extra }, label);
   const dot = (p) => h('span', { class: 'sn-dot', style: { background: p?.color ?? '#888' } });
@@ -157,6 +158,16 @@ export function mount(container, { send }) {
       , me?.canStart ? btn('Play again', 'go huge', () => send({ t: 'play-again' })) : h('p', { class: 'dim' }, 'The host can start another game.')];
   }
 
+  /** With no host page the first player moves a stuck game along or ends it (the same buttons the host page has). */
+  function starterTools(v) {
+    if (!v.me?.canStart || ['lobby', 'gameover'].includes(v.phase)) return null;
+    const inTurn = !['roles'].includes(v.phase);
+    return h('div', { class: 'sn-card' },
+      h('p', { class: 'dim' }, 'You started the game, so you can get it going again if someone has gone quiet.'),
+      inTurn && btn(v.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', 'ghost', () => send({ t: 'advance' })),
+      btn(confirmEnd ? 'Tap again to end the game for everyone' : 'End the game', 'ghost', () => { if (confirmEnd) { confirmEnd = false; send({ t: 'end-game' }); } else { confirmEnd = true; refresh(); } }));
+  }
+
   function history(v) {
     if (!v.history?.length) return null;
     return h('details', { class: 'sn-card sn-hist' }, h('summary', {}, `Who voted for what (${v.history.length})`),
@@ -169,13 +180,13 @@ export function mount(container, { send }) {
   function refresh() {
     const v = view?.game;
     if (!v || !view.room?.me) return;
-    if (v.phase !== lastPhase) { if (lastPhase === 'lobby' || v.phase === 'lobby') showRole = false; lastPhase = v.phase; }
+    if (v.phase !== lastPhase) { confirmEnd = false; if (lastPhase === 'lobby' || v.phase === 'lobby') showRole = false; lastPhase = v.phase; }
     const body = {
       lobby, roles, team, vote, 'vote-result': voteResult, mission, 'mission-result': missionResult, gameover,
     }[v.phase]?.(v) ?? h('p', {}, 'Waiting…');
     const me = v.me;
     const showPeek = me?.role && !['lobby', 'roles', 'gameover'].includes(v.phase);
-    setKids(container, h('div', { class: 'sn' }, body, v.phase !== 'lobby' && v.phase !== 'roles' && history(v), v.phase === 'lobby' ? null : rules()),
+    setKids(container, h('div', { class: 'sn' }, body, starterTools(v), v.phase !== 'lobby' && v.phase !== 'roles' && history(v), v.phase === 'lobby' ? null : rules()),
       showPeek && h('button', { type: 'button', class: 'sn-peek', onclick: () => { peeking = true; refresh(); } }, '🕵️ My role'),
       showPeek && peeking && h('div', { class: 'sn-peekbox', onclick: () => { peeking = false; showMates = false; refresh(); } },
         h('div', { class: `sn-role ${me.role}` },

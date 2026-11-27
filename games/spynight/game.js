@@ -27,6 +27,7 @@ export const failsNeeded = (players, mission) => (players >= 7 && mission === 3 
 export const T = {
   voteResult: 7000,      // everyone's vote, shown on the TV, before the game moves on
   missionResult: 7000,   // the mission's result (how many Fail cards, never who), before the next team
+  leaderAway: 25000,     // a leader who has been away this long loses the pick: the next player leads
 };
 
 const isRole = (r) => r === 'spy' || r === 'resistance';
@@ -54,6 +55,7 @@ export class SpyNightGame {
     this.why = '';
     this.timer = null;             // { at, fire }
     this.lastMission = null;       // { success, fails } for the TV's result screen
+    this.leaderAwaySince = null;   // runtime only: when the leader was first seen away
     this.history = [];             // every vote that was held, in the open: { mission, leaderId, team, votes, approved }
   }
   #changed() { this.room.changed(); }
@@ -73,6 +75,8 @@ export class SpyNightGame {
   // ---------- the room's side of the contract ----------
   /** The roster is locked once the roles are dealt. */
   inProgress() { return this.phase !== 'lobby'; }
+  /** Everyone who was dealt a role is needed (a leader, a voter, a team member), so nobody can be removed mid-game. */
+  removeBlocked() { return this.phase === 'lobby' ? null : 'Players can only be removed before the game starts (end the game first, or skip a player who is away)'; }
   tick() {
     const t = this.timer;
     if (t && this.#now() >= t.at) { this.timer = null; t.fire(); return; }
@@ -81,6 +85,20 @@ export class SpyNightGame {
     if (this.phase === 'roles' && done(this.order, (id) => this.ready[id])) this.#startTeam();
     else if (this.phase === 'vote' && done(this.order, (id) => id in this.votes)) this.#revealVotes();
     else if (this.phase === 'mission' && done(this.team, (id) => this.cards[id])) this.#finishMission();
+    else this.#leaderWatch();
+  }
+  /** A leader who is away for too long does not hold the game up: the pick passes to the next player.
+   *  (Only while someone else is here to see it; a whole room reconnecting after a restart gets time to come back.) */
+  #leaderWatch() {
+    if (this.phase !== 'team' || this.#connected(this.leaderId) || !this.order.some((id) => this.#connected(id))) { this.leaderAwaySince = null; return; }
+    const now = this.#now();
+    if (this.leaderAwaySince == null) { this.leaderAwaySince = now; return; }
+    if (now - this.leaderAwaySince >= T.leaderAway) this.#skipLeader();
+  }
+  /** Passes the pick to the next player (a mission is not lost: this is not a rejected team). */
+  #skipLeader() {
+    this.#nextLeader();
+    this.#startTeam();
   }
   size() { return MISSIONS; }
   /** How many players go on this mission. */
@@ -115,6 +133,7 @@ export class SpyNightGame {
     if (this.order.every((id) => this.ready[id] || !this.#connected(id))) this.#startTeam();
   }
   #startTeam() {
+    this.leaderAwaySince = null;
     this.phase = 'team';
     this.team = []; this.votes = {}; this.approved = null; this.cards = {};
     this.#changed();
@@ -219,6 +238,7 @@ export class SpyNightGame {
   advance() {
     switch (this.phase) {
       case 'roles': this.#startTeam(); break;
+      case 'team': this.#skipLeader(); break;   // the leader is away or taking too long: the next player picks
       case 'vote': this.#revealVotes(); break;
       case 'vote-result': this.timer = null; this.#afterVotes(); break;
       case 'mission': this.#finishMission(); break;
@@ -253,6 +273,10 @@ export class SpyNightGame {
       case 'start': case 'advance': case 'play-again':
         if (!this.#starter(pid)) fail('Only the host can do that');
         this.act(msg.t === 'play-again' ? 'playAgain' : msg.t);
+        return undefined;
+      case 'end-game':
+        if (!this.#starter(pid)) fail('Only the host can do that');
+        this.act('endGame');
         return undefined;
       case 'got-it': this.gotIt(pid); return undefined;
       case 'pick': this.toggleMember(pid, String(msg.pid ?? '')); return undefined;

@@ -1064,3 +1064,43 @@ test('Fast Money: Player 2 still cannot be given Player 1’s answer while they 
   g.fmEdit('p2', 0, { text: 'uno' });
   assert.equal(g.run.fm.answers.p2[0], 'uno');
 });
+
+test('P1: removing a face-off player hands the buzzer to a teammate', () => {
+  const { room, g, ps, red } = setup();
+  g.startGame();
+  const rep = g.run.faceoff.reps[red.id];
+  const mate = ps.find((p) => p.teamId === red.id && p.id !== rep);
+  room.removePlayer(rep);
+  assert.equal(g.run.faceoff.reps[red.id], mate.id);
+  assert.equal(g.publicView().round.faceoff.reps.find((r) => r.unitId === red.id).playerId, mate.id);
+});
+
+test('P1: removing a Fast Money player swaps in a teammate; one who has already played stays on the board', () => {
+  const { room, g, ps, red } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Flo'] });
+  g.run.status = 'fastmoney';
+  g.run.fm = { team: red.id, step: 'team', stakes: 'bonus', players: [], part: null, hidden: { p1: false }, rejected: [], dupBuzz: 0, answers: { p1: null, p2: null }, points: { p1: [], p2: [] }, labels: { p1: [], p2: [] }, shown: { p1: [], p2: [] } };
+  g.fmTeam(red.id);
+  const [a, b] = g.run.fm.players;
+  assert.ok(a && b);
+  room.removePlayer(a);
+  assert.ok(g.run.fm.players[0] && g.run.fm.players[0] !== a, 'Player 1 was replaced before they went');
+  assert.equal(room.players.find((p) => p.id === g.run.fm.players[0]).teamId, red.id);
+  // Once Player 1 has answered and been revealed they are kept, with their name.
+  const p1 = g.run.fm.players[0];
+  const name = room.players.find((p) => p.id === p1).name;
+  g.run.fm.step = 'p2';
+  room.removePlayer(p1);
+  assert.equal(g.run.fm.players[0], p1);
+  assert.equal(g.fmView?.name ?? name, name);
+});
+
+test('P1: a Fast Money phone that reloads gets its saved answers back (and only its own)', () => {
+  const { room, g, ps, red } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  g.run.status = 'fastmoney';
+  g.run.fm = { team: red.id, step: 'p1', stakes: 'bonus', players: [], part: null, hidden: { p1: false }, rejected: [], dupBuzz: 0, answers: { p1: ['Apple', 'Dog', 'Sneakers', '', ''], p2: null }, points: { p1: [], p2: [] }, labels: { p1: [], p2: [] }, shown: { p1: [], p2: [] } };
+  const m = ps.filter((p) => p.teamId === red.id);
+  g.run.fm.players = [m[0].id, m[1].id];
+  assert.deepEqual(room.playerView(m[0].id).game.fm.mine, ['Apple', 'Dog', 'Sneakers', '', '']);
+  assert.equal(room.playerView(m[1].id).game.fm.mine, undefined, 'not Player 2');
+  assert.equal(room.playerView(ps.find((p) => p.teamId !== red.id).id).game.fm.mine, undefined);
+});

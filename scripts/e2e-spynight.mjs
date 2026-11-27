@@ -100,6 +100,15 @@ try {
     await p.locator('.sn-peekbox').click({ position: { x: 5, y: 5 } });   // the dark edge closes it
   }
   await until(async () => /is picking/.test(await tv.locator('.sn-tv').innerText()), 'the TV to move on to picking a team');
+  // With no host page the first player has the buttons to get a stuck game going again; nobody else does.
+  if (!(await phones[0].getByRole('button', { name: /skip the leader/i }).count()) || !(await phones[0].getByRole('button', { name: /end the game/i }).count())) fail('the first player has no Skip the leader / End the game buttons');
+  if (await phones[1].getByRole('button', { name: /skip the leader|end the game/i }).count()) fail('a player who joined second has the first player’s buttons');
+  {
+    const picking = async () => (await tv.locator('.sn-tv').innerText()).match(/(\w+) is picking/)?.[1];
+    const before = await picking();
+    await phones[0].getByRole('button', { name: /skip the leader/i }).click();
+    await until(async () => (await picking()) && (await picking()) !== before, 'the pick to pass to the next player after Skip the leader');
+  }
   // The TV never shows a role.
   const tvText = async () => (await tv.locator('.sn-tv').innerText());
   if (/\b(SPY|RESISTANCE)\b/.test((await tvText()).replace(/Spies|Resistance|rejected/gi, ''))) fail('the TV shows a role');

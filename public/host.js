@@ -298,9 +298,11 @@ function playersTab() {
           ? h('span', { class: 'pill' }, '★ Captain')
           : button({ label: 'Make captain', kind: 'ghost', size: 'sm', onclick: () => act('setCaptain', { pid: p.id }) })),
         !teams && lobby && button({ icon: 'edit', kind: 'ghost', size: 'sm', aria: `Rename ${p.name}`, onclick: () => openRenameSheet(p.id, p.name) }),
-        button({ icon: 'trash', kind: 'ghost', size: 'sm', aria: `Remove ${p.name}`, onclick: () => confirmSheet({ title: `Remove ${p.name}?`, message: 'They can rejoin by scanning the code again.', confirmLabel: 'Remove', onConfirm: () => act('removePlayer', { id: p.id }) }) }));
+        // A game that cannot carry on without everyone it dealt in (Spy Night, Pie Chase, Guys vs Gals) does not let anyone be removed mid-game.
+        !room.removeBlocked && button({ icon: 'trash', kind: 'ghost', size: 'sm', aria: `Remove ${p.name}`, onclick: () => confirmSheet({ title: `Remove ${p.name}?`, message: lobby ? 'They can rejoin by scanning the code again.' : 'They leave the game now. They can only come back as a new player.', confirmLabel: 'Remove', onConfirm: () => act('removePlayer', { id: p.id }) }) }));
     }))
-    : h('p', { class: 'dim' }, 'Nobody yet. Players scan the QR code on the TV to join.')));
+    : h('p', { class: 'dim' }, 'Nobody yet. Players scan the QR code on the TV to join.'),
+    room.removeBlocked && count ? h('p', { class: 'dim' }, 'Players cannot be removed while this game is running. If someone has gone, use the skip button on the Game tab, or end the game.') : null));
   return cards;
 }
 

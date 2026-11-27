@@ -6,11 +6,12 @@ import { spokenCommand, nextUnanswered, speechProblem } from './speech.js';
 /**
  * questions  the five questions
  * send       sends { t: 'fm-answers', answers }
+ * initial    answers the server already holds for this player (a phone that reloaded picks up where it left off)
  * Returns { node, auto, setNote } — auto() sends whatever is there (called when time runs out).
  */
-export function buildFastMoneyForm(questions, { send, Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition } = {}) {
+export function buildFastMoneyForm(questions, { send, initial = null, Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition } = {}) {
   const N = questions.length;
-  const answers = Array(N).fill('');
+  const answers = Array.from({ length: N }, (_, i) => String(initial?.[i] ?? '').slice(0, 40));
   const skipped = new Set();
   let idx = 0;
   let mode = 'ask';           // 'ask' (one question) or 'review' (all of them, with a Send button)
@@ -127,7 +128,8 @@ export function buildFastMoneyForm(questions, { send, Recognition = window.Speec
   }
   mic.addEventListener('click', () => { if (listening) stopListening(); else startListening(); });
 
-  show(0, Recognition ? '' : 'Tip: tap the microphone on your keyboard to speak your answer.');
+  const first = nextUnanswered(answers, -1);
+  show(first === -1 ? 0 : first, initial?.some((a) => a) ? 'Welcome back: your earlier answers are still here.' : Recognition ? '' : 'Tip: tap the microphone on your keyboard to speak your answer.');
 
   return {
     node,

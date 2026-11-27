@@ -125,11 +125,13 @@ export class PieChaseGame {
     const t = this.timer;
     if (t && this.#now() >= t.at) { this.timer = null; t.fire(); }
   }
-  playerRemoved() {
-    if (this.phase === 'lobby') return;
-    const ids = new Set(this.room.units().map((u) => u.id));
-    this.order = this.order.filter((id) => ids.has(id));
-    if (this.turn && !ids.has(this.turn)) { this.turn = this.order[0] ?? null; this.#startTurn(); }
+  /** Everyone who was dealt in is needed (turns, the who-goes-first roll, equal turns), so nobody can be removed mid-game. */
+  removeBlocked() { return this.phase === 'lobby' ? null : 'Players can only be removed before the game starts (end the game first, or skip a player who is away)'; }
+  /** True when the game is waiting for a player (or team) that nobody is here for: anyone who is here may then move it along. */
+  #awayHolds() {
+    if (this.phase === 'rolloff') { const r = this.rolloff; return !!r && !r.starter && r.contenders.some((id) => !r.rolls[id] && !this.#connectedUnit(id)); }
+    if (['roll', 'move', 'choose', 'question'].includes(this.phase)) return !!this.turn && !this.#connectedUnit(this.turn);
+    return false;
   }
   contentChanged(id) {
     if (this.phase === 'lobby' && this.settings.setId === id && !this.room.loadContent(GAME, id)) this.settings.setId = ALL_SETS;
@@ -458,7 +460,8 @@ export class PieChaseGame {
     const unit = this.#unitOf(player);
     switch (msg.t) {
       case 'start': case 'advance': case 'skip': case 'play-again':
-        if (!this.#starter(player.id)) fail('Only the host can do that');
+        // The host (or, with no host page, the first player) runs the game; anyone may skip past a player who has gone away.
+        if (!this.#starter(player.id) && !(['advance', 'skip'].includes(msg.t) && this.#awayHolds())) fail(this.room.hosts ? 'Only the host can do that' : 'Only the first player can do that');
         this.act({ start: 'start', advance: 'advance', skip: 'skipTurn', 'play-again': 'playAgain' }[msg.t]);
         return undefined;
       case 'roll': this.roll(unit); return { t: 'ack', what: 'roll' };
@@ -561,7 +564,7 @@ export class PieChaseGame {
   playerView(player) {
     const v = this.publicView();
     const unit = this.#unitOf(player);
-    v.me = { id: player.id, unitId: unit, canStart: this.#starter(player.id), myTurn: !!unit && unit === this.turn };
+    v.me = { id: player.id, unitId: unit, canStart: this.#starter(player.id), canNudge: this.#starter(player.id) || this.#awayHolds(), myTurn: !!unit && unit === this.turn };
     if (this.phase === 'question' && !v.hosted && unit && unit !== this.turn) {
       v.question.answer = this.question.a;
       v.me.canJudge = true;

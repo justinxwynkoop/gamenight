@@ -309,3 +309,60 @@ test('everyone can see who went on each mission, but who played Fail only comes 
   assert.ok(Object.entries(track[0].cards).every(([id, c]) => (id === spies[0] ? c === 'fail' : c === 'success')));
   assert.equal(track[3].cards, null, 'a mission that was not played has none');
 });
+
+test('P1: nobody can be removed once the roles are dealt, and the host page is told why', () => {
+  const s = setup(6);
+  s.room.removePlayer(s.ps[5].id);                                    // fine in the lobby
+  assert.equal(s.room.players.length, 5);
+  assert.equal(s.room.hostView().room.removeBlocked, null);
+  s.g.start();
+  assert.throws(() => s.room.removePlayer(s.ps[0].id), /before the game starts/);
+  assert.throws(() => s.room.act('removePlayer', { id: s.ps[0].id }), /before the game starts/);
+  assert.equal(s.room.players.length, 5);
+  assert.match(s.room.hostView().room.removeBlocked, /before the game starts/);
+});
+
+test('P1: a leader who is away loses the pick after a while, and the host or first player can skip them at once', () => {
+  const s = setup(5);
+  toTeam(s);
+  const first = s.g.leaderId;
+  s.room.connected.delete(first);
+  s.wait(1000);
+  assert.equal(s.g.phase, 'team');
+  assert.equal(s.g.leaderId, first, 'not yet');
+  s.wait(T.leaderAway + 1000);
+  assert.equal(s.g.phase, 'team');
+  assert.notEqual(s.g.leaderId, first, 'the pick passed on');
+  assert.equal(s.g.rejects, 0, 'a skipped leader is not a rejected team');
+  assert.equal(s.g.mission, 0);
+  // The new leader can pick as usual.
+  pickTeam(s, s.ps.slice(0, s.g.teamSize()).map((p) => p.id));
+  assert.equal(s.g.phase, 'vote');
+});
+
+test('P1: skipping the leader by hand (host Move on, or the first player on their phone), and a first player can end a stuck game', () => {
+  const s = setup(5);
+  toTeam(s);
+  const first = s.g.leaderId;
+  s.g.act('advance');
+  assert.equal(s.g.phase, 'team');
+  assert.notEqual(s.g.leaderId, first);
+  // No host page: the first player.
+  const second = s.g.leaderId;
+  assert.throws(() => s.msg(s.ps[1], { t: 'advance' }), /Only the host/);
+  s.msg(s.ps[0], { t: 'advance' });
+  assert.notEqual(s.g.leaderId, second);
+  assert.throws(() => s.msg(s.ps[1], { t: 'end-game' }), /Only the host/);
+  s.msg(s.ps[0], { t: 'end-game' });
+  assert.equal(s.g.phase, 'lobby');
+  assert.equal(s.room.players.length, 5);
+});
+
+test('a whole room that is away (a restart) does not cycle the leaders', () => {
+  const s = setup(5);
+  toTeam(s);
+  const first = s.g.leaderId;
+  for (const p of s.ps) s.room.connected.delete(p.id);
+  s.wait(T.leaderAway * 3);
+  assert.equal(s.g.leaderId, first);
+});

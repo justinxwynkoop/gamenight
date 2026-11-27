@@ -214,7 +214,9 @@ game is over.
 
 **Who starts it.** With a host page open, the host presses **Deal the roles**. Without one, the first player to join
 does, from their phone. Anyone who goes away does not hold things up: their vote counts as Reject, and their mission
-card as Success. The host (or the first player) can also **Move on without waiting**. Past votes are public, so the
+card as Success. A leader who stays away for about 25 seconds loses the pick: the next player leads (that is not a
+rejected team). The host (or, with no host, the first player, from their phone) can also **Move on without waiting**,
+**Skip the leader** at once, or end the game. Nobody can be removed once the roles are dealt. Past votes are public, so the
 phones keep a "Who voted for what" list to argue over. When the game ends everyone's role is shown.
 
 ## Pie Chase
@@ -260,7 +262,9 @@ Answer it wrong and your turn ends: leave the hub on your next turn and come bac
 **Teams.** In teams mode each team shares one token and pie, and any member can roll, move and answer.
 
 **Away players.** A player whose phone goes quiet does not hold the game up: the host (or, with no host, the first player)
-can **Skip** their turn from **Someone gone quiet?**, and the reader passes to the next player who is here.
+can **Skip** their turn from **Someone gone quiet?**, and the reader passes to the next player who is here. When the game is
+waiting for a player (or a whole team) that nobody is here for, **any** player can skip them. Nobody can be removed once
+the game has started.
 
 **Questions.** Two sets ship. *Family Easy* (360 questions, the default) is everyday trivia that kids and grown-ups can
 all answer; *Family Classic* (362) is harder, closer to the real board game's level. The host picks one in Settings
@@ -326,7 +330,9 @@ with every pawn across wins. There are no challenges in the race.
 **The host.** The host page shows every card with its answer and can judge it (as well as the reader), pick the actor,
 call a charade, lock in Our Lives guesses, throw out a dud with **New card**, nudge the trophy a space either way, and
 end the game. Before the game: who is on which side, the question set, trophies to win (1, 2 or 3) and challenge tokens
-on or off.
+on or off. Nobody can be removed once the game has started. If a card is waiting for a reader nobody can stand in for (the
+whole reading side has gone away), any player who is still here gets **Skip this card** on their phone, and the same side
+is dealt another.
 
 **Questions.** *Family Battle* has all five decks for both sides, all written for this game (none copied from the
 board game): over 160 Our Facts and Our Stuff questions per side, more than 25 Our Pics, 32 Our Lives and 44 Our Moves.

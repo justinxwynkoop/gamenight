@@ -174,7 +174,7 @@ export function mount(container, { send, flash }) {
     if (fmBox?.key === key) { fmBox.form.setNote(f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : ''); return { key, node: fmBox.node }; }
     clockEl = h('div', { class: 'status-line' });
     // One question at a time, with a microphone, Skip, and a way back to skipped questions (see fmform.js).
-    const form = buildFastMoneyForm(f.rows.map((row) => row.question), { send: (m) => { quiet += 1; send(m); } });
+    const form = buildFastMoneyForm(f.rows.map((row) => row.question), { initial: f.mine, send: (m) => { quiet += 1; send(m); } });
     const node = h('div', { class: 'card' }, h('h2', {}, 'Fast Money — you’re up!'), clockEl, form.node);
     fmBox = { key, node, form, auto: () => form.auto() };
     return { key, node };

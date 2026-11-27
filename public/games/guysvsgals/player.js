@@ -300,11 +300,18 @@ export function mount(container, { send }) {
   }
 
   function helper(g) {
-    if (!g.me?.canStart || ['lobby', 'gameover'].includes(g.phase)) return null;
+    const stuck = !!g.me?.stuck;   // the card is waiting for a reader nobody can stand in for: anyone here may skip it
+    if (!(g.me?.canStart || stuck) || ['lobby', 'gameover'].includes(g.phase)) return null;
     const guessing = g.phase === 'card' && g.card?.stage === 'guess';
     const starting = g.phase === 'card' && g.card?.stage === 'ready';
     const stepping = g.phase === 'card' && g.card?.stage === 'move';
-    if (g.phase === 'card' && !guessing && !starting && !stepping) return null;
+    const newCard = g.phase === 'card' && (stuck || (g.me?.canStart && ['read', 'secret', 'pick'].includes(g.card?.stage)));
+    if (g.phase === 'card' && !guessing && !starting && !stepping && !newCard) return null;
+    if (newCard) {
+      return h('details', { class: 'gv-pcard', open: stuck }, h('summary', {}, 'Someone gone quiet?'),
+        h('p', { class: 'dim' }, stuck ? 'Nobody who can read this card is here. Skip it and the same team gets another.' : 'The reader is taking a while. You can skip this card and deal another.'),
+        btn('Skip this card', '', () => send({ t: 'new-card' })));
+    }
     return h('details', { class: 'gv-pcard' }, h('summary', {}, 'Someone gone quiet?'),
       h('p', { class: 'dim' }, 'You started the game, so you can keep it moving.'),
       btn(guessing ? 'Lock in their guesses now' : starting ? 'Start the clock now' : stepping ? 'Move the pawn for them' : 'Move on', '', () => send({ t: 'advance' })));

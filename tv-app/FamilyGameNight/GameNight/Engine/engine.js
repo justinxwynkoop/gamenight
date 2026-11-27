@@ -2583,6 +2583,30 @@
     typed() {
       return !!this.settings.typed;
     }
+    /** A player was removed from the room: whoever stood in for them (face-off player, Fast Money player) is replaced. */
+    playerRemoved(id, gone) {
+      const run = this.run;
+      if (run.status === "round" && run.faceoff) {
+        for (const unitId of Object.keys(run.faceoff.reps)) {
+          if (run.faceoff.reps[unitId] === id) run.faceoff.reps[unitId] = __privateMethod(this, _FeudGame_instances, members_fn).call(this, unitId)[0]?.id ?? null;
+        }
+      }
+      const fm = run.fm;
+      if (fm && Array.isArray(fm.players) && fm.players.includes(id)) {
+        const finished = (slot) => slot === "p1" ? !["team", "pick", "p1"].includes(fm.step) : fm.step === "results" || fm.step === "reveal" && fm.part === "p2";
+        SLOTS.forEach((slot, i) => {
+          if (fm.players[i] !== id) return;
+          if (finished(slot)) {
+            fm.gone = { ...fm.gone ?? {}, [id]: gone?.name ?? null };
+            return;
+          }
+          const other = fm.players[1 - i];
+          const m = __privateMethod(this, _FeudGame_instances, members_fn).call(this, fm.team).filter((p) => p.id !== id);
+          fm.players[i] = (m.find((p) => p.id !== other) ?? m[0])?.id ?? null;
+        });
+      }
+      __privateMethod(this, _FeudGame_instances, changed_fn2).call(this);
+    }
     /** Whose phone may type a guess right now: the face-off player whose turn it is, or anyone on the team playing or stealing. */
     canGuess(player) {
       const run = this.run;
@@ -3112,6 +3136,9 @@
         canGuess: this.canGuess(player),
         canChoose: run.status === "round" && run.step === "choose" && player.teamId === run.faceoff.winner
       };
+      if (v.fm && run.fm && run.status === "fastmoney" && ["p1", "p2"].includes(run.fm.step) && run.fm.players[SLOTS.indexOf(run.fm.step)] === player.id) {
+        v.fm.mine = (run.fm.answers[run.fm.step] ?? []).slice();
+      }
       return v;
     }
     hostView() {
@@ -3468,7 +3495,7 @@
   };
   // ---------- views ----------
   playerName_fn = function(id) {
-    return this.room.players.find((p) => p.id === id)?.name ?? null;
+    return this.room.players.find((p) => p.id === id)?.name ?? this.run.fm?.gone?.[id] ?? null;
   };
   view_fn = function(host) {
     const run = this.run;
@@ -3873,11 +3900,13 @@
   var T2 = {
     voteResult: 7e3,
     // everyone's vote, shown on the TV, before the game moves on
-    missionResult: 7e3
+    missionResult: 7e3,
     // the mission's result (how many Fail cards, never who), before the next team
+    leaderAway: 25e3
+    // a leader who has been away this long loses the pick: the next player leads
   };
   var isRole = (r) => r === "spy" || r === "resistance";
-  var _SpyNightGame_instances, reset_fn, changed_fn4, now_fn2, player_fn2, connected_fn2, setTimer_fn2, shuffle_fn2, startTeam_fn, nextLeader_fn, revealVotes_fn, afterVotes_fn, finishMission_fn, afterMission_fn, end_fn, starter_fn, players_fn2, line_fn;
+  var _SpyNightGame_instances, reset_fn, changed_fn4, now_fn2, player_fn2, connected_fn2, setTimer_fn2, shuffle_fn2, leaderWatch_fn, skipLeader_fn, startTeam_fn, nextLeader_fn, revealVotes_fn, afterVotes_fn, finishMission_fn, afterMission_fn, end_fn, starter_fn, players_fn2, line_fn;
   var SpyNightGame = class {
     constructor(room) {
       __privateAdd(this, _SpyNightGame_instances);
@@ -3888,6 +3917,10 @@
     /** The roster is locked once the roles are dealt. */
     inProgress() {
       return this.phase !== "lobby";
+    }
+    /** Everyone who was dealt a role is needed (a leader, a voter, a team member), so nobody can be removed mid-game. */
+    removeBlocked() {
+      return this.phase === "lobby" ? null : "Players can only be removed before the game starts (end the game first, or skip a player who is away)";
     }
     tick() {
       const t = this.timer;
@@ -3900,6 +3933,7 @@
       if (this.phase === "roles" && done(this.order, (id) => this.ready[id])) __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
       else if (this.phase === "vote" && done(this.order, (id) => id in this.votes)) __privateMethod(this, _SpyNightGame_instances, revealVotes_fn).call(this);
       else if (this.phase === "mission" && done(this.team, (id) => this.cards[id])) __privateMethod(this, _SpyNightGame_instances, finishMission_fn).call(this);
+      else __privateMethod(this, _SpyNightGame_instances, leaderWatch_fn).call(this);
     }
     size() {
       return MISSIONS;
@@ -3984,6 +4018,10 @@
         case "roles":
           __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
           break;
+        case "team":
+          __privateMethod(this, _SpyNightGame_instances, skipLeader_fn).call(this);
+          break;
+        // the leader is away or taking too long: the next player picks
         case "vote":
           __privateMethod(this, _SpyNightGame_instances, revealVotes_fn).call(this);
           break;
@@ -4034,6 +4072,10 @@
         case "play-again":
           if (!__privateMethod(this, _SpyNightGame_instances, starter_fn).call(this, pid)) fail("Only the host can do that");
           this.act(msg.t === "play-again" ? "playAgain" : msg.t);
+          return void 0;
+        case "end-game":
+          if (!__privateMethod(this, _SpyNightGame_instances, starter_fn).call(this, pid)) fail("Only the host can do that");
+          this.act("endGame");
           return void 0;
         case "got-it":
           this.gotIt(pid);
@@ -4200,6 +4242,7 @@
     this.why = "";
     this.timer = null;
     this.lastMission = null;
+    this.leaderAwaySince = null;
     this.history = [];
   };
   changed_fn4 = function() {
@@ -4225,7 +4268,27 @@
     }
     return a;
   };
+  /** A leader who is away for too long does not hold the game up: the pick passes to the next player.
+   *  (Only while someone else is here to see it; a whole room reconnecting after a restart gets time to come back.) */
+  leaderWatch_fn = function() {
+    if (this.phase !== "team" || __privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, this.leaderId) || !this.order.some((id) => __privateMethod(this, _SpyNightGame_instances, connected_fn2).call(this, id))) {
+      this.leaderAwaySince = null;
+      return;
+    }
+    const now = __privateMethod(this, _SpyNightGame_instances, now_fn2).call(this);
+    if (this.leaderAwaySince == null) {
+      this.leaderAwaySince = now;
+      return;
+    }
+    if (now - this.leaderAwaySince >= T2.leaderAway) __privateMethod(this, _SpyNightGame_instances, skipLeader_fn).call(this);
+  };
+  /** Passes the pick to the next player (a mission is not lost: this is not a rejected team). */
+  skipLeader_fn = function() {
+    __privateMethod(this, _SpyNightGame_instances, nextLeader_fn).call(this);
+    __privateMethod(this, _SpyNightGame_instances, startTeam_fn).call(this);
+  };
   startTeam_fn = function() {
+    this.leaderAwaySince = null;
     this.phase = "team";
     this.team = [];
     this.votes = {};
@@ -4454,7 +4517,7 @@
     return true;
   }
   var keyOf = (q) => String(q.q).trim().toLowerCase().slice(0, 120);
-  var _PieChaseGame_instances, reset_fn2, changed_fn5, now_fn3, setTimer_fn3, unit_fn2, name_fn, note_fn, members_fn2, connectedUnit_fn, unitOf_fn, sets_fn, categoryNames_fn, buildDeck_fn, draw_fn, units_fn, rolloffRoll_fn, settleRolloff_fn, beginPlay_fn, startTurn_fn, hasAll_fn, land_fn, ask_fn, afterResult_fn, won_fn, nextTurn_fn, end_fn2, catName_fn, starter_fn2, reader_fn, line_fn2, peekNext_fn, unitsView_fn;
+  var _PieChaseGame_instances, reset_fn2, changed_fn5, now_fn3, setTimer_fn3, unit_fn2, name_fn, note_fn, members_fn2, connectedUnit_fn, unitOf_fn, awayHolds_fn, sets_fn, categoryNames_fn, buildDeck_fn, draw_fn, units_fn, rolloffRoll_fn, settleRolloff_fn, beginPlay_fn, startTurn_fn, hasAll_fn, land_fn, ask_fn, afterResult_fn, won_fn, nextTurn_fn, end_fn2, catName_fn, starter_fn2, reader_fn, line_fn2, peekNext_fn, unitsView_fn;
   var PieChaseGame = class {
     constructor(room) {
       __privateAdd(this, _PieChaseGame_instances);
@@ -4480,14 +4543,9 @@
         t.fire();
       }
     }
-    playerRemoved() {
-      if (this.phase === "lobby") return;
-      const ids = new Set(this.room.units().map((u) => u.id));
-      this.order = this.order.filter((id) => ids.has(id));
-      if (this.turn && !ids.has(this.turn)) {
-        this.turn = this.order[0] ?? null;
-        __privateMethod(this, _PieChaseGame_instances, startTurn_fn).call(this);
-      }
+    /** Everyone who was dealt in is needed (turns, the who-goes-first roll, equal turns), so nobody can be removed mid-game. */
+    removeBlocked() {
+      return this.phase === "lobby" ? null : "Players can only be removed before the game starts (end the game first, or skip a player who is away)";
     }
     contentChanged(id) {
       if (this.phase === "lobby" && this.settings.setId === id && !this.room.loadContent(GAME5, id)) this.settings.setId = ALL_SETS;
@@ -4691,7 +4749,7 @@
         case "advance":
         case "skip":
         case "play-again":
-          if (!__privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id)) fail("Only the host can do that");
+          if (!__privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id) && !(["advance", "skip"].includes(msg.t) && __privateMethod(this, _PieChaseGame_instances, awayHolds_fn).call(this))) fail(this.room.hosts ? "Only the host can do that" : "Only the first player can do that");
           this.act({ start: "start", advance: "advance", skip: "skipTurn", "play-again": "playAgain" }[msg.t]);
           return void 0;
         case "roll":
@@ -4758,7 +4816,7 @@
     playerView(player) {
       const v = this.publicView();
       const unit = __privateMethod(this, _PieChaseGame_instances, unitOf_fn).call(this, player);
-      v.me = { id: player.id, unitId: unit, canStart: __privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id), myTurn: !!unit && unit === this.turn };
+      v.me = { id: player.id, unitId: unit, canStart: __privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id), canNudge: __privateMethod(this, _PieChaseGame_instances, starter_fn2).call(this, player.id) || __privateMethod(this, _PieChaseGame_instances, awayHolds_fn).call(this), myTurn: !!unit && unit === this.turn };
       if (this.phase === "question" && !v.hosted && unit && unit !== this.turn) {
         v.question.answer = this.question.a;
         v.me.canJudge = true;
@@ -4884,6 +4942,15 @@
   };
   unitOf_fn = function(player) {
     return this.room.unitOf(player)?.id ?? null;
+  };
+  /** True when the game is waiting for a player (or team) that nobody is here for: anyone who is here may then move it along. */
+  awayHolds_fn = function() {
+    if (this.phase === "rolloff") {
+      const r = this.rolloff;
+      return !!r && !r.starter && r.contenders.some((id) => !r.rolls[id] && !__privateMethod(this, _PieChaseGame_instances, connectedUnit_fn).call(this, id));
+    }
+    if (["roll", "move", "choose", "question"].includes(this.phase)) return !!this.turn && !__privateMethod(this, _PieChaseGame_instances, connectedUnit_fn).call(this, this.turn);
+    return false;
   };
   // ---------- questions ----------
   /** The question sets in play: one, or every set this TV has. */
@@ -5241,7 +5308,7 @@
   }
   var keyOf2 = (s) => String(s).trim().toLowerCase().slice(0, 120);
   var cardKey = (deck, x) => `${deck}:${keyOf2(x.q ?? x.m ?? "")}`;
-  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, sets_fn2, buildDeck_fn2, draw_fn2, hasLives_fn, path_fn, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, rightChoice_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
+  var _GuysVsGalsGame_instances, reset_fn3, isRace_fn, changed_fn6, now_fn4, setTimer_fn4, note_fn2, team_fn, sideOfTeam_fn, sideOf_fn, members_fn3, here_fn, name_fn2, pname_fn, dress_fn, stuck_fn, sets_fn2, buildDeck_fn2, draw_fn2, hasLives_fn, path_fn, deckFor_fn, score_fn, nextReader_fn, deal_fn, act_fn, actors_fn, startMoves_fn, guessers_fn, judges_fn, judgeSide_fn, mayJudge_fn, lockGuess_fn, movesDone_fn, answered_fn, rightChoice_fn, outcome_fn, next_fn, winTrophy_fn, newTrophy_fn, end_fn3, newRace_fn, pawn_fn, steps_fn, defaultStep_fn, dealRace_fn, raceQuestion_fn, movePawn_fn, raceWon_fn, wild_fn, capture_fn, raceAnswered_fn, raceResolve_fn, raceAfter_fn, raceView_fn, lobby_fn, starter_fn3, timerView_fn3, line_fn3, teamsView_fn, cardView_fn;
   var GuysVsGalsGame = class {
     constructor(room) {
       __privateAdd(this, _GuysVsGalsGame_instances);
@@ -5289,6 +5356,10 @@
         this.reactions = this.reactions.filter((r) => r.at + REACTION_MS >= __privateMethod(this, _GuysVsGalsGame_instances, now_fn4).call(this));
         __privateMethod(this, _GuysVsGalsGame_instances, changed_fn6).call(this);
       }
+    }
+    /** The reader, the actor and the two teams are all dealt in, so nobody can be removed once the game has started. */
+    removeBlocked() {
+      return this.phase === "lobby" ? null : "Players can only be removed before the game starts (end the game first, or skip the card)";
     }
     playerRemoved(id) {
       delete this.picked[id];
@@ -5618,6 +5689,10 @@
           if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id)) fail("Only the host can do that");
           this.act({ start: "start", advance: "advance", "play-again": "playAgain" }[msg.t]);
           return void 0;
+        case "new-card":
+          if (!__privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id) && !__privateMethod(this, _GuysVsGalsGame_instances, stuck_fn).call(this)) fail("Only the host can do that");
+          this.newCard();
+          return void 0;
         case "side":
           this.setSide(player, String(msg.side ?? ""));
           return void 0;
@@ -5704,7 +5779,7 @@
       const v = this.publicView();
       const side = __privateMethod(this, _GuysVsGalsGame_instances, sideOf_fn).call(this, player);
       const c = this.card;
-      const me = { id: player.id, side, picked: !!this.picked[player.id], canStart: __privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id), myTurn: !!side && side === this.turn };
+      const me = { id: player.id, side, picked: !!this.picked[player.id], canStart: __privateMethod(this, _GuysVsGalsGame_instances, starter_fn3).call(this, player.id), stuck: __privateMethod(this, _GuysVsGalsGame_instances, stuck_fn).call(this), myTurn: !!side && side === this.turn };
       if (c && this.phase === "card") {
         const reading = c.about;
         me.reader = c.reader === player.id;
@@ -5898,6 +5973,13 @@
       if (["Red", "Blue"].includes(t.name)) t.name = SIDES[side].name;
       t.color = SIDES[side].color;
     }
+  };
+  /** The card is waiting for someone who is not here (the reader and everyone who could stand in for them): then
+   *  anyone who is here may throw the card out and deal another. */
+  stuck_fn = function() {
+    const c = this.card;
+    if (this.phase !== "card" || !c || !["read", "secret", "pick"].includes(c.stage)) return false;
+    return !__privateMethod(this, _GuysVsGalsGame_instances, judges_fn).call(this).some((id) => this.room.connected.has(id));
   };
   // ---------- the decks ----------
   sets_fn2 = function() {
@@ -6727,11 +6809,13 @@
       this.changed();
     }
     removePlayer(id) {
-      this.player(id);
+      const gone = this.player(id);
+      const why = this.game?.removeBlocked?.();
+      if (why) fail(why);
       this.players = this.players.filter((p) => p.id !== id);
       this.connected.delete(id);
       __privateMethod(this, _Room_instances, reconcile_fn).call(this);
-      this.game?.playerRemoved?.(id);
+      this.game?.playerRemoved?.(id, gone);
       this.changed();
     }
     /** Lobby only: forget every player and team (a new party). */
@@ -6974,6 +7058,8 @@
       units: __privateMethod(this, _Room_instances, unitViews_fn).call(this),
       gameId: this.gameId,
       inProgress: this.inProgress(),
+      // Why nobody can be removed right now (a game that cannot carry on without everyone it dealt), or null.
+      removeBlocked: this.game?.removeBlocked?.() ?? null,
       settings: { ...this.settings, ping: this.soundPing }
     };
   };

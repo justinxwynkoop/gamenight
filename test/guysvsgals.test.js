@@ -759,3 +759,29 @@ test('the Grown-Ups set is valid, is where new games start, and the first player
   assert.equal(room.publicView().game.setTitle, 'Family Battle');
   assert.throws(() => msg(G[0], { t: 'set', id: 'nope' }), /No such question set/);
 });
+
+test('P1: nobody can be removed once the game has started (no empty team, no blank reader)', () => {
+  const s = setup({ guys: 2, gals: 2 });
+  s.room.removePlayer(s.G[1].id);                                     // lobby: fine
+  s.begin();
+  assert.throws(() => s.room.removePlayer(s.G[0].id), /before the game starts/);
+  assert.throws(() => s.room.act('removePlayer', { id: s.W[0].id }), /before the game starts/);
+  assert.match(s.room.hostView().room.removeBlocked, /before the game starts/);
+  assert.equal(s.room.players.length, 3);
+});
+
+test('P1: a card waiting for a reader who has gone away can be skipped by anyone who is here', () => {
+  const s = setup({ guys: 1, gals: 1 });
+  s.begin();
+  assert.equal(s.g.phase, 'card');
+  const cardN = s.g.card.n;
+  const reader = s.reader();
+  const other = [...s.G, ...s.W].find((p) => p !== reader);
+  // Reader here: only the first player may skip.
+  assert.equal(s.view(other).me.stuck, false);
+  s.room.connected.delete(reader.id);
+  s.room.setConnected(other.id, true);
+  assert.equal(s.view(other).me.stuck, true);
+  s.msg(other, { t: 'new-card' });
+  assert.ok(s.g.card.n > cardN, 'a new card was dealt');
+});
