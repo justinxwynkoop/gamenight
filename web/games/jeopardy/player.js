@@ -295,7 +295,7 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     const locked = now < lockedUntil;
     // The warning comes before it can happen: buzz before the button turns gold and you are locked out for a moment.
     let cls = 'wait'; let label = 'WAIT'; let sub = 'Eyes on the TV. Buzz when the bar fills and the button turns gold. Buzz too early and you are locked out for a quarter of a second!';
-    if (v.hostJudges && ph === 'reading') sub = 'The host is reading. Buzz when the button turns gold. Too early and you are locked out for a quarter of a second!';
+    if (v.hostJudges && ph === 'reading') sub = v.timer?.kind === 'reading' ? 'Get ready! The buzzers open when the bar fills and the button turns gold. Too early and you are locked out for a quarter of a second!' : 'The host is reading. Buzz when the button turns gold. Too early and you are locked out for a quarter of a second!';
     if (live) { cls = 'live'; label = 'BUZZ!'; sub = ''; }
     if (pressed && live) { cls = 'sent'; label = 'BUZZED'; sub = 'In! Waiting for the TV…'; }
     if (tried) { cls = 'out'; label = 'OUT'; sub = 'You already took a shot at this one.'; }
@@ -571,7 +571,9 @@ export function mount(container, { send, flash, clock: roomClock = null }) {
     if (!me().isCaptain) { captainBar.style.display = 'none'; captainBar.replaceChildren(); captainBar.dataset.key = ''; return; }   // forget what was drawn, so the bar is built again if the captain comes back
     const ph = v.phase; const items = [];
     // The captain is the host (a host judges out loud, and no host page): the judge's buttons come first, and big.
-    if (v.hostJudges && ph === 'reading') items.push(['Open buzzers', () => cap('openNow'), 'good judge']);
+    // Hosting from this phone: Open buzzers starts a short countdown (every phone turns gold together when it ends).
+    if (v.hostJudges && ph === 'reading' && v.timer?.kind !== 'reading') items.push(['Open buzzers', () => cap('openNow'), 'good judge']);
+    else if (v.hostJudges && ph === 'reading') items.push(['Opening…', () => {}, 'ghost wide']);
     if (v.hostJudges && (ph === 'answering' || ph === 'dd-answer')) {
       items.push(['✓ Correct', () => cap('judge', { correct: true }), 'good judge'], ['✗ Wrong', () => cap('judge', { correct: false }), 'bad judge']);
       if (me().answer) items.push([answerShown ? `Answer: ${me().answer}` : 'Show the answer', () => { answerShown = !answerShown; captainBar.dataset.key = ''; renderCaptain(); }, 'ghost wide']);

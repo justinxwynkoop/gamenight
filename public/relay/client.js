@@ -14,7 +14,7 @@ export const cleanCode = (text) => String(text ?? '').toUpperCase().replace(/[^A
  */
 export function connectRelay({
   config, room, clientId, hello, onState, onMessage = () => {}, onStatus = () => {},
-  WebSocketImpl, setTimer = setTimeout, clearTimer = clearTimeout, pingMs = 4000, quietMs = 20000, now = () => Date.now(),
+  WebSocketImpl, setTimer = setTimeout, clearTimer = clearTimeout, pingMs = 4000, quietMs = 12000, now = () => Date.now(),
   hires = () => globalThis.performance?.now?.() ?? Date.now(),
 }) {
   const toTv = `gn:${room}`;
@@ -58,12 +58,18 @@ export function connectRelay({
   });
 
   // Phones ping now and then: the TV drops a client that goes quiet, and hello again if the TV has forgotten us.
+  let lastCheck = 0;
   const beat = () => {
     if (closed) return;
     if (ready) {
       if (connected && now() - lastHeard > quietMs) setConnected(false);
       // The ping says which view arrived last, so the TV can send the newest again if it was lost on the way.
-      if (!connected) sayHello(); else say({ t: 'ping', n: lastN, ...(clock.lag() != null ? { lag: Math.round(clock.lag()) } : {}) });
+      if (!connected) {
+        sayHello();
+        // Nothing has come back for a while: the link may be dead without the phone knowing (Wi-Fi changed, a socket that
+        // slept). Check it now, so it is rebuilt in a few seconds instead of waiting for the next heartbeat (or a page reload).
+        if (now() - lastCheck > Math.max(quietMs / 2, 4000)) { lastCheck = now(); rt.checkNow(); }
+      } else say({ t: 'ping', n: lastN, ...(clock.lag() != null ? { lag: Math.round(clock.lag()) } : {}) });
       clock.probeNow();
     }
     timer = setTimer(beat, pingMs);

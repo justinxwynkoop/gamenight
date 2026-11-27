@@ -379,6 +379,7 @@ final class ClipStage: ObservableObject {
     private var player: AVPlayer?
     private var endObserver: Any?
     private var failObserver: NSObjectProtocol?
+    private var timeObserver: Any?
     private var backstop: Task<Void, Never>?
 
     func play(_ media: JeoMedia, volume: Float, done: @escaping () -> Void) {
@@ -405,6 +406,12 @@ final class ClipStage: ObservableObject {
         failObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main) { _ in
             Task { @MainActor in finish() }
         }
+        // The clip ends where the clue says it ends, even if the player does not honour forwardPlaybackEndTime (a streamed sound
+        // would otherwise carry on past it to the end of the file, or to the backstop below): watch the playhead.
+        let endAt = span.end
+        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.2, preferredTimescale: 600), queue: .main) { time in
+            if time.seconds >= endAt - 0.05 { Task { @MainActor in finish() } }
+        }
         // Loading may take a moment; a clip that never starts or never ends does not hold up the game.
         backstop = Task { @MainActor in
             try? await Task.sleep(for: .seconds(span.end - span.start + 8))
@@ -428,6 +435,8 @@ final class ClipStage: ObservableObject {
         if let failObserver { NotificationCenter.default.removeObserver(failObserver) }
         endObserver = nil
         failObserver = nil
+        if let timeObserver { player?.removeTimeObserver(timeObserver) }
+        timeObserver = nil
         player?.pause()
         player = nil
         if video != nil { video = nil }

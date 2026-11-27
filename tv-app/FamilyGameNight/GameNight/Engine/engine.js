@@ -504,6 +504,8 @@
     // host mode: Daily Double fallback for the host to judge a spoken answer
     hostGrace: 8e3,
     // host mode: after the answer clock hits zero ("Time's up" on the TV), the host still has this long to rule
+    openCountdown: 5e3,
+    // the captain (hosting from a phone) opens the buzzers: they open this long after the tap, a time every phone is told
     captainGone: 15e3
     // how long the captain may be away before someone else takes over
   };
@@ -625,7 +627,7 @@
     return h1.toString(36) + h2.toString(36).slice(0, 3);
   }
   var MAX_SEEN = 15e3;
-  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, loadSeen_fn, saveSeen_fn, recordGame_fn, hallView_fn, seenClue_fn, freshIn_fn, markSeen_fn, renewUsedUp_fn, ranked_fn, refreshPacks_fn, composePacks_fn, bank_fn, chosen_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, pickRow_fn, buildRounds_fn, roundIntro_fn, startWager_fn, startReading_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, startDDClock_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, lockFinalWagers_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalNextManual_fn, finalStep_fn, timerView_fn, players_fn, guide_fn, finalCurrent_fn;
+  var _JeopardyGame_instances, resetRun_fn, changed_fn, now_fn, rng_fn, shuffle_fn, player_fn, order_fn, connected_fn, stat_fn, resetStats_fn, setTimer_fn, setTimerFrom_fn, clearTimer_fn, loadSeen_fn, saveSeen_fn, recordGame_fn, hallView_fn, seenClue_fn, freshIn_fn, markSeen_fn, renewUsedUp_fn, ranked_fn, refreshPacks_fn, composePacks_fn, bank_fn, chosen_fn, asWrittenPacks_fn, lobbyOnly_fn, requestArchive_fn, placeDailyDoubles_fn, makeRound_fn, pickRow_fn, buildRounds_fn, roundIntro_fn, startWager_fn, startReading_fn, countdownBeforeOpening_fn, openBuzzers_fn, liveAt_fn, reopens_fn, pressTime_fn, waitFor_fn, settle_fn, win_fn, startAnswerClock_fn, timeUp_fn, tally_fn, ruling_fn, afterRuling_fn, startDDClock_fn, endClue_fn, revealClue_fn, afterReveal_fn, startFinal_fn, lockFinalWagers_fn, checkFinalReady_fn, beginFinalClue_fn, beginFinalReveal_fn, finalNextManual_fn, finalStep_fn, timerView_fn, players_fn, guide_fn, finalCurrent_fn;
   var _JeopardyGame = class _JeopardyGame {
     constructor(room) {
       __privateAdd(this, _JeopardyGame_instances);
@@ -988,8 +990,23 @@
       }
       __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
     }
+    /**
+     * The host opens the buzzers. A host page (or the TV's remote) opens them at once. A captain hosting from a phone starts a
+     * countdown instead: the buzzers open {openCountdown} from now, a moment every phone is told, so all of them turn gold
+     * together (a phone that is a little slow to hear about it has time to) and nobody is caught by surprise.
+     */
     openNow() {
-      if (this.phase === "reading") __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
+      if (this.phase !== "reading") return;
+      if (__privateMethod(this, _JeopardyGame_instances, countdownBeforeOpening_fn).call(this)) {
+        if (__privateMethod(this, _JeopardyGame_instances, liveAt_fn).call(this) != null) return;
+        const ms = T.openCountdown;
+        const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
+        this.clue.counting = true;
+        __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
+        __privateMethod(this, _JeopardyGame_instances, changed_fn).call(this);
+        return;
+      }
+      __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow);
     }
     /** The TV reads clues out loud (never with a host, who reads them). */
     readsAloud() {
@@ -1692,6 +1709,7 @@
       this.final = data.final ?? null;
       this.lastResult = data.lastResult ?? null;
       this.clue = data.clue ?? null;
+      if (this.clue) this.clue.counting = false;
       this.stats = new Map(data.stats ?? []);
       this.timer = null;
       __privateMethod(this, _JeopardyGame_instances, refreshPacks_fn).call(this);
@@ -2082,9 +2100,14 @@
     const at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this) + ms;
     __privateMethod(this, _JeopardyGame_instances, setTimer_fn).call(this, ms, () => __privateMethod(this, _JeopardyGame_instances, openBuzzers_fn).call(this, T.buzzWindow, at), "reading");
   };
+  /** Hosting from the captain's phone (no host page connected): the buzzers open after a countdown. */
+  countdownBeforeOpening_fn = function() {
+    return this.hostJudges() && !this.hosted();
+  };
   /** Opens the buzzers. `at` is when they were due to open (the timer may be checked a moment later). */
   openBuzzers_fn = function(window, at = __privateMethod(this, _JeopardyGame_instances, now_fn).call(this)) {
     this.phase = "open";
+    this.clue.counting = false;
     this.clue.buzzedId = null;
     this.collecting = null;
     this.clue.open = (this.clue.open ?? 0) + 1;
@@ -2100,7 +2123,7 @@
     const t = this.timer;
     if (!this.clue) return null;
     if (this.phase === "open") return this.openedAt;
-    if (this.phase === "reading" && t?.kind === "reading" && !this.hostJudges()) return t.at;
+    if (this.phase === "reading" && t?.kind === "reading" && (!this.hostJudges() || this.clue.counting)) return t.at;
     if (this.phase === "ruling" && t?.kind === "ruling" && __privateMethod(this, _JeopardyGame_instances, reopens_fn).call(this)) return t.at;
     return null;
   };
@@ -2403,7 +2426,7 @@
   timerView_fn = function() {
     const t = this.timer;
     if (!t || !["buzz", "answer", "final", "wager", "reading", "intro"].includes(t.kind)) return null;
-    if (t.kind === "reading" && this.hostJudges()) return null;
+    if (t.kind === "reading" && this.hostJudges() && !this.clue?.counting) return null;
     const left = Math.max(0, Math.round(t.shownEnd - __privateMethod(this, _JeopardyGame_instances, now_fn).call(this)));
     return { kind: t.kind, totalMs: t.totalMs, leftMs: left };
   };
@@ -2445,6 +2468,7 @@
         return { pid: ctrl, text: text2, next };
       }
       case "reading":
+        if (c?.counting) return { pid: null, text: "Get ready\u2026", next: "Buzzers open when the bar fills. Buzz too early and you\u2019re locked out a moment" };
         return { pid: null, text: host ? `${judge2 === "the host" ? "The host" : judge2} reads the clue out loud` : "Read the clue", next: host ? `Buzzers open when ${judge2} says go` : "Buzzers open when the bar fills. Buzz too early and you\u2019re locked out a moment" };
       case "open":
         return { pid: null, text: "Buzzers are open!", next: r && !r.correct ? `${name(r.pid)} missed it. Anyone else?` : "First to buzz on their phone answers" };

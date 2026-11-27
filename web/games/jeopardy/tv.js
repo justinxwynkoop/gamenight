@@ -342,7 +342,7 @@ function podiumStrip() {
 function controlItems() {
   const ph = g.phase; const list = [];
   if (ph === 'lobby' && g.players.length) list.push(['Start game (S)', 'start']);
-  if (g.hostJudges && ph === 'reading') list.push(['Open buzzers (B)', 'openNow']);
+  if (g.hostJudges && ph === 'reading' && g.timer?.kind !== 'reading') list.push(['Open buzzers (B)', 'openNow']);
   if (g.hostJudges && (ph === 'answering' || ph === 'dd-answer')) list.push(['Correct (C)', 'judge', { correct: true }], ['Wrong (W)', 'judge', { correct: false }]);
   if (['reading', 'open', 'answering', 'ruling', 'dd-wager', 'dd-answer'].includes(ph)) list.push(['Skip clue (K)', 'skip']);
   if (g.lastResult && ['ruling', 'reveal', 'open', 'board'].includes(ph)) list.push(['Flip last ruling (O)', 'override']);
@@ -719,7 +719,10 @@ function clue() {
   if (g.phase === 'dd-wager') return ddSplash(c, null);
   const q = clueText(c);
   if (g.phase === 'reading') {
-    const band = g.hostJudges
+    const counting = g.hostJudges && g.timer?.kind === 'reading';   // the host opened the buzzers: a short countdown
+    const band = counting
+      ? h('div', { class: 'band' }, h('div', { class: 'grow' }, h('div', { class: 'hint' }, 'Get ready! Buzzers open when the bar fills.'), readingBar(g.timer)))
+      : g.hostJudges
       ? h('div', { class: 'band' }, h('div', { class: 'grow' }, h('div', { class: 'hint' }, 'The host is reading the clue. Thumbs ready.')))
       : h('div', { class: 'band' }, h('div', { class: 'grow' }, h('div', { class: 'hint' }, 'Listen up. Buzzers open when the bar fills.'), readingBar(g.timer)));
     return frame(card(c, { q, band }));

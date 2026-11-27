@@ -19,7 +19,9 @@ touching the host page. The first player to join is the **captain**, unless some
 connected there is **no captain** (in Jeopardy and in Family Feud alike), and the topics are the host's to choose on the host page. The TV lobby
 then shows only who has joined. With **A host judges out loud** on and no host page, the first player is the host (not a captain): their
 phone gets **Open buzzers**, **Correct** and **Wrong** (and can peek at the answer), and taps the clue the player in control
-says.
+says. **Open buzzers** from a phone (or the Apple TV remote) starts a **5-second countdown** ("Get ready!", with a bar on the TV
+and the phones) and the buzzers open when it ends, a moment every phone is told, so they all turn gold together and nobody
+is caught by surprise. A host page connected opens them at once.
 
 1. **Lobby.** Players scan the QR code (or type the room code) and join. The TV (**Choose questions**), the captain's
    phone or the host page chooses what to play, on three shelves:

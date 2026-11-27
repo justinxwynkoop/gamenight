@@ -14,7 +14,7 @@
 .jp button { font-family: inherit; }
 
 /* The phone page takes on the stage look while Jeopardy is up. */
-body.jp-phone { background: radial-gradient(500px 360px at 50% -10%, rgba(42, 75, 216, .4), transparent 70%), #0A0C1C; background-attachment: fixed; padding-bottom: env(safe-area-inset-bottom); }
+body.jp-phone { background: radial-gradient(500px 360px at 50% -10%, rgba(42, 75, 216, .4), transparent 70%), #0A0C1C; background-attachment: fixed; padding-bottom: calc(env(safe-area-inset-bottom) + 56px); }   /* room to scroll the last buttons above a browser's floating bottom bar */
 body.jp-phone .p-head { background: #161A36; font-family: 'Outfit', system-ui, sans-serif; padding-top: max(10px, env(safe-area-inset-top)); }
 body.jp-phone #score { font-family: 'Unbounded', system-ui, sans-serif; font-weight: 900; font-size: 20px; }
 body.jp-phone main, body.jp-phone #screen { min-height: 0; }
@@ -23,7 +23,7 @@ body.jp-phone main, body.jp-phone #screen { min-height: 0; }
 .jp .jp-center { flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center; text-align: center; gap: 14px; min-height: 0; overflow: auto; }
 .jp .jp-center-t { text-align: center; }
 .jp .jp-logo { font-family: var(--jp-display); font-weight: 900; font-size: 30px; line-height: 1.08; color: var(--jp-sun); overflow-wrap: anywhere; }
-.jp .jp-logo.xl { font-size: 64px; color: var(--jp-text); }
+.jp .jp-logo.xl { font-size: min(64px, 12vw); overflow-wrap: normal; color: var(--jp-text); }   /* "CHAMPION" fits on one line on a phone, and is never split mid-word */
 .jp .jp-logo.sun, .jp .sun { color: var(--jp-sun); }
 .jp .jp-logo.good, .jp .good { color: var(--jp-good); }
 .jp .bad { color: var(--jp-hot); }
