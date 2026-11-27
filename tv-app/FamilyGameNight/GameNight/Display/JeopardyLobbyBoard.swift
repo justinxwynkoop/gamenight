@@ -726,7 +726,9 @@ struct JeoSeats: View {
             HStack(alignment: .firstTextBaseline, spacing: 18) {
                 BWEyebrow(text: "Players", size: 20)
                 Text(count == 0 ? "Nobody yet" : "\(count) joined").font(BW.title(26))
-                Text(captain.map { "\($0.name) is captain. Select a player to change it" } ?? "The first to join is captain")
+                Text(game.hosted == true ? "A host is running this game"
+                     : captain.map { "\($0.name) is \(game.hostJudges ? "the host" : "captain"). Select a player to change it" }
+                     ?? (game.hostJudges ? "The first to join is the host" : "The first to join is captain"))
                     .font(BW.body(21)).foregroundColor(BW.muted).lineLimit(1).minimumScaleFactor(0.7)
                 Spacer(minLength: 8)
                 Button { act("setHostJudges", ["on": !game.hostJudges]) } label: {
@@ -752,7 +754,7 @@ struct JeoSeats: View {
                             BWAvatar(name: player.name, color: Color(playerHex: player.color), size: 58)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(player.name).font(BW.body(26, .heavy)).lineLimit(1).minimumScaleFactor(0.6)
-                                Text(isCaptain ? "\u{2605} Captain" : player.connected ? "Ready" : "Reconnecting\u{2026}")
+                                Text(isCaptain ? (game.hostJudges ? "\u{2605} Host" : "\u{2605} Captain") : player.connected ? "Ready" : "Reconnecting\u{2026}")
                                     .font(BW.body(17, .semibold))
                                     .foregroundColor(isCaptain ? BW.yellow : player.connected ? BW.mint : BW.muted)
                             }
@@ -792,7 +794,7 @@ struct JeoSeats: View {
             }
         }
         .fullScreenCover(item: $chosen) { player in
-            JeoPlayerSheet(player: player, isCaptain: player.id == game.captainId, act: act) { chosen = nil }
+            JeoPlayerSheet(player: player, isCaptain: player.id == game.captainId, hosted: game.hosted == true, hostJudges: game.hostJudges, act: act) { chosen = nil }
         }
         .padding(28)
         .frame(maxWidth: .infinity, alignment: .topLeading)

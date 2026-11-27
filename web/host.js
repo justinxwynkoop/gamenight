@@ -260,7 +260,8 @@ function playersTab() {
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, `${room.fixedTeams} teams`),
     h('p', { class: 'dim' }, `${room.games.find((x) => x.id === room.gameId)?.name ?? 'This game'} is always played by ${room.fixedTeams} teams. Players are dealt onto them at random.`),
-    lobby && button({ label: 'Shuffle teams', icon: 'shuffle', onclick: () => act('shuffleTeams') }),
+    // (A game where players pick their own side, Guys vs Gals, has no shuffle: it would undo what they picked.)
+    lobby && !room.picksSides && button({ label: 'Shuffle teams', icon: 'shuffle', onclick: () => act('shuffleTeams') }),
   ] : [
     eyebrow('How to play'),
     h('div', { class: 'card-title' }, teams ? `${room.teams.length} teams` : 'Individual players'),
@@ -275,9 +276,9 @@ function playersTab() {
       seg([{ value: 2, label: '2 teams', sub: 'Red, Blue' }, { value: 4, label: '4 teams', sub: '+ Green, Yellow' }], room.teams.length,
         (c) => act('setTeamCount', { count: c })),
       count > 2 * room.teamSize && h('p', { class: 'dim' }, `More than ${2 * room.teamSize} players, so there are four teams.`),
-      button({ label: 'Shuffle teams', icon: 'shuffle', onclick: () => act('shuffleTeams') }));
+      lobby && button({ label: 'Shuffle teams', icon: 'shuffle', onclick: () => act('shuffleTeams') }));
   }
-  if (!lobby) how.push(h('p', { class: 'dim' }, 'Teams can only be changed before the game starts. You can still move a player below.'));
+  if (!lobby) how.push(h('p', { class: 'dim' }, 'Teams and sides are fixed once the game has started.'));
   cards.push(card(...how));
 
   if (teams) {
@@ -292,9 +293,10 @@ function playersTab() {
       return h('div', { class: 'rowi' }, dot(t?.color ?? p.color, 16),
         h('div', { class: 'grow' }, h('div', { class: 't' }, p.name),
           h('div', { class: 's' }, [t?.name, p.kind === 'buzzer' && 'buzzer', p.connected ? 'online' : 'offline'].filter(Boolean).join(' · '))),
-        teams && button({ label: 'Team', icon: 'swap', kind: 'ghost', size: 'sm', onclick: () => openTeamSheet(p) }),
+        teams && lobby && button({ label: 'Team', icon: 'swap', kind: 'ghost', size: 'sm', onclick: () => openTeamSheet(p) }),
         // Games with a captain (Jeopardy): hand the captain's controls to someone else, at any time.
-        view.game?.captainId !== undefined && (p.id === view.game.captainId
+        // (With a host page connected there is no captain, so captainId is null and nothing shows.)
+        !!view.game?.captainId && (p.id === view.game.captainId
           ? h('span', { class: 'pill' }, '★ Captain')
           : button({ label: 'Make captain', kind: 'ghost', size: 'sm', onclick: () => act('setCaptain', { pid: p.id }) })),
         !teams && lobby && button({ icon: 'edit', kind: 'ghost', size: 'sm', aria: `Rename ${p.name}`, onclick: () => openRenameSheet(p.id, p.name) }),

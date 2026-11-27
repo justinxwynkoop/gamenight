@@ -217,6 +217,7 @@ export class Room {
   /** Deal everyone onto the teams again, at random. */
   shuffleTeams() {
     this.#lobbyOnly('Shuffle the teams');
+    if (this.games[this.gameId]?.needs?.picksSides) fail('Players pick their own side in this game');
     if (this.mode !== 'teams') fail('Not playing in teams');
     this.#deal();
     this.changed();
@@ -295,6 +296,9 @@ export class Room {
   }
   setPlayerTeam(playerId, teamId) {
     const p = this.player(playerId);
+    // Once a game has started nobody changes sides: it would hand a face-off seat, a reader's card or a Fast Money turn to the
+    // wrong person (a player who has no team yet may still be put on one).
+    if (this.inProgress() && p.teamId) fail('Players cannot change teams once the game has started');
     if (teamId && !this.teams.some((t) => t.id === teamId)) fail('No such team');
     p.teamId = teamId || null;
     this.changed();
@@ -324,6 +328,7 @@ export class Room {
     this.changed();
   }
   adjustScore(id, { delta, set }) {
+    if (this.games[this.gameId]?.needs?.noScoreEdit) fail('This game has no score to fix');
     const u = this.unit(id) ?? fail('No such player');
     if (set !== undefined) {
       const n = int(set); if (Number.isNaN(n)) fail('Score must be a number'); u.score = n;
@@ -399,6 +404,7 @@ export class Room {
       modeSetting: this.modeSetting,
       teamCount: this.teams.length,
       fixedTeams: this.#neededTeams(),   // a game that insists on this many teams (0: the host chooses)
+      picksSides: !!this.games[this.gameId]?.needs?.picksSides,   // players choose their own team (no shuffling)
       individualsOnly: this.#individualsOnly(),
       maxPlayers: this.#maxPlayers(),
       individualMax: INDIVIDUAL_MAX,

@@ -48,8 +48,18 @@ export function validateSet(set) {
 /** A question's answers best first (the board lists them by rank). */
 export const ranked = (q) => q.answers.map((a) => ({ text: cleanName(a.text, 40), points: int(a.points), aliases: a.aliases ?? [] })).sort((a, b) => b.points - a.points);
 
+/** One word with its plural or "-ie" ending folded, so "cookies" is "cookie" and "horses" is "horse". */
+const stemWord = (w) => {
+  if (w.length <= 3) return w;
+  if (/ies$/.test(w) && w.length > 4) return `${w.slice(0, -3)}y`;
+  if (/(ss|x|ch|sh|z)es$/.test(w)) return w.slice(0, -2);
+  if (/s$/.test(w) && !/(ss|us|is)$/.test(w)) w = w.slice(0, -1);
+  return /ie$/.test(w) && w.length > 4 ? `${w.slice(0, -2)}y` : w;
+};
 const normalize = (s) => String(s ?? '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\b(a|an|the|my|your|their|his|her)\b/g, ' ').replace(/\s+/g, ' ').trim()
-  .split(' ').map((w) => (w.length > 3 ? w.replace(/(ies)$/, 'y').replace(/(es|s)$/, '') : w)).join(' ');
+  .split(' ').map(stemWord).join(' ');
+/** `part` is a run of whole words inside `whole` ("chicken" in "fried chicken", never "ant" in "restaurant"). */
+const wholeWords = (whole, part) => ` ${whole} `.includes(` ${part} `);
 
 /** Which of a question's answers a typed or spoken guess most likely means, as an index into ranked(), or -1. */
 export function matchAnswer(answers, typed) {
@@ -61,7 +71,7 @@ export function matchAnswer(answers, typed) {
       const f = normalize(form);
       if (!f) continue;
       if (f === t) { best = i; return; }
-      if (best === -1 && t.length >= 3 && (f.includes(t) || (f.length >= 3 && t.includes(f)))) best = i;
+      if (best === -1 && t.length >= 3 && (wholeWords(f, t) || (f.length >= 3 && wholeWords(t, f)))) best = i;
     }
   });
   return best;
@@ -136,7 +146,7 @@ export class FeudGame {
       case 'revealRest': return this.revealRest();
       case 'showAnswer': return this.showAnswer(a.index === undefined ? undefined : int(a.index));
       case 'nextRound': return this.nextRound();
-      case 'endRounds': return this.finishRounds();
+      case 'endRounds': return this.finishRounds(a.bank === true);
       // Fast Money
       case 'fmTeam': return this.fmTeam(a.id);
       case 'fmPlayers': return this.fmPlayers(a.ids);
@@ -615,9 +625,14 @@ export class FeudGame {
     return { question: q.question, answers: q.answers.map((a) => ({ text: a.text, points: a.points, aliases: a.aliases ?? [] })) };
   }
   /** The regular rounds are over (a team reached the target, the questions ran out, or the host ended them). */
-  finishRounds() {
+  finishRounds(bank = false) {
     const run = this.run;
     if (run.status !== 'round') fail('No round is being played');
+    // Ending in the middle of a round: the points on the board have not been won by anyone. They are lost, unless the host
+    // gives them to the team that has the board (bank).
+    if (bank && run.step !== 'roundEnd' && run.control && this.pot() > 0) {
+      this.#unit(run.control).score += this.pot() * this.multiplier();
+    }
     this.history = [];
     // Whoever leads now has won the game. Fast Money is then a bonus round for them: it cannot change the result,
     // it is played for the jackpot. Only a tie leaves the winner open, and then Fast Money decides it: the team that

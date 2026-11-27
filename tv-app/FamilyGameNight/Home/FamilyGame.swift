@@ -15,10 +15,10 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     // MARK: - The menu's layout
-    // Up to three games sit in one row. From four on they go in two staggered rows (brick fashion), which leaves room for
-    // much larger tiles than one long row would. A tile is just the game's logo art; the name, description and facts
-    // appear in a pop-up beside the tile that has focus. The size is worked out from the number of games and the screen,
-    // so adding a game needs no change here.
+    // A tile is just the game's logo art; the name, description and facts (players, host, devices) appear in a pop-up beside
+    // the tile that has focus. The layout is worked out from the number of games and the screen, so adding a game needs no
+    // change here: every way of splitting the games into 1 to 4 rows is tried, the one with the biggest tiles wins (fewer
+    // rows on a tie), and rows of equal length are slid half a tile apart, brick fashion, when that costs little.
 
     /// Space for the tiles on a 1920 x 1080 screen, inside the menu's side padding, between the title and the footer.
     private static let menuWidth: CGFloat = 1760
@@ -27,34 +27,60 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     static let tileAspect: CGFloat = 0.6
     static let cardSpacing: CGFloat = 36
     static let rowSpacing: CGFloat = 30
+    private static let maxCardWidth: CGFloat = 560
+    private static let maxRows = 4
+    /// A staggered layout is picked over a plain one unless its tiles come out more than this much smaller.
+    private static let staggerBonus: CGFloat = 1.25
 
-    static var rowCount: Int { allCases.count <= 3 ? 1 : 2 }
-    static var perRow: Int { (allCases.count + rowCount - 1) / rowCount }
-    /// Two rows of the same length are slid half a tile apart so they still stagger.
-    static var rowsAreShifted: Bool { rowCount > 1 && allCases.count % rowCount == 0 }
-
-    static var cardWidth: CGFloat {
-        let across = CGFloat(perRow)
-        let byWidth = rowsAreShifted
-            ? (menuWidth - (across - 0.5) * cardSpacing) / (across + 0.5)
-            : (menuWidth - (across - 1) * cardSpacing) / across
-        let rows = CGFloat(rowCount)
-        let byHeight = ((menuHeight - (rows - 1) * rowSpacing) / rows) / tileAspect
-        return min(560, byWidth, byHeight).rounded(.down)
+    /// How a number of games is laid out: tiles per row, whether the rows are staggered, and the width of a tile.
+    struct MenuLayout: Equatable {
+        let perRow: Int
+        let rowCount: Int
+        let staggered: Bool
+        let cardWidth: CGFloat
     }
+
+    /// The best layout for `count` games (pure, so it can be checked for any number of games).
+    static func menuLayout(count: Int) -> MenuLayout {
+        var best: (layout: MenuLayout, score: CGFloat)?
+        for rowsWanted in 1 ... min(maxRows, max(1, count)) {
+            let perRow = (count + rowsWanted - 1) / rowsWanted
+            let rows = (count + perRow - 1) / perRow
+            guard rows == rowsWanted else { continue }   // e.g. 4 games in "3 rows" is really 2 rows of 2
+            let across = CGFloat(perRow)
+            let byHeight = ((menuHeight - CGFloat(rows - 1) * rowSpacing) / CGFloat(rows)) / tileAspect
+            for staggered in (rows > 1 && perRow > 1 && count % perRow == 0) ? [true, false] : [false] {
+                let byWidth = staggered
+                    ? (menuWidth - (across - 0.5) * cardSpacing) / (across + 0.5)
+                    : (menuWidth - (across - 1) * cardSpacing) / across
+                let width = min(maxCardWidth, byWidth, byHeight).rounded(.down)
+                let layout = MenuLayout(perRow: perRow, rowCount: rows, staggered: staggered, cardWidth: width)
+                let score = width * (staggered ? staggerBonus : 1)
+                if best == nil || score > best!.score + 0.5 { best = (layout, score) }   // a tie keeps the one with fewer rows
+            }
+        }
+        return best?.layout ?? MenuLayout(perRow: 1, rowCount: 1, staggered: false, cardWidth: maxCardWidth)
+    }
+
+    static var layout: MenuLayout { menuLayout(count: allCases.count) }
+    static var cardWidth: CGFloat { layout.cardWidth }
 
     /// The games laid out row by row.
     static var rows: [[FamilyGame]] {
         let all = Array(allCases)
+        let perRow = layout.perRow
         return stride(from: 0, to: all.count, by: perRow).map { Array(all[$0 ..< min($0 + perRow, all.count)]) }
     }
 
-    /// How far a row is slid sideways: the first row left and the second right by a quarter of a tile each.
+    /// How far a row is slid sideways: even rows left and odd rows right by a quarter of a tile each (half a tile apart).
     static func rowShift(_ index: Int) -> CGFloat {
-        guard rowsAreShifted else { return 0 }
+        guard layout.staggered else { return 0 }
         let quarter = (cardWidth + cardSpacing) / 4
-        return index == 0 ? -quarter : quarter
+        return index % 2 == 0 ? -quarter : quarter
     }
+
+    /// True when the pop-up for a tile in this row goes below it (the top half of the screen); otherwise above it.
+    static func tooltipBelow(row index: Int) -> Bool { layout.rowCount == 1 || index < layout.rowCount / 2 }
 
     var title: String {
         switch self {
@@ -79,27 +105,27 @@ enum FamilyGame: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Who plays and what you need, shown under the blurb.
-    var players: String {
+    /// What a game needs, shown in its pop-up: how many play, whether it needs a host, and who needs a device.
+    var facts: GameFacts {
         switch self {
-        case .singo: return "Bingo with songs, for the whole room"
-        case .jeopardy: return "Players or teams buzz in from their phones"
-        case .feud: return "Two teams, phones as buzzers"
-        case .spynight: return "Five to ten players, each on their own phone"
-        case .piechase: return "Two to six players or teams, each with a phone"
-        case .guysvsgals: return "Guys against Gals, everyone votes on their own phone"
-        }
-    }
-
-    /// Two quick facts shown as pills on the game's card: an SF Symbol and a word or two.
-    var tags: [GameTag] {
-        switch self {
-        case .singo: return [GameTag("music.note", "Apple Music"), GameTag("tv", "Plays on the TV")]
-        case .jeopardy: return [GameTag("person.3.fill", "2+ players"), GameTag("iphone", "Phone buzzers")]
-        case .feud: return [GameTag("person.2.fill", "Two teams"), GameTag("bolt.fill", "Fast Money")]
-        case .spynight: return [GameTag("person.3.fill", "5–10 players"), GameTag("eye.slash.fill", "Secret roles")]
-        case .piechase: return [GameTag("person.3.fill", "2–6 players"), GameTag("die.face.5.fill", "Six wedges")]
-        case .guysvsgals: return [GameTag("person.2.fill", "Two sides"), GameTag("trophy.fill", "Tug of war")]
+        case .singo:
+            return GameFacts(players: "1–30 players", host: .notNeeded, devices: .optional,
+                             devicesNote: "Phones show the bingo card (a QR code on the TV), or hand out printed sheets")
+        case .jeopardy:
+            return GameFacts(players: "1–10 players", host: .optional, devices: .each,
+                             devicesNote: "Each player buzzes in from their own phone")
+        case .feud:
+            return GameFacts(players: "2–30 players, in two teams", host: .optional, devices: .hostOnly,
+                             devicesNote: "With a host only the host needs a phone. Without one, everyone plays on their own")
+        case .spynight:
+            return GameFacts(players: "5–10 players", host: .optional, devices: .each,
+                             devicesNote: "Secret roles, so each player needs their own phone")
+        case .piechase:
+            return GameFacts(players: "2–6 players or teams", host: .optional, devices: .shared,
+                             devicesNote: "One phone per player, or one per team")
+        case .guysvsgals:
+            return GameFacts(players: "2–30 players, Guys against Gals", host: .optional, devices: .shared,
+                             devicesNote: "Everyone plays on their own phone, or several share one")
         }
     }
 
@@ -128,13 +154,56 @@ enum FamilyGame: String, CaseIterable, Identifiable {
     }
 }
 
-/// A pill on a game's card: an SF Symbol and a word or two.
-struct GameTag: Hashable {
-    let icon: String
-    let text: String
-
-    init(_ icon: String, _ text: String) {
-        self.icon = icon
-        self.text = text
+/// What a game needs, for the pop-up on the home screen.
+struct GameFacts {
+    enum Host {
+        case notNeeded, optional, required
+        var text: String {
+            switch self {
+            case .notNeeded: return "No host needed"
+            case .optional: return "A host is optional"
+            case .required: return "Needs a host"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .notNeeded: return "person.slash"
+            case .optional: return "person.fill.questionmark"
+            case .required: return "person.fill.checkmark"
+            }
+        }
     }
+
+    enum Devices {
+        /// Every player needs a phone of their own.
+        case each
+        /// A phone each is best, but several players (or a team) can share one.
+        case shared
+        /// With a host, only the host needs a device.
+        case hostOnly
+        /// Phones are a bonus (a card on the phone, or a printed one).
+        case optional
+        var text: String {
+            switch self {
+            case .each: return "Everyone needs their own phone"
+            case .shared: return "Phones can be shared"
+            case .hostOnly: return "Only the host needs a phone"
+            case .optional: return "Phones are optional"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .each: return "iphone"
+            case .shared: return "person.2.fill"
+            case .hostOnly: return "person.fill.checkmark"
+            case .optional: return "iphone.slash"
+            }
+        }
+    }
+
+    let players: String
+    let host: Host
+    let devices: Devices
+    /// A sentence that explains the phone line.
+    let devicesNote: String
 }

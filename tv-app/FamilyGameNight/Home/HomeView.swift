@@ -86,12 +86,13 @@ struct HomeView: View {
         }
     }
 
-    /// The pop-up for the focused tile: below it for the top row, above it for the bottom row, kept on screen.
+    /// The pop-up for the focused tile: below it for the top half of the rows, above it for the bottom half, kept on screen.
     @ViewBuilder
     private func tooltip(for game: FamilyGame, tile: CGRect, in size: CGSize) -> some View {
         let width = GameTooltip.width
         let left = min(max(tile.midX - width / 2, 0), size.width - width)
-        let below = FamilyGame.rows.first?.contains(game) ?? true
+        let row = FamilyGame.rows.firstIndex(where: { $0.contains(game) }) ?? 0
+        let below = FamilyGame.tooltipBelow(row: row)
         let gap = tile.height * 0.06 + 14   // the focused tile is drawn a little larger than its frame
         GameTooltip(game: game)
             .padding(.leading, left)
@@ -174,33 +175,30 @@ private struct TileFrames: PreferenceKey {
     }
 }
 
-/// The pop-up: the game's name, what it is, who plays and what you need.
+/// The pop-up: the game's name, what it is, how many play, whether it needs a host and who needs a phone.
 private struct GameTooltip: View {
-    static let width: CGFloat = 600
+    static let width: CGFloat = 640
     let game: FamilyGame
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let facts = game.facts
+        VStack(alignment: .leading, spacing: 12) {
             Text(game.title)
-                .font(.system(size: 36, weight: .bold))
+                .font(.system(size: 38, weight: .bold))
             Text(game.blurb)
-                .font(.system(size: 26, weight: .medium))
+                .font(.system(size: 25, weight: .medium))
                 .foregroundStyle(.white.opacity(0.9))
                 .fixedSize(horizontal: false, vertical: true)
-            Text(game.players)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(game.accent)
-                .brightness(0.5)
-            HStack(spacing: 10) {
-                ForEach(game.tags, id: \.self) { tag in
-                    HStack(spacing: 8) {
-                        Image(systemName: tag.icon).font(.system(size: 17, weight: .bold))
-                        Text(tag.text).font(.system(size: 20, weight: .semibold)).lineLimit(1)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(.white.opacity(0.18)))
-                }
+            Divider().overlay(.white.opacity(0.25)).padding(.vertical, 2)
+            fact("person.3.fill", facts.players)
+            fact(facts.host.icon, facts.host.text)
+            VStack(alignment: .leading, spacing: 2) {
+                fact(facts.devices.icon, facts.devices.text)
+                Text(facts.devicesNote)
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 46)
             }
         }
         .foregroundStyle(.white)
@@ -208,12 +206,24 @@ private struct GameTooltip: View {
         .frame(width: Self.width, alignment: .leading)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 26, style: .continuous).fill(.black.opacity(0.82))
+                RoundedRectangle(cornerRadius: 26, style: .continuous).fill(.black.opacity(0.84))
                 RoundedRectangle(cornerRadius: 26, style: .continuous).fill(game.accent.opacity(0.4))
             }
         )
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.35), lineWidth: 2))
         .shadow(color: .black.opacity(0.6), radius: 30, y: 12)
+    }
+
+    /// One line of the pop-up: an SF Symbol in the game's colour and a short sentence.
+    private func fact(_ icon: String, _ text: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(game.accent)
+                .brightness(0.55)
+                .frame(width: 32)
+            Text(text).font(.system(size: 26, weight: .semibold))
+        }
     }
 }
 

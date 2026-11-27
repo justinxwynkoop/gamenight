@@ -17,8 +17,8 @@ export function render(raw, ctx) {
   const body = [];
   const dock = [];
   const waitingFor = () => {
-    if (g.phase === 'roles') return raw.room.players.filter((p) => !g.readyIds.includes(p.id)).map((p) => p.name);
-    if (g.phase === 'vote') return raw.room.players.filter((p) => !g.votedIds.includes(p.id)).map((p) => p.name);
+    if (g.phase === 'roles') return g.players.filter((p) => !g.readyIds.includes(p.id)).map((p) => p.name);
+    if (g.phase === 'vote') return g.players.filter((p) => !g.votedIds.includes(p.id)).map((p) => p.name);
     if (g.phase === 'mission') return g.team.filter((id) => !g.playedIds.includes(id)).map((id) => nameOf(g, id));
     return [];
   };
@@ -33,14 +33,17 @@ export function render(raw, ctx) {
     dock.push(button({ label: 'Deal the roles', icon: 'play', kind: 'primary', size: 'lg', block: true, disabled: n < g.minPlayers, onclick: () => act('start') }));
   } else if (g.phase === 'gameover') {
     body.push(card(eyebrow('Result'), h('div', { class: 'card-title' }, g.winner === 'spies' ? 'The Spies win' : 'The Resistance wins'), h('p', { class: 'dim' }, g.why),
-      h('div', { class: 'list' }, raw.room.players.map((p) => h('div', { class: 'rowi' }, dot(p.color, 18), h('div', { class: 'grow t' }, p.name), h('span', { class: 'tag' }, g.roles[p.id] === 'spy' ? 'Spy' : 'Resistance'))))));
+      h('div', { class: 'list' }, g.players.map((p) => h('div', { class: 'rowi' }, dot(p.color, 18), h('div', { class: 'grow t' }, p.name), h('span', { class: 'tag' }, g.roles[p.id] === 'spy' ? 'Spy' : 'Resistance'))))));
     dock.push(button({ label: 'Play again', icon: 'refresh', kind: 'primary', size: 'lg', block: true, onclick: () => act('playAgain') }));
   } else {
     body.push(card(eyebrow('Now'), h('div', { class: 'card-title' }, g.line.text), h('p', { class: 'dim' }, g.line.next),
       g.phase === 'team' ? h('p', {}, `Leader: ${nameOf(g, g.leaderId)} · picking ${g.teamSize}`) : null,
       waitingFor().length ? h('p', { class: 'dim' }, `Waiting for: ${waitingFor().join(', ')}`) : null));
     if (['roles', 'team', 'vote', 'mission', 'vote-result', 'mission-result'].includes(g.phase)) {
-      dock.push(button({ label: g.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => act('advance') }));
+      // Moving on in a vote or a mission counts whoever has not answered as Reject (a vote) or Success (a card): ask first.
+      const missing = ['vote', 'mission'].includes(g.phase) ? waitingFor() : [];
+      dock.push(button({ label: g.phase === 'team' ? 'Skip the leader' : 'Move on without waiting', icon: 'chevron', kind: 'primary', size: 'lg', block: true,
+        onclick: missing.length ? () => ctx.confirm({ title: 'Move on without them?', message: `${missing.join(', ')} ${missing.length === 1 ? 'has' : 'have'} not ${g.phase === 'vote' ? 'voted' : 'played a card'}. ${g.phase === 'vote' ? 'A missing vote counts as Reject.' : 'A missing card counts as Success.'}`, confirmLabel: 'Move on', kind: 'primary', onConfirm: () => act('advance') }) : () => act('advance') }));
     }
   }
   return {

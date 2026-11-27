@@ -1123,7 +1123,7 @@ export class JeopardyGame {
     else if (this.phase === 'reveal') { this.#clearTimer(); this.#afterReveal(); }
     else if (this.phase === 'final-wager') this.#beginFinalClue();
     else if (this.phase === 'final-answer') { this.#clearTimer(); this.#beginFinalReveal(); }
-    else if (this.phase === 'final-reveal') this.#finalStep();
+    else if (this.phase === 'final-reveal') { if (this.final?.manual) this.#finalNextManual(); else this.#finalStep(); }
   }
   /** Skip a clue (a broken or unfair one): show the answer, and nobody wins or loses anything for it. */
   skipClue() {
@@ -1149,7 +1149,8 @@ export class JeopardyGame {
   /** Flip the last automatic ruling (a typo or a generous call). */
   override() {
     const r = this.lastResult;
-    if (!r || this.phase.startsWith('final')) return;
+    // Only while the clue it belongs to is still on or just after it (the same moments the buttons are offered), never once a round or the game is over.
+    if (!r || !['ruling', 'reveal', 'open', 'board', 'reading', 'answering'].includes(this.phase)) return;
     const p = this.#player(r.pid);
     if (!p) return;
     p.score += (r.correct ? -1 : 1) * 2 * r.delta;
@@ -1247,8 +1248,50 @@ export class JeopardyGame {
     f.revealIndex = -1;
     f.stage = null;
     f.answerShown = false;
+    // With a host (a host page, or a host judging out loud) the host turns each response over and rules on it by hand:
+    // "Ann wrote... that is right, and she wagered...". Nobody hosting: the game does it on a timer, checking the typed answers.
+    f.manual = this.hostJudges() && f.revealOrder.length > 0;
     this.phase = 'final-reveal';
+    if (f.manual) { f.revealIndex = 0; f.stage = 'hidden'; this.#clearTimer(); this.#changed(); return; }
     this.#finalStep();
+  }
+  /** Manual reveal: the host turns the current player's response over. */
+  finalReveal() {
+    const f = this.final;
+    if (this.phase !== 'final-reveal' || !f?.manual || f.stage !== 'hidden') fail('There is no answer to turn over right now');
+    f.results[f.revealOrder[f.revealIndex]].shown = true;
+    f.stage = 'answer';
+    this.#changed();
+  }
+  /** Manual reveal: the host says whether the response was right. Only now do the score and the wager show. */
+  finalRule(correct) {
+    const f = this.final;
+    if (this.phase !== 'final-reveal' || !f?.manual || f.stage !== 'answer') fail('Turn the answer over first');
+    const id = f.revealOrder[f.revealIndex];
+    const r = f.results[id];
+    const p = this.#player(id);
+    r.correct = !!correct;
+    if (p && !r.applied) {
+      p.score += r.correct ? f.wagers[id] : -f.wagers[id];
+      this.#tally(id, r.correct, f.wagers[id]);
+      r.applied = true;
+    }
+    f.stage = 'verdict';
+    this.#changed();
+  }
+  /** Manual reveal: on to the next player, then the correct response, then the champion. */
+  #finalNextManual() {
+    const f = this.final;
+    if (f.stage === 'hidden') { this.finalReveal(); return; }
+    if (f.stage === 'answer') fail('Say whether it was right or wrong first');
+    if (f.stage === 'verdict') {
+      if (f.revealIndex + 1 < f.revealOrder.length) { f.revealIndex += 1; f.stage = 'hidden'; }
+      else { f.answerShown = true; f.stage = 'done'; }
+      this.#changed();
+      return;
+    }
+    this.phase = 'gameover';
+    this.#changed();
   }
   /**
    * One beat of the final reveal. Each player: their response ('answer'), then right or wrong with the wager
@@ -1297,7 +1340,15 @@ export class JeopardyGame {
       f.eligible = f.eligible.filter((x) => x !== id);
       delete f.wagers[id]; delete f.answers[id]; if (f.drafts) delete f.drafts[id];
       const at = f.revealOrder.indexOf(id);
-      if (at >= 0) {
+      if (at >= 0 && f.manual) {
+        // By hand: whoever was up is gone, so the next player (if any) is up, face down.
+        f.revealOrder.splice(at, 1);
+        if (this.phase === 'final-reveal') {
+          if (at < f.revealIndex) f.revealIndex -= 1;
+          else if (at === f.revealIndex && f.stage !== 'done') f.stage = 'hidden';
+          if (f.revealIndex >= f.revealOrder.length) { f.revealIndex = f.revealOrder.length - 1; f.answerShown = true; f.stage = 'done'; }
+        }
+      } else if (at >= 0) {
         f.revealOrder.splice(at, 1);
         if (at <= f.revealIndex) { f.revealIndex -= 1; if (at === f.revealIndex + 1 && f.stage === 'answer') f.stage = 'verdict'; }
       }
@@ -1399,6 +1450,8 @@ export class JeopardyGame {
       case 'skip': return this.skipClue();
       case 'override': return this.override();
       case 'finalOverride': return this.finalOverride(String(a.pid ?? a.targetPid ?? ''));
+      case 'finalReveal': return this.finalReveal();
+      case 'finalRule': return this.finalRule(a.correct === true);
       case 'endRound': return this.endRound();
       case 'playAgain': return this.playAgain();
       case 'endGame': return this.endGame();
@@ -1422,7 +1475,7 @@ export class JeopardyGame {
     }
   }
   /** What the captain's phone may do (with a host page connected there is no captain; without one the captain is the host). */
-  static CAPTAIN_ACTIONS = new Set(['judge', 'openNow', 'pick', 'peek', 'ddWager', 'kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory', 'resetHall']);
+  static CAPTAIN_ACTIONS = new Set(['judge', 'openNow', 'pick', 'peek', 'ddWager', 'kick', 'setCaptain', 'togglePack', 'start', 'advance', 'skip', 'override', 'finalOverride', 'finalReveal', 'finalRule', 'endRound', 'playAgain', 'endGame', 'adjustScore', 'toggleEasy', 'setAnswerTime', 'setEra', 'previewBoard', 'swapCategory', 'clearPreview', 'setHostJudges', 'setAsWritten', 'setFinalForAll', 'setReadAloud', 'playBoard', 'setAllPacks', 'resetHistory', 'resetHall']);
 
   /** A message from a phone. */
   onPlayer(player, msg) {
@@ -1535,7 +1588,11 @@ export class JeopardyGame {
         return { pid: null, text: 'Write your response on your phone', next: locked(f?.answers) };
       case 'final-reveal': {
         const id = f?.revealOrder?.[f.revealIndex];
-        if (f?.stage === 'done' || !id) return { pid: null, text: 'And the correct response is…', next: 'Then we crown the champion' };
+        if (f?.stage === 'done' || !id) return { pid: null, text: 'And the correct response is…', next: f?.manual ? `${mover} taps Continue to crown the champion` : 'Then we crown the champion' };
+        if (f?.manual) {
+          const next = f.stage === 'hidden' ? `${mover} turns over ${name(id)}’s response` : f.stage === 'answer' ? `${mover} says whether it is right or wrong` : `${mover} taps Next`;
+          return { pid: id, text: `${name(id)}’s response`, next };
+        }
         return { pid: id, text: `${name(id)}’s response`, next: 'Lowest score goes first' };
       }
       case 'gameover':
@@ -1643,13 +1700,16 @@ export class JeopardyGame {
         revealIndex: f.revealIndex,
         // 'answer' (their response is up), 'verdict' (right or wrong, and the wager), 'done' (the correct answer).
         stage: this.phase === 'final-reveal' ? (f.stage ?? null) : null,
+        // A host turns each response over and rules on it by hand (stages 'hidden', 'answer', 'verdict').
+        manual: !!f.manual,
         answerShown: this.phase === 'gameover' || !!f.answerShown,
         order: done ? (f.revealOrder ?? []).slice() : [],
         reveals: done ? (f.revealOrder ?? []).slice(0, f.revealIndex + 1).map((id, i) => {
           const r = f.results[id] ?? {};
           // While a response is up, right or wrong and the wager stay hidden.
-          const pending = this.phase === 'final-reveal' && i === f.revealIndex && f.stage === 'answer';
-          return { id, answer: r.answer, correct: pending ? false : !!r.correct, overridden: !!r.overridden, wager: pending ? 0 : (f.wagers[id] ?? 0), pending };
+          const covered = this.phase === 'final-reveal' && i === f.revealIndex && f.stage === 'hidden';   // not turned over yet: the response is not sent at all
+          const pending = covered || (this.phase === 'final-reveal' && i === f.revealIndex && f.stage === 'answer');
+          return { id, answer: covered ? '' : r.answer, correct: pending ? false : !!r.correct, overridden: !!r.overridden, wager: pending ? 0 : (f.wagers[id] ?? 0), pending, ...(covered ? { hidden: true } : {}) };
         }) : [],
       };
     }
@@ -1667,8 +1727,19 @@ export class JeopardyGame {
       finalAnswer: this.final ? this.final.answers[p.id] : undefined,
       // The captain who is also the host may peek at the answer while someone answers out loud.
       answer: this.hostJudges() && this.captain() === p.id && ['answering', 'dd-answer'].includes(this.phase) ? this.clue?.a ?? null : null,
+      // The captain who is the host sees the response before turning it over.
+      finalCurrent: this.hostJudges() && this.captain() === p.id ? this.#finalCurrent() : null,
     } : null;
     return v;
+  }
+  /** By-hand Final reveal: the player who is up, what they wrote (before it is turned over), their wager and what the game thinks. */
+  #finalCurrent() {
+    const f = this.final;
+    if (!f?.manual || this.phase !== 'final-reveal' || f.stage === 'done') return null;
+    const id = f.revealOrder[f.revealIndex];
+    const r = id && f.results[id];
+    if (!r) return null;
+    return { id, answer: r.answer, wager: f.wagers[id] ?? 0, suggested: !!r.correct, stage: f.stage, index: f.revealIndex, of: f.revealOrder.length };
   }
   /** The host also sees the answers, ahead of time. */
   hostView() {
@@ -1680,6 +1751,7 @@ export class JeopardyGame {
       alt: this.clue ? this.clue.alt : [],
       finalAnswer: this.final ? this.final.a : null,
       finalAnswers: this.final && this.phase === 'final-answer' ? this.final.answers : null,
+      finalCurrent: this.#finalCurrent(),
       // Where the Daily Doubles hide on the current board.
       dd: b ? b.map((c) => c.clues.map((cl) => cl.dd)) : null,
     };
@@ -1730,7 +1802,7 @@ export class JeopardyGame {
     else if (this.phase === 'final-wager') this.#setTimer(T.finalWager, () => this.#lockFinalWagers(), 'wager');
     // Answers already locked in are kept; everyone else gets the whole clock again.
     else if (this.phase === 'final-answer') this.#setTimer(T.finalAnswer, () => this.#beginFinalReveal(), 'final');
-    else if (this.phase === 'final-reveal') this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
+    else if (this.phase === 'final-reveal' && !this.final?.manual) this.#setTimer(T.finalStep, () => this.#finalStep(), 'final-step');
     if (this.phase === 'lobby' && !this.archivePacks.length) this.#requestArchive(this.era);
   }
 }

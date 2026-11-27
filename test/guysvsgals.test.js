@@ -231,12 +231,13 @@ test('a challenge: the readers’ team answers it themselves, without having see
   assert.equal(room.publicView().game.teams.find((t) => t.side === 'gals').challenges, CHALLENGES - 2);
 });
 
-test('if the reader wanders off, their team judges; on a challenge, the team that challenged does', () => {
+test('if the reader wanders off, their teammates do NOT get the answer (a challenge could still come); on a challenge, the team that challenged judges', () => {
   const { room, g, G, W, begin, msg, view } = setup();
   begin();
   room.setConnected(G[0].id, false);
-  assert.equal(view(G[1]).me.canJudge, true);
-  assert.ok(view(G[1]).me.answer);
+  assert.equal(view(G[1]).me.canJudge, false);
+  assert.equal(view(G[1]).me.answer, undefined, 'the reader’s team never sees the answer');
+  assert.equal(view(G[1]).me.stuck, true, 'but anyone here may skip the card');
   msg(W[0], { t: 'challenge' });
   assert.equal(view(G[1]).me.answer, undefined);
   assert.equal(view(W[1]).me.canJudge, true);
@@ -784,4 +785,31 @@ test('P1: a card waiting for a reader who has gone away can be skipped by anyone
   assert.equal(s.view(other).me.stuck, true);
   s.msg(other, { t: 'new-card' });
   assert.ok(s.g.card.n > cardN, 'a new card was dealt');
+});
+
+test('P2: Guys vs Gals never shuffles the sides players picked, and has no score to fix', () => {
+  const s = setup({ guys: 2, gals: 2 });
+  assert.equal(s.room.hostView().room.picksSides, true);
+  assert.throws(() => s.room.shuffleTeams(), /pick their own side/);
+  assert.throws(() => s.room.adjustScore(s.room.units()[0].id, { delta: 1 }), /no score to fix/);
+  s.begin();
+  // Moving the reader to the answering side would hand them the answer: refused once the game has started.
+  assert.throws(() => s.room.act('setPlayerTeam', { playerId: s.reader().id, teamId: s.room.teams.find((t) => t.id !== s.reader().teamId).id }), /change teams once the game has started/);
+});
+
+test('P2: a small Our Pics deck is not dealt twice while the big decks still have cards nobody has seen', () => {
+  const s = setup({ guys: 3, gals: 3, sets: { grown: SETS.grownups } });
+  s.begin();
+  const asked = new Map();
+  let pics = 0;
+  // Stand the trophy on the Our Pics space (space 2) over and over: 40 cards, the Grown-Ups set has 13 to 15 pictures a side.
+  for (let i = 0; i < 40; i++) {
+    s.at(2);
+    const c = s.g.card;
+    if (c.deck === 'pics') { pics++; asked.set(c.img ?? c.q, (asked.get(c.img ?? c.q) ?? 0) + 1); }
+  }
+  const repeats = [...asked.values()].reduce((n, k) => n + Math.max(0, k - 1), 0);
+  assert.ok(pics >= 10, `Our Pics still come up (${pics})`);
+  assert.ok(repeats <= 2, `${repeats} repeated Our Pics in ${pics} pictures`);
+  assert.ok(pics < 40, 'the other decks were dealt once the pictures had been seen');
 });

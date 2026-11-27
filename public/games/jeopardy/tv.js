@@ -346,7 +346,12 @@ function controlItems() {
   if (g.hostJudges && (ph === 'answering' || ph === 'dd-answer')) list.push(['Correct (C)', 'judge', { correct: true }], ['Wrong (W)', 'judge', { correct: false }]);
   if (['reading', 'open', 'answering', 'ruling', 'dd-wager', 'dd-answer'].includes(ph)) list.push(['Skip clue (K)', 'skip']);
   if (g.lastResult && ['ruling', 'reveal', 'open', 'board'].includes(ph)) list.push(['Flip last ruling (O)', 'override']);
-  if (['round-intro', 'reveal', 'round-end', 'final-wager', 'final-answer', 'final-reveal'].includes(ph)) list.push(['Continue (N)', 'advance']);
+  if (ph === 'final-reveal' && g.final?.manual && g.final.stage !== 'done') {
+    // A host turns each Final response over and rules on it by hand.
+    if (g.final.stage === 'hidden') list.push(['Turn over (N)', 'finalReveal']);
+    else if (g.final.stage === 'answer') list.push(['Right (C)', 'finalRule', { correct: true }], ['Wrong (W)', 'finalRule', { correct: false }]);
+    else list.push(['Next (N)', 'advance']);
+  } else if (['round-intro', 'reveal', 'round-end', 'final-wager', 'final-answer', 'final-reveal'].includes(ph)) list.push(['Continue (N)', 'advance']);
   if (ph === 'board') list.push(['End round early', 'endRound']);
   if (ph === 'gameover') list.push(['Play again', 'playAgain']);
   if (ph !== 'lobby' && ph !== 'gameover') list.push(['End game', 'endGame']);
@@ -371,7 +376,14 @@ const KEYS = { s: ['start'], k: ['skip'], b: ['openNow'], c: ['judge', { correct
 addEventListener('keydown', (e) => {
   if (!act || !g || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.target instanceof HTMLElement && e.target.closest('input, textarea, button, .tvmenu')) return;
-  const k = KEYS[e.key.toLowerCase()];
+  let k = KEYS[e.key.toLowerCase()];
+  if (g.phase === 'final-reveal' && g.final?.manual) {
+    // By hand: N turns the response over, then C or W rule on it, then N moves on.
+    const key = e.key.toLowerCase();
+    if (['n', 'enter', ' '].includes(key)) k = g.final.stage === 'hidden' ? ['finalReveal'] : ['advance'];
+    else if (key === 'c') k = ['finalRule', { correct: true }];
+    else if (key === 'w') k = ['finalRule', { correct: false }];
+  }
   if (!k) return;
   if (k[0] === 'start' && g.phase !== 'lobby') return;
   if (!controlItems().some(([, a]) => a === k[0])) return;
@@ -423,17 +435,20 @@ export function lobby(view, ctx = {}) {
   const choosing = !!g.draft || (!!act && packsOpen);
   const step = (num, title, sub) => h('li', {}, h('span', { class: 'num' }, String(num)), h('span', {}, h('b', {}, title), h('small', {}, sub)));
 
-  // On a TV that may act, clicking a seat makes that player the captain.
+  // On a TV that may act, clicking a seat makes that player the captain. With a host page connected there is no captain;
+  // when a host judges out loud from a phone, that player is the host (not a captain).
+  const role = g.hostJudges ? 'host' : 'captain';
+  const canCap = !!act && !g.hosted;
   const seats = g.players.map((p) => h('div', {
-    class: `seat ${p.connected ? '' : 'off'} ${act && p.id !== g.captainId ? 'pickable' : ''}`, style: { '--c': p.color },
-    title: act && p.id !== g.captainId ? `Make ${p.name} captain` : null,
-    onclick: act && p.id !== g.captainId ? () => { if (confirm(`Make ${p.name} the captain?`)) act('setCaptain', { pid: p.id }); } : null,
+    class: `seat ${p.connected ? '' : 'off'} ${canCap && p.id !== g.captainId ? 'pickable' : ''}`, style: { '--c': p.color },
+    title: canCap && p.id !== g.captainId ? `Make ${p.name} the ${role}` : null,
+    onclick: canCap && p.id !== g.captainId ? () => { if (confirm(`Make ${p.name} the ${role}?`)) act('setCaptain', { pid: p.id }); } : null,
   }, av(p),
-    h('span', { class: 'who' }, h('b', {}, p.name), h('small', { class: p.id === g.captainId ? 'cap' : '' }, p.id === g.captainId ? '★ Captain' : p.connected ? 'Ready' : 'Reconnecting…'))));
+    h('span', { class: 'who' }, h('b', {}, p.name), h('small', { class: p.id === g.captainId ? 'cap' : '' }, p.id === g.captainId ? `★ ${g.hostJudges ? 'Host' : 'Captain'}` : p.connected ? 'Ready' : 'Reconnecting…'))));
   for (let i = n; i < 8; i++) seats.push(h('div', { class: 'seat open' }, h('span', { class: 'av' }, '+'), h('span', { class: 'who' }, h('small', {}, 'Open seat'))));
   const players = h('div', { class: 'lb-panel lb-players' },
     h('div', { class: 'lb-head' }, h('span', { class: 'eyebrow' }, 'Players'), h('b', {}, n ? `${n} joined` : 'Nobody yet'),
-      h('span', { class: 'aside' }, g.hosted ? 'A host is running this game' : cap ? `${cap.name} is ${g.hostJudges ? 'the host' : 'captain'}${act ? '. Click a player to change it' : ''}` : 'The first to join is captain')),
+      h('span', { class: 'aside' }, g.hosted ? 'A host is running this game' : cap ? `${cap.name} is ${g.hostJudges ? 'the host' : 'captain'}${act ? '. Click a player to change it' : ''}` : g.hostJudges ? 'The first to join is the host' : 'The first to join is captain')),
     h('div', { class: `seats ${n > 8 ? 'many' : ''}` }, seats));
   // With a host connected, the topics are the host's to choose (on the host page): the TV shows only who has joined.
   const packs = g.hosted ? null : pickerPanel();
@@ -801,7 +816,8 @@ function ddSplash(c, wager, overlay = false) {
 function standings() {
   const sorted = byScore();
   const top = Math.max(1, sorted.length ? sorted[0].score : 1);
-  return h('div', { class: 'standings' }, sorted.map((p, i) => h('div', { class: 'row', style: { '--c': p.color, '--w': `${(Math.max(0, p.score) / top) * 100}%`, '--i': String(i) } },
+  // Many players: two columns, so the lowest scores (the ones that pick first next round) are not pushed off the screen.
+  return h('div', { class: `standings ${sorted.length > 5 ? 'two' : ''} ${sorted.length > 8 ? 'tight' : ''}` }, sorted.map((p, i) => h('div', { class: 'row', style: { '--c': p.color, '--w': `${(Math.max(0, p.score) / top) * 100}%`, '--i': String(i) } },
     h('span', { class: 'rank' }, String(i + 1)), av(p), h('span', { class: 'nm' }, p.name), h('b', { class: p.score < 0 ? 'neg' : '' }, minus(p.score)))));
 }
 function roundEnd() {
@@ -853,11 +869,11 @@ function finalReveal() {
   const verdict = r && !r.pending;
   const after = p ? p.score : 0;
   const wagerAmt = verdict ? (r.correct ? r.wager : -r.wager) : null;
-  const steps = [['Their answer', true], ['Right or wrong', verdict], ['The wager', verdict]];
+  const steps = [['Their answer', !r?.hidden], ['Right or wrong', verdict], ['The wager', verdict]];
   return frame(h('div', { class: 'freveal', style: { '--c': p?.color ?? '#FFC940' } },
     h('div', { class: 'who' }, av(p, 110), h('span', { style: { color: p?.color } }, (p?.name ?? 'Someone').toUpperCase())),
-    h('div', { class: 'lead' }, 'wrote'),
-    h('div', { class: 'response' }, h('div', {}, r?.answer && r.answer !== '(no answer)' ? r.answer : '(nothing)'),
+    h('div', { class: 'lead' }, r?.hidden ? 'is ready to reveal…' : 'wrote'),
+    h('div', { class: `response ${r?.hidden ? 'covered' : ''}` }, h('div', {}, r?.hidden ? '?' : r?.answer && r.answer !== '(no answer)' ? r.answer : '(nothing)'),
       verdict ? stamp(r.correct, r.correct ? 'RIGHT' : 'WRONG') : null),
     h('div', { class: `money ${verdict ? '' : 'wait'}` },
       h('div', {}, h('div', { class: 'eyebrow' }, 'WAGERED'), h('div', { class: `amt ${verdict ? (r.correct ? 'good' : 'bad') : ''}` }, verdict ? (r.wager ? signed(wagerAmt) : '$0') : '$?')),

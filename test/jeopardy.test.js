@@ -1421,3 +1421,127 @@ test('a spoken answer the host rules on has no typed words, and is not a time-ou
   assert.equal(g.lastResult.timedOut, false);
   clock.advance(10);
 });
+
+test('with a host, Final Jeopardy is revealed by hand: turn over the response, rule on it, then the wager and score show', () => {
+  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  assert.equal(g.phase, 'final-wager');
+  g.settings.hostJudges = true;                          // somebody is hosting
+  g.finalWager(ps[0].id, 100); g.finalWager(ps[1].id, 50);
+  g.advance();
+  g.finalAnswer(ps[0].id, g.finalClue.a);                // right
+  g.finalAnswer(ps[1].id, 'definitely not it');          // wrong
+  clock.advance(2000);
+  assert.equal(g.phase, 'final-reveal');
+  const first = g.final.revealOrder[0];
+  const second = g.final.revealOrder[1];
+  const score = (id) => ps.find((p) => p.id === id).score;
+  const before = { [first]: score(first), [second]: score(second) };
+  // Face down: nothing about the response is sent to the TV, nothing happens on its own however long it waits.
+  let fv = g.publicView().final;
+  assert.equal(fv.manual, true);
+  assert.equal(fv.stage, 'hidden');
+  assert.deepEqual(fv.reveals.map((r) => [r.id, r.pending, r.hidden, r.answer]), [[first, true, true, '']]);
+  clock.advance(60000);
+  assert.equal(g.publicView().final.stage, 'hidden');
+  // The host's page knows what they wrote, what they bet and what the game thinks.
+  const cur = g.hostView().secret.finalCurrent;
+  assert.equal(cur.id, first);
+  assert.ok(cur.wager > 0 && typeof cur.answer === 'string');
+  assert.throws(() => g.finalRule(true), /Turn the answer over/);
+  // Turn it over: the response shows, right or wrong and the wager do not.
+  g.finalReveal();
+  fv = g.publicView().final;
+  assert.equal(fv.stage, 'answer');
+  assert.equal(fv.reveals[0].answer, cur.answer);
+  assert.equal(fv.reveals[0].pending, true);
+  assert.equal(fv.reveals[0].wager, 0);
+  assert.equal(score(first), before[first]);
+  assert.throws(() => g.advance(), /right or wrong/);
+  // The host rules (against what the game thought, if it differs): that is what counts.
+  g.finalRule(first !== ps[0].id);                      // the first one is Bo (lower score) unless Ann is: rule the opposite of "right" for Ann
+  fv = g.publicView().final;
+  assert.equal(fv.stage, 'verdict');
+  assert.equal(fv.reveals[0].wager, cur.wager);
+  const gained = score(first) - before[first];
+  assert.equal(Math.abs(gained), cur.wager);
+  assert.equal(fv.reveals[0].correct, gained > 0);
+  g.advance();                                           // next player, face down again
+  fv = g.publicView().final;
+  assert.equal(fv.stage, 'hidden');
+  assert.equal(fv.reveals.length, 2);
+  assert.equal(fv.reveals[1].id, second);
+  assert.equal(fv.reveals[1].answer, '');
+  g.advance();                                           // Continue turns it over
+  assert.equal(g.publicView().final.stage, 'answer');
+  g.finalRule(true);
+  g.advance();
+  fv = g.publicView().final;
+  assert.equal(fv.stage, 'done');
+  assert.equal(fv.answer, g.finalClue.a);
+  g.advance();
+  assert.equal(g.phase, 'gameover');
+  assert.equal(score(second), before[second] + g.final.wagers[second]);
+  // A flipped ruling still works afterwards.
+  const w = g.final.wagers[second];
+  g.finalOverride(second);
+  assert.equal(score(second), before[second] - w);
+});
+
+test('without a host, Final Jeopardy still reveals itself on a timer', () => {
+  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  g.finalWager(ps[0].id, 10); g.finalWager(ps[1].id, 10);
+  clock.advance(3000);
+  g.finalAnswer(ps[0].id, 'x'); g.finalAnswer(ps[1].id, 'y');
+  clock.advance(2000);
+  assert.equal(g.publicView().final.manual, false);
+  assert.equal(g.publicView().final.stage, 'answer');
+  clock.advance(T.finalBeat + 10);
+  assert.equal(g.publicView().final.stage, 'verdict');
+});
+
+test('judge: a different answer is not accepted, however close it looks', () => {
+  const no = (g, a, o) => assert.ok(!judge(g, Array.isArray(a) ? a : [a], o), `${g} is not ${a}`);
+  no('Basketball', 'Baseball'); no('Baseball', 'Basketball');
+  no('South America', 'South Africa'); no('South Africa', 'South America');
+  no('Athena', 'Athens'); no('North Dakota', 'South Dakota'); no('South Carolina', 'North Carolina');
+  no('Slovenia', 'Slovakia'); no('Kansas', 'Arkansas'); no('Austria', 'Australia'); no('podium', 'Sodium');
+  no('Patrick', 'Hat trick'); no('Thanos', 'Thank you'); no('Austin', 'Jane Austen');
+  no('Aretha Franklin', ['Benjamin Franklin'], { person: true });
+  no('James Cameron', ['LeBron James'], { person: true }); no('James Naismith', ['LeBron James'], { person: true });
+  no('Washington DC', ['George Washington'], { person: true });
+  // Two guesses are not an answer.
+  no('London Paris', 'Paris'); no('Paris Hilton', 'Paris'); no('Whale shark', 'Shark'); no('Spider-Man', 'Spider'); no('Iron Man', 'Iron'); no('Blue whale', 'Blue');
+  no('2 4', '24'); no('1 2', '12'); no('pairs', 'Paris'); no('plato', 'Pluto'); no('Mark', 'Mars');
+});
+
+test('judge: small slips, plurals, numerals and nicknames are fine', () => {
+  const yes = (g, a, o) => assert.ok(judge(g, Array.isArray(a) ? a : [a], o), `${g} is ${a}`);
+  yes('Pariss', 'Paris'); yes('Pars', 'Paris'); yes('Texs', 'Texas');
+  yes('Dog', 'Dogs'); yes('Dogs', 'Dog'); yes('Cat', 'Cats'); yes('Bat', 'Bats'); yes('Cow', 'Cows'); yes('Wolf', 'Wolves'); yes('Tiger', 'Tigers'); yes('Cities', 'City');
+  yes('Jupitre', 'Jupiter'); yes('Staurn', 'Saturn');
+  yes('WWII', 'World War II'); yes('Henry 8', 'Henry VIII'); yes('World War 2', 'World War II'); yes('ww2', 'World War II');
+  yes('Abe Lincoln', 'Abraham Lincoln'); yes('Missisippi', 'Mississippi'); yes('newyork', 'New York'); yes('southafrica', 'South Africa');
+  yes('Abraham Lincoln', ['Lincoln'], { person: true });
+  yes('the planet Mars', 'Mars'); yes('Basketbal', 'Basketball'); yes('Mississipi river', 'Mississippi River');
+});
+
+test('flipping the last ruling does nothing once the game is over (a final score cannot change under the winner)', () => {
+  const { g, ps, clock } = setup({ players: ['Ann', 'Bo'] });
+  begin(g);
+  playRound(g, ps, clock); g.advance(); g.advance();
+  playRound(g, ps, clock); g.advance();
+  g.finalWager(ps[0].id, 10); g.finalWager(ps[1].id, 10);
+  clock.advance(3000);
+  g.finalAnswer(ps[0].id, 'x'); g.finalAnswer(ps[1].id, 'y');
+  for (let i = 0; i < 30 && g.phase !== 'gameover'; i++) clock.advance(T.finalStep + 100);
+  assert.equal(g.phase, 'gameover');
+  const before = ps.map((p) => p.score);
+  g.override();
+  assert.deepEqual(ps.map((p) => p.score), before);
+});

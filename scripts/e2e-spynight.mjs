@@ -106,6 +106,7 @@ try {
   {
     const picking = async () => (await tv.locator('.sn-tv').innerText()).match(/(\w+) is picking/)?.[1];
     const before = await picking();
+    await new Promise((r) => setTimeout(r, 1500));   // a Move on right after the screen changed is taken for a double tap
     await phones[0].getByRole('button', { name: /skip the leader/i }).click();
     await until(async () => (await picking()) && (await picking()) !== before, 'the pick to pass to the next player after Skip the leader');
   }
