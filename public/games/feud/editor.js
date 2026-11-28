@@ -4,6 +4,7 @@
 import { h, setKids } from '../../common.js';
 import { field, row, btn, toggleRow, accordionGroup, slug } from '../../editkit.js';
 import { parseAnswerLine } from '../../importer.js';
+import { ERA_LABELS } from './shared.js';
 
 const blankQ = () => ({ question: '', answers: Array.from({ length: 5 }, () => ({ text: '', points: 10 })) });
 const blank = () => ({ title: '', rounds: Array.from({ length: 5 }, blankQ), fastMoney: Array.from({ length: 5 }, blankQ) });
@@ -51,7 +52,7 @@ export function mount(container, api, ui) {
         ...(a.aliasText?.trim() ? { aliases: a.aliasText.split(',').map((s) => s.trim()).filter(Boolean) } : {}),
       })),
     });
-    return { title: doc.title.trim(), rounds: doc.rounds.map(q), ...(doc.fastMoney ? { fastMoney: doc.fastMoney.map(q) } : {}) };
+    return { title: doc.title.trim(), ...(doc.era && doc.era !== 'timeless' ? { era: doc.era } : {}), rounds: doc.rounds.map(q), ...(doc.fastMoney ? { fastMoney: doc.fastMoney.map(q) } : {}) };
   }
   async function save() {
     const sid = isNew ? slug(id || doc.title) : id;
@@ -137,7 +138,9 @@ export function mount(container, api, ui) {
     const titleInput = field('input', doc, 'title', { maxLength: 80, placeholder: 'e.g. Grandma’s House', autocomplete: 'off' }, touch);
     const fileName = isNew && h('details', {}, h('summary', { class: 'tag', style: { cursor: 'pointer' } }, 'File name (optional)'),
       (() => { const el = h('input', { value: id, placeholder: 'auto from the title', style: { marginTop: '8px' } }); el.addEventListener('input', () => { id = el.value; touch(); }); return el; })());
-    const setCard = h('div', { class: 'card' }, row('Question set', picker), row('Title', titleInput), fileName);
+    const eraSelect = h('select', { 'aria-label': 'When the questions are from', onchange: (e) => { doc.era = e.target.value; touch(); } },
+      Object.entries(ERA_LABELS).map(([value, text]) => h('option', { value, selected: (doc.era ?? 'timeless') === value }, text)));
+    const setCard = h('div', { class: 'card' }, row('Question set', picker), row('Title', titleInput), row('Questions are from', eraSelect), fileName);
 
     const rounds = doc.rounds.map((_, i) => questionAcc(group, doc.rounds, i, 'Round', `r${i}`, doc.rounds.length > 3));
     const addRound = btn('＋ Add a round', () => { doc.rounds.push(blankQ()); openKey = `r${doc.rounds.length - 1}`; touch(); render(); }, { disabled: doc.rounds.length >= 8 });

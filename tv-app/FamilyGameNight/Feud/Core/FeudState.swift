@@ -179,6 +179,8 @@ struct FastMoneyState: Decodable, Equatable {
     var rejected: [Int]?
     /// How many times Player 2 has been buzzed for repeating Player 1 (the TV sounds a buzzer each time).
     var dupBuzz: Int?
+    /// Player 2 is up but the host has not started the clock yet: the questions stay hidden until then.
+    var waitingForClock: Bool?
 
     /// Fast Money is a tiebreaker (a tie when the rounds ended), not the champions' bonus round.
     var isTiebreak: Bool { stakes == "tiebreak" }

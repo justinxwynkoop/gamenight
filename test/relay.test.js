@@ -91,7 +91,7 @@ test('a phone joins by room code, plays, and the host controls the room, all thr
     assert.equal(first.room.players.length === 1, true);
 
     const lists = await host.link.rpc('listSets', { game: 'feud' });
-    assert.deepEqual(lists, { ok: true, data: [{ id: 'basics', title: feudSet.title }], t: 'rpc-reply', id: lists.id });
+    assert.deepEqual(lists, { ok: true, data: [{ id: 'basics', title: feudSet.title, era: feudSet.era }], t: 'rpc-reply', id: lists.id });
     const one = await host.link.rpc('getSet', { game: 'feud', id: 'basics' });
     assert.equal(one.data.rounds.length, feudSet.rounds.length);
     assert.equal((await host.link.rpc('getSet', { game: 'feud', id: 'nope' })).error, 'No such set');

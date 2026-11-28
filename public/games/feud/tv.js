@@ -250,7 +250,7 @@ function banner(v, r) {
   const vs = f.reps.map((p) => p.name).filter(Boolean).join('  vs  ');
   if (r.step === 'faceoff') {
     if (f.open) { cls.push('open'); text = 'Face-off! Buzz in!'; sub = vs; }
-    else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); if (f.followup) sub = 'Both missed: next in line'; else if (r.sudden) sub = `Sudden death: the winning answer is worth ×${r.multiplier}`; }
+    else if (f.turn) { const rep = f.reps.find((p) => p.unitId === f.turn); text = `${rep?.name ?? nameOf(v, f.turn)}, your answer?`; color = colorOf(v, f.turn); if (f.followup) sub = 'Both missed: next in line'; else if (r.sudden) sub = `Sudden death: the winning answer is worth ×${r.multiplier}`; sub = sub ? `${sub} · No table talk!` : 'No table talk! Answer alone'; }
     else if (f.attempts.length >= 2) { text = 'Nobody got it. Face-off again!'; }
     else { text = 'Face-off'; sub = vs; }
   } else if (r.step === 'choose') { text = `${nameOf(v, f.winner)} won the face-off!`; color = colorOf(v, f.winner); sub = 'Play or pass?'; }
@@ -320,7 +320,7 @@ function fmScreen(v) {
       h('div', { class: 'fd-fmbody' },
         h('div', { class: 'fd-fmleft' },
           h('div', { class: 'fd-big' }, `${who.name ?? 'Player'}, you’re up!`),
-          h('p', { class: 'fd-sub' }, f.step === 'p2' ? 'Don’t repeat your partner’s answers' : 'Five questions. Answer fast!'),
+          h('p', { class: 'fd-sub' }, f.step === 'p2' ? (f.waitingForClock ? 'Get ready! The host starts the clock.' : 'Don’t repeat your partner’s answers') : 'Five questions. Answer fast! No table talk.'),
           // Player 2 plays with Player 1's answers hidden, but their score stays up.
           f.step === 'p2' && h('div', { class: 'fd-p1score' }, h('span', {}, `${f.players[0]?.name ?? 'Player 1'} scored`), h('b', {}, String(f.totals.p1))),
           f.step === 'p2' && f.rejected?.length ? h('p', { class: 'fd-dupnote' }, `Question ${f.rejected[0] + 1}: that answer was already given. Try another!`) : null,

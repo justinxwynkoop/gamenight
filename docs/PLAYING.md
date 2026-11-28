@@ -122,7 +122,9 @@ is tucked away at the bottom of Settings behind a confirmation.
 Pick **Family Feud** in the game picker. It is always **two teams** (Red and Blue); players are
 dealt onto them at random and the host can move anyone **before the game starts** (nobody changes teams once it is under way).
 
-1. **Setup.** Choose a question set, the winning score (200 to 500) and whether to play Fast Money.
+1. **Setup.** Choose a question set, the winning score (200 to 500) and whether to play Fast Money. In the set list on the
+   host page you can filter by **when the questions are from**: *Any time* (everyday questions that never date), *Throwback*
+   (the 80s to the 2000s) or *Today*. (A set's era is set in the editor; a set with none is *Any time*.)
 2. **Face-off.** One player from each team steps up (a different player each round; the host can
    change who). The host reads the question and opens the buzzers; only those two phones can buzz.
    The first one answers out loud and the host taps the matching survey answer, or **Not on the board**.
@@ -166,12 +168,16 @@ moves on when time is up and reveals itself. Every phone shows the question, big
 (phones never show it).
 
 5. **Fast Money.** The winning team (or, after a tie, the team the host picks) chooses two players (the host taps who is Player 1 and Player 2 on the host page, can swap them, and can change whoever is up while they answer; the same player cannot be both). It goes as on the show:
+   0. **No table talk.** In the face-off and in Fast Money the player answers **alone**: their team may not help (the TV, the
+      host page and the phones say so). Once the team has the board (the play and the steal) they may talk it over.
    1. **Player 1 plays.** Player 2 waits out of the room (or with headphones on). Player 1 answers five questions
       (40 seconds by default; change it under Settings): typing on their phone, or the host enters what they say.
    2. **Player 1's answers are revealed.** One answer at a time: the host taps **Reveal the next answer** (the TV types
       out what they said), then again for the points ("survey says"). Player 1's total stays on the TV.
    3. **They are hidden, and Player 2 comes in.** The host taps **Hide the answers. Player 2 is next**. The TV covers
-      Player 1's answers but keeps their score on screen, and Player 2 plays (45 seconds by default).
+      Player 1's answers but keeps their score on screen. With a host, **the host starts Player 2's clock** (**Start Player 2's
+      clock**): until then the TV and phones show "Get ready!" and the questions stay hidden (the host page still has them to
+      read out). With nobody hosting the clock starts at once. Player 2 plays (45 seconds by default).
    4. **Player 2's answers are revealed** the same way, with Player 1's back in view, and the TV shows the total against the goal.
    **Player 2 cannot say what Player 1 said.** On a phone such an answer is not accepted (the phone says so and asks for
    another) and when the host enters one it is turned away too, with a red note for that question. The TV sounds the

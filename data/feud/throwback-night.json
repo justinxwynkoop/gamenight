@@ -1,0 +1,447 @@
+{
+  "title": "Throwback Night",
+  "era": "throwback",
+  "rounds": [
+    {
+      "question": "Name something you did on a Saturday morning as a kid",
+      "answers": [
+        {
+          "text": "Watch cartoons",
+          "points": 36,
+          "aliases": [
+            "cartoons",
+            "tv"
+          ]
+        },
+        {
+          "text": "Eat sugary cereal",
+          "points": 24,
+          "aliases": [
+            "cereal"
+          ]
+        },
+        {
+          "text": "Play outside",
+          "points": 16,
+          "aliases": [
+            "go outside"
+          ]
+        },
+        {
+          "text": "Play video games",
+          "points": 12,
+          "aliases": [
+            "video games",
+            "nintendo"
+          ]
+        },
+        {
+          "text": "Ride bikes",
+          "points": 8,
+          "aliases": [
+            "ride a bike",
+            "bike"
+          ]
+        },
+        {
+          "text": "Do chores",
+          "points": 4,
+          "aliases": [
+            "chores"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you needed quarters for",
+      "answers": [
+        {
+          "text": "Arcade games",
+          "points": 32,
+          "aliases": [
+            "arcade",
+            "video games"
+          ]
+        },
+        {
+          "text": "Payphone",
+          "points": 26,
+          "aliases": [
+            "pay phone",
+            "phone"
+          ]
+        },
+        {
+          "text": "Gumball machine",
+          "points": 16,
+          "aliases": [
+            "gumballs"
+          ]
+        },
+        {
+          "text": "Vending machine",
+          "points": 12,
+          "aliases": [
+            "soda machine",
+            "snacks"
+          ]
+        },
+        {
+          "text": "Jukebox",
+          "points": 8,
+          "aliases": [
+            "music"
+          ]
+        },
+        {
+          "text": "Laundry",
+          "points": 6,
+          "aliases": [
+            "laundromat",
+            "washing machine"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a toy or gadget every kid wanted in the 90s",
+      "answers": [
+        {
+          "text": "Tamagotchi",
+          "points": 24,
+          "aliases": [
+            "tamagotchis",
+            "digital pet"
+          ]
+        },
+        {
+          "text": "Furby",
+          "points": 22,
+          "aliases": [
+            "furbies"
+          ]
+        },
+        {
+          "text": "Game Boy",
+          "points": 18,
+          "aliases": [
+            "gameboy"
+          ]
+        },
+        {
+          "text": "Beanie Babies",
+          "points": 14,
+          "aliases": [
+            "beanie baby",
+            "beanies"
+          ]
+        },
+        {
+          "text": "Pogs",
+          "points": 10,
+          "aliases": [
+            "pog"
+          ]
+        },
+        {
+          "text": "Rollerblades",
+          "points": 8,
+          "aliases": [
+            "roller blades",
+            "rollerblade"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you could rent from a video store",
+      "answers": [
+        {
+          "text": "Movies",
+          "points": 44,
+          "aliases": [
+            "movie",
+            "films"
+          ]
+        },
+        {
+          "text": "Video games",
+          "points": 24,
+          "aliases": [
+            "games",
+            "game"
+          ]
+        },
+        {
+          "text": "VHS tapes",
+          "points": 14,
+          "aliases": [
+            "vhs",
+            "tapes"
+          ]
+        },
+        {
+          "text": "DVDs",
+          "points": 10,
+          "aliases": [
+            "dvd"
+          ]
+        },
+        {
+          "text": "Game consoles",
+          "points": 8,
+          "aliases": [
+            "console",
+            "nintendo",
+            "playstation"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a way people listened to music before streaming",
+      "answers": [
+        {
+          "text": "Radio",
+          "points": 34,
+          "aliases": [
+            "car radio"
+          ]
+        },
+        {
+          "text": "CDs",
+          "points": 26,
+          "aliases": [
+            "cd",
+            "compact discs"
+          ]
+        },
+        {
+          "text": "Cassette tapes",
+          "points": 20,
+          "aliases": [
+            "cassettes",
+            "tapes"
+          ]
+        },
+        {
+          "text": "Records",
+          "points": 12,
+          "aliases": [
+            "vinyl",
+            "record player"
+          ]
+        },
+        {
+          "text": "MP3 player",
+          "points": 8,
+          "aliases": [
+            "ipod",
+            "mp3"
+          ]
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name a famous cartoon from the 80s or 90s",
+      "answers": [
+        {
+          "text": "The Simpsons",
+          "points": 30,
+          "aliases": [
+            "simpsons"
+          ]
+        },
+        {
+          "text": "Ninja Turtles",
+          "points": 24,
+          "aliases": [
+            "teenage mutant ninja turtles",
+            "tmnt"
+          ]
+        },
+        {
+          "text": "Pokémon",
+          "points": 20,
+          "aliases": [
+            "pokemon"
+          ]
+        },
+        {
+          "text": "Rugrats",
+          "points": 14
+        },
+        {
+          "text": "He-Man",
+          "points": 8,
+          "aliases": [
+            "he man"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you would find next to a TV in the 90s",
+      "answers": [
+        {
+          "text": "VCR",
+          "points": 36,
+          "aliases": [
+            "vhs player",
+            "video player"
+          ]
+        },
+        {
+          "text": "Remote",
+          "points": 24,
+          "aliases": [
+            "remote control"
+          ]
+        },
+        {
+          "text": "Video tapes",
+          "points": 18,
+          "aliases": [
+            "vhs",
+            "tapes",
+            "movies"
+          ]
+        },
+        {
+          "text": "Game console",
+          "points": 14,
+          "aliases": [
+            "nintendo",
+            "playstation",
+            "video games"
+          ]
+        },
+        {
+          "text": "Cable box",
+          "points": 8,
+          "aliases": [
+            "cable"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a boy band or girl group from the 90s",
+      "answers": [
+        {
+          "text": "Backstreet Boys",
+          "points": 32,
+          "aliases": [
+            "backstreet"
+          ]
+        },
+        {
+          "text": "NSYNC",
+          "points": 28,
+          "aliases": [
+            "nsync",
+            "n sync"
+          ]
+        },
+        {
+          "text": "Spice Girls",
+          "points": 20
+        },
+        {
+          "text": "New Kids on the Block",
+          "points": 12,
+          "aliases": [
+            "nkotb"
+          ]
+        },
+        {
+          "text": "TLC",
+          "points": 8
+        }
+      ]
+    },
+    {
+      "question": "Name a snack kids brought in a lunchbox",
+      "answers": [
+        {
+          "text": "Fruit Roll-Ups",
+          "points": 26,
+          "aliases": [
+            "fruit roll ups",
+            "roll ups"
+          ]
+        },
+        {
+          "text": "Lunchables",
+          "points": 24,
+          "aliases": [
+            "lunchable"
+          ]
+        },
+        {
+          "text": "Capri Sun",
+          "points": 20,
+          "aliases": [
+            "capri sun juice",
+            "juice box"
+          ]
+        },
+        {
+          "text": "Gushers",
+          "points": 16,
+          "aliases": [
+            "gusher"
+          ]
+        },
+        {
+          "text": "Dunkaroos",
+          "points": 14,
+          "aliases": [
+            "dunkaroo"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a way you took photos before smartphones",
+      "answers": [
+        {
+          "text": "Disposable camera",
+          "points": 38,
+          "aliases": [
+            "disposable",
+            "throwaway camera"
+          ]
+        },
+        {
+          "text": "Polaroid",
+          "points": 24,
+          "aliases": [
+            "instant camera"
+          ]
+        },
+        {
+          "text": "Film camera",
+          "points": 20,
+          "aliases": [
+            "35mm",
+            "camera"
+          ]
+        },
+        {
+          "text": "Camcorder",
+          "points": 10,
+          "aliases": [
+            "video camera"
+          ]
+        },
+        {
+          "text": "Digital camera",
+          "points": 8
+        }
+      ]
+    }
+  ]
+}

@@ -61,7 +61,7 @@ function readSet(gameId, id) {
 function listSets(gameId) {
   if (!GAMES[gameId]) return [];
   return readdirSync(path.join(DATA_DIR, gameId)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).filter((id) => SET_ID.test(id))
-    .map((id) => ({ id, title: readSet(gameId, id)?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title));
+    .map((id) => { const s = readSet(gameId, id); return { id, title: s?.title ?? id, ...(s?.era ? { era: s.era } : {}) }; }).sort((a, b) => a.title.localeCompare(b.title));
 }
 
 // ---------- the room, saved to disk so a restart does not lose the game ----------

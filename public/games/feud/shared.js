@@ -1,6 +1,9 @@
 // Bits the TV and phone pages of Family Feud share: the stylesheet with its fonts, and the art.
 import { h } from '../../common.js';
 
+/** When a question set's questions feel from (keep in step with ERAS in games/feud/game.js). A set with no era is timeless. */
+export const ERA_LABELS = { timeless: 'Any time', throwback: 'Throwback (80s to 2000s)', today: 'Today' };
+
 /** Loads the Family Feud stylesheet (and its fonts) once. */
 export function loadStyles() {
   if (document.getElementById('fd-css')) return;

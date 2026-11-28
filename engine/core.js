@@ -43,7 +43,7 @@ export function createEngine({ games, pin, now, send, save = () => {}, saved = n
     ...(now ? { now } : {}),
     loadContent: (gameId, id) => sets[gameId]?.[id] ?? null,
     listContent: (gameId) => Object.entries(sets[gameId] ?? {})
-      .map(([id, s]) => ({ id, title: s?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title)),
+      .map(([id, s]) => ({ id, title: s?.title ?? id, ...(s?.era ? { era: s.era } : {}) })).sort((a, b) => a.title.localeCompare(b.title)),
     onChange() {
       if (queued) return;
       queued = true;
