@@ -59,10 +59,10 @@ export function mount(container, { send, flash }) {
       // Whoever is answering now: the face-off players first and, when both miss, the next players in line on each team.
       const answerer = f.turn ? f.reps.find((p) => p.unitId === f.turn) : null;
       const sudden = r.sudden ? ` Sudden death: the winning answer is worth ×${r.multiplier}!` : '';
-      if (!iAmRep) return { label: 'WATCH', cls: 'out', line: answerer ? `${answerer.name} is answering${f.followup ? ' (both missed: next in line)' : ''}` : f.reps.length ? `Face-off: ${f.reps.map((p) => p.name).join(' vs ')}` : 'Face-off!' };
+      if (!iAmRep) return { label: 'WATCH', cls: 'out', line: answerer ? `${answerer.name} is answering${f.followup ? ' (both missed: next in line)' : ''}${answerer.unitId === me.unitId ? '. No table talk: let them answer alone!' : ''}` : f.reps.length ? `Face-off: ${f.reps.map((p) => p.name).join(' vs ')}` : 'Face-off!' };
       if (f.open) return { label: 'BUZZ', cls: 'live', line: `You’re up for the face-off. Go!${sudden}`, color: mine.color };
-      if (answerer?.playerId === me.id) return { label: 'YOU!', cls: 'won', line: `${f.followup ? 'Both missed, so you’re next in line! ' : ''}${g.settings.typed ? 'Type your answer below!' : 'Answer out loud!'}`, color: mine.color };
-      if (f.turn) return { label: 'WAIT', cls: 'out', line: `${answerer?.name ?? unit(v, f.turn)?.name ?? 'The other team'} is answering` };
+      if (answerer?.playerId === me.id) return { label: 'YOU!', cls: 'won', line: `${f.followup ? 'Both missed, so you’re next in line! ' : ''}${g.settings.typed ? 'Type your answer below!' : 'Answer out loud!'} No table talk: it’s your answer alone.`, color: mine.color };
+      if (f.turn) return { label: 'WAIT', cls: 'out', line: `${answerer?.name ?? unit(v, f.turn)?.name ?? 'The other team'} is answering${f.turn === me.unitId ? '. No table talk: let them answer alone!' : ''}` };
       return { label: 'READY', cls: 'out', line: f.attempts.length >= 2 ? 'Nobody had an answer. The face-off starts again.' : `You’re up for the face-off. Wait for the host to open buzzers.${sudden}`, color: mine.color };
     }
     if (r.step === 'choose') return { label: f.winner === me.unitId ? 'YOU WON' : 'WAIT', cls: f.winner === me.unitId ? 'won' : 'out', line: f.winner === me.unitId ? 'Your team won the face-off. Play or pass?' : `${unit(v, f.winner)?.name} won the face-off`, color: f.winner === me.unitId ? mine.color : null };
@@ -169,6 +169,11 @@ export function mount(container, { send, flash }) {
               : f.step === 'reveal' && !v.game.settings.typed ? (f.part === 'p1' && f.partDone ? btn('Hide the answers. Player 2 is next', () => cap('fmNext')) : btn('Reveal the next answer', () => cap('fmRevealNext')))
                 : f.step === 'results' ? btn('Show the winner', () => cap('finishGame')) : null;
       return { key: `fm-wait-${f.step}-${captain}-${f.timer?.timedOut ?? ''}`, node: h('div', { class: 'card' }, h('img', { class: 'fdp-art', src: '/games/feud/art/money-bag.png', alt: '' }), h('h2', {}, bonus ? 'Bonus round: Fast Money' : 'Tiebreaker: Fast Money'), h('p', {}, line), extra) };
+    }
+    // Player 2 is up but the host has not started the clock: the questions are hidden until it starts.
+    if (slot === 'p2' && f.waitingForClock) {
+      fmBox = null;
+      return { key: 'fm-p2-ready', node: h('div', { class: 'card' }, h('img', { class: 'fdp-art', src: '/games/feud/art/money-bag.png', alt: '' }), h('h2', {}, 'Get ready!'), h('p', {}, 'The host starts your clock, then your five questions appear.'), h('p', { class: 'tag' }, 'Don’t repeat your partner’s answers.')) };
     }
     const key = `fm-${slot}`;
     if (fmBox?.key === key) { fmBox.form.setNote(f.submitted[slot] ? 'Answers sent. You can change them until time is up.' : ''); return { key, node: fmBox.node }; }

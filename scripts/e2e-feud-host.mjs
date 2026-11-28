@@ -202,6 +202,13 @@ try {
   assert.equal(hidden.rows[0].p1.typed, null, 'Player 1’s answers are hidden from the TV and phones');
   assert.equal(hidden.totals.p1, p1Score, 'but Player 1’s score stays up');
   console.log(`Fast Money: Player 1 revealed (${p1Score} points), then hidden; Player 2 is in and the score stays`);
+  // With a host, Player 2's clock waits for the host: the TV and phones have no questions until it starts.
+  assert.equal(hidden.waitingForClock, true);
+  assert.ok(hidden.rows.every((r) => r.question === null), 'the questions are hidden until the clock starts');
+  await host.getByRole('button', { name: /Start Player 2’s clock/ }).click();
+  await until(() => !!g.publicView().fm.timer, 'Player 2’s clock to start');
+  assert.ok(g.publicView().fm.rows.every((r) => typeof r.question === 'string'), 'the questions show once the clock runs');
+  console.log('Fast Money: Player 2’s clock waited for the host, and the questions showed when it started');
 
   // Player 2 cannot repeat Player 1: those survey answers are greyed out, and typing one is turned away.
   await until(async () => (await host.locator('.fd-chips .chip:disabled').count()) === 5, 'Player 1’s answers to be greyed out for Player 2');

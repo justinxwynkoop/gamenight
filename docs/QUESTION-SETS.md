@@ -138,6 +138,7 @@ final | Category | The final clue | The answer
 ```json
 {
   "title": "Grandma's House",
+  "era": "timeless",   /* optional: "timeless" (the default), "throwback" (80s to 2000s) or "today"; the host can filter sets by it */
   "rounds": [
     { "question": "Name something in a kitchen",
       "answers": [ { "text": "Spoon", "points": 30, "aliases": ["spoons"] }, { "text": "Fork", "points": 25 }, { "text": "Plate", "points": 20 } ] }

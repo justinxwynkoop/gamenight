@@ -18,12 +18,16 @@ export const AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold
 const GAME = 'feud';
 const SLOTS = ['p1', 'p2'];
 
+/** When a question set's questions feel from: everyday questions that never date, or ones tied to a time. A set with no era is timeless. */
+export const ERAS = { timeless: 'Any time', throwback: 'Throwback (80s to 2000s)', today: 'Today' };
+
 const unique = (list) => new Set(list.map((x) => x.toLowerCase())).size === list.length;
 
 /** Checks a question set. Throws a GameError with a message the editor can show. */
 export function validateSet(set) {
   if (!set || typeof set !== 'object') fail('Question set must be an object');
   if (!cleanName(set.title, 80)) fail('Question set needs a title');
+  if (set.era !== undefined && !Object.hasOwn(ERAS, set.era)) fail(`Era must be one of: ${Object.keys(ERAS).join(', ')}`);
   const checkQuestion = (q, label) => {
     if (!String(q?.question ?? '').trim()) fail(`${label} needs a question`);
     if (String(q.question).length > 200) fail(`${label}: the question is too long`);
@@ -157,7 +161,7 @@ export class FeudGame {
       case 'fmShowPoints': return this.fmShowPoints(a.slot, int(a.q), a.points, a.label);
       case 'fmEdit': return this.fmEdit(a.slot, int(a.q), a);
       case 'startAnswerTimer': return this.startAnswerTimer();
-      case 'fmRestartTimer': return this.fmRestartTimer();
+      case 'fmRestartTimer': case 'fmStartTimer': return this.fmRestartTimer();
       case 'finishGame': return this.finishGame();
       case 'fmRevealNext': return this.fmRevealNext();
       default: throw new GameError(`Unknown action ${action}`);
@@ -734,7 +738,8 @@ export class FeudGame {
     } else if (fm.step === 'reveal' && fm.part === 'p1') {
       if (!fm.shown.p1.every((v) => v === 2)) fail('Reveal all of Player 1’s answers first');
       fm.step = 'p2'; fm.hidden.p1 = true; fm.rejected = [];
-      this.#startTimer(fm, this.settings.fastMoneySeconds2);
+      // With a host, Player 2's clock starts when the host says (the questions stay hidden until then); with nobody hosting it starts at once.
+      if (this.hosted()) fm.timer = null; else this.#startTimer(fm, this.settings.fastMoneySeconds2);
     } else if (fm.step === 'p2') {
       this.#zeroBlanks('p2');
       fm.step = 'reveal'; fm.part = 'p2'; fm.hidden.p1 = false; fm.timer = null; fm.rejected = [];
@@ -792,6 +797,7 @@ export class FeudGame {
     const fm = this.run.status === 'fastmoney' ? this.run.fm : null;
     if (!fm || !['p1', 'p2'].includes(fm.step)) fail('Fast Money is not taking answers right now');
     if (fm.players[SLOTS.indexOf(fm.step)] !== playerId) fail('It is not your turn');
+    if (fm.step === 'p2' && !fm.timer) fail('Wait for the host to start your clock');
     const clean = this.#cleanAnswers(answers);
     // The second player may not say what the first player said: such an answer is not taken, and the phone is told which.
     let rejected = [];
@@ -1056,7 +1062,8 @@ export class FeudGame {
   #fmView(host) {
     const fm = this.run.fm;
     const rows = Array.from({ length: FAST_MONEY_QUESTIONS }, (_, q) => {
-      const row = { q, question: fm.step === 'pick' || fm.step === 'team' ? null : this.set.fastMoney[q].question };
+      // The TV and phones do not see the questions until Player 2's clock has been started by the host (the host reads them out).
+      const row = { q, question: fm.step === 'pick' || fm.step === 'team' || (!host && fm.step === 'p2' && !fm.timer) ? null : this.set.fastMoney[q].question };
       for (const s of SLOTS) {
         const shown = fm.shown[s][q];
         const judged = shown === 2;
@@ -1075,7 +1082,7 @@ export class FeudGame {
     const totals = this.fmTotals();
     const finished = fm.step === 'results';
     return {
-      team: fm.team, step: fm.step, stakes: this.#stakes(fm), timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
+      team: fm.team, step: fm.step, waitingForClock: fm.step === 'p2' && !fm.timer, stakes: this.#stakes(fm), timer: this.#timerView(fm), goal: this.settings.fastMoneyGoal,
       // Which player's answers are being revealed ('p1', 'p2', or 'all' in a game saved before the two-part reveal), and whether
       // all of them are up. Player 2's answers that were turned away as repeats (the TV sounds a buzzer each time: dupBuzz counts them).
       reached: !!fm.reached, part: fm.part ?? null, partDone: fm.step === 'reveal' ? this.#partRevealed(fm) : false, hidden: !!fm.hidden?.p1, rejected: [...(fm.rejected ?? [])], dupBuzz: fm.dupBuzz ?? 0,

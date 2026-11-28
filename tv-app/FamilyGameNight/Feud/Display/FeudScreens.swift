@@ -860,8 +860,10 @@ struct FeudBanner: View {
             if faceoff.open { return ("Face-off! Buzz in!", names, .open) }
             if let turn = faceoff.turn {
                 let rep = faceoff.reps.first { $0.unitId == turn }?.name ?? name(turn)
-                let sub: String? = faceoff.followup == true ? "Both missed: next in line"
+                // The face-off is one player's answer: their team must not help (no table talk, unlike the play that follows).
+                let note: String? = faceoff.followup == true ? "Both missed: next in line"
                     : round.sudden.map { "Sudden death: the winning answer is worth ×\($0.mult)" }
+                let sub = note.map { "\($0) · No table talk!" } ?? "No table talk! Answer alone"
                 return ("\(rep), your answer?", sub, teamLook(turn))
             }
             if faceoff.attempts.count >= 2 { return ("Nobody got it. Face-off again!", nil, .plain) }
@@ -1043,7 +1045,7 @@ struct FeudFastMoneyScreen: View {
                     .font(FD.show(92))
                     .lineLimit(1)
                     .minimumScaleFactor(0.4)
-                Text(fm.step == .p2 ? "Don’t repeat your partner’s answers" : "Five questions. Answer fast!")
+                Text(fm.step == .p2 ? (fm.waitingForClock == true ? "Get ready! The host starts the clock." : "Don’t repeat your partner’s answers") : "Five questions. Answer fast! No table talk.")
                     .font(FD.text(40, .semibold))
                     .foregroundStyle(FD.soft)
                 // Player 2 plays with Player 1's answers hidden, but their score stays up.

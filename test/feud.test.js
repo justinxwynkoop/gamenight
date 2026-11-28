@@ -1142,3 +1142,46 @@ test('P2: once Feud has started nobody changes teams (a face-off seat or a Fast 
   assert.throws(() => room.setPlayerTeam(ps[0].id, blue.id), /change teams once the game has started/);
   assert.throws(() => room.act('setPlayerTeam', { playerId: ps[0].id, teamId: blue.id }), /change teams/);
 });
+
+test('eras: every shipped set has a valid era, and an unknown one is refused', () => {
+  const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+  const eras = new Set();
+  for (const f of files) {
+    const s = JSON.parse(readFileSync(new URL(f, dir)));
+    eras.add(s.era ?? 'timeless');
+    assert.equal(validateSet(s), true, f);
+  }
+  assert.ok(eras.has('timeless') && eras.has('throwback') && eras.has('today'), 'a set from each era ships');
+  assert.throws(() => validateSet({ ...set, era: 'medieval' }), /Era must be one of/);
+  assert.equal(validateSet({ ...set, era: 'today' }), true);
+});
+
+test('with a host, Player 2’s Fast Money clock waits for the host and the questions stay hidden until then', () => {
+  const { room, g, ps, red } = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  room.setHosts(1);
+  g.run.status = 'fastmoney';
+  g.run.fm = { team: red.id, step: 'p1', stakes: 'bonus', players: [], part: null, hidden: { p1: false }, rejected: [], dupBuzz: 0, answers: { p1: null, p2: null }, points: { p1: Array(5).fill(null), p2: Array(5).fill(null) }, labels: { p1: Array(5).fill(null), p2: Array(5).fill(null) }, shown: { p1: Array(5).fill(0), p2: Array(5).fill(0) }, timer: null };
+  const m = ps.filter((p) => p.teamId === red.id);
+  g.run.fm.players = [m[0].id, m[1].id];
+  g.fmNext();                                            // Player 1 is done: their answers are revealed
+  g.run.fm.shown.p1 = Array(5).fill(2);
+  g.fmNext();                                            // ...then hidden, and Player 2 is next
+  assert.equal(g.run.fm.step, 'p2');
+  const tv = g.publicView().fm;
+  assert.equal(tv.waitingForClock, true);
+  assert.equal(tv.timer, null, 'no clock yet');
+  assert.ok(tv.rows.every((r) => r.question === null), 'the TV and phones do not see the questions yet');
+  assert.ok(g.hostView().fm.rows.every((r) => typeof r.question === 'string'), 'the host reads them out');
+  assert.throws(() => g.fmAnswersFrom(m[1].id, ['a', 'b', 'c', 'd', 'e']), /host to start your clock/);
+  g.act('fmStartTimer', {});
+  assert.ok(g.publicView().fm.timer, 'the clock runs');
+  assert.equal(g.publicView().fm.waitingForClock, false);
+  assert.ok(g.publicView().fm.rows.every((r) => typeof r.question === 'string'));
+  g.fmAnswersFrom(m[1].id, ['a', 'b', 'c', 'd', 'e']);
+  // Nobody hosting: it starts by itself.
+  const s2 = setup({ players: ['Ann', 'Bo', 'Cy', 'Di'] });
+  s2.g.run.status = 'fastmoney';
+  s2.g.run.fm = { ...g.run.fm, step: 'reveal', part: 'p1', timer: null, shown: { p1: Array(5).fill(2), p2: Array(5).fill(0) }, hidden: { p1: false }, answers: { p1: null, p2: null } };
+  s2.g.fmNext();
+  assert.ok(s2.g.publicView().fm.timer, 'with no host the clock starts at once');
+});

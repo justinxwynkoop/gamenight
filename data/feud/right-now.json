@@ -1,0 +1,419 @@
+{
+  "title": "Right Now",
+  "era": "today",
+  "rounds": [
+    {
+      "question": "Name something you do on your phone every day",
+      "answers": [
+        {
+          "text": "Text",
+          "points": 28,
+          "aliases": [
+            "texting",
+            "message people"
+          ]
+        },
+        {
+          "text": "Check social media",
+          "points": 26,
+          "aliases": [
+            "social media",
+            "instagram",
+            "facebook",
+            "tiktok"
+          ]
+        },
+        {
+          "text": "Watch videos",
+          "points": 16,
+          "aliases": [
+            "videos",
+            "youtube"
+          ]
+        },
+        {
+          "text": "Check the weather",
+          "points": 12,
+          "aliases": [
+            "weather"
+          ]
+        },
+        {
+          "text": "Play games",
+          "points": 10,
+          "aliases": [
+            "games"
+          ]
+        },
+        {
+          "text": "Take photos",
+          "points": 8,
+          "aliases": [
+            "photos",
+            "pictures",
+            "selfies"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a streaming service",
+      "answers": [
+        {
+          "text": "Netflix",
+          "points": 40
+        },
+        {
+          "text": "Disney+",
+          "points": 22,
+          "aliases": [
+            "disney plus",
+            "disney"
+          ]
+        },
+        {
+          "text": "Hulu",
+          "points": 14
+        },
+        {
+          "text": "YouTube",
+          "points": 12,
+          "aliases": [
+            "youtube tv"
+          ]
+        },
+        {
+          "text": "Amazon Prime",
+          "points": 8,
+          "aliases": [
+            "prime video",
+            "prime",
+            "amazon"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you ask a smart speaker to do",
+      "answers": [
+        {
+          "text": "Play music",
+          "points": 40,
+          "aliases": [
+            "music",
+            "play a song",
+            "songs"
+          ]
+        },
+        {
+          "text": "Tell the weather",
+          "points": 24,
+          "aliases": [
+            "weather",
+            "forecast"
+          ]
+        },
+        {
+          "text": "Set a timer",
+          "points": 18,
+          "aliases": [
+            "timer",
+            "alarm"
+          ]
+        },
+        {
+          "text": "Tell a joke",
+          "points": 10,
+          "aliases": [
+            "joke",
+            "jokes"
+          ]
+        },
+        {
+          "text": "Turn off the lights",
+          "points": 8,
+          "aliases": [
+            "lights",
+            "turn on the lights"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a popular social media app",
+      "answers": [
+        {
+          "text": "Instagram",
+          "points": 30,
+          "aliases": [
+            "insta"
+          ]
+        },
+        {
+          "text": "TikTok",
+          "points": 28,
+          "aliases": [
+            "tik tok"
+          ]
+        },
+        {
+          "text": "Facebook",
+          "points": 18
+        },
+        {
+          "text": "Snapchat",
+          "points": 14,
+          "aliases": [
+            "snap"
+          ]
+        },
+        {
+          "text": "X",
+          "points": 10,
+          "aliases": [
+            "twitter"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something you order for delivery",
+      "answers": [
+        {
+          "text": "Pizza",
+          "points": 36
+        },
+        {
+          "text": "Groceries",
+          "points": 22,
+          "aliases": [
+            "food",
+            "grocery"
+          ]
+        },
+        {
+          "text": "Fast food",
+          "points": 18,
+          "aliases": [
+            "burgers",
+            "mcdonalds"
+          ]
+        },
+        {
+          "text": "Takeout",
+          "points": 14,
+          "aliases": [
+            "chinese food",
+            "chinese",
+            "sushi",
+            "takeout food"
+          ]
+        },
+        {
+          "text": "Coffee",
+          "points": 10
+        }
+      ]
+    }
+  ],
+  "fastMoney": [
+    {
+      "question": "Name something you charge every night",
+      "answers": [
+        {
+          "text": "Phone",
+          "points": 52,
+          "aliases": [
+            "cell phone",
+            "iphone"
+          ]
+        },
+        {
+          "text": "Laptop",
+          "points": 16,
+          "aliases": [
+            "tablet",
+            "ipad",
+            "computer"
+          ]
+        },
+        {
+          "text": "Smartwatch",
+          "points": 12,
+          "aliases": [
+            "watch",
+            "apple watch"
+          ]
+        },
+        {
+          "text": "Earbuds",
+          "points": 12,
+          "aliases": [
+            "airpods",
+            "headphones"
+          ]
+        },
+        {
+          "text": "Car",
+          "points": 8,
+          "aliases": [
+            "electric car",
+            "tesla"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name something people video call about",
+      "answers": [
+        {
+          "text": "Family",
+          "points": 38,
+          "aliases": [
+            "relatives",
+            "grandma",
+            "kids"
+          ]
+        },
+        {
+          "text": "Work meetings",
+          "points": 28,
+          "aliases": [
+            "work",
+            "meetings",
+            "job"
+          ]
+        },
+        {
+          "text": "Friends",
+          "points": 18,
+          "aliases": [
+            "friend"
+          ]
+        },
+        {
+          "text": "The doctor",
+          "points": 10,
+          "aliases": [
+            "doctor",
+            "telehealth"
+          ]
+        },
+        {
+          "text": "School",
+          "points": 6,
+          "aliases": [
+            "class",
+            "classes"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name an app on almost every phone",
+      "answers": [
+        {
+          "text": "Maps",
+          "points": 30,
+          "aliases": [
+            "google maps",
+            "gps",
+            "directions"
+          ]
+        },
+        {
+          "text": "Camera",
+          "points": 24,
+          "aliases": [
+            "photos",
+            "pictures"
+          ]
+        },
+        {
+          "text": "Weather",
+          "points": 18
+        },
+        {
+          "text": "Music",
+          "points": 16,
+          "aliases": [
+            "spotify",
+            "apple music"
+          ]
+        },
+        {
+          "text": "Calculator",
+          "points": 12
+        }
+      ]
+    },
+    {
+      "question": "Name something you buy online",
+      "answers": [
+        {
+          "text": "Clothes",
+          "points": 34,
+          "aliases": [
+            "clothing",
+            "shirts"
+          ]
+        },
+        {
+          "text": "Groceries",
+          "points": 20,
+          "aliases": [
+            "food"
+          ]
+        },
+        {
+          "text": "Shoes",
+          "points": 16,
+          "aliases": [
+            "sneakers"
+          ]
+        },
+        {
+          "text": "Books",
+          "points": 14,
+          "aliases": [
+            "book"
+          ]
+        },
+        {
+          "text": "Electronics",
+          "points": 16,
+          "aliases": [
+            "gadgets",
+            "phones",
+            "tvs"
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Name a game kids play online",
+      "answers": [
+        {
+          "text": "Roblox",
+          "points": 30
+        },
+        {
+          "text": "Minecraft",
+          "points": 28
+        },
+        {
+          "text": "Fortnite",
+          "points": 24
+        },
+        {
+          "text": "Among Us",
+          "points": 10
+        },
+        {
+          "text": "Candy Crush",
+          "points": 8
+        }
+      ]
+    }
+  ]
+}

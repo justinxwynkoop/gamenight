@@ -2536,10 +2536,12 @@
   var AUTO = { faceoffReplay: 2500, fmGrace: 1500, fmReveal: 2200, fmHold: 4500, fmWin: 5e3 };
   var GAME2 = "feud";
   var SLOTS = ["p1", "p2"];
+  var ERAS2 = { timeless: "Any time", throwback: "Throwback (80s to 2000s)", today: "Today" };
   var unique = (list) => new Set(list.map((x) => x.toLowerCase())).size === list.length;
   function validateSet2(set) {
     if (!set || typeof set !== "object") fail("Question set must be an object");
     if (!cleanName(set.title, 80)) fail("Question set needs a title");
+    if (set.era !== void 0 && !Object.hasOwn(ERAS2, set.era)) fail(`Era must be one of: ${Object.keys(ERAS2).join(", ")}`);
     const checkQuestion = (q, label) => {
       if (!String(q?.question ?? "").trim()) fail(`${label} needs a question`);
       if (String(q.question).length > 200) fail(`${label}: the question is too long`);
@@ -2693,6 +2695,7 @@
         case "startAnswerTimer":
           return this.startAnswerTimer();
         case "fmRestartTimer":
+        case "fmStartTimer":
           return this.fmRestartTimer();
         case "finishGame":
           return this.finishGame();
@@ -3105,7 +3108,8 @@
         fm.step = "p2";
         fm.hidden.p1 = true;
         fm.rejected = [];
-        __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds2);
+        if (this.hosted()) fm.timer = null;
+        else __privateMethod(this, _FeudGame_instances, startTimer_fn).call(this, fm, this.settings.fastMoneySeconds2);
       } else if (fm.step === "p2") {
         __privateMethod(this, _FeudGame_instances, zeroBlanks_fn).call(this, "p2");
         fm.step = "reveal";
@@ -3135,6 +3139,7 @@
       const fm = this.run.status === "fastmoney" ? this.run.fm : null;
       if (!fm || !["p1", "p2"].includes(fm.step)) fail("Fast Money is not taking answers right now");
       if (fm.players[SLOTS.indexOf(fm.step)] !== playerId) fail("It is not your turn");
+      if (fm.step === "p2" && !fm.timer) fail("Wait for the host to start your clock");
       const clean2 = __privateMethod(this, _FeudGame_instances, cleanAnswers_fn).call(this, answers);
       let rejected = [];
       if (fm.step === "p2") {
@@ -3733,7 +3738,7 @@
   fmView_fn = function(host) {
     const fm = this.run.fm;
     const rows = Array.from({ length: FAST_MONEY_QUESTIONS }, (_, q) => {
-      const row = { q, question: fm.step === "pick" || fm.step === "team" ? null : this.set.fastMoney[q].question };
+      const row = { q, question: fm.step === "pick" || fm.step === "team" || !host && fm.step === "p2" && !fm.timer ? null : this.set.fastMoney[q].question };
       for (const s of SLOTS) {
         const shown = fm.shown[s][q];
         const judged = shown === 2;
@@ -3757,6 +3762,7 @@
     return {
       team: fm.team,
       step: fm.step,
+      waitingForClock: fm.step === "p2" && !fm.timer,
       stakes: __privateMethod(this, _FeudGame_instances, stakes_fn).call(this, fm),
       timer: __privateMethod(this, _FeudGame_instances, timerView_fn2).call(this, fm),
       goal: this.settings.fastMoneyGoal,
@@ -7559,7 +7565,7 @@
       } },
       ...now ? { now } : {},
       loadContent: (gameId, id) => sets[gameId]?.[id] ?? null,
-      listContent: (gameId) => Object.entries(sets[gameId] ?? {}).map(([id, s]) => ({ id, title: s?.title ?? id })).sort((a, b) => a.title.localeCompare(b.title)),
+      listContent: (gameId) => Object.entries(sets[gameId] ?? {}).map(([id, s]) => ({ id, title: s?.title ?? id, ...s?.era ? { era: s.era } : {} })).sort((a, b) => a.title.localeCompare(b.title)),
       onChange() {
         if (queued) return;
         queued = true;

@@ -3,6 +3,9 @@
 // the steal, round end, Fast Money, the result), the pinned action bar for each, and the game's rules.
 import { h, apiFetch } from '../../common.js';
 import { icon, button, seg, toggle, dot, pill, card, eyebrow, timerPill } from '../../ui.js';
+import { ERA_LABELS } from './shared.js';
+
+let eraFilter = 'all';   // the question-set list shows every era, or just one
 
 let g = null;     // the game's view
 let room = null;  // the room's view (teams, players)
@@ -123,12 +126,22 @@ function setupView() {
 function openSetSheet() {
   C.openSheet({
     title: 'Question set',
-    build: () => (C.sets.length
-      ? h('div', { class: 'list' }, C.sets.map((x) => h('button', {
-        type: 'button', class: 'pick', 'aria-pressed': String(x.id === g.setId),
-        onclick: () => { act('chooseSet', { id: x.id }); C.closeSheet(); },
-      }, h('div', { class: 'grow' }, h('div', { class: 't' }, x.title)), x.id === g.setId && icon('check', 20))))
-      : h('p', { class: 'dim' }, 'No question sets yet. Write one in the question editor.')),
+    build: () => {
+      if (!C.sets.length) return h('p', { class: 'dim' }, 'No question sets yet. Write one in the question editor.');
+      const eraOf = (x) => x.era ?? 'timeless';
+      const shown = C.sets.filter((x) => eraFilter === 'all' || eraOf(x) === eraFilter);
+      // Only the eras that some set has are offered as a filter.
+      const present = Object.keys(ERA_LABELS).filter((e) => C.sets.some((x) => eraOf(x) === e));
+      return [
+        present.length > 1 && h('div', { class: 'field' }, h('span', {}, 'When the questions are from'),
+          seg([{ value: 'all', label: 'All' }, ...present.map((e) => ({ value: e, label: ERA_LABELS[e].replace(/ \(.*\)$/, '') }))], eraFilter, (e) => { eraFilter = e; C.refresh(); })),
+        shown.length ? h('div', { class: 'list' }, shown.map((x) => h('button', {
+          type: 'button', class: 'pick', 'aria-pressed': String(x.id === g.setId),
+          onclick: () => { act('chooseSet', { id: x.id }); C.closeSheet(); },
+        }, h('div', { class: 'grow' }, h('div', { class: 't' }, x.title), h('div', { class: 's dim' }, ERA_LABELS[eraOf(x)] ?? '')), x.id === g.setId && icon('check', 20))))
+          : h('p', { class: 'dim' }, 'No sets from that time yet.'),
+      ].filter(Boolean);
+    },
   });
 }
 
@@ -370,8 +383,9 @@ function fmAnswering(fm, head) {
       slot === 'p2' && card(eyebrow(`${fm.players[0].name ?? 'Player 1'} scored`), h('div', { class: 'fd-total' }, h('b', {}, String(fm.totals.p1)), h('span', { class: 'dim' }, ' points. Their answers are hidden on the TV.'))),
       ...fm.rows.map((row, i) => card(eyebrow(`Question ${i + 1}`), h('div', { class: 'card-title' }, row.question), inputs[i], dup(row), chips(row))),
       card(button({ label: 'Save these answers', icon: 'check', onclick: save }))].filter(Boolean),
-    dock: [button({ label: slot === 'p1' ? 'Time’s up. Reveal Player 1’s answers' : 'Time’s up. Reveal Player 2’s answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => { save(); act('fmNext'); } }),
-      dockRow(button({ label: 'Restart the timer', icon: 'refresh', size: 'sm', onclick: () => act('fmRestartTimer') }),
+    dock: [fm.waitingForClock && button({ label: 'Start Player 2’s clock', icon: 'clock', kind: 'ok', size: 'lg', block: true, onclick: () => act('fmStartTimer') }),
+      button({ label: slot === 'p1' ? 'Time’s up. Reveal Player 1’s answers' : 'Time’s up. Reveal Player 2’s answers', icon: 'chevron', kind: 'primary', size: 'lg', block: true, onclick: () => { save(); act('fmNext'); } }),
+      dockRow(!fm.waitingForClock && button({ label: 'Restart the timer', icon: 'refresh', size: 'sm', onclick: () => act('fmRestartTimer') }),
         button({ label: `Change ${slot === 'p1' ? 'Player 1' : 'Player 2'}`, icon: 'swap', size: 'sm', onclick: () => openChangePlayerSheet(slot === 'p1' ? 0 : 1) }))],
   };
 }
