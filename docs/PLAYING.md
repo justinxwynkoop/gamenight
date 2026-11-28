@@ -83,8 +83,8 @@ is caught by surprise. A host page connected opens them at once.
 7. **Winner.** The champion, everyone's scores, and awards (Fastest Finger, Big Brain, On Fire, High Roller, Fearless).
    **Play again** deals new categories.
 
-**Buzz times.** Everyone's buzz times, ranked and to the thousandth of a second, stay in a semi-transparent panel down the side of the TV (one player to a row, a long name wraps inside its row) for the whole
-clue (also after a wrong answer, when the buzzers open again), and for ten seconds on the board after it ends.
+**Buzz times.** Everyone's buzz times, ranked and to the thousandth of a second, stay in a semi-transparent panel down the side of the TV (one player to a row; a long name is shrunk a little and then cut short on one line, never wrapped) for the whole
+clue (also after a wrong answer, when the buzzers open again), and for ten seconds on the board after it ends, where they sit four across in two rows (eight players at most).
 
 Also: streaks (**on fire** after three right in a row), emoji reactions that float up the TV from phones, and
 **captain controls** on the captain's phone: choose packs, start, skip a clue, flip the last ruling, continue, end the

@@ -670,7 +670,7 @@ function recentBuzzes() {
   const best = list[0].ms;
   return h('div', { class: 'recent' }, h('span', { class: 'lbl' }, 'BUZZ TIMES'),
     list.map((b, i) => h('span', { class: `rb ${i === 0 ? 'first' : ''}`, style: { '--c': player(b.pid)?.color ?? '#AEB3D6' } },
-      h('i', {}, String(i + 1)), nameOf(b.pid), h('b', {}, `${secs(b.ms)}s`), i ? h('small', {}, `+${secs(b.ms - best)}`) : null)));
+      h('i', {}, String(i + 1)), h('span', { class: 'nm' }, nameOf(b.pid)), h('b', {}, `${secs(b.ms)}s`), i ? h('small', {}, `+${secs(b.ms - best)}`) : null)));
 }
 
 // ---------- a clue ----------
