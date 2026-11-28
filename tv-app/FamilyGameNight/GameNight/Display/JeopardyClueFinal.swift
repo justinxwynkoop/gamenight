@@ -380,8 +380,8 @@ struct JeoBuzzSide {
 }
 
 /// The buzz times as a semi-transparent panel down the side of the clue, one player to a row, newest opening of the
-/// buzzers only: the name gets two lines (so a long one does not make the panel grow), then the time, and how far behind
-/// the fastest it was.
+/// buzzers only: the name on one line (a long one is shrunk, then cut short, so it never wraps or makes the panel grow), then
+/// the time, and how far behind the fastest it was.
 struct JeoBuzzPanel: View {
     let game: JeopardyState
     let clue: JeoClue
@@ -401,9 +401,9 @@ struct JeoBuzzPanel: View {
                         BWAvatar(name: player?.name ?? "?", color: Color(playerHex: player?.color ?? "#AEB3D6"), size: 38)
                         Text(player?.name ?? "Someone")
                             .font(BW.body(26, .semibold))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.75)
-                            .multilineTextAlignment(.leading)
+                            .lineLimit(1)               // a long name is shrunk a little, then cut short: it never wraps
+                            .minimumScaleFactor(0.7)
+                            .truncationMode(.tail)
                         Spacer(minLength: 4)
                         VStack(alignment: .trailing, spacing: 0) {
                             Text(BW.seconds(buzz.ms)).font(BW.title(24)).monospacedDigit()
@@ -1081,14 +1081,15 @@ struct JeoRecentBuzzesStrip: View {
         let latest = recent.buzzes.map { $0.open ?? 1 }.max() ?? 1
         let list = recent.buzzes.filter { ($0.open ?? 1) == latest }
         if let best = list.first?.ms {
-            HStack(alignment: .top, spacing: 18) {
-                Text("BUZZ TIMES").font(BW.body(20, .heavy)).kerning(3).foregroundColor(BW.soft).padding(.top, 8)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: 10)], alignment: .leading, spacing: 8) {
+            // Four across and two rows (at most eight players), the label above them, names on one line.
+            VStack(spacing: 6) {
+                Text("BUZZ TIMES").font(BW.body(20, .heavy)).kerning(3).foregroundColor(BW.soft)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), alignment: .leading, spacing: 8) {
                     ForEach(Array(list.prefix(8).enumerated()), id: \.element.id) { index, buzz in
                         let player = game.player(buzz.pid)
                         HStack(spacing: 8) {
                             Text("\(index + 1)").font(BW.title(18)).frame(width: 22)
-                            Text(player?.name ?? "Someone").font(BW.body(22, .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+                            Text(player?.name ?? "Someone").font(BW.body(22, .semibold)).lineLimit(1).minimumScaleFactor(0.6).truncationMode(.tail)
                             Spacer(minLength: 2)
                             Text(BW.seconds(buzz.ms)).font(BW.title(21)).monospacedDigit()
                             if index > 0 {
